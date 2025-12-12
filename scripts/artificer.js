@@ -161,20 +161,20 @@ Hooks.once('ready', async () => {
         console.log('API TEST | 3. If you hear a battle cry, your sound playback worked!');
         console.log('API TEST | ');
 
-        try {
-            BlacksmithUtils.playSound('modules/coffee-pub-blacksmith/sounds/battlecry.mp3', 0.7);
-            console.log('✅ API TEST | BLACKSMITH TEST: Sound playback test completed');
-        } catch (soundError) {
-            console.error('❌ API TEST | BLACKSMITH TEST: Sound playback test failed:', soundError);
-        }
+        // try {
+        //     BlacksmithUtils.playSound('modules/coffee-pub-blacksmith/sounds/battlecry.mp3', 0.7);
+        //     console.log('✅ API TEST | BLACKSMITH TEST: Sound playback test completed');
+        // } catch (soundError) {
+        //     console.error('❌ API TEST | BLACKSMITH TEST: Sound playback test failed:', soundError);
+        // }
 
         // ----- UTILS TEST
-        console.log('API TEST | ==== UTILS TEST INSTRUCTIONS: ====');
-        console.log('API TEST | 1. You should see a notification in the console.');
-        console.log('API TEST | 2. The notification should contain your module ID.');
-        console.log('API TEST | ');
+        // console.log('API TEST | ==== UTILS TEST INSTRUCTIONS: ====');
+        // console.log('API TEST | 1. You should see a notification in the console.');
+        // console.log('API TEST | 2. The notification should contain your module ID.');
+        // console.log('API TEST | ');
 
-        BlacksmithUtils.postConsoleAndNotification(TEST_MODULE_ID, 'API TEST | Utils working!', null, false, false);
+        // BlacksmithUtils.postConsoleAndNotification(TEST_MODULE_ID, 'API TEST | Utils working!', null, false, false);
 
         // ----- HOOK TEST - Use REAL FoundryVTT events
         console.log('API TEST | ===================================================');
