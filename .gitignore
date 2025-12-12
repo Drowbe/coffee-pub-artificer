@@ -1,0 +1,35 @@
+# FoundryVTT Module .gitignore
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.code-workspace
+
+# Node (if you add build tools later)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Lock files (uncomment if you don't want to track these)
+# *.lock
+
