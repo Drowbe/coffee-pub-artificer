@@ -2,5 +2,20 @@
 /* --- COFFEE PUB ARTIFICER STYLES --- */
 /* ------------------------------------ */
 
-/* Add your module styles here */
+/* Secondary Bar Styles */
+#artificer-crafting-bar {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid #4a4a4a;
+    border-radius: 4px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#artificer-crafting-bar .artificer-content {
+    color: #fff;
+    text-align: center;
+}
 
