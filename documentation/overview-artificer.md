@@ -275,7 +275,244 @@ This preserves system stability.
 
 ---
 
-## 11. JSON Structures (High-Level)
+## 11. Architecture & Technical Decisions
+
+### 11.1 Data Storage Strategy (Hybrid Approach)
+
+Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage approach:
+
+#### Tier 1: Master Data (Compendium Packs)
+- **Ingredients** (Raw Materials)
+- **Components** (Refined Materials)  
+- **Essences** (Magical Affinities)
+
+**Rationale:** Frequently accessed during crafting operations. Fast lookup for tag combination logic. Better performance, easy to share/expand via compendiums.
+
+#### Tier 2: World Content (Journal Entries)
+- **Recipes** - Structured HTML journal pages
+- **Blueprints** - Multi-stage journal pages with state markup
+
+**Rationale:** Human-editable by GMs, supports rich formatting, built-in permissions/ownership, easy to share as journal compendiums. Uses parser-based architecture (like Codex/Quest systems).
+
+#### Tier 3: Player Data (Actor Flags)
+- Skills (Herbalism, Metallurgy, etc.)
+- Tag discoveries (per ingredient, per actor)
+- Blueprint progress (per blueprint, per actor)
+- Unlocked recipes
+
+**Rationale:** Player-specific data that changes frequently, tied to actors.
+
+#### Tier 4: World/Scene Data (Scene Flags / World Settings)
+- Workstation locations and states (scene flags)
+- Gathering nodes (positions, states, respawn timers) (scene flags)
+- Biome data (scene flags)
+- World-wide settings (world settings)
+
+**Rationale:** Spatial and world-level configuration.
+
+---
+
+### 11.2 Parser-Based Architecture
+
+Following Codex/Quest patterns:
+
+**Recipes & Blueprints:**
+- Stored as structured HTML in journal entries
+- Parsed on-demand using DOMParser
+- Extract structured data via semantic HTML (`<p><strong>Label:</strong> value</p>`)
+- Flexible schema - can add fields without migration
+- Version-tolerant parsing
+
+**Example Recipe Structure:**
+```html
+<p><strong>Recipe Name:</strong> Healing Potion</p>
+<p><strong>Type:</strong> Consumable</p>
+<p><strong>Category:</strong> Potion</p>
+<p><strong>Skill:</strong> Alchemy</p>
+<p><strong>Skill Level:</strong> 25</p>
+<p><strong>Workstation:</strong> Alchemist Table</p>
+<p><strong>Ingredients:</strong></p>
+<ul>
+    <li>Herb: Lavender (2)</li>
+    <li>Essence: Life (1)</li>
+</ul>
+<p><strong>Result:</strong> @UUID[Item.abc123]{Healing Potion}</p>
+<p><strong>Tags:</strong> healing, consumable, potion</p>
+```
+
+**Blueprint Stage State Markup:**
+- `<s>`, `<del>`, or `<strike>`: Completed stages
+- `<code>`: Failed stages
+- `<em>` or `<i>`: Hidden stages (GM-only)
+- Plain text: Active stages
+
+---
+
+### 11.3 Patterns Adopted from Codex/Quest Systems
+
+#### ✅ Parser-Based Architecture
+- HTML stored in journals, parsed on-demand
+- Flexible, version-tolerant, human-editable
+
+#### ✅ Form/Panel Pattern
+- **FormApplication** for creating/editing recipes/blueprints
+- **ApplicationV2 Panel** for browsing (like CodexPanel/QuestPanel)
+- Drag & drop auto-population
+
+#### ✅ Status-Based Organization
+- Recipes/Blueprints grouped by status (Available, Locked, Unlocked, In Progress, Complete)
+- Dynamic status calculation from requirements/state
+
+#### ✅ Client-Side Filtering
+- DOM-based filtering for performance
+- Tag-based filtering, search, category filters
+
+#### ✅ Scene Pin Integration (Future)
+- PIXI-based pins for workstations and gathering nodes
+- Interactive canvas placement (like Quest pins)
+- Position persistence in scene flags
+
+#### ✅ Notification Integration
+- Use Blacksmith API for crafting event notifications
+- Tag discoveries, skill increases, crafting success/failure, etc.
+
+#### ✅ Hash-Based Numbering (Optional)
+- Recipe numbers (R1, R2, etc.) from UUID hash
+- Blueprint numbers (B1, B2, etc.)
+- Consistent reference system
+
+---
+
+### 11.4 Journal Organization
+
+**Recipes:**
+- Default journal: "Artificer Recipes" (auto-created if missing)
+- User-configurable: Can select different journal via settings
+- Single journal recommended (simpler management)
+
+**Blueprints:**
+- **DECISION PENDING:** Same journal as recipes or separate journal?
+- Recommendation: Separate journal ("Artificer Blueprints") for clarity and different permissions
+
+---
+
+### 11.5 UI Components
+
+**Crafting Interface (Secondary Bar):**
+- 100px height secondary bar (already implemented)
+- Opens via menubar tool (middle zone)
+- Will contain main crafting UI
+
+**Recipe/Blueprint Browser:**
+- Status-based organization (like Quest system)
+- Category filtering available
+- Tag cloud filtering
+- Search functionality
+
+**Ingredient Browser:**
+- Filter by family, tags, tier, rarity
+- Show discovered/undiscovered tags
+- Quantity from actor inventory
+
+---
+
+## 12. Outstanding Questions to Resolve
+
+### Critical (Must Decide Before Phase 1)
+
+**Q1: Ingredient Storage**
+- **Recommendation:** Compendium Packs (performance)
+- **Alternative:** Journals (flexibility, easier editing)
+- **Status:** ⏳ Pending Decision
+
+**Q2: Blueprint Storage**
+- Same journal as recipes or separate journal?
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Separate journal for clarity
+
+**Q3: Canvas/Pin Approach for MVP**
+- Start with abstract menu-based (faster to build)
+- Or build canvas pins from start (more immersive)
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Abstract for MVP, add canvas pins in Phase 8
+
+**Q4: Blueprint State Representation**
+- Use HTML markup (`<s>`, `<code>`, `<em>`) like Quest tasks?
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Yes - consistent with Quest patterns
+
+**Q5: Workstation Storage**
+- Compendium for definitions + scene flags for instances?
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Hybrid approach
+
+**Q6: Gathering Node Storage**
+- Compendium for definitions + scene flags for instances?
+- **Status:** ⏳ Pending Decision
+
+### Important (Should Decide Before Phase 2-3)
+
+**Q7: Recipe Numbering**
+- Hash-based numbers (R1, R2, etc.)?
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Yes - consistent with Quest system
+
+**Q8: Recipe Result Linking**
+- Link to existing items or auto-create on craft?
+- **Status:** ⏳ Pending Decision
+
+**Q9: Blueprint Stage Progression**
+- Player initiates each stage separately?
+- Or stages auto-unlock when materials available?
+- **Status:** ⏳ Pending Decision
+
+**Q10: Panel Organization**
+- Status-based, category-based, or both?
+- **Status:** ⏳ Pending Decision
+- **Recommendation:** Both (default to status, with category filter)
+
+**Q11: Item System Integration**
+- Which Foundry game system primarily? (D&D 5e, PF2e, custom?)
+- **Status:** ⏳ Pending Decision
+
+### Nice to Have (Can Decide During Implementation)
+
+**Q12: Pin Interactions**
+- Click behaviors, drag, right-click menus, tooltips
+
+**Q13: Export/Import Format**
+- JSON export/import, journal compendiums, or both?
+
+**Q14: Notification Events**
+- Which crafting events trigger notifications?
+- Likely configurable in settings
+
+**Q15: Progress Display**
+- Where to show progress bars (crafting panel, recipe browser, actor sheet)?
+
+---
+
+## 13. Implementation Status
+
+### ✅ Completed
+- Module setup and GitHub repository
+- Menubar integration (Artificer tool in middle zone)
+- Secondary bar (100px height, ready for content)
+- Blacksmith API integration
+
+### 🔄 In Progress
+- Architecture decisions
+- Data storage planning
+
+### 📋 Next Steps
+1. Resolve critical questions (Q1-Q6)
+2. Begin Phase 0: Foundation & Architecture Setup
+3. Create data models and storage systems
+
+---
+
+## 14. JSON Structures (High-Level)
+
 Future schemas will define:
 - Ingredients  
 - Components  
@@ -291,7 +528,8 @@ Expected fields include:
 
 ---
 
-## 12. System Capabilities
+## 15. System Capabilities
+
 This crafting system supports:
 - intuitive experimentation  
 - narrative-driven rare-item creation  
@@ -304,3 +542,9 @@ This crafting system supports:
 - exploration that rewards curiosity  
 
 ---
+
+## Notes
+
+- See `documentation/DEVELOPMENT_PLAN.md` for detailed phased implementation plan
+- Architecture decisions based on analysis of Coffee Pub Codex and Quest systems
+- All patterns leverage FoundryVTT native systems (journals, flags, compendiums) for maximum compatibility
