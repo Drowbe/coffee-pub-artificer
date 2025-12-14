@@ -5,9 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - Initial Release
+## [13.0.0] - Initial Framework Release - NON FUNCTIONAL
 
 ### Added
 - Initial module structure
 - Integration with Coffee Pub Blacksmith
+- Menubar integration with Artificer tool (middle zone)
+- Secondary bar system (100px height, ready for crafting UI)
+- Architecture analysis and design documentation
+- Consolidated design document with technical decisions and outstanding questions
 
