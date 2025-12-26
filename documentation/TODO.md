@@ -5,13 +5,13 @@
 ### CRITICAL PRIORITY
 
 **Decision Blockers - Must Resolve Before Phase 1:**
-- [ ] **Q1: Ingredient Storage** - Decide: Compendium Packs vs. Journals
-- [ ] **Q2: Blueprint Storage** - Decide: Same journal as recipes or separate?
-- [ ] **Q3: Canvas/Pin Approach for MVP** - Decide: Abstract menu-based or canvas pins from start?
-- [ ] **Q4: Blueprint State Representation** - Decide: HTML markup (recommended) or separate state tracking?
-- [ ] **Q5: Workstation Storage** - Decide: Hybrid (compendium + scene flags) or alternative?
-- [ ] **Q6: Gathering Node Storage** - Decide: Compendium definitions + scene flags?
-- [ ] **Q11: Item System Integration** - Decide: Which Foundry game system primarily? (D&D 5e, PF2e, custom?)
+- [x] **Q1: Ingredient Storage** - ✅ DECIDED: Compendium Packs (journal type entries)
+- [x] **Q2: Blueprint Storage** - ✅ DECIDED: Separate journal ("Artificer Blueprints")
+- [x] **Q3: Canvas/Pin Approach for MVP** - ✅ DECIDED: Abstract menu-based for MVP
+- [x] **Q4: Blueprint State Representation** - ✅ DECIDED: HTML markup (`<s>`, `<code>`, `<em>`)
+- [x] **Q5: Workstation Storage** - ✅ DECIDED: Hybrid (compendium + scene flags)
+- [x] **Q6: Gathering Node Storage** - ✅ DECIDED: Compendium definitions + scene flags
+- [x] **Q11: Item System Integration** - ✅ DECIDED: D&D 5e
 
 ### HIGH PRIORITY
 

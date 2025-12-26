@@ -281,12 +281,12 @@ This preserves system stability.
 
 Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage approach:
 
-#### Tier 1: Master Data (Compendium Packs)
-- **Ingredients** (Raw Materials)
-- **Components** (Refined Materials)  
-- **Essences** (Magical Affinities)
+#### Tier 1: Master Data (Compendium Packs - Journal Type)
+- **Ingredients** (Raw Materials) - Stored as journal entries in compendium packs
+- **Components** (Refined Materials) - Stored as journal entries in compendium packs
+- **Essences** (Magical Affinities) - Stored as journal entries in compendium packs
 
-**Rationale:** Frequently accessed during crafting operations. Fast lookup for tag combination logic. Better performance, easy to share/expand via compendiums.
+**Rationale:** Frequently accessed during crafting operations. Fast lookup for tag combination logic. Better performance, easy to share/expand via compendiums. Using journal-type entries provides human-readable format while maintaining compendium performance benefits.
 
 #### Tier 2: World Content (Journal Entries)
 - **Recipes** - Structured HTML journal pages
@@ -391,8 +391,9 @@ Following Codex/Quest patterns:
 - Single journal recommended (simpler management)
 
 **Blueprints:**
-- **DECISION PENDING:** Same journal as recipes or separate journal?
-- Recommendation: Separate journal ("Artificer Blueprints") for clarity and different permissions
+- **DECISION:** Separate journal ("Artificer Blueprints") for clarity and different permissions
+- Default journal: "Artificer Blueprints" (auto-created if missing)
+- User-configurable: Can select different journal via settings
 
 ---
 
@@ -421,34 +422,34 @@ Following Codex/Quest patterns:
 ### Critical (Must Decide Before Phase 1)
 
 **Q1: Ingredient Storage**
-- **Recommendation:** Compendium Packs (performance)
-- **Alternative:** Journals (flexibility, easier editing)
-- **Status:** ⏳ Pending Decision
+- **Decision:** Compendium Packs (journal type entries)
+- **Rationale:** Performance benefits of compendiums with human-readable journal format
+- **Status:** ✅ Decided
 
 **Q2: Blueprint Storage**
-- Same journal as recipes or separate journal?
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Separate journal for clarity
+- **Decision:** Separate journal from recipes ("Artificer Blueprints")
+- **Rationale:** Clear separation, different permissions possible, cleaner organization
+- **Status:** ✅ Decided
 
 **Q3: Canvas/Pin Approach for MVP**
-- Start with abstract menu-based (faster to build)
-- Or build canvas pins from start (more immersive)
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Abstract for MVP, add canvas pins in Phase 8
+- **Decision:** Abstract menu-based for MVP
+- **Rationale:** Faster to build, canvas pins can be added in Phase 8/12
+- **Status:** ✅ Decided
 
 **Q4: Blueprint State Representation**
-- Use HTML markup (`<s>`, `<code>`, `<em>`) like Quest tasks?
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Yes - consistent with Quest patterns
+- **Decision:** HTML markup (`<s>`, `<code>`, `<em>`) like Quest tasks
+- **Rationale:** Consistent with Quest patterns, human-editable, version-tolerant
+- **Status:** ✅ Decided
 
 **Q5: Workstation Storage**
-- Compendium for definitions + scene flags for instances?
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Hybrid approach
+- **Decision:** Hybrid approach (Compendium for definitions + scene flags for instances)
+- **Rationale:** Reusable definitions in compendium, scene-specific placement/state in flags
+- **Status:** ✅ Decided
 
 **Q6: Gathering Node Storage**
-- Compendium for definitions + scene flags for instances?
-- **Status:** ⏳ Pending Decision
+- **Decision:** Compendium for definitions + scene flags for instances
+- **Rationale:** Consistent with workstation approach, reusable definitions, scene-specific data
+- **Status:** ✅ Decided
 
 ### Important (Should Decide Before Phase 2-3)
 
@@ -472,8 +473,9 @@ Following Codex/Quest patterns:
 - **Recommendation:** Both (default to status, with category filter)
 
 **Q11: Item System Integration**
-- Which Foundry game system primarily? (D&D 5e, PF2e, custom?)
-- **Status:** ⏳ Pending Decision
+- **Decision:** D&D 5e
+- **Rationale:** Primary target system for item structure and stats
+- **Status:** ✅ Decided
 
 ### Nice to Have (Can Decide During Implementation)
 
@@ -505,7 +507,7 @@ Following Codex/Quest patterns:
 - Data storage planning
 
 ### 📋 Next Steps
-1. Resolve critical questions (Q1-Q6)
+1. ~~Resolve critical questions (Q1-Q6, Q11)~~ ✅ **COMPLETED**
 2. Begin Phase 0: Foundation & Architecture Setup
 3. Create data models and storage systems
 
