@@ -28,11 +28,12 @@ This plan breaks down the crafting system into manageable phases, building from 
      - `Skill` (Player Progression)
 
 3. **Module Structure**
-   - Set up folder structure:
-     - `scripts/data/` - Data models and managers
-     - `scripts/systems/` - Core systems (tag logic, crafting engine)
-     - `scripts/ui/` - UI components
-     - `scripts/utils/` - Helper functions
+   - Set up flat file structure following Codex/Quest patterns:
+     - `schema-*.js` - JSDoc type definitions
+     - `manager-*.js` - Data managers
+     - `api-artificer.js` - Module API
+     - `resources/` - JSON data files (when needed)
+     - `templates/` - Handlebars templates (when needed)
    - Create core manager classes (placeholder structure)
    - Set up module API for external access
 

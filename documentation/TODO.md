@@ -16,11 +16,12 @@
 ### HIGH PRIORITY
 
 **Phase 0: Foundation & Architecture Setup**
-- [ ] Set up folder structure (`scripts/data/`, `scripts/systems/`, `scripts/ui/`, `scripts/utils/`)
-- [ ] Define JSON schema definitions with JSDoc for all data types
-- [ ] Create validation functions for each data type
-- [ ] Set up module API for external access
-- [ ] Define module settings in `settings.js` (feature toggles, discovery thresholds, skill rates)
+- [x] Set up folder structure (`resources/`, `templates/`)
+- [x] Define schema definitions with JSDoc for all data types (`schema-*.js` files)
+- [ ] Create validation functions for each data type (Phase 1)
+- [x] Set up module API for external access (`api-artificer.js`)
+- [x] Create placeholder manager classes (`manager-*.js` files)
+- [ ] Define module settings in `settings.js` (feature toggles, discovery thresholds, skill rates) - Settings framework exists, needs actual settings
 - [ ] Add localization keys for settings in `lang/en.json`
 
 **Phase 1: Core Data System**

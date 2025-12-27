@@ -277,7 +277,38 @@ This preserves system stability.
 
 ## 11. Architecture & Technical Decisions
 
-### 11.1 Data Storage Strategy (Hybrid Approach)
+### 11.1 Module Structure
+
+Following Codex/Quest naming patterns, the module uses a flat file structure:
+
+```
+scripts/
+  ├── artificer.js                    (main entry point)
+  ├── const.js                        (module constants)
+  ├── settings.js                     (settings registration)
+  │
+  ├── schema-*.js                     (JSDoc type definitions)
+  ├── utility-*-parser.js             (HTML parsers for journal entries)
+  ├── manager-*.js                    (data managers)
+  ├── panel-*.js                      (UI panels - ApplicationV2)
+  ├── window-*.js                     (UI forms - FormApplication)
+  ├── api-artificer.js                (module API exports)
+  └── utils.js                        (utility functions)
+
+resources/                             (JSON data files)
+templates/                             (Handlebars templates)
+styles/                                (CSS files)
+```
+
+**File Naming Conventions:**
+- `schema-*` - JSDoc type definitions (documentation only, no data)
+- `utility-*-parser` - Parsers following Codex/Quest patterns
+- `manager-*` - Data managers (compendium/journal access)
+- `panel-*` - UI panels (ApplicationV2)
+- `window-*` - UI forms (FormApplication)
+- `api-*` - Module API exports
+
+### 11.2 Data Storage Strategy (Hybrid Approach)
 
 Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage approach:
 
@@ -312,7 +343,7 @@ Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage
 
 ---
 
-### 11.2 Parser-Based Architecture
+### 11.3 Parser-Based Architecture
 
 Following Codex/Quest patterns:
 
@@ -348,7 +379,7 @@ Following Codex/Quest patterns:
 
 ---
 
-### 11.3 Patterns Adopted from Codex/Quest Systems
+### 11.4 Patterns Adopted from Codex/Quest Systems
 
 #### ✅ Parser-Based Architecture
 - HTML stored in journals, parsed on-demand
@@ -383,7 +414,7 @@ Following Codex/Quest patterns:
 
 ---
 
-### 11.4 Journal Organization
+### 11.5 Journal Organization
 
 **Recipes:**
 - Default journal: "Artificer Recipes" (auto-created if missing)
@@ -397,7 +428,7 @@ Following Codex/Quest patterns:
 
 ---
 
-### 11.5 UI Components
+### 11.6 UI Components
 
 **Crafting Interface (Secondary Bar):**
 - 100px height secondary bar (already implemented)
@@ -501,15 +532,21 @@ Following Codex/Quest patterns:
 - Menubar integration (Artificer tool in middle zone)
 - Secondary bar (100px height, ready for content)
 - Blacksmith API integration
+- ~~Resolve critical questions (Q1-Q6, Q11)~~ ✅ **COMPLETED**
+- Phase 0: Foundation & Architecture Setup ✅ **COMPLETED**
+  - Folder structure (resources/, templates/)
+  - Schema files with JSDoc type definitions
+  - Manager placeholder classes
+  - Module API structure
 
 ### 🔄 In Progress
-- Architecture decisions
-- Data storage planning
+- Phase 1: Core Data System
 
 ### 📋 Next Steps
-1. ~~Resolve critical questions (Q1-Q6, Q11)~~ ✅ **COMPLETED**
-2. Begin Phase 0: Foundation & Architecture Setup
-3. Create data models and storage systems
+1. Phase 1: Implement data models and storage systems
+2. Create parser classes for journal entries
+3. Implement manager functionality
+4. Create initial data set
 
 ---
 

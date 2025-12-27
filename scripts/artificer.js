@@ -4,6 +4,7 @@
 
 import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
+import { getAPI } from './api-artificer.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -31,6 +32,13 @@ Hooks.once('ready', async () => {
         } else {
             console.warn(`⚠️ ${MODULE.NAME}: Blacksmith not available`);
         }
+        
+        // Initialize module API
+        const api = getAPI();
+        await api.initialize();
+        
+        // Expose API globally for external access
+        game.modules.get(MODULE.ID).api = api;
         
         // Initialize module features
         initializeModule();

@@ -14,4 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Secondary bar system (100px height, ready for crafting UI)
 - Architecture analysis and design documentation
 - Consolidated design document with technical decisions and outstanding questions
+- Phase 0: Foundation & Architecture Setup
+  - Folder structure (resources/, templates/)
+  - Schema files with JSDoc type definitions (schema-*.js)
+  - Manager placeholder classes (manager-*.js)
+  - Module API structure (api-artificer.js)
+  - Updated module.json with all new script files
 
