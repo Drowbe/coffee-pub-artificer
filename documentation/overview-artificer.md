@@ -312,18 +312,20 @@ styles/                                (CSS files)
 
 Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage approach:
 
-#### Tier 1: Master Data (Compendium Packs - Journal Type)
-- **Ingredients** (Raw Materials) - Stored as journal entries in compendium packs
-- **Components** (Refined Materials) - Stored as journal entries in compendium packs
-- **Essences** (Magical Affinities) - Stored as journal entries in compendium packs
+#### Tier 1: Master Data (Compendium Packs - Items)
+- **Ingredients** (Raw Materials) - Stored as FoundryVTT Items in compendium packs
+- **Components** (Refined Materials) - Stored as FoundryVTT Items in compendium packs
+- **Essences** (Magical Affinities) - Stored as FoundryVTT Items in compendium packs
 
-**Rationale:** Frequently accessed during crafting operations. Fast lookup for tag combination logic. Better performance, easy to share/expand via compendiums. Using journal-type entries provides human-readable format while maintaining compendium performance benefits.
+**Rationale:** Items represent physical materials that can be held, used, and consumed during crafting. Compendium packs provide fast lookup for tag combination logic, better performance, and easy sharing/expansion. Items can be dragged into actor inventories and used directly in crafting operations.
 
 #### Tier 2: World Content (Journal Entries)
-- **Recipes** - Structured HTML journal pages
-- **Blueprints** - Multi-stage journal pages with state markup
+- **Recipes** - Structured HTML journal pages (instructions for crafting)
+- **Blueprints** - Multi-stage journal pages with state markup (instructions for multi-stage crafting)
 
-**Rationale:** Human-editable by GMs, supports rich formatting, built-in permissions/ownership, easy to share as journal compendiums. Uses parser-based architecture (like Codex/Quest systems).
+**Note:** Recipe and Blueprint results (the crafted items) are FoundryVTT Items, not journals. Recipes/Blueprints reference these items via `resultItemUuid`.
+
+**Rationale:** Recipes and Blueprints are knowledge/instructions that GMs can edit and share. Storing them as journal entries provides human-editable format, rich formatting, built-in permissions/ownership, and easy sharing via journal compendiums. Uses parser-based architecture (like Codex/Quest systems). The actual crafted results (swords, potions, etc.) are Items that can be held and used.
 
 #### Tier 3: Player Data (Actor Flags)
 - Skills (Herbalism, Metallurgy, etc.)
@@ -453,8 +455,8 @@ Following Codex/Quest patterns:
 ### Critical (Must Decide Before Phase 1)
 
 **Q1: Ingredient Storage**
-- **Decision:** Compendium Packs (journal type entries)
-- **Rationale:** Performance benefits of compendiums with human-readable journal format
+- **Decision:** Compendium Packs (Items)
+- **Rationale:** Ingredients are physical materials that need to be held and used in crafting. Storing them as FoundryVTT Items allows them to be dragged into actor inventories, used in crafting operations, and consumed. Compendiums provide performance benefits and easy sharing/expansion.
 - **Status:** ✅ Decided
 
 **Q2: Blueprint Storage**
@@ -489,8 +491,9 @@ Following Codex/Quest patterns:
 - **Status:** ⏳ Pending Decision
 - **Recommendation:** Yes - consistent with Quest system
 
-**Q8: Recipe Result Linking**
-- Link to existing items or auto-create on craft?
+**Q8: Recipe Result Item Creation**
+- Recipe results are FoundryVTT Items (weapons, armor, potions, etc.)
+- Question: Link recipes to existing item definitions in compendiums, or auto-create item definitions on craft?
 - **Status:** ⏳ Pending Decision
 
 **Q9: Blueprint Stage Progression**

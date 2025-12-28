@@ -73,17 +73,17 @@ This plan breaks down the crafting system into manageable phases, building from 
    - Tag combination rules (base structure, will be refined in Phase 2)
 
 3. **Data Storage Implementation**
-   - Implement storage manager
-   - Create compendium packs OR world storage system
+   - Implement storage manager for Items (ingredients, components, essences in compendium packs)
+   - Implement storage manager for Journal Entries (recipes, blueprints in world journals)
    - Migration system for future updates
    - Import/export functionality (for community sharing)
 
 4. **Initial Data Set**
-   - Create starter set of ingredients (5-10 examples per family)
-   - Create starter set of components (2-3 per type)
-   - Create starter set of essences (5-7 examples)
-   - Create 2-3 example recipes
-   - Create 1 example blueprint
+   - Create starter set of ingredient Items (5-10 examples per family)
+   - Create starter set of component Items (2-3 per type)
+   - Create starter set of essence Items (5-7 examples)
+   - Create 2-3 example recipe Journal entries
+   - Create 1 example blueprint Journal entry
 
 **Deliverable:** Data models working, initial data set available, can store/retrieve crafting entities.
 

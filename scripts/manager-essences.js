@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 
 /**
- * Manager for Essences stored in compendium packs (journal type entries)
+ * Manager for Essences stored in compendium packs (FoundryVTT Items)
  * Handles loading, searching, and retrieving essences from compendiums
  */
 export class EssenceManager {

@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 
 /**
- * Manager for Components stored in compendium packs (journal type entries)
+ * Manager for Components stored in compendium packs (FoundryVTT Items)
  * Handles loading, searching, and retrieving components from compendiums
  */
 export class ComponentManager {

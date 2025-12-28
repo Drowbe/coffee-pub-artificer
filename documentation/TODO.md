@@ -5,7 +5,7 @@
 ### CRITICAL PRIORITY
 
 **Decision Blockers - Must Resolve Before Phase 1:**
-- [x] **Q1: Ingredient Storage** - ✅ DECIDED: Compendium Packs (journal type entries)
+- [x] **Q1: Ingredient Storage** - ✅ DECIDED: Compendium Packs (Items)
 - [x] **Q2: Blueprint Storage** - ✅ DECIDED: Separate journal ("Artificer Blueprints")
 - [x] **Q3: Canvas/Pin Approach for MVP** - ✅ DECIDED: Abstract menu-based for MVP
 - [x] **Q4: Blueprint State Representation** - ✅ DECIDED: HTML markup (`<s>`, `<code>`, `<em>`)

@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 
 /**
- * Manager for Ingredients stored in compendium packs (journal type entries)
+ * Manager for Ingredients stored in compendium packs (FoundryVTT Items)
  * Handles loading, searching, and retrieving ingredients from compendiums
  */
 export class IngredientManager {
