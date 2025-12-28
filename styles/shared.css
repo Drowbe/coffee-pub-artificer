@@ -383,7 +383,8 @@
 
 .artificer-content {
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -460,5 +461,19 @@
 .artificer-button-divider {
     color: rgba(145, 133, 107, 0.5);
     padding: 0px 0px 0px 12px !important;
+}
+
+/* ================================================================== 
+   ===== FORM ACTIONS (Submit/Cancel Buttons) ======================
+   ================================================================== */
+
+.artificer-form-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid rgba(145, 133, 107, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+    justify-content: flex-end;
 }
 

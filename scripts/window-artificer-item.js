@@ -21,7 +21,12 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         width: 600,
         height: 'auto',
         resizable: true,
-        tag: 'form'
+        tag: 'form', // ApplicationV2 hosts the single form element
+        form: {
+            handler: ArtificerItemForm.handleForm,
+            submitOnChange: false,
+            closeOnSubmit: false
+        }
     });
 
     static PARTS = {
@@ -169,14 +174,12 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     activateListeners(html) {
         super.activateListeners(html);
         
-        // Handle jQuery conversion if needed (v13 migration pattern)
-        let nativeHtml = html;
-        if (html && (html.jquery || typeof html.find === 'function')) {
-            nativeHtml = html[0] || html.get?.(0) || html;
-        }
+        // Root element is the form (tag: 'form'); fall back to querying within html
+        const form = html?.tagName === 'FORM' ? html : html?.querySelector?.('form');
+        const query = (selector) => form?.querySelector?.(selector);
         
         // Type selector change - updates form when type changes
-        const typeSelect = nativeHtml.querySelector('#itemType');
+        const typeSelect = query('#itemType');
         if (typeSelect) {
             typeSelect.addEventListener('change', (event) => {
                 this.itemType = event.target.value;
@@ -184,32 +187,33 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             });
         }
         
-        // Form submission - ApplicationV2 with tag: "form" should handle this via _onSubmitForm
-        // But we'll add explicit handler as backup
-        const form = nativeHtml.closest('form');
-        if (form) {
-            form.addEventListener('submit', (event) => {
+        // Cancel button (direct binding so it always fires)
+        const cancelButton = query('[data-action="cancel"]');
+        if (cancelButton) {
+            cancelButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                this._onSubmitForm(event);
+                this.close();
             });
         }
     }
 
     /**
-     * Handle form submission
-     * @param {Event} event - Form submit event
+     * ApplicationV2 form handler entrypoint (bound to the instance)
+     * @param {SubmitEvent} event
+     * @param {HTMLFormElement} form
+     * @param {FormData} formData
      */
-    async _onSubmitForm(event) {
+    static async handleForm(event, form, formData) {
         event.preventDefault();
-        
-        // Get form element
-        const form = event.currentTarget.closest('form');
-        if (!form) {
-            ui.notifications.error('Form element not found');
-            return;
-        }
-        
-        const formData = new FormData(form);
+        if (!(this instanceof ArtificerItemForm)) return;
+        return this._handleSubmit(formData);
+    }
+
+    /**
+     * Process form submission using FormData
+     * @param {FormData} formData
+     */
+    async _handleSubmit(formData) {
         const formObject = {};
         
         // Convert FormData to object
@@ -223,12 +227,15 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             }
         }
         
+        // Track current item type from the form
+        this.itemType = formObject.itemType || this.itemType || 'ingredient';
+
         // Parse item data
         const itemData = {
             name: formObject.itemName || '',
             type: formObject.itemType5e || 'consumable',
             weight: parseFloat(formObject.itemWeight) || 0,
-            price: formObject.itemPrice || '0',
+            price: parseFloat(formObject.itemPrice) || 0, // Ensure price is a number
             rarity: formObject.itemRarity || 'Common',
             description: formObject.itemDescription || '',
             img: ''
@@ -276,8 +283,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             // Show notification
             ui.notifications.info(`Created ${itemData.name}`);
         } catch (error) {
-            ui.notifications.error(`Error creating item: ${error.message}`);
+            const errorMessage = error.message || String(error);
+            ui.notifications.error(`Error creating item: ${errorMessage}`);
             console.error('Artificer Item Form Error:', error);
+            console.error('Error stack:', error.stack);
+            // Don't re-throw - we want to show the error but not crash
         }
     }
 }
