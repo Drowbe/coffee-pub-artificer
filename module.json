@@ -56,6 +56,7 @@
     "scripts/schema-workstations.js",
     "scripts/schema-skills.js",
     "scripts/utility-artificer-item.js",
+    "scripts/window-artificer-item.js",
     "scripts/manager-ingredients.js",
     "scripts/manager-components.js",
     "scripts/manager-essences.js",

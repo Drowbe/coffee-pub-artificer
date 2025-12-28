@@ -1,0 +1,18 @@
+{{!-- Toggle Switch Partial --}}
+{{!-- Usage: {{> partials/toggle name="myToggle" label="My Label" checked=isChecked}} --}}
+<div class="artificer-toggle-container">
+    {{#if labelLeft}}
+    <span class="artificer-toggle-label-left">{{labelLeft}}</span>
+    {{/if}}
+    <div class="artificer-toggle">
+        <input type="checkbox" name="{{name}}" id="{{name}}" {{#if checked}}checked{{/if}}>
+        <label for="{{name}}" class="artificer-toggle-slider"></label>
+    </div>
+    {{#if labelRight}}
+    <span class="artificer-toggle-label-right">{{labelRight}}</span>
+    {{/if}}
+    {{#if label}}
+    <span class="artificer-toggle-label">{{label}}</span>
+    {{/if}}
+</div>
+

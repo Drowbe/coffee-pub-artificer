@@ -1,0 +1,74 @@
+<div class="artificer-window artificer-item-form">
+    {{!-- Header --}}
+    <div class="artificer-header">
+        <div class="artificer-header-content">
+            <div class="artificer-header-icon">
+                <i class="fa-solid fa-hammer"></i>
+            </div>
+            <div class="artificer-header-title">
+                <div class="artificer-main-title">Create {{itemTypeName}}</div>
+                <div class="artificer-subtitle">Artificer Item Creation</div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Content --}}
+    <div class="artificer-content">
+        {{!-- Type Selector --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-list"></i> Item Type
+            </div>
+        </div>
+        <div class="artificer-form-section">
+            <div class="artificer-form-group">
+                <div class="artificer-form-fields">
+                    <select name="itemType" id="itemType">
+                        <option value="ingredient" {{#if isIngredient}}selected{{/if}}>Ingredient</option>
+                        <option value="component" {{#if isComponent}}selected{{/if}}>Component</option>
+                        <option value="essence" {{#if isEssence}}selected{{/if}}>Essence</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {{!-- D&D 5e Item Fields --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-scroll"></i> Item Details
+            </div>
+        </div>
+        <div class="artificer-form-section">
+            {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
+            {{> partials/form-field name="itemType5e" label="D&D 5e Type" type="select" isSelect=true options=itemType5eOptions}}
+            {{> partials/form-field name="itemWeight" label="Weight" type="number" isNumber=true value=itemWeight placeholder="0" min="0"}}
+            {{> partials/form-field name="itemPrice" label="Price (GP)" type="text" value=itemPrice placeholder="0"}}
+            {{> partials/form-field name="itemRarity" label="Rarity" type="select" isSelect=true options=rarityOptions}}
+            {{> partials/form-field name="itemDescription" label="Description" type="textarea" isTextarea=true value=itemDescription placeholder="Item description..."}}
+        </div>
+
+        {{!-- Artificer-Specific Fields --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-tags"></i> Artificer Properties
+            </div>
+        </div>
+        <div class="artificer-form-section">
+            {{> partials/form-field name="primaryTag" label="Primary Tag" type="text" value=primaryTag placeholder="Primary tag (required)"}}
+            {{> partials/form-field name="secondaryTags" label="Secondary Tags" type="text" value=secondaryTags placeholder="Tag1, Tag2 (comma-separated)"}}
+            {{> partials/form-field name="tier" label="Tier" type="number" isNumber=true value=tier placeholder="1" min="1" max="10"}}
+            
+            {{#if isIngredient}}
+            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}
+            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="text" value=quirk placeholder="Quirk name"}}
+            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
+            {{/if}}
+            {{#if isComponent}}
+            {{> partials/form-field name="componentType" label="Component Type" type="select" isSelect=true options=componentTypeOptions}}
+            {{/if}}
+            {{#if isEssence}}
+            {{> partials/form-field name="affinity" label="Affinity" type="select" isSelect=true options=affinityOptions}}
+            {{/if}}
+        </div>
+    </div>
+</div>

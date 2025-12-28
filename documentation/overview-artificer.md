@@ -307,7 +307,7 @@ styles/                                (CSS files)
 - `utility-*-import` - JSON import utilities
 - `manager-*` - Data managers (compendium/journal access)
 - `panel-*` - UI panels (ApplicationV2)
-- `window-*` - UI forms (FormApplication)
+- `window-*` - UI forms (ApplicationV2)
 - `api-*` - Module API exports
 
 ### 11.2 Data Storage Strategy (Hybrid Approach)
