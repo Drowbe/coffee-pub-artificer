@@ -5,6 +5,7 @@
 import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
+import { ArtificerItemForm } from './window-artificer-item.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -17,8 +18,36 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 // ===== MODULE INITIALIZATION ======================================
 // ================================================================== 
 
+Hooks.once('init', async () => {
+    // Preload templates
+    await loadTemplates([
+        'modules/coffee-pub-artificer/templates/item-form.hbs',
+        'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
+        'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
+    ]);
+    
+    // Register Handlebars partials - templates are already loaded, just register them
+    try {
+        // Get the raw template content (not compiled)
+        const formFieldResponse = await fetch('modules/coffee-pub-artificer/templates/partials/form-field.hbs');
+        const formFieldTemplate = await formFieldResponse.text();
+        
+        const toggleResponse = await fetch('modules/coffee-pub-artificer/templates/partials/toggle.hbs');
+        const toggleTemplate = await toggleResponse.text();
+        
+        Handlebars.registerPartial('partials/form-field', formFieldTemplate);
+        Handlebars.registerPartial('partials/toggle', toggleTemplate);
+    } catch (error) {
+        // Error will be handled/logged in ready hook if needed
+        throw error;
+    }
+});
+
 Hooks.once('ready', async () => {
     try {
+        // Log that templates/partials were loaded (BlacksmithUtils available after ready)
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Templates and partials registered successfully`, null, false, false);
+        
         // Register settings FIRST during the ready phase
         registerSettings();
         
@@ -107,10 +136,41 @@ function registerMenubarIntegration() {
         }
     });
     
-    if (toolRegistered) {
-        console.log(`✅ ${MODULE.NAME}: Menubar tool and secondary bar registered successfully`);
-    } else {
+    if (!toolRegistered) {
         console.warn(`⚠️ ${MODULE.NAME}: Failed to register menubar tool`);
+        return;
+    }
+    
+    // Register secondary bar item for creating items
+    const createItemItemId = 'artificer-create-item';
+    const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
+        icon: 'fa-solid fa-plus-circle',
+        title: 'Create Item',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            // Open the item creation form
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Create Item button clicked`, null, false, false);
+            
+            try {
+                const form = new ArtificerItemForm();
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: ArtificerItemForm instance created`, null, false, false);
+                
+                form.render(true).then(() => {
+                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Form rendered successfully`, null, false, false);
+                }).catch((error) => {
+                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Error rendering form: ${error.message}`, null, true, false);
+                });
+            } catch (error) {
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Error creating form: ${error.message}`, null, true, false);
+            }
+        }
+    });
+    
+    if (createItemRegistered) {
+        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and create item button registered successfully`);
+    } else {
+        console.warn(`⚠️ ${MODULE.NAME}: Failed to register create item button`);
     }
 }
 

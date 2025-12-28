@@ -18,12 +18,17 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
         id: 'artificer-item-form',
         title: 'Create Artificer Item',
-        template: 'modules/coffee-pub-artificer/templates/item-form.hbs',
         width: 600,
         height: 'auto',
         resizable: true,
         tag: 'form'
     });
+
+    static PARTS = {
+        body: {
+            template: 'modules/coffee-pub-artificer/templates/item-form.hbs'
+        }
+    };
 
     constructor(options = {}) {
         super(options);
@@ -118,7 +123,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         }
         
         // Merge with existing context
-        return foundry.utils.mergeObject(context, {
+        const mergedContext = foundry.utils.mergeObject(context, {
             itemType: this.itemType,
             itemTypeName: itemTypeNames[this.itemType] || 'Item',
             isIngredient: this.itemType === 'ingredient',
@@ -144,6 +149,17 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             affinity: this.itemData?.flags?.[MODULE.ID]?.affinity || '',
             affinityOptions: affinityOptions
         });
+        
+        return mergedContext;
+    }
+
+    /**
+     * Render the application
+     * @param {Object} options - Render options
+     * @returns {Promise<ApplicationV2>}
+     */
+    async render(options = {}) {
+        return await super.render(options);
     }
 
     /**
