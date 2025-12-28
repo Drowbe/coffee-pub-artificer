@@ -72,20 +72,36 @@ This plan breaks down the crafting system into manageable phases, building from 
    - Tag family definitions (Herb, Metal, Crystal, etc.)
    - Tag combination rules (base structure, will be refined in Phase 2)
 
-3. **Data Storage Implementation**
+3. **Item Creation & Import System**
+   - Create `utility-artificer-item.js` with core item creation functions
+     - `createArtificerItem()` - Creates items with D&D 5e structure + artificer flags
+     - `updateArtificerItem()` - Updates existing items
+     - `validateArtificerData()` - Validates artificer data structure
+   - Create `window-artificer-item.js` unified form for manual creation
+     - Switches between ingredient/component/essence types
+     - Collects D&D 5e item fields + artificer-specific fields
+     - Creates items in world (GM drags to compendium)
+   - Create `utility-artificer-import.js` for JSON import
+     - Supports single items and bulk imports (arrays)
+     - Validates JSON structure
+     - Uses core creation utilities for consistency
+   - Define JSON structure (D&D 5e fields + flags.artificer section)
+   - Add menubar buttons for Create Item and Import Items
+
+4. **Data Storage Implementation**
    - Implement storage manager for Items (ingredients, components, essences in compendium packs)
    - Implement storage manager for Journal Entries (recipes, blueprints in world journals)
+   - Artificer data stored in `flags.artificer.*` (tags only visible in crafting UI)
    - Migration system for future updates
-   - Import/export functionality (for community sharing)
 
-4. **Initial Data Set**
-   - Create starter set of ingredient Items (5-10 examples per family)
+5. **Initial Data Set**
+   - Create starter set of ingredient Items (5-10 examples per family) using creation utilities
    - Create starter set of component Items (2-3 per type)
    - Create starter set of essence Items (5-7 examples)
    - Create 2-3 example recipe Journal entries
    - Create 1 example blueprint Journal entry
 
-**Deliverable:** Data models working, initial data set available, can store/retrieve crafting entities.
+**Deliverable:** Item creation system working, can create items manually and via JSON import, data models working, initial data set available.
 
 ---
 

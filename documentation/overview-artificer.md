@@ -303,6 +303,8 @@ styles/                                (CSS files)
 **File Naming Conventions:**
 - `schema-*` - JSDoc type definitions (documentation only, no data)
 - `utility-*-parser` - Parsers following Codex/Quest patterns
+- `utility-*-item` - Item creation utilities (reusable core functions)
+- `utility-*-import` - JSON import utilities
 - `manager-*` - Data managers (compendium/journal access)
 - `panel-*` - UI panels (ApplicationV2)
 - `window-*` - UI forms (FormApplication)
@@ -318,6 +320,18 @@ Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage
 - **Essences** (Magical Affinities) - Stored as FoundryVTT Items in compendium packs
 
 **Rationale:** Items represent physical materials that can be held, used, and consumed during crafting. Compendium packs provide fast lookup for tag combination logic, better performance, and easy sharing/expansion. Items can be dragged into actor inventories and used directly in crafting operations.
+
+**Artificer Data Storage:**
+- Artificer-specific data (tags, family, tier, rarity, biomes, etc.) is stored in `flags.artificer.*`
+- Tags are only visible in the crafting UI, not in the standard item sheet
+- Items include both D&D 5e item structure (for normal use) and artificer flags (for crafting logic)
+- Item type is determined by the material (most ingredients are consumables, but results match the crafted item type)
+
+**Item Creation:**
+- Items are created in the world using unified creation forms (accessed via Artificer menubar)
+- GMs can manually drag created items into compendium packs
+- JSON import utilities support both single items and bulk imports
+- Creation utilities are reusable (shared between manual forms and JSON import)
 
 #### Tier 2: World Content (Journal Entries)
 - **Recipes** - Structured HTML journal pages (instructions for crafting)
@@ -430,7 +444,35 @@ Following Codex/Quest patterns:
 
 ---
 
-### 11.6 UI Components
+### 11.6 Item Creation & Import Architecture
+
+**Core Utilities:**
+- `utility-artificer-item.js` - Reusable item creation functions
+  - `createArtificerItem()` - Creates items with D&D 5e structure + artificer flags
+  - `updateArtificerItem()` - Updates existing items
+  - `validateArtificerData()` - Validates artificer data structure
+  - Used by both manual forms and JSON import
+
+**Manual Creation:**
+- Unified form (`window-artificer-item.js`) for creating ingredients/components/essences
+- Form switches between types via UI (ingredient/component/essence)
+- Accessed via Artificer menubar buttons
+- Creates items in world (GM drags to compendium manually)
+
+**JSON Import:**
+- `utility-artificer-import.js` - JSON import utilities
+  - Supports both single items and bulk imports (arrays)
+  - Validates JSON structure
+  - Uses core creation utilities for consistency
+- JSON structure includes both D&D 5e fields and `flags.artificer` section
+- Import accessed via Artificer menubar
+
+**Menubar Integration:**
+- Create Item button (opens unified form)
+- Import Items button (opens file picker or JSON paste dialog)
+- Integrated into existing Artificer menubar tool
+
+### 11.7 UI Components
 
 **Crafting Interface (Secondary Bar):**
 - 100px height secondary bar (already implemented)
@@ -445,7 +487,7 @@ Following Codex/Quest patterns:
 
 **Ingredient Browser:**
 - Filter by family, tags, tier, rarity
-- Show discovered/undiscovered tags
+- Show discovered/undiscovered tags (tags only visible in crafting UI, not item sheet)
 - Quantity from actor inventory
 
 ---
@@ -541,32 +583,74 @@ Following Codex/Quest patterns:
   - Schema files with JSDoc type definitions
   - Manager placeholder classes
   - Module API structure
+- Phase 1: Item Creation & Import System (Partial) ✅ **IN PROGRESS**
+  - Core item creation utilities (`utility-artificer-item.js`)
+  - Architecture decisions documented (unified form, JSON import, menubar integration)
 
 ### 🔄 In Progress
 - Phase 1: Core Data System
+  - Item creation form (`window-artificer-item.js`)
+  - JSON import utilities (`utility-artificer-import.js`)
+  - Data models and storage managers
 
 ### 📋 Next Steps
-1. Phase 1: Implement data models and storage systems
-2. Create parser classes for journal entries
-3. Implement manager functionality
-4. Create initial data set
+1. Complete Phase 1: Item Creation & Import System
+   - Create unified form for manual item creation
+   - Implement JSON import utilities
+   - Add menubar buttons
+2. Implement data models and storage systems
+3. Create parser classes for journal entries
+4. Implement manager functionality
+5. Create initial data set
 
 ---
 
-## 14. JSON Structures (High-Level)
+## 14. JSON Structures
 
-Future schemas will define:
-- Ingredients  
-- Components  
-- Essences  
-- Recipes  
-- Blueprints  
-- Items  
-- Skills  
-- Stations  
+### 14.1 Item JSON Structure
 
-Expected fields include:
-`name`, `type`, `tags`, `tier`, `rarity`, `source`, `effects`, `yield`, `quirk`.
+Items (Ingredients, Components, Essences) use a hybrid JSON structure:
+
+**D&D 5e Item Fields:**
+- Standard D&D 5e item structure (name, type, description, weight, price, rarity, etc.)
+- Matches Blacksmith/FoundryVTT format for compatibility
+- Item type depends on material (most ingredients = consumable, results match crafted type)
+
+**Artificer Flags Section:**
+```json
+{
+  "flags": {
+    "artificer": {
+      "type": "ingredient|component|essence",
+      "primaryTag": "string",
+      "secondaryTags": ["string"],
+      "tier": 1,
+      "rarity": "Common|Uncommon|Rare|Epic|Legendary",
+      // Ingredient-specific:
+      "family": "Herbs|Minerals|Gems|CreatureParts|Environmental",
+      "quirk": "string|null",
+      "biomes": ["string"],
+      // Component-specific:
+      "componentType": "Metal|Alchemical|Monster|Arcane|Structural",
+      // Essence-specific:
+      "affinity": "Heat|Cold|Electric|Light|Shadow|Time|Mind|Life|Death"
+    }
+  }
+}
+```
+
+**Full JSON Template:**
+- Combines D&D 5e item structure with `flags.artificer` section
+- Supports both single items and arrays (for bulk import)
+- Used by import utilities and can be generated by forms
+
+### 14.2 Future Schemas
+
+Additional schemas to define:
+- Recipes (Journal entries)  
+- Blueprints (Journal entries)  
+- Skills (Actor flags)  
+- Workstations (Compendium + scene flags)
 
 ---
 

@@ -25,6 +25,12 @@
 - [ ] Add localization keys for settings in `lang/en.json`
 
 **Phase 1: Core Data System**
+- [ ] Item Creation & Import System:
+  - [x] Create `utility-artificer-item.js` with core item creation functions
+  - [ ] Create `window-artificer-item.js` unified form for manual creation
+  - [ ] Create `utility-artificer-import.js` for JSON import (single + bulk)
+  - [ ] Define JSON structure template (D&D 5e + flags.artificer)
+  - [ ] Add menubar buttons for Create Item and Import Items
 - [ ] Create class-based data models:
   - [ ] `ArtificerIngredient` (Raw materials with tags, family, tier, rarity)
   - [ ] `ArtificerComponent` (Refined materials)
@@ -35,7 +41,7 @@
 - [ ] Implement `TagManager` class (validation, categories, families)
 - [ ] Implement data storage manager (based on decisions from critical questions)
 - [ ] Create initial data set:
-  - [ ] Starter ingredients (5-10 examples per family)
+  - [ ] Starter ingredients (5-10 examples per family) using creation utilities
   - [ ] Starter components (2-3 per type)
   - [ ] Starter essences (5-7 examples)
   - [ ] Example recipes (2-3)

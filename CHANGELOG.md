@@ -24,3 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Data Storage Clarification:** Updated documentation to clarify that Ingredients, Components, Essences, and Recipe/Blueprint results are FoundryVTT Items (stored in compendium packs), while Recipes and Blueprints themselves are Journal Entries. This aligns with the architecture where Items represent physical materials/crafted results, and Journals represent knowledge/instructions.
 
+### Added
+- **Item Creation & Import Architecture:**
+  - Core item creation utilities (`utility-artificer-item.js`)
+  - Artificer data stored in `flags.artificer.*` (tags only visible in crafting UI)
+  - Unified form approach for creating ingredients/components/essences
+  - JSON import utilities planned (supports single and bulk imports)
+  - Menubar integration for Create Item and Import Items tools
+  - Items created in world (GM drags to compendium manually)
+
