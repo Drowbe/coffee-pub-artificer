@@ -124,16 +124,24 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-hammer',
         name: 'artificer',
         title: 'Artificer',
-        zone: 'middle',
-        order: 5,
-        moduleId: MODULE.ID,
-        gmOnly: false,
-        leaderOnly: false,
-        visible: true,
+        tooltip: "Crafting and Harvesting Tools",
         onClick: function() {
             // Toggle the secondary bar
             blacksmith.toggleSecondaryBar(barType);
-        }
+        },
+        zone: "middle",
+        group: "utility",
+        groupOrder: null,
+        order: 1,
+        moduleId: MODULE.ID,  
+        gmOnly: false,
+        leaderOnly: false,
+        visible: true,
+        toggleable: true,
+        active: false,
+        iconColor: null,
+        buttonNormalTint: "rgba(3, 43, 18, 0.9)",
+        buttonSelectedTint: null
     });
     
     if (!toolRegistered) {
