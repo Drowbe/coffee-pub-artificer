@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.2] - Phase 1 Core Data System Implementation
+
+### Added
+- **Data Models:**
+  - `ArtificerIngredient` class - Raw materials with tags, family, tier, rarity
+  - `ArtificerComponent` class - Refined materials with component types
+  - `ArtificerEssence` class - Magical affinities with essence types
+  - `ArtificerRecipe` class - Recipe definitions with hash-based numbering (R1, R2, etc.)
+  - `ArtificerBlueprint` class - Multi-stage blueprints with hash-based numbering (B1, B2, etc.)
+  - All models include validation, serialization, and helper methods
+  - Recipe model includes `canCraft()`, `getMissingMaterials()`, `getNumber()` methods
+  - Blueprint model includes `getStageStatus()`, `canStartStage()`, `getActorProgress()` methods
+
+- **Storage System:**
+  - `IngredientStorage` - Loads ingredients from user-configured compendiums (priority-based)
+  - `RecipeStorage` - Loads recipes from journal entries using parser
+  - `BlueprintStorage` - Loads blueprints from journal entries using parser
+  - All storage classes include caching and refresh capabilities
+  - Storage managers integrated into manager classes
+
+- **Parser System:**
+  - `RecipeParser` - Parses HTML journal pages into ArtificerRecipe objects
+  - `BlueprintParser` - Parses HTML journal pages with stage markup into ArtificerBlueprint objects
+  - Both parsers handle FoundryVTT HTML format (`<p><strong>Label</strong>: value</p>`)
+  - Handles ingredient/requirement lists from `<ul><li>` elements
+  - Extracts `@UUID` links for result items
+  - Version-tolerant parsing with graceful error handling
+
+- **TagManager System:**
+  - `TagManager` class - Comprehensive tag validation and management
+  - Tag validation (2-5 tags per ingredient)
+  - Tag categories (primary, secondary, quirk, element, structural)
+  - Tag family definitions (Herbs, Minerals, Gems, CreatureParts, Environmental)
+  - Tag lookup methods (`getTagCategory()`, `getTagFamily()`, `getTagMetadata()`)
+  - Tag suggestion methods (`suggestPrimaryTag()`, `suggestSecondaryTags()`)
+  - Tag combination analysis (base structure for Phase 2)
+  - Singleton pattern via `getTagManager()`
+  - Integrated into API as `api.tags`
+
+- **Compendium Mapping Settings:**
+  - `numIngredientCompendiums` setting - Slider (0-10) to configure number of priority slots
+  - `ingredientCompendium1`, `ingredientCompendium2`, etc. - Priority-based compendium selection
+  - Dropdown menus for selecting Item compendiums
+  - Only configured compendiums are scanned for ingredients
+  - Prevents errors from malformed items in other compendiums
+
+- **Journal Settings:**
+  - `recipeJournal` setting - Select journal for recipe entries
+  - `blueprintJournal` setting - Select journal for blueprint entries
+  - Both settings with full localization support
+  - Graceful fallback to defaults if settings not registered
+
+- **Utilities:**
+  - `helpers.js` - General utilities including `getOrCreateJournal()` and `hashString()`
+  - Hash-based numbering for recipes (R1, R2, etc.) and blueprints (B1, B2, etc.)
+  - Consistent with Quest system numbering pattern
+
+- **Documentation:**
+  - `documentation/architecture-artificer.md` - Renamed from `overview-artificer.md` for naming consistency
+  - `documentation/SYSTEM_EXPLANATION.md` - Comprehensive visual explanation of system
+  - `documentation/IMPLEMENTATION_ROADMAP.md` - Updated with progress and decisions
+
+### Changed
+- **Ingredient Loading:**
+  - Now only loads from user-configured compendiums (priority-based)
+  - No longer scans all compendiums, reducing errors and improving performance
+  - Per-item error handling to gracefully skip malformed items
+  - Checks for `flags.artificer.type === 'ingredient'` before processing
+
+- **Settings Access:**
+  - Added try-catch guards around `game.settings.get()` calls
+  - Graceful fallback to defaults when settings not yet registered
+  - Prevents initialization errors during module startup
+
+- **Storage Initialization:**
+  - Storage classes now have `isInitialized` flag
+  - Better error handling during initialization
+  - Individual item loading to avoid bulk initialization errors
+
+### Fixed
+- Fixed "setting not registered" errors during initialization
+- Fixed errors from loading malformed items in compendiums (midi-qol compatibility)
+- Improved error handling to prevent one bad item from breaking entire pack loading
+- Fixed settings registration order to ensure compendium choices are available
+
+### Technical Details
+- All data models use class-based structure with validation
+- Storage managers use Map-based caching for performance
+- Parsers use DOMParser for safe HTML parsing
+- TagManager uses singleton pattern for efficient reuse
+- Compendium loading uses individual item loading to avoid bulk errors
+- Hash-based numbering provides consistent IDs even if names change
+
 ## [13.0.1] - Phase 0-1 Implementation
 
 ### Added

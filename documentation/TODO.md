@@ -21,8 +21,8 @@
 - [ ] Create validation functions for each data type (Phase 1)
 - [x] Set up module API for external access (`api-artificer.js`)
 - [x] Create placeholder manager classes (`manager-*.js` files)
-- [ ] Define module settings in `settings.js` (feature toggles, discovery thresholds, skill rates) - Settings framework exists, needs actual settings
-- [ ] Add localization keys for settings in `lang/en.json`
+- [x] Define module settings in `settings.js` (journal selections, ingredient compendium mapping; feature toggles to follow)
+- [x] Add localization keys for new settings in `lang/en.json`
 
 **Phase 1: Core Data System**
 - [ ] Item Creation & Import System:
@@ -31,15 +31,15 @@
   - [ ] Create `utility-artificer-import.js` for JSON import (single + bulk)
   - [ ] Define JSON structure template (D&D 5e + flags.artificer)
   - [ ] Add menubar buttons for Create Item and Import Items
-- [ ] Create class-based data models:
-  - [ ] `ArtificerIngredient` (Raw materials with tags, family, tier, rarity)
-  - [ ] `ArtificerComponent` (Refined materials)
-  - [ ] `ArtificerEssence` (Magical affinities)
-  - [ ] `ArtificerRecipe` (Recipe definitions)
-  - [ ] `ArtificerBlueprint` (Multi-stage blueprint definitions)
+- [x] Create class-based data models:
+  - [x] `ArtificerIngredient` (Raw materials with tags, family, tier, rarity)
+  - [x] `ArtificerComponent` (Refined materials)
+  - [x] `ArtificerEssence` (Magical affinities)
+  - [x] `ArtificerRecipe` (Recipe definitions)
+  - [x] `ArtificerBlueprint` (Multi-stage blueprint definitions)
   - [ ] `ArtificerWorkstation` (Workstation definitions)
-- [ ] Implement `TagManager` class (validation, categories, families)
-- [ ] Implement data storage manager (based on decisions from critical questions)
+- [x] Implement `TagManager` class (validation, categories, families)
+- [x] Implement data storage managers (ingredients, recipes, blueprints) with configurable ingredient compendium mapping
 - [ ] Create initial data set:
   - [ ] Starter ingredients (5-10 examples per family) using creation utilities
   - [ ] Starter components (2-3 per type)
@@ -162,7 +162,7 @@
 
 ## Notes
 
-- Questions marked with **Q##** reference questions in `documentation/overview-artificer.md` section 12
+- Questions marked with **Q##** reference questions in `documentation/architecture-artificer.md` section 12
 - Phases reference `documentation/DEVELOPMENT_PLAN.md` for detailed task breakdowns
 - Critical priority items are blockers - cannot proceed without decisions
 - High priority items form the MVP (core crafting functionality)

@@ -55,7 +55,7 @@ This document outlines the implementation path, remaining decisions, and priorit
 
 ## 🛣️ Implementation Path
 
-### Current Status: Phase 0 Complete, Phase 1 In Progress
+### Current Status: Phase 0 Complete, Phase 1 In Progress (major pieces done)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -69,13 +69,13 @@ This document outlines the implementation path, remaining decisions, and priorit
     ├── API structure
     └── Settings framework
 
-🔄 PHASE 1: Core Data System (IN PROGRESS - ~30% complete)
+🔄 PHASE 1: Core Data System (IN PROGRESS - ~60% complete)
     ├── ✅ Item creation utilities
     ├── ⏳ Item creation form (window-artificer-item.js)
     ├── ⏳ JSON import utilities
-    ├── ⏳ Data models (classes)
-    ├── ⏳ Storage managers (loading/parsing)
-    ├── ⏳ TagManager
+    ├── ✅ Data models (Ingredient, Component, Essence, Recipe, Blueprint)
+    ├── ✅ Storage managers (ingredients with compendium mapping, recipes, blueprints)
+    ├── ✅ TagManager
     └── ⏳ Initial data set
 
 ⏳ PHASE 2: Tag Logic & Experimentation (BLOCKED on Phase 1)
@@ -97,20 +97,7 @@ This document outlines the implementation path, remaining decisions, and priorit
 
 ## 📋 Immediate Next Steps (Priority Order)
 
-### Step 1: Resolve Remaining Decisions (30 minutes)
-**Action:** Make decisions on Q7-Q10
-
-**Questions to Answer:**
-1. **Q7:** Recipe numbering - Yes (hash-based) or No?
-2. **Q8:** Recipe result items - Link (A), Auto-create (B), or Hybrid (C)?
-3. **Q9:** Blueprint progression - Manual (A), Auto (B), or Hybrid (C)?
-4. **Q10:** Panel organization - Status (A), Category (B), or Both (C)?
-
-**Output:** Update `overview-artificer.md` with decisions
-
----
-
-### Step 2: Complete Phase 1 - Data Models (4-6 hours)
+### Step 1: Complete Phase 1 - Data Models (DONE)
 **Action:** Implement class-based data models
 
 **Tasks:**
@@ -143,13 +130,13 @@ This document outlines the implementation path, remaining decisions, and priorit
 
 ---
 
-### Step 3: Complete Phase 1 - Storage Managers (4-6 hours)
+### Step 2: Complete Phase 1 - Storage Managers (DONE)
 **Action:** Implement storage loading and parsing
 
 **Tasks:**
 1. Implement `IngredientStorage` manager
-   - Load from compendium packs (Items with `flags.artificer.type === "ingredient"`)
-   - Load from journals (if custom ingredients stored there)
+   - Load from configured ingredient compendiums (priority list setting)
+   - Skip items without `flags.artificer` or non-ingredient types
    - Aggregate and cache
    - Methods: `getAll()`, `getById(id)`, `getByTag(tag)`, `refresh()`
    
@@ -184,7 +171,7 @@ This document outlines the implementation path, remaining decisions, and priorit
 
 ---
 
-### Step 4: Complete Phase 1 - Tag Manager (2-3 hours)
+### Step 3: Complete Phase 1 - Tag Manager (DONE)
 **Action:** Implement tag validation and management
 
 **Tasks:**
@@ -195,12 +182,12 @@ This document outlines the implementation path, remaining decisions, and priorit
    - Tag combination rules (base structure)
    - Methods: `validateTags(tags)`, `getTagCategory(tag)`, `getTagFamily(tag)`
 
-**Files to Create:**
+**Files Created:**
 - `scripts/systems/tag-manager.js`
 
 ---
 
-### Step 5: Complete Phase 1 - Item Creation UI (4-6 hours)
+### Step 4: Complete Phase 1 - Item Creation UI (4-6 hours)
 **Action:** Build the item creation form and import system
 
 **Tasks:**
@@ -228,7 +215,7 @@ This document outlines the implementation path, remaining decisions, and priorit
 
 ---
 
-### Step 6: Create Initial Data Set (3-4 hours)
+### Step 5: Create Initial Data Set (3-4 hours)
 **Action:** Create starter content using the creation utilities
 
 **Tasks:**
@@ -325,34 +312,26 @@ If you want to get to a working MVP faster, follow this prioritized path:
 ## 🚀 Getting Started: Action Plan
 
 ### Today (2-3 hours)
-1. **Resolve Q7-Q10** (30 min)
-   - Review options
-   - Make decisions
-   - Update documentation
-   
-2. **Start Data Models** (2 hours)
-   - Create `ArtificerIngredient` class
-   - Create `ArtificerComponent` class
-   - Create `ArtificerEssence` class
-   - Test with example data
+1. **Item Creation UI** (2-3 hours)
+   - Finish `window-artificer-item.js`
+   - Wire to menubar
+   - Hook to creation utilities
 
 ### This Week (10-15 hours)
-1. **Complete Data Models** (4 hours)
-   - `ArtificerRecipe` class
-   - `ArtificerBlueprint` class
-   
-2. **Implement Storage Managers** (6 hours)
-   - `IngredientStorage`
-   - `RecipeStorage` with parser
-   - `BlueprintStorage` with parser
-   
-3. **Implement TagManager** (2 hours)
-   - Tag validation
-   - Tag categories
-   - Tag families
+1. **Import Utilities** (3-4 hours)
+   - Build `utility-artificer-import.js` (single + bulk)
+   - Validate JSON structure
+   - Use core creation utilities
+
+2. **Initial Data Set** (4-5 hours)
+   - Starter ingredients/components/essences
+   - Example recipes and blueprint
+
+3. **Tag Logic Prep** (2-3 hours)
+   - Outline tag combination rules for Phase 2
 
 ### Next Week (15-20 hours)
-1. **Complete Item Creation UI** (6 hours)
+1. **Complete Item Creation UI** (if remaining)
    - Finish `window-artificer-item.js`
    - Create `utility-artificer-import.js`
    - Add menubar buttons

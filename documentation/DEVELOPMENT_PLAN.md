@@ -52,6 +52,7 @@ This plan breaks down the crafting system into manageable phases, building from 
 
 ## Phase 1: Core Data System
 **Goal:** Implement data models and storage for all crafting entities.
+**Status:** Data models, storage managers (with configurable ingredient compendium mapping), and TagManager implemented. Remaining: workstation model, item creation UI/import, initial data set.
 
 ### Tasks:
 1. **Data Models**
@@ -90,6 +91,7 @@ This plan breaks down the crafting system into manageable phases, building from 
 
 4. **Data Storage Implementation**
    - Implement storage manager for Items (ingredients, components, essences in compendium packs)
+     - Ingredients: load only from user-configured compendium priorities
    - Implement storage manager for Journal Entries (recipes, blueprints in world journals)
    - Artificer data stored in `flags.artificer.*` (tags only visible in crafting UI)
    - Migration system for future updates
