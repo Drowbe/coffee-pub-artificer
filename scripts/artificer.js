@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
+import { importFromFile, showImportResult } from './utility-artificer-import.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -175,10 +176,61 @@ function registerMenubarIntegration() {
         }
     });
     
-    if (createItemRegistered) {
-        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and create item button registered successfully`);
+    // Register secondary bar item for importing items
+    const importItemItemId = 'artificer-import-items';
+    const importItemRegistered = blacksmith.registerSecondaryBarItem(barType, importItemItemId, {
+        icon: 'fa-solid fa-file-import',
+        title: 'Import Items',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            // Open file picker for JSON import
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Import Items button clicked`, null, false, false);
+            
+            // Create file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'application/json,.json';
+            fileInput.style.display = 'none';
+            
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) {
+                    return;
+                }
+                
+                try {
+                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Importing items from ${file.name}...`, null, false, false);
+                    
+                    // Import items from file
+                    const result = await importFromFile(file, {
+                        createInWorld: true,
+                        actor: null
+                    });
+                    
+                    // Show results
+                    showImportResult(result, MODULE.NAME);
+                    
+                } catch (error) {
+                    const errorMessage = error.message || String(error);
+                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Import failed: ${errorMessage}`, null, true, false);
+                    console.error(`[${MODULE.NAME}] Import error:`, error);
+                } finally {
+                    // Clean up file input
+                    document.body.removeChild(fileInput);
+                }
+            });
+            
+            // Add to DOM and trigger click
+            document.body.appendChild(fileInput);
+            fileInput.click();
+        }
+    });
+    
+    if (createItemRegistered && importItemRegistered) {
+        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, create item button, and import items button registered successfully`);
     } else {
-        console.warn(`⚠️ ${MODULE.NAME}: Failed to register create item button`);
+        console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered})`);
     }
 }
 

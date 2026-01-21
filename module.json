@@ -68,6 +68,7 @@
     "scripts/parsers/parser-blueprint.js",
     "scripts/systems/tag-manager.js",
     "scripts/utility-artificer-item.js",
+    "scripts/utility-artificer-import.js",
     "scripts/window-artificer-item.js",
     "scripts/manager-ingredients.js",
     "scripts/manager-components.js",
