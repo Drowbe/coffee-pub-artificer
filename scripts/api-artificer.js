@@ -10,6 +10,7 @@ import { RecipeManager } from './manager-recipes.js';
 import { BlueprintManager } from './manager-blueprints.js';
 import { WorkstationManager } from './manager-workstations.js';
 import { SkillManager } from './manager-skills.js';
+import { getTagManager } from './systems/tag-manager.js';
 
 /**
  * Module API - Public interface for external access
@@ -24,6 +25,7 @@ export class ArtificerAPI {
         this.blueprints = new BlueprintManager();
         this.workstations = new WorkstationManager();
         this.skills = new SkillManager();
+        this.tags = getTagManager();
     }
 
     /**

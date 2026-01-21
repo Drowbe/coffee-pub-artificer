@@ -64,10 +64,10 @@
 ### MEDIUM PRIORITY
 
 **Important Decisions - Should Resolve Before Phase 2-3:**
-- [ ] **Q7: Recipe Numbering** - Decide: Hash-based numbers (R1, R2, etc.)?
-- [ ] **Q8: Recipe Result Linking** - Decide: Link to existing items or auto-create?
-- [ ] **Q9: Blueprint Stage Progression** - Decide: Player initiates each stage or auto-unlock?
-- [ ] **Q10: Panel Organization** - Decide: Status-based, category-based, or both?
+- [x] **Q7: Recipe Numbering** - ✅ DECIDED: Hash-based numbers (R1, R2, etc.)
+- [x] **Q8: Recipe Result Linking** - ✅ DECIDED: Link to existing items in compendium
+- [x] **Q9: Blueprint Stage Progression** - ✅ DECIDED: Player manually initiates each stage
+- [x] **Q10: Panel Organization** - ✅ DECIDED: Both (default to status, with category filter)
 
 **Phase 4: Skill System**
 - [ ] Create skill data model (store in actor flags)

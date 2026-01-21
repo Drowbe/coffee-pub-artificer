@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { IngredientStorage } from './data/storage/storage-ingredients.js';
 
 /**
  * Manager for Ingredients stored in compendium packs (FoundryVTT Items)
@@ -10,7 +11,7 @@ import { MODULE } from './const.js';
  */
 export class IngredientManager {
     constructor() {
-        this._cache = null;
+        this._storage = new IngredientStorage();
     }
 
     /**
@@ -18,37 +19,59 @@ export class IngredientManager {
      * @returns {Promise<void>}
      */
     async initialize() {
-        // TODO: Phase 1 - Load ingredients from compendium packs
-        this._cache = new Map();
+        await this._storage.initialize();
     }
 
     /**
      * Get all ingredients
-     * @returns {Promise<Array<ArtificerIngredient>>}
+     * @returns {Array<ArtificerIngredient>}
      */
-    async getAll() {
-        // TODO: Phase 1 - Load from compendium packs
-        return [];
+    getAll() {
+        return this._storage.getAll();
     }
 
     /**
      * Get ingredient by ID
      * @param {string} id - Ingredient ID
-     * @returns {Promise<ArtificerIngredient|null>}
+     * @returns {ArtificerIngredient|null}
      */
-    async getById(id) {
-        // TODO: Phase 1 - Load from compendium packs
-        return null;
+    getById(id) {
+        return this._storage.getById(id);
+    }
+
+    /**
+     * Get ingredients by family
+     * @param {string} family - Ingredient family
+     * @returns {Array<ArtificerIngredient>}
+     */
+    getByFamily(family) {
+        return this._storage.getByFamily(family);
+    }
+
+    /**
+     * Get ingredients by tag
+     * @param {string} tag - Tag to search for
+     * @returns {Array<ArtificerIngredient>}
+     */
+    getByTag(tag) {
+        return this._storage.getByTag(tag);
     }
 
     /**
      * Search ingredients by criteria
      * @param {Object} criteria - Search criteria
-     * @returns {Promise<Array<ArtificerIngredient>>}
+     * @returns {Array<ArtificerIngredient>}
      */
-    async search(criteria) {
-        // TODO: Phase 1 - Implement search logic
-        return [];
+    search(criteria) {
+        return this._storage.search(criteria);
+    }
+
+    /**
+     * Refresh ingredient cache
+     * @returns {Promise<void>}
+     */
+    async refresh() {
+        await this._storage.refresh();
     }
 }
 

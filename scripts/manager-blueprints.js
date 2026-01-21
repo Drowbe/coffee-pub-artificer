@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { BlueprintStorage } from './data/storage/storage-blueprints.js';
 
 /**
  * Manager for Blueprints stored in journal entries
@@ -10,7 +11,7 @@ import { MODULE } from './const.js';
  */
 export class BlueprintManager {
     constructor() {
-        this._cache = null;
+        this._storage = new BlueprintStorage();
     }
 
     /**
@@ -18,38 +19,61 @@ export class BlueprintManager {
      * @returns {Promise<void>}
      */
     async initialize() {
-        // TODO: Phase 1 - Load blueprints from journal
-        this._cache = new Map();
+        await this._storage.initialize();
     }
 
     /**
      * Get all blueprints
-     * @returns {Promise<Array<ArtificerBlueprint>>}
+     * @returns {Array<ArtificerBlueprint>}
      */
-    async getAll() {
-        // TODO: Phase 9 - Load from journal entries using parser
-        return [];
+    getAll() {
+        return this._storage.getAll();
     }
 
     /**
      * Get blueprint by ID
      * @param {string} id - Blueprint UUID
-     * @returns {Promise<ArtificerBlueprint|null>}
+     * @returns {ArtificerBlueprint|null}
      */
-    async getById(id) {
-        // TODO: Phase 9 - Load from journal using parser
-        return null;
+    getById(id) {
+        return this._storage.getById(id);
+    }
+
+    /**
+     * Get blueprints by status for actor
+     * @param {Actor} actor - Actor to check
+     * @param {string} status - Status: 'available', 'locked', 'in_progress', 'completed'
+     * @returns {Array<ArtificerBlueprint>}
+     */
+    getByStatus(actor, status) {
+        return this._storage.getByStatus(actor, status);
     }
 
     /**
      * Get blueprint progress for an actor
      * @param {string} blueprintId - Blueprint UUID
      * @param {Actor} actor - Actor document
-     * @returns {Promise<Object|null>}
+     * @returns {Object|null}
      */
-    async getProgress(blueprintId, actor) {
-        // TODO: Phase 9 - Load progress from actor flags
-        return null;
+    getProgress(blueprintId, actor) {
+        return this._storage.getProgress(blueprintId, actor);
+    }
+
+    /**
+     * Search blueprints by criteria
+     * @param {Object} criteria - Search criteria
+     * @returns {Array<ArtificerBlueprint>}
+     */
+    search(criteria) {
+        return this._storage.search(criteria);
+    }
+
+    /**
+     * Refresh blueprint cache
+     * @returns {Promise<void>}
+     */
+    async refresh() {
+        await this._storage.refresh();
     }
 }
 

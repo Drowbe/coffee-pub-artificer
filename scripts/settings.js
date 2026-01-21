@@ -45,6 +45,55 @@ function registerHeader(id, labelKey, hintKey, level = 'H2', group = null) {
     });
 }
 
+/**
+ * Get compendium choices for dropdowns
+ * @returns {Object} Object mapping compendium IDs to display labels
+ */
+function getCompendiumChoices() {
+    const choices = { "none": "-- None --" };
+    
+    // Get all Item compendiums
+    const itemPacks = game.packs.filter(pack => pack.documentName === 'Item');
+    
+    for (const pack of itemPacks) {
+        // Create readable label: "Package: Compendium Name"
+        const packageLabel = pack.metadata.packageLabel || pack.metadata.package || pack.metadata.packageName || "Unknown";
+        const label = `${packageLabel}: ${pack.metadata.label}`;
+        choices[pack.metadata.id] = label;
+    }
+    
+    return choices;
+}
+
+/**
+ * Register ingredient compendium priority settings
+ * @param {number} numCompendiums - Number of priority slots to register
+ */
+function registerIngredientCompendiumSettings(numCompendiums = 1) {
+    const choices = getCompendiumChoices();
+    
+    // Register priority settings
+    for (let i = 1; i <= numCompendiums; i++) {
+        const settingKey = `ingredientCompendium${i}`;
+        
+        // Skip if already registered
+        if (game.settings.settings.has(`${MODULE.ID}.${settingKey}`)) {
+            continue;
+        }
+        
+        game.settings.register(MODULE.ID, settingKey, {
+            name: `Ingredients: Priority ${i}`,
+            hint: null,
+            scope: 'world',
+            config: true,
+            default: 'none',
+            type: String,
+            choices: choices,
+            group: WORKFLOW_GROUPS.COMMON_SETTINGS
+        });
+    }
+}
+
 
 // ================================================================== 
 // ===== SETTINGS REGISTRATION ======================================
@@ -107,22 +156,61 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('CommonSettings', 'headingH2CommonSettings-Label', 'headingH2CommonSettings-Hint', 'H2', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-
     // --------------------------------------
-	// -- H3: EXAMPLE SUBHEADER
+	// -- H3: JOURNAL SETTINGS
 	// --------------------------------------
-	registerHeader('ExampleSubheader', 'headingH3ExampleSubheader-Label', 'headingH3ExampleSubheader-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
+	registerHeader('JournalSettings', 'headingH3JournalSettings-Label', 'headingH3JournalSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-    // -- Example Setting --
-	game.settings.register(MODULE.ID, 'exampleSetting', {
-        name: MODULE.ID + '.exampleSetting-Label',
-        hint: MODULE.ID + '.exampleSetting-Hint',
+    // -- Recipe Journal Setting --
+	game.settings.register(MODULE.ID, 'recipeJournal', {
+        name: MODULE.ID + '.recipeJournal-Label',
+        hint: MODULE.ID + '.recipeJournal-Hint',
         scope: 'world',
         config: true,
-        default: "Example Value",
+        default: 'Artificer Recipes',
         type: String,
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
+
+    // -- Blueprint Journal Setting --
+	game.settings.register(MODULE.ID, 'blueprintJournal', {
+        name: MODULE.ID + '.blueprintJournal-Label',
+        hint: MODULE.ID + '.blueprintJournal-Hint',
+        scope: 'world',
+        config: true,
+        default: 'Artificer Blueprints',
+        type: String,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // --------------------------------------
+	// -- H3: COMPENDIUM SETTINGS
+	// --------------------------------------
+	registerHeader('CompendiumSettings', 'headingH3CompendiumSettings-Label', 'headingH3CompendiumSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
+
+    // -- Number of Ingredient Compendiums --
+	game.settings.register(MODULE.ID, 'numIngredientCompendiums', {
+        name: MODULE.ID + '.numIngredientCompendiums-Label',
+        hint: MODULE.ID + '.numIngredientCompendiums-Hint',
+        scope: 'world',
+        config: true,
+        default: 1,
+        type: Number,
+        range: { min: 0, max: 10, step: 1 },
+        requiresReload: true,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // Register ingredient compendium priority settings
+    // Use default of 1 for initial registration (user can increase and reload)
+    let numCompendiums = 1;
+    try {
+        numCompendiums = game.settings.get(MODULE.ID, 'numIngredientCompendiums') ?? 1;
+    } catch (error) {
+        // Setting not accessible yet (first load), use default
+        numCompendiums = 1;
+    }
+    registerIngredientCompendiumSettings(numCompendiums);
 
     // Add more settings here as needed
     

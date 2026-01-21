@@ -12,11 +12,26 @@
 		"headingH2CommonSettings-Label": "Common Settings",
 		"headingH2CommonSettings-Hint": "This is the common settings section of the module.",
 
+		"headingH3JournalSettings-Label": "Journal Settings",
+		"headingH3JournalSettings-Hint": "Configure which journals are used for recipes and blueprints.",
+
+		"headingH3CompendiumSettings-Label": "Compendium Settings",
+		"headingH3CompendiumSettings-Hint": "Configure which compendiums to search for ingredients. They are in priority order and we stop looking when we find a match.",
+
 		"headingH3ExampleSubheader-Label": "Example Subheader",
 		"headingH3ExampleSubheader-Hint": "This is an example subheader for the module.",
 
 
 		
+		"recipeJournal-Label": "Recipe Journal",
+		"recipeJournal-Hint": "The journal containing recipe entries. Default: 'Artificer Recipes'",
+
+		"blueprintJournal-Label": "Blueprint Journal",
+		"blueprintJournal-Hint": "The journal containing blueprint entries. Default: 'Artificer Blueprints'",
+
+		"numIngredientCompendiums-Label": "Number of Compendiums",
+		"numIngredientCompendiums-Hint": "Number of compendiums to search for ingredients. Adjust the slider to add or remove priority slots.",
+
 		"exampleSetting-Label": "Example Setting",
 		"exampleSetting-Hint": "This is an example setting for the module."
 	}

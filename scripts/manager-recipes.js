@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { RecipeStorage } from './data/storage/storage-recipes.js';
 
 /**
  * Manager for Recipes stored in journal entries
@@ -10,7 +11,7 @@ import { MODULE } from './const.js';
  */
 export class RecipeManager {
     constructor() {
-        this._cache = null;
+        this._storage = new RecipeStorage();
     }
 
     /**
@@ -18,37 +19,77 @@ export class RecipeManager {
      * @returns {Promise<void>}
      */
     async initialize() {
-        // TODO: Phase 1 - Load recipes from journal
-        this._cache = new Map();
+        await this._storage.initialize();
     }
 
     /**
      * Get all recipes
-     * @returns {Promise<Array<ArtificerRecipe>>}
+     * @returns {Array<ArtificerRecipe>}
      */
-    async getAll() {
-        // TODO: Phase 5 - Load from journal entries using parser
-        return [];
+    getAll() {
+        return this._storage.getAll();
     }
 
     /**
      * Get recipe by ID
      * @param {string} id - Recipe UUID
-     * @returns {Promise<ArtificerRecipe|null>}
+     * @returns {ArtificerRecipe|null}
      */
-    async getById(id) {
-        // TODO: Phase 5 - Load from journal using parser
-        return null;
+    getById(id) {
+        return this._storage.getById(id);
+    }
+
+    /**
+     * Get recipes by category
+     * @param {string} category - Recipe category
+     * @returns {Array<ArtificerRecipe>}
+     */
+    getByCategory(category) {
+        return this._storage.getByCategory(category);
+    }
+
+    /**
+     * Get recipes by type
+     * @param {string} type - Item type
+     * @returns {Array<ArtificerRecipe>}
+     */
+    getByType(type) {
+        return this._storage.getByType(type);
+    }
+
+    /**
+     * Get recipes by skill
+     * @param {string} skill - Crafting skill
+     * @returns {Array<ArtificerRecipe>}
+     */
+    getBySkill(skill) {
+        return this._storage.getBySkill(skill);
+    }
+
+    /**
+     * Get recipes that actor can craft
+     * @param {Actor} actor - Actor to check
+     * @returns {Array<ArtificerRecipe>}
+     */
+    getCraftableBy(actor) {
+        return this._storage.getCraftableBy(actor);
     }
 
     /**
      * Search recipes by criteria
      * @param {Object} criteria - Search criteria
-     * @returns {Promise<Array<ArtificerRecipe>>}
+     * @returns {Array<ArtificerRecipe>}
      */
-    async search(criteria) {
-        // TODO: Phase 5 - Implement search logic
-        return [];
+    search(criteria) {
+        return this._storage.search(criteria);
+    }
+
+    /**
+     * Refresh recipe cache
+     * @returns {Promise<void>}
+     */
+    async refresh() {
+        await this._storage.refresh();
     }
 }
 

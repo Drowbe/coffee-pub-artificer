@@ -529,24 +529,24 @@ Following Codex/Quest patterns:
 ### Important (Should Decide Before Phase 2-3)
 
 **Q7: Recipe Numbering**
-- Hash-based numbers (R1, R2, etc.)?
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Yes - consistent with Quest system
+- **Decision:** Hash-based numbers (R1, R2, etc.)
+- **Rationale:** Consistent with Quest system, easy reference system, stable IDs even if recipe name changes
+- **Status:** ✅ Decided
 
 **Q8: Recipe Result Item Creation**
-- Recipe results are FoundryVTT Items (weapons, armor, potions, etc.)
-- Question: Link recipes to existing item definitions in compendiums, or auto-create item definitions on craft?
-- **Status:** ⏳ Pending Decision
+- **Decision:** Link to existing item in compendium (Option A)
+- **Rationale:** Recipe stores `resultItemUuid` pointing to existing item. Crafting creates a copy of that item. Provides consistent item definitions, easy to update all instances, requires pre-creating recipe result items.
+- **Status:** ✅ Decided
 
 **Q9: Blueprint Stage Progression**
-- Player initiates each stage separately?
-- Or stages auto-unlock when materials available?
-- **Status:** ⏳ Pending Decision
+- **Decision:** Player manually initiates each stage (Option A)
+- **Rationale:** Player sees available stages and clicks "Start Stage 2" when ready. Provides player control, clear progression, requires extra clicks but better UX.
+- **Status:** ✅ Decided
 
 **Q10: Panel Organization**
-- Status-based, category-based, or both?
-- **Status:** ⏳ Pending Decision
-- **Recommendation:** Both (default to status, with category filter)
+- **Decision:** Both (default to status, with category filter) (Option C)
+- **Rationale:** Default shows player state (Available, Locked, In Progress, Complete), with ability to filter by category (Potion, Weapon, Armor, etc.) when needed. Best of both worlds.
+- **Status:** ✅ Decided
 
 **Q11: Item System Integration**
 - **Decision:** D&D 5e
