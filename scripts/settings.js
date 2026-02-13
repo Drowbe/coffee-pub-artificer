@@ -46,6 +46,19 @@ function registerHeader(id, labelKey, hintKey, level = 'H2', group = null) {
 }
 
 /**
+ * Get journal choices for dropdowns (world journals only)
+ * @returns {Object} Object mapping journal UUID to display label
+ */
+function getJournalChoices() {
+    const choices = { "": "-- None --" };
+    if (!game.journal) return choices;
+    for (const journal of game.journal) {
+        choices[journal.uuid] = journal.name;
+    }
+    return choices;
+}
+
+/**
  * Get compendium choices for dropdowns
  * @returns {Object} Object mapping compendium IDs to display labels
  */
@@ -167,8 +180,9 @@ export const registerSettings = () => {
         hint: MODULE.ID + '.recipeJournal-Hint',
         scope: 'world',
         config: true,
-        default: 'Artificer Recipes',
+        default: '',
         type: String,
+        choices: getJournalChoices(),
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
 
@@ -178,8 +192,9 @@ export const registerSettings = () => {
         hint: MODULE.ID + '.blueprintJournal-Hint',
         scope: 'world',
         config: true,
-        default: 'Artificer Blueprints',
+        default: '',
         type: String,
+        choices: getJournalChoices(),
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
 

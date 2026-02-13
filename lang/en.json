@@ -24,10 +24,10 @@
 
 		
 		"recipeJournal-Label": "Recipe Journal",
-		"recipeJournal-Hint": "The journal containing recipe entries. Default: 'Artificer Recipes'",
+		"recipeJournal-Hint": "Select the journal containing recipe entries. Each page is parsed as a recipe.",
 
 		"blueprintJournal-Label": "Blueprint Journal",
-		"blueprintJournal-Hint": "The journal containing blueprint entries. Default: 'Artificer Blueprints'",
+		"blueprintJournal-Hint": "Select the journal containing blueprint entries. Each page is parsed as a blueprint.",
 
 		"numIngredientCompendiums-Label": "Number of Compendiums",
 		"numIngredientCompendiums-Hint": "Number of compendiums to search for ingredients. Adjust the slider to add or remove priority slots.",

@@ -49,21 +49,17 @@ export class BlueprintStorage {
      * @returns {Promise<void>}
      */
     async _loadFromJournals() {
-        // Get blueprint journal setting (default: "Artificer Blueprints")
-        // Use try-catch to handle case where setting doesn't exist yet
-        let journalName;
+        let journalUuid;
         try {
-            journalName = game.settings.get(MODULE.ID, 'blueprintJournal');
+            journalUuid = game.settings.get(MODULE.ID, 'blueprintJournal');
         } catch (error) {
-            // Setting not registered yet, use default
-            journalName = null;
+            journalUuid = '';
         }
-        journalName = journalName || 'Artificer Blueprints';
-        
-        // Find journal by name
-        const journal = game.journal?.find(j => j.name === journalName);
-        if (!journal) {
-            console.warn(`Blueprint journal "${journalName}" not found. Blueprints will not be loaded.`);
+        if (!journalUuid) return;
+
+        const journal = await fromUuid(journalUuid);
+        if (!journal || journal.documentName !== 'JournalEntry') {
+            console.warn(`Blueprint journal "${journalUuid}" not found. Blueprints will not be loaded.`);
             return;
         }
         
