@@ -1,0 +1,187 @@
+/* Crafting Experiment Panel */
+
+.artificer-crafting-panel {
+    padding: 0.5rem;
+}
+
+.crafting-header {
+    margin-bottom: 0.75rem;
+}
+
+.crafting-header h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.1rem;
+}
+
+.crafting-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--color-text-dark-5);
+}
+
+.crafting-actor-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.crafting-actor-row label {
+    flex-shrink: 0;
+}
+
+.crafting-actor-row select {
+    flex: 1;
+    min-width: 120px;
+}
+
+.crafting-seed-btn {
+    white-space: nowrap;
+}
+
+.crafting-slots {
+    margin-bottom: 0.75rem;
+}
+
+.crafting-slots-label,
+.crafting-ingredients-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.crafting-slot-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.crafting-slot {
+    width: 100px;
+    min-height: 60px;
+    border: 1px dashed var(--color-border-dark-3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--color-bg-dark-1);
+}
+
+.crafting-slot:hover {
+    border-color: var(--color-border-highlight);
+    background: var(--color-bg-dark-2);
+}
+
+.slot-empty {
+    color: var(--color-text-dark-5);
+    font-size: 0.8rem;
+}
+
+.slot-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.25rem;
+    width: 100%;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.slot-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    margin-bottom: 0.15rem;
+}
+
+.slot-tags {
+    font-size: 0.65rem;
+    color: var(--color-text-dark-5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90px;
+}
+
+.crafting-ingredients {
+    margin-bottom: 0.75rem;
+}
+
+.crafting-ingredient-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.crafting-ingredient-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--color-bg-dark-2);
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.crafting-ingredient-item:hover {
+    border-color: var(--color-border-highlight);
+    background: var(--color-bg-dark-3);
+}
+
+.crafting-ingredient-item img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.ingredient-qty {
+    font-size: 0.75rem;
+    color: var(--color-text-dark-5);
+}
+
+.crafting-no-items {
+    color: var(--color-text-dark-5);
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+.crafting-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.crafting-craft-btn {
+    flex: 1;
+}
+
+.crafting-result {
+    min-height: 2rem;
+    padding: 0.5rem;
+    background: var(--color-bg-dark-1);
+    border-radius: 4px;
+    border: 1px solid var(--color-border-dark-2);
+}
+
+.result-placeholder {
+    color: var(--color-text-dark-5);
+    font-size: 0.85rem;
+}
+
+.result-message {
+    font-size: 0.9rem;
+}
+
+.result-success {
+    color: var(--color-success);
+}
+
+.result-fail {
+    color: var(--color-warning);
+}

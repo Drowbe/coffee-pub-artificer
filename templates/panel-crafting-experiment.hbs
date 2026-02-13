@@ -1,0 +1,75 @@
+<div class="artificer-crafting-panel">
+    <div class="crafting-header">
+        <h3><i class="fa-solid fa-flask"></i> Experimentation</h3>
+        <p class="crafting-subtitle">Combine 1–3 ingredients to craft. Tags determine the result.</p>
+    </div>
+
+    <div class="crafting-actor-row">
+        <label for="crafting-actor">Crafter:</label>
+        <select id="crafting-actor" name="actorId">
+            {{#each actors}}
+            <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+            {{/each}}
+        </select>
+        <button type="button" class="crafting-seed-btn" data-action="seed" title="Add test ingredients to this actor">
+            <i class="fa-solid fa-plus"></i> Seed Test Ingredients
+        </button>
+    </div>
+
+    <div class="crafting-slots">
+        <div class="crafting-slots-label">Ingredients (click to add):</div>
+        <div class="crafting-slot-list">
+            {{#each slots}}
+            <div class="crafting-slot" data-slot-index="{{@index}}">
+                {{#if this.item}}
+                <div class="slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-item-id="{{this.item.id}}" title="Click to remove">
+                    <img src="{{this.item.img}}" alt="" />
+                    <span>{{this.item.name}}</span>
+                    <span class="slot-tags">{{this.tags}}</span>
+                </div>
+                {{else}}
+                <div class="slot-empty">Empty</div>
+                {{/if}}
+            </div>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="crafting-ingredients">
+        <div class="crafting-ingredients-label">Your ingredients:</div>
+        <div class="crafting-ingredient-list" id="ingredient-list">
+            {{#each ingredients}}
+            <div class="crafting-ingredient-item" data-action="addToSlot" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" title="{{this.tags}}">
+                <img src="{{this.img}}" alt="" />
+                <span>{{this.name}}</span>
+                <span class="ingredient-qty">×{{this.quantity}}</span>
+            </div>
+            {{else}}
+            <div class="crafting-no-items">No ingredients. Use "Seed Test Ingredients" or Import items.</div>
+            {{/each}}
+        </div>
+    </div>
+
+    <div class="crafting-actions">
+        <button type="button" class="crafting-craft-btn" data-action="craft" {{#unless canCraft}}disabled{{/unless}}>
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Craft
+        </button>
+        <button type="button" class="crafting-clear-btn" data-action="clear">
+            <i class="fa-solid fa-eraser"></i> Clear Slots
+        </button>
+    </div>
+
+    <div class="crafting-result" id="crafting-result">
+        {{#if lastResult}}
+        <div class="result-message {{#if lastResult.success}}result-success{{else}}result-fail{{/if}}">
+            {{#if lastResult.success}}
+            <i class="fa-solid fa-check"></i> Created: {{lastResult.name}}
+            {{else}}
+            <i class="fa-solid fa-times"></i> {{lastResult.name}}
+            {{/if}}
+        </div>
+        {{else}}
+        <div class="result-placeholder">Result will appear here.</div>
+        {{/if}}
+    </div>
+</div>

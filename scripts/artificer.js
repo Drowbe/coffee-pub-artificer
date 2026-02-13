@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
+import { CraftingExperimentPanel } from './panel-crafting-experiment.js';
 import { importFromFile, showImportResult } from './utility-artificer-import.js';
 
 // ================================================================== 
@@ -23,6 +24,7 @@ Hooks.once('init', async () => {
     // Preload templates
     await loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
+        'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
     ]);
@@ -150,6 +152,19 @@ function registerMenubarIntegration() {
         return;
     }
     
+    // Register secondary bar item for experimentation (crafting prototype)
+    const experimentItemId = 'artificer-experiment';
+    const experimentRegistered = blacksmith.registerSecondaryBarItem(barType, experimentItemId, {
+        icon: 'fa-solid fa-flask',
+        title: 'Experiment',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const panel = new CraftingExperimentPanel();
+            panel.render(true);
+        }
+    });
+
     // Register secondary bar item for creating items
     const createItemItemId = 'artificer-create-item';
     const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
@@ -227,8 +242,8 @@ function registerMenubarIntegration() {
         }
     });
     
-    if (createItemRegistered && importItemRegistered) {
-        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, create item button, and import items button registered successfully`);
+    if (experimentRegistered && createItemRegistered && importItemRegistered) {
+        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and crafting buttons registered successfully`);
     } else {
         console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered})`);
     }
