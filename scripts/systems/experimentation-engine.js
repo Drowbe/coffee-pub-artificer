@@ -3,7 +3,6 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { ArtificerIngredient } from '../data/models/model-ingredient.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
 
 /**
@@ -17,8 +16,11 @@ export function getTagsFromItem(item) {
     const type = flags.type;
 
     if (type === 'ingredient') {
-        const ing = ArtificerIngredient.fromItem(item);
-        return (ing?.getAllTags() ?? []).map(t => t.toLowerCase());
+        const f = flags;
+        const primary = f.primaryTag ?? '';
+        const secondary = Array.isArray(f.secondaryTags) ? f.secondaryTags : [];
+        const quirk = f.quirk ?? '';
+        return [primary, ...secondary, quirk].filter(Boolean).map(t => String(t).toLowerCase());
     }
     if (type === 'component') {
         const comp = ArtificerComponent.fromItem(item);
