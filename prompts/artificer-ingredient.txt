@@ -2,6 +2,7 @@ VARIABLES FOR THE ARTIFICAER ITEM
 
 Name: 
 Type: 
+Source: 
 Artificer type: 
 Family: 
 Primary tag: 
@@ -26,6 +27,7 @@ formula:
 Activity effect type: 
 Activity effect die: 
 Activity effect bonus:
+Damage type:
 
 
 JSON TEMPLATE FOR ARTIFICER INGREDIENTS
@@ -74,11 +76,11 @@ Include "system": { ... } when the ingredient can be used directly (e.g., chewed
 - system.destroyOnEmpty: (boolean) REQUIRED for consumables. true = item is destroyed when uses reach 0; false = item remains. Single-use items must be true.
 - system.consumptionMagical: (boolean) Set true if the item has magical properties when used (healing, buffs, damage, etc.).
 - system.recoveryPeriod: (string) "none" for single-use consumables; "Long Rest", "Short Rest", etc. for rechargeable items.
-- system.activities: (array) D&D 5e Activities for Use action. Include id, activityType, activityName, activityFormula, activityEffectType, activityEffectDie, activityEffectBonus. Examples:
+- system.activities: (array) D&D 5e Activities for Use action. Include id, activityType, activityName, activityFormula, activityEffectType, activityEffectDie, activityEffectBonus. For Damage or Save activities (poisons, etc.), also include damageType: "poison"|"fire"|"cold"|"necrotic"|"acid"|etc. Examples:
   - Heal: activityType "Heal", activityFormula "2d4+2", activityEffectType "healing", activityEffectDie "d4", activityEffectBonus 2
-  - Poison/Damage: activityType "Damage" or "Save", activityFormula "1d6", damageType "poison"
+  - Poison/Damage: activityType "Damage" or "Save", activityFormula "1d6", activityEffectType "damage", damageType "poison" (required for poisons)
 - system.identified: (boolean) Usually true.
-- system.source: { value: "Sourcebook or Homebrew" } — use "" if unknown, never "[ADD-ITEM-SOURCE-HERE]".
+- system.source: { value: "Sourcebook or Homebrew" } — use "Artificer" if not specified. Never use "[ADD-ITEM-SOURCE-HERE]".
 If system is omitted, the importer builds minimal consumable data. If included, the full structure is preserved for FoundryVTT and cross-module use.
 
 ARTIFICER FLAGS (flags["coffee-pub-artificer"]):
@@ -145,7 +147,7 @@ Add optional "system" when the ingredient has usable properties. The importer pr
   "rarity": "ITEMRARITY",
   "system": {
     "description": { "value": "ITEMDESCRIPTION", "chat": "", "unidentified": "" },
-    "source": { "value": "SOURCE_OR_EMPTY" },
+    "source": { "value": "Artificer" },
     "quantity": 1,
     "weight": ITEMWEIGHT,
     "price": { "value": ITEMPRICE, "denomination": "gp" },
@@ -165,7 +167,8 @@ Add optional "system" when the ingredient has usable properties. The importer pr
         "activityFormula": "2d4+2",
         "activityEffectType": "healing|damage|temphp|...",
         "activityEffectDie": "d4",
-        "activityEffectBonus": 2
+        "activityEffectBonus": 2,
+        "damageType": "poison|fire|cold|necrotic|acid|..."
       }
     ]
   },
@@ -240,7 +243,7 @@ EXAMPLE (Bloodroot — full consumable, healing herb with Use activity)
   "rarity": "common",
   "system": {
     "description": { "value": "<p>A crimson-rooted herb found in damp forests. When chewed, it staunches bleeding.</p>", "chat": "", "unidentified": "" },
-    "source": { "value": "" },
+    "source": { "value": "Artificer" },
     "quantity": 1,
     "weight": 0.1,
     "price": { "value": 15, "denomination": "gp" },
@@ -277,6 +280,58 @@ EXAMPLE (Bloodroot — full consumable, healing herb with Use activity)
   }
 }
 
+-------------------
+EXAMPLE (Wyvern Stinger — poison with Damage activity)
+-------------------
+
+{
+  "name": "Wyvern Stinger",
+  "type": "consumable",
+  "img": "",
+  "description": "<p>A barbed stinger from a wyvern, still holding venom. Apply as a weapon coating.</p>",
+  "weight": 0.2,
+  "price": 75,
+  "rarity": "uncommon",
+  "system": {
+    "description": { "value": "<p>A barbed stinger from a wyvern, still holding venom.</p>", "chat": "", "unidentified": "" },
+    "source": { "value": "Artificer" },
+    "quantity": 1,
+    "weight": 0.2,
+    "price": { "value": 75, "denomination": "gp" },
+    "rarity": "uncommon",
+    "identified": true,
+    "consumableType": "poison",
+    "uses": { "value": 1, "max": 1, "per": "charges" },
+    "destroyOnEmpty": true,
+    "consumptionMagical": false,
+    "recoveryPeriod": "none",
+    "activities": [
+      {
+        "id": "apply-wyvern-venom",
+        "activityType": "Damage",
+        "activityName": "Apply Wyvern Venom",
+        "activityFormula": "2d6",
+        "activityEffectType": "damage",
+        "activityEffectDie": "d6",
+        "activityEffectBonus": 0,
+        "damageType": "poison"
+      }
+    ]
+  },
+  "flags": {
+    "coffee-pub-artificer": {
+      "type": "ingredient",
+      "primaryTag": "Venom",
+      "secondaryTags": ["Toxic", "MonsterBits"],
+      "family": "CreatureParts",
+      "tier": 3,
+      "rarity": "Uncommon",
+      "quirk": "Volatile",
+      "biomes": ["Mountain", "Cavern", "Swamp"]
+    }
+  }
+}
+
 Note: For essences (Life Essence, Fire Essence, etc.), use type "essence" and add "affinity" instead of "family". This template is for ingredients only.
 
 -------------------
@@ -293,7 +348,7 @@ When asked to generate an Artificer ingredient, create a flavorful raw material 
 Inject mystery or regional flavor. Make the party wonder where it came from and what it can craft.
 
 Additional settings:
-- SOURCE: set to "[ADD-ITEM-SOURCE-HERE]"
+- SOURCE: use "Artificer" if not specified. Never use "[ADD-ITEM-SOURCE-HERE]"
 - Campaign: "[ADD-CAMPAIGN-NAME-HERE]"
 - Rulebooks: [ADD-RULEBOOKS-HERE]
 - Ask clarifying questions if something is ambiguous.
