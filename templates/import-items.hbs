@@ -1,0 +1,69 @@
+<div class="artificer-window artificer-import-window">
+    {{!-- Header --}}
+    <div class="artificer-header">
+        <div class="artificer-header-content">
+            <div class="artificer-header-icon">
+                <i class="fa-solid fa-file-import"></i>
+            </div>
+            <div class="artificer-header-title">
+                <div class="artificer-main-title">Import Items from JSON</div>
+                <div class="artificer-subtitle">Artificer Ingredients, Components & Essences</div>
+            </div>
+        </div>
+    </div>
+
+    {{!-- Content --}}
+    <div class="artificer-content">
+        {{!-- Base Prompt Template --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-clipboard"></i> Base Prompt Template
+            </div>
+        </div>
+        <div class="artificer-form-section">
+            <p class="artificer-import-hint">Copy the ingredient prompt to use with your AI assistant, then paste the generated JSON below.</p>
+            <button type="button" class="artificer-button artificer-button-copy" data-action="copy-prompt" title="Copy prompt to clipboard">
+                <i class="fa-solid fa-copy"></i> Copy to Clipboard
+            </button>
+        </div>
+
+        {{!-- Select or Paste JSON --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-code"></i> Select or Paste JSON
+            </div>
+        </div>
+        <div class="artificer-form-section">
+            <button type="button" class="artificer-button artificer-button-select" data-action="select-file" title="Select a JSON file">
+                <i class="fa-solid fa-folder-open"></i> Select JSON File
+            </button>
+            <input type="file" id="artificer-import-file-input" accept="application/json,.json" style="display: none;">
+            <label class="artificer-import-textarea-label" for="artificer-import-json">Paste JSON below or load from file:</label>
+            <textarea id="artificer-import-json" name="jsonContent" class="artificer-import-textarea" placeholder='Paste JSON here, e.g.&#10;{ "name": "Lavender", "type": "consumable", ... }' rows="12"></textarea>
+        </div>
+
+        {{!-- Import Info --}}
+        <div class="artificer-section-header">
+            <div class="artificer-section-header-left">
+                <i class="fa-solid fa-info-circle"></i> Import Notes
+            </div>
+        </div>
+        <div class="artificer-form-section artificer-import-notes">
+            <ul>
+                <li>Items require <code>flags["coffee-pub-artificer"]</code> with type, primaryTag, and family/componentType/affinity</li>
+                <li>Full D&D 5e consumable structure (activities, uses) is preserved for healing, poison, and magic items</li>
+                <li>Accepts a single object or an array of objects</li>
+            </ul>
+        </div>
+    </div>
+
+    {{!-- Form Actions --}}
+    <div class="artificer-form-actions">
+        <button type="button" class="artificer-button" data-action="cancel">
+            <i class="fa-solid fa-times"></i> Cancel Import
+        </button>
+        <button type="submit" class="artificer-button" data-action="import">
+            <i class="fa-solid fa-file-import"></i> Import JSON
+        </button>
+    </div>
+</div>

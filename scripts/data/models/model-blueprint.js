@@ -2,6 +2,7 @@
 // ===== ARTIFICER BLUEPRINT MODEL ==================================
 // ================================================================== 
 
+import { MODULE } from '../../const.js';
 import { CRAFTING_SKILLS } from '../../schema-recipes.js';
 import { BLUEPRINT_STAGE_STATES } from '../../schema-blueprints.js';
 import { hashString } from '../../utils/helpers.js';
@@ -188,16 +189,20 @@ export class ArtificerBlueprint {
         const missing = [];
         for (const req of stage.requirements) {
             const items = actor.items.filter(item => {
-                const artificerData = item.flags?.artificer;
-                if (!artificerData) return false;
-                
-                if (artificerData.type !== req.type) return false;
-                if (item.name !== req.name) return false;
-                
-                return true;
+                const artificerData = item.flags?.[MODULE.ID] || item.flags?.artificer;
+                const nameMatches = (item.name || '').trim() === (req.name || '').trim();
+
+                if (artificerData) {
+                    return artificerData.type === req.type && nameMatches;
+                }
+                return nameMatches;
             });
-            
-            const have = items.reduce((sum, item) => sum + (item.system?.quantity?.value ?? 1), 0);
+
+            const getQuantity = (item) => {
+                const q = item.system?.quantity;
+                return typeof q === 'number' ? q : (q?.value ?? 1);
+            };
+            const have = items.reduce((sum, item) => sum + getQuantity(item), 0);
             const need = req.quantity;
             
             if (have < need) {

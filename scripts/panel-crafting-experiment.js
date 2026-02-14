@@ -56,7 +56,10 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
             ? actor.items
                 .filter(i => {
                     const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                    return f?.type && ['ingredient', 'component', 'essence'].includes(f.type);
+                    if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
+                    // Normal D&D items (consumables, loot, etc.) — no tags but usable in recipes
+                    if (!f) return ['consumable', 'loot', 'equipment', 'tool'].includes(i.type);
+                    return false;
                 })
                 .map(i => ({
                     id: i.id,

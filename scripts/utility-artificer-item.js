@@ -14,7 +14,7 @@ import { MODULE } from './const.js';
  * @param {Actor|null} options.actor - Optional actor to add item to
  * @returns {Promise<Item>} Created item
  */
-export async function createArtificerItem(itemData, artificerData, options = {}) {
+export async function createArtificerItem(payload, artificerData, options = {}) {
     const { type, createInWorld = true, actor = null } = options;
     
     // Validate type
@@ -27,10 +27,10 @@ export async function createArtificerItem(itemData, artificerData, options = {})
     
     // Build item structure
     const itemStructure = {
-        name: itemData.name || 'Unnamed Item',
-        type: itemData.type || 'consumable', // Default to consumable for ingredients
-        img: itemData.img || '',
-        system: buildItemSystem(itemData),
+        name: payload.name || 'Unnamed Item',
+        type: payload.type || 'consumable',
+        img: payload.img || '',
+        system: buildItemSystem(payload),
         flags: {
             [MODULE.ID]: buildArtificerFlags(artificerData, type)
         }
@@ -89,41 +89,70 @@ export async function updateArtificerItem(item, itemData, artificerData) {
 
 /**
  * Build D&D 5e item system data
- * @param {Object} itemData - Item data
+ * Preserves full payload.system when present (activities, uses, consumableType, etc.)
+ * so items retain healing, poison, magical, and cross-module properties.
+ * @param {Object} payload - Full item payload (may include system)
  * @returns {Object} System data structure
  */
-function buildItemSystem(itemData) {
-    // Base structure for D&D 5e items - minimal required fields
-    const system = {
+function buildItemSystem(payload) {
+    const hasSystem = payload?.system && typeof payload.system === 'object' && Object.keys(payload.system).length > 0;
+
+    // Base defaults (from flat fields or minimal structure)
+    const descriptionValue = payload.description ?? payload.system?.description?.value ?? '';
+    const weight = payload.weight ?? payload.system?.weight ?? 0;
+    const priceVal = payload.price ?? payload.system?.price?.value ?? payload.system?.price ?? 0;
+    const rarityRaw = payload.rarity ?? payload.system?.rarity ?? 'common';
+    const rarity = typeof rarityRaw === 'string' ? rarityRaw.toLowerCase() : 'common';
+
+    const defaults = {
         description: {
-            value: itemData.description || '',
-            chat: '',
-            unidentified: ''
+            value: descriptionValue,
+            chat: payload.system?.description?.chat ?? '',
+            unidentified: payload.system?.description?.unidentified ?? ''
         },
         source: {
-            value: ''
+            value: payload.system?.source?.value ?? ''
         },
-        quantity: 1,
-        weight: itemData.weight || 0,
-        price: itemData.price || 0,
-        rarity: (itemData.rarity || 'common').toLowerCase(),
-        identified: true
+        quantity: payload.system?.quantity ?? 1,
+        weight,
+        price: typeof priceVal === 'object' ? priceVal : { value: priceVal, denomination: 'gp' },
+        rarity,
+        identified: payload.system?.identified ?? true
     };
-    
-    // Add type-specific system data
-    if (itemData.type === 'consumable') {
-        system.consumableType = itemData.consumableType || 'other';
-        system.uses = {
-            value: 1,
-            max: 1,
-            per: 'none'
-        };
+
+    if (payload.type === 'consumable' || (hasSystem && payload.system.consumableType)) {
+        defaults.consumableType = payload.system?.consumableType ?? 'other';
+        defaults.uses = payload.system?.uses ?? { value: 1, max: 1, per: 'charges' };
     }
-    
-    // For other types, D&D 5e system will add default structure
-    // We keep it minimal to avoid validation errors
-    
-    return system;
+
+    // If payload has full system, deep merge (payload.system wins for nested objects)
+    if (hasSystem) {
+        return deepMergeSystem(defaults, payload.system);
+    }
+
+    return defaults;
+}
+
+/**
+ * Deep merge payload.system into defaults; preserves activities, uses, and nested structures
+ * @param {Object} defaults - Base structure
+ * @param {Object} incoming - Incoming system data from payload
+ * @returns {Object} Merged system
+ */
+function deepMergeSystem(defaults, incoming) {
+    const result = { ...defaults };
+    for (const key of Object.keys(incoming)) {
+        const inc = incoming[key];
+        if (inc === null || inc === undefined) continue;
+        if (Array.isArray(inc)) {
+            result[key] = [...inc];
+        } else if (typeof inc === 'object' && inc !== null && !(inc instanceof Date) && !Array.isArray(inc)) {
+            result[key] = deepMergeSystem(result[key] ?? {}, inc);
+        } else {
+            result[key] = inc;
+        }
+    }
+    return result;
 }
 
 /**

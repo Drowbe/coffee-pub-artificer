@@ -43,8 +43,12 @@ export async function parseImportInput(input) {
 
 /**
  * Validate an import payload structure
+ * Preserves the full payload (including system, activities, etc.) so items retain
+ * healing, poison, magical, and other D&D 5e consumable properties. Pass-through
+ * design supports cross-module use (e.g., Blacksmith) and ingredients that are
+ * both crafting materials and standalone usable items.
  * @param {Object} payload - Item payload to validate
- * @returns {Object} Validated and normalized payload
+ * @returns {Object} Validated payload with { payload, artificerData, type }
  * @throws {Error} If validation fails
  */
 export function validateImportPayload(payload) {
@@ -65,33 +69,22 @@ export function validateImportPayload(payload) {
         throw new Error(`Payload must have flags.${MODULE.ID}.type or artificer.type set to 'ingredient', 'component', or 'essence'`);
     }
     
-    // Build itemData structure
-    const itemData = {
-        name: payload.name,
-        type: payload.type || 'consumable', // Default to consumable
-        price: payload.price || payload.system?.price || 0,
-        weight: payload.weight || payload.system?.weight || 0,
-        rarity: payload.rarity || payload.system?.rarity || 'common',
-        description: payload.description || payload.system?.description?.value || '',
-        img: payload.img || ''
-    };
-    
-    // Build artificerData structure
+    // Build artificerData structure (extracted for validation only)
     const artificerData = {
         primaryTag: artificerFlags.primaryTag || '',
-        secondaryTags: Array.isArray(artificerFlags.secondaryTags) 
-            ? artificerFlags.secondaryTags 
+        secondaryTags: Array.isArray(artificerFlags.secondaryTags)
+            ? artificerFlags.secondaryTags
             : (artificerFlags.secondaryTags ? [artificerFlags.secondaryTags] : []),
         tier: artificerFlags.tier || 1,
-        rarity: artificerFlags.rarity || itemData.rarity || 'Common'
+        rarity: artificerFlags.rarity || payload.rarity || payload.system?.rarity || 'Common'
     };
     
     // Add type-specific fields
     if (artificerType === 'ingredient') {
         artificerData.family = artificerFlags.family || '';
-        artificerData.quirk = artificerFlags.quirk || null;
-        artificerData.biomes = Array.isArray(artificerFlags.biomes) 
-            ? artificerFlags.biomes 
+        artificerData.quirk = artificerFlags.quirk ?? null;
+        artificerData.biomes = Array.isArray(artificerFlags.biomes)
+            ? artificerFlags.biomes
             : (artificerFlags.biomes ? [artificerFlags.biomes] : []);
     } else if (artificerType === 'component') {
         artificerData.componentType = artificerFlags.componentType || '';
@@ -102,8 +95,9 @@ export function validateImportPayload(payload) {
     // Validate artificer data
     validateArtificerData(artificerData, artificerType);
     
+    // Return full payload — do NOT strip system, activities, or other fields
     return {
-        itemData,
+        payload,
         artificerData,
         type: artificerType
     };
@@ -136,9 +130,9 @@ export async function importItems(payloads, options = {}) {
             // Validate payload
             const validated = validateImportPayload(payload);
             
-            // Create item
+            // Create item (pass full payload to preserve system, activities, etc.)
             const item = await createArtificerItem(
-                validated.itemData,
+                validated.payload,
                 validated.artificerData,
                 {
                     type: validated.type,

@@ -6,8 +6,8 @@ import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
+import { ArtificerImportWindow } from './window-artificer-import.js';
 import { CraftingExperimentPanel } from './panel-crafting-experiment.js';
-import { importFromFile, showImportResult } from './utility-artificer-import.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -24,6 +24,7 @@ Hooks.once('init', async () => {
     // Preload templates
     await loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
+        'modules/coffee-pub-artificer/templates/import-items.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
@@ -199,46 +200,8 @@ function registerMenubarIntegration() {
         moduleId: MODULE.ID,
         visible: true,
         onClick: function() {
-            // Open file picker for JSON import
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Import Items button clicked`, null, false, false);
-            
-            // Create file input element
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'application/json,.json';
-            fileInput.style.display = 'none';
-            
-            fileInput.addEventListener('change', async (event) => {
-                const file = event.target.files?.[0];
-                if (!file) {
-                    return;
-                }
-                
-                try {
-                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Importing items from ${file.name}...`, null, false, false);
-                    
-                    // Import items from file
-                    const result = await importFromFile(file, {
-                        createInWorld: true,
-                        actor: null
-                    });
-                    
-                    // Show results
-                    showImportResult(result, MODULE.NAME);
-                    
-                } catch (error) {
-                    const errorMessage = error.message || String(error);
-                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Import failed: ${errorMessage}`, null, true, false);
-                    console.error(`[${MODULE.NAME}] Import error:`, error);
-                } finally {
-                    // Clean up file input
-                    document.body.removeChild(fileInput);
-                }
-            });
-            
-            // Add to DOM and trigger click
-            document.body.appendChild(fileInput);
-            fileInput.click();
+            const importWindow = new ArtificerImportWindow();
+            importWindow.render(true);
         }
     });
     

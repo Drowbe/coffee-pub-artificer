@@ -5,9 +5,10 @@
 /**
  * Recipe ingredient requirement
  * @typedef {Object} RecipeIngredient
- * @property {string} type - Type: 'ingredient', 'component', or 'essence'
+ * @property {string} type - Type: 'ingredient', 'component', 'essence', or 'item' (item = any D&D item by name)
  * @property {string} name - Ingredient/component/essence name (reference)
  * @property {number} quantity - Required quantity
+ * @description Artificer items match by type+name. Normal D&D items (no Artificer flags) match by name only.
  */
 
 /**

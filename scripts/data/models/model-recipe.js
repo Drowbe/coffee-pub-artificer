@@ -2,6 +2,7 @@
 // ===== ARTIFICER RECIPE MODEL =====================================
 // ================================================================== 
 
+import { MODULE } from '../../const.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from '../../schema-recipes.js';
 import { hashString } from '../../utils/helpers.js';
 
@@ -152,17 +153,22 @@ export class ArtificerRecipe {
         const missing = [];
         for (const ing of this.ingredients) {
             const items = actor.items.filter(item => {
-                const artificerData = item.flags?.artificer;
-                if (!artificerData) return false;
-                
-                // Check if item matches ingredient type and name
-                if (artificerData.type !== ing.type) return false;
-                if (item.name !== ing.name) return false;
-                
-                return true;
+                const artificerData = item.flags?.[MODULE.ID] || item.flags?.artificer;
+                const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+
+                if (artificerData) {
+                    // Artificer item: match type and name
+                    return artificerData.type === ing.type && nameMatches;
+                }
+                // Normal D&D item (no Artificer flags): match by name only
+                return nameMatches;
             });
-            
-            const have = items.reduce((sum, item) => sum + (item.system?.quantity?.value ?? 1), 0);
+
+            const getQuantity = (item) => {
+                const q = item.system?.quantity;
+                return typeof q === 'number' ? q : (q?.value ?? 1);
+            };
+            const have = items.reduce((sum, item) => sum + getQuantity(item), 0);
             const need = ing.quantity;
             
             if (have < need) {
