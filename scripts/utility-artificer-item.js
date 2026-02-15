@@ -111,7 +111,8 @@ function buildItemSystem(payload) {
             unidentified: payload.system?.description?.unidentified ?? ''
         },
         source: {
-            value: payload.system?.source?.value ?? ''
+            value: payload.system?.source?.value ?? payload.system?.source?.custom ?? '',
+            custom: payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer'
         },
         quantity: payload.system?.quantity ?? 1,
         weight,
@@ -126,11 +127,23 @@ function buildItemSystem(payload) {
     }
 
     // If payload has full system, deep merge (payload.system wins for nested objects)
+    let system;
     if (hasSystem) {
-        return deepMergeSystem(defaults, payload.system);
+        system = deepMergeSystem(defaults, payload.system);
+    } else {
+        system = defaults;
     }
 
-    return defaults;
+    // Explicitly ensure source.value and source.custom are set (Configure Source → Custom Label)
+    const sourceValue = payload.system?.source?.value ?? payload.system?.source?.custom ?? '';
+    const sourceCustom = payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer';
+    system.source = {
+        ...(typeof system.source === 'object' ? system.source : {}),
+        value: sourceValue || system.source?.value || '',
+        custom: sourceCustom || system.source?.custom || 'Artificer'
+    };
+
+    return system;
 }
 
 /**
