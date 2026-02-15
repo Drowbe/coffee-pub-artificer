@@ -36,12 +36,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     };
 
     constructor(options = {}) {
-        super(options);
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.title = (options.mode === 'edit' && options.item) ? 'Edit Artificer Item' : 'Create Artificer Item';
+        super(opts);
         this.itemType = options.itemType || 'ingredient';
         this.itemData = options.itemData || null;
         this.existingItem = options.item || null;
         this.mode = options.mode || 'create';
-        this.options.title = this.isEditMode ? 'Edit Artificer Item' : 'Create Artificer Item';
     }
 
     get isEditMode() {

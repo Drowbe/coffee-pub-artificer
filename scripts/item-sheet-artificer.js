@@ -12,6 +12,18 @@ import { ArtificerItemForm } from './window-artificer-item.js';
 function registerItemSheetIntegration() {
     Hooks.on('renderDocumentSheetV2', onRenderItemSheet);
     Hooks.on('renderItemSheet', onRenderItemSheet);
+    document.body.addEventListener('click', onDocumentClick, true);
+}
+
+function onDocumentClick(event) {
+    const target = event.target.closest('[data-action="edit-artificer"]');
+    if (!target) return;
+    const uuid = target.getAttribute('data-item-uuid');
+    if (!uuid) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const item = foundry.utils.fromUuidSync(uuid);
+    if (item) openEditForm(item);
 }
 
 /**
@@ -123,22 +135,12 @@ function buildArtificerSection(item, flags, type, editable) {
     section.innerHTML = `
         <div class="artificer-sheet-header">
             <h4 class="artificer-sheet-title"><i class="fa-solid fa-hammer"></i> Artificer Properties</h4>
-            ${editable ? '<a class="artificer-sheet-edit-btn" data-action="edit-artificer" title="Edit"><i class="fa-solid fa-feather"></i></a>' : ''}
+            ${editable ? `<a class="artificer-sheet-edit-btn" data-action="edit-artificer" data-item-uuid="${escapeHtml(item.uuid)}" title="Edit" href="#"><i class="fa-solid fa-feather"></i></a>` : ''}
         </div>
         <div class="artificer-sheet-body">
             ${rowsHtml || '<p class="artificer-sheet-empty">No Artificer data.</p>'}
         </div>
     `;
-
-    if (editable) {
-        const editBtn = section.querySelector('[data-action="edit-artificer"]');
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                openEditForm(item);
-            });
-        }
-    }
 
     return section;
 }
