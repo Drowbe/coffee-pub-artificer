@@ -1,12 +1,12 @@
 # Ingredient Migration Reference
 
-**Source:** Potion Brewing and Ingredient Gathering for DnD 5e (piccolo917, GM Binder)
+**Source:** Artificer - Potion Brewing and Ingredient Gathering for DnD 5e (piccolo917, GM Binder)
 
 This document contains variable blocks for every ingredient from the source PDF, formatted for Coffee Pub Artificer import. Each block uses the template from `prompts/artificer-ingredient.txt`.
 
 **Biomes:** Use only official D&D 5e monster habitats (Arctic, Coastal, Desert, Forest, Grassland, Hill, Mountain, Swamp, Underdark, Underwater, Urban). Avoid non-leverageable descriptors like "Sites of frequent or large-scale death" or "Wyvern poison burned soil"—put those in descriptions only.
 
-**Import JSON mapping:** When building import JSON, map `Source` → `system.source.value` and `system.source.custom`. For non-official content, set both so the Configure Source dialog's "Custom Label" is populated (e.g. `"source": { "value": "Potion Brewing and Ingredient Gathering", "custom": "Potion Brewing and Ingredient Gathering" }`).
+**Import JSON mapping:** When building import JSON, map `Source` → `system.source.value` and `system.source.custom`. For non-official content, set both so the Configure Source dialog's "Custom Label" is populated (e.g. `"source": { "value": "Artificer - Potion Brewing and Ingredient Gathering", "custom": "Artificer - Potion Brewing and Ingredient Gathering" }`).
 
 ---
 
@@ -16,7 +16,7 @@ This document contains variable blocks for every ingredient from the source PDF,
 ```
 Name: Acid Dew
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -48,7 +48,7 @@ Damage type: acid
 ```
 Name: Angel's Trumpet
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -80,7 +80,7 @@ Damage type: poison
 ```
 Name: Ashblossom
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -112,7 +112,7 @@ Damage type: fire
 ```
 Name: Bane Berry
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -144,7 +144,7 @@ Damage type: poison
 ```
 Name: Black Cup Mushroom
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -176,7 +176,7 @@ Damage type: poison
 ```
 Name: Black Sap
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -208,7 +208,7 @@ Damage type: poison
 ```
 Name: Black Thistle
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -240,7 +240,7 @@ Damage type:
 ```
 Name: Blight Spores
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -272,7 +272,7 @@ Damage type: poison
 ```
 Name: Bloodroot
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -304,7 +304,7 @@ Damage type:
 ```
 Name: Cat's Tongue
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -336,7 +336,7 @@ Damage type:
 ```
 Name: Death Cap
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -368,7 +368,7 @@ Damage type: poison
 ```
 Name: Dreamlily
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -400,7 +400,7 @@ Damage type:
 ```
 Name: Everfrost Berries
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -432,7 +432,7 @@ Damage type:
 ```
 Name: Fairy Stool
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -464,7 +464,7 @@ Damage type:
 ```
 Name: Fire Peas
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -496,7 +496,7 @@ Damage type:
 ```
 Name: Flame Lily
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -528,7 +528,7 @@ Damage type:
 ```
 Name: Frost Lichen
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -560,7 +560,7 @@ Damage type:
 ```
 Name: Gillyweed
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -592,7 +592,7 @@ Damage type:
 ```
 Name: Hagfinger
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -624,7 +624,7 @@ Damage type:
 ```
 Name: Idle Claws
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -656,7 +656,7 @@ Damage type:
 ```
 Name: Lightning Moss
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -688,7 +688,7 @@ Damage type:
 ```
 Name: Mandrake Root
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -720,7 +720,7 @@ Damage type: poison
 ```
 Name: Mindflayer Stinkhorn
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -752,7 +752,7 @@ Damage type:
 ```
 Name: Moonstalker
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -784,7 +784,7 @@ Damage type:
 ```
 Name: Morning Dew
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -816,7 +816,7 @@ Damage type:
 ```
 Name: Muroosa Bush
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -848,7 +848,7 @@ Damage type:
 ```
 Name: Nightshade
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -880,7 +880,7 @@ Damage type: poison
 ```
 Name: Olisuba Leaf
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -912,7 +912,7 @@ Damage type:
 ```
 Name: Pixie's Parasol
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -944,7 +944,7 @@ Damage type:
 ```
 Name: Rainbow Mushroom
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -976,7 +976,7 @@ Damage type:
 ```
 Name: Red Amanita Mushroom
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -1008,7 +1008,7 @@ Damage type: poison
 ```
 Name: Silverthorn
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1040,7 +1040,7 @@ Damage type:
 ```
 Name: Singing Nettle
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1072,7 +1072,7 @@ Damage type:
 ```
 Name: Sourgrass
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1104,7 +1104,7 @@ Damage type:
 ```
 Name: Theki Root
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1136,7 +1136,7 @@ Damage type:
 ```
 Name: The Bearded Green
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Fungus
@@ -1168,7 +1168,7 @@ Damage type:
 ```
 Name: White Ghost Orchid Seed
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1200,7 +1200,7 @@ Damage type:
 ```
 Name: Willowshade Fruit
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1232,7 +1232,7 @@ Damage type:
 ```
 Name: Wolfsbane
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Herbs
 Primary tag: Herb
@@ -1268,7 +1268,7 @@ Damage type:
 ```
 Name: Lightning Struck Metal
 Type: loot
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Minerals
 Primary tag: Metal
@@ -1300,7 +1300,7 @@ Damage type:
 ```
 Name: Soothsalt Geode
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: Minerals
 Primary tag: Crystal
@@ -1336,7 +1336,7 @@ Damage type:
 ```
 Name: Ankheg Ichor
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1368,7 +1368,7 @@ Damage type: poison
 ```
 Name: Blue-Ringed Octopus Poison
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Venom
@@ -1400,7 +1400,7 @@ Damage type: poison
 ```
 Name: Crawler Mucus
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1432,7 +1432,7 @@ Damage type: poison
 ```
 Name: Dracula's Blood
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1464,7 +1464,7 @@ Damage type:
 ```
 Name: Drider Poison
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Venom
@@ -1496,7 +1496,7 @@ Damage type: poison
 ```
 Name: Eagle Claw
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1528,7 +1528,7 @@ Damage type:
 ```
 Name: Ectoplasm
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1560,7 +1560,7 @@ Damage type:
 ```
 Name: Air Elemental Wisp
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Environmental
@@ -1592,7 +1592,7 @@ Damage type:
 ```
 Name: Earth Elemental Pebble
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Environmental
@@ -1624,7 +1624,7 @@ Damage type:
 ```
 Name: Fire Elemental Ember
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Environmental
@@ -1656,7 +1656,7 @@ Damage type:
 ```
 Name: Water Elemental Droplet
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Environmental
@@ -1688,7 +1688,7 @@ Damage type:
 ```
 Name: Giant's Fingernail
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1720,7 +1720,7 @@ Damage type:
 ```
 Name: Serpent's Venom
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Venom
@@ -1752,7 +1752,7 @@ Damage type: poison
 ```
 Name: Amphibian Saliva
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1784,7 +1784,7 @@ Damage type:
 ```
 Name: Giant Wolf Spider Hair
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1816,7 +1816,7 @@ Damage type:
 ```
 Name: Grey Ooze Residue
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1848,7 +1848,7 @@ Damage type:
 ```
 Name: Imp Heart
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1880,7 +1880,7 @@ Damage type:
 ```
 Name: Nothic Tears
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1912,7 +1912,7 @@ Damage type:
 ```
 Name: Purple Worm Poison
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Venom
@@ -1944,7 +1944,7 @@ Damage type: poison
 ```
 Name: Quipper Scale
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -1976,7 +1976,7 @@ Damage type:
 ```
 Name: Remorhaz Ichor
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -2008,7 +2008,7 @@ Damage type:
 ```
 Name: Skulk Claw
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -2040,7 +2040,7 @@ Damage type:
 ```
 Name: Dragon's Blood
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: MonsterBits
@@ -2072,7 +2072,7 @@ Damage type:
 ```
 Name: Wyvern Poison
 Type: consumable
-Source: Potion Brewing and Ingredient Gathering
+Source: Artificer - Potion Brewing and Ingredient Gathering
 Artificer type: ingredient
 Family: CreatureParts
 Primary tag: Venom

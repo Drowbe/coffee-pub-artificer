@@ -6,8 +6,8 @@
                 <i class="fa-solid fa-hammer"></i>
             </div>
             <div class="artificer-header-title">
-                <div class="artificer-main-title">Create {{itemTypeName}}</div>
-                <div class="artificer-subtitle">Artificer Item Creation</div>
+                <div class="artificer-main-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} {{itemTypeName}}</div>
+                <div class="artificer-subtitle">{{#if isEditMode}}Artificer Item Properties{{else}}Artificer Item Creation{{/if}}</div>
             </div>
         </div>
     </div>
@@ -75,7 +75,7 @@
     {{!-- Form Actions --}}
     <div class="artificer-form-actions">
         <button type="submit" class="artificer-button">
-            <i class="fa-solid fa-check"></i> Create Item
+            <i class="fa-solid fa-check"></i> {{#if isEditMode}}Save Changes{{else}}Create Item{{/if}}
         </button>
         <button type="button" class="artificer-button" data-action="cancel">
             <i class="fa-solid fa-times"></i> Cancel

@@ -1,0 +1,174 @@
+// ==================================================================
+// ===== ITEM SHEET ARTIFICER INTEGRATION ===========================
+// ==================================================================
+
+import { MODULE } from './const.js';
+import { ArtificerItemForm } from './window-artificer-item.js';
+
+/**
+ * Inject Artificer tags section into item sheets when the item has artificer flags.
+ * Registers on renderDocumentSheetV2 (Foundry v13) and renderItemSheet (legacy) for compatibility.
+ */
+function registerItemSheetIntegration() {
+    Hooks.on('renderDocumentSheetV2', onRenderItemSheet);
+    Hooks.on('renderItemSheet', onRenderItemSheet);
+}
+
+/**
+ * @param {DocumentSheetV2} app - The sheet application
+ * @param {HTMLElement} html - The rendered HTML element
+ */
+function onRenderItemSheet(app, html) {
+    const item = app.object ?? app.document ?? app.item;
+    if (!item) return;
+    if (app.document?.documentName && app.document.documentName !== 'Item') return;
+
+    const element = html instanceof HTMLElement ? html : html[0];
+    if (!element) return;
+
+    const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
+    const type = flags.type;
+    if (!type || !['ingredient', 'component', 'essence'].includes(type)) return;
+
+    // Avoid double-injection
+    if (element.querySelector('.artificer-item-sheet-section')) return;
+
+    const section = buildArtificerSection(item, flags, type, app.options.editable ?? false);
+    const insertTarget = findInsertTarget(element);
+    if (insertTarget) {
+        insertTarget.after(section);
+    } else {
+        element.appendChild(section);
+    }
+}
+
+/**
+ * Find a suitable place to insert the Artificer section (after description/details area).
+ * @param {HTMLElement} root
+ * @returns {HTMLElement|null}
+ */
+function findInsertTarget(root) {
+    // Tidy5e: data-tidy-sheet-part="description" or similar
+    const tidyDesc = root.querySelector('[data-tidy-sheet-part="description"]');
+    if (tidyDesc) return tidyDesc;
+
+    // Default dnd5e: .tab[data-tab="description"] or .item-properties
+    const descTab = root.querySelector('.tab[data-tab="description"]');
+    if (descTab) return descTab;
+
+    const props = root.querySelector('.item-properties');
+    if (props) return props;
+
+    // Fallback: first .form-group or form
+    const formGroup = root.querySelector('.form-group');
+    if (formGroup) return formGroup;
+
+    return null;
+}
+
+/**
+ * Build the Artificer section DOM
+ * @param {Item} item
+ * @param {Object} flags
+ * @param {string} type
+ * @param {boolean} editable
+ * @returns {HTMLElement}
+ */
+function buildArtificerSection(item, flags, type, editable) {
+    const section = document.createElement('div');
+    section.className = 'artificer-item-sheet-section';
+
+    const primaryTag = flags.primaryTag ?? '';
+    const secondaryTags = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
+    const secondaryStr = secondaryTags.join(', ');
+    const family = flags.family ?? '';
+    const tier = flags.tier ?? 1;
+    const rarity = flags.rarity ?? 'Common';
+    const quirk = flags.quirk ?? '';
+    const biomes = Array.isArray(flags.biomes) ? flags.biomes : [];
+    const biomesStr = biomes.join(', ');
+    const componentType = flags.componentType ?? '';
+    const affinity = flags.affinity ?? '';
+
+    const rows = [];
+    if (primaryTag) rows.push({ label: 'Primary Tag', value: primaryTag });
+    if (secondaryStr) rows.push({ label: 'Secondary Tags', value: secondaryStr });
+    if (type === 'ingredient' && family) rows.push({ label: 'Family', value: family });
+    if (type === 'component' && componentType) rows.push({ label: 'Component Type', value: componentType });
+    if (type === 'essence' && affinity) rows.push({ label: 'Affinity', value: affinity });
+    rows.push({ label: 'Tier', value: String(tier) });
+    rows.push({ label: 'Rarity', value: rarity });
+    if (type === 'ingredient' && quirk) rows.push({ label: 'Quirk', value: quirk });
+    if (type === 'ingredient' && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
+
+    const rowsHtml = rows
+        .map((r) => `<div class="artificer-sheet-row"><span class="artificer-sheet-label">${escapeHtml(r.label)}:</span><span class="artificer-sheet-value">${escapeHtml(r.value)}</span></div>`)
+        .join('');
+
+    section.innerHTML = `
+        <div class="artificer-sheet-header">
+            <h4 class="artificer-sheet-title"><i class="fa-solid fa-hammer"></i> Artificer Properties</h4>
+            ${editable ? '<button type="button" class="artificer-sheet-edit-btn" data-action="edit-artificer"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : ''}
+        </div>
+        <div class="artificer-sheet-body">
+            ${rowsHtml || '<p class="artificer-sheet-empty">No Artificer data.</p>'}
+        </div>
+    `;
+
+    if (editable) {
+        const editBtn = section.querySelector('[data-action="edit-artificer"]');
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                openEditForm(item);
+            });
+        }
+    }
+
+    return section;
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
+ * Open the Artificer form in edit mode for the given item
+ * @param {Item} item
+ */
+function openEditForm(item) {
+    const itemData = itemToFormData(item);
+    const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
+    const form = new ArtificerItemForm({
+        itemData,
+        item,
+        mode: 'edit',
+        itemType: flags.type || 'ingredient'
+    });
+    form.render(true);
+}
+
+/**
+ * Convert a Foundry Item to the shape expected by ArtificerItemForm
+ * @param {Item} item
+ * @returns {Object}
+ */
+export function itemToFormData(item) {
+    const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
+    return {
+        name: item.name,
+        type: item.type,
+        weight: item.system?.weight ?? 0,
+        price: typeof item.system?.price === 'object' ? item.system.price?.value : item.system?.price ?? 0,
+        rarity: item.system?.rarity ?? 'Common',
+        description: item.system?.description?.value ?? item.description ?? '',
+        img: item.img ?? '',
+        flags: {
+            [MODULE.ID]: { ...flags }
+        }
+    };
+}
+
+export { registerItemSheetIntegration };

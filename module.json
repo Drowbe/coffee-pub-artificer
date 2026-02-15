@@ -71,6 +71,7 @@
     "scripts/utility-artificer-item.js",
     "scripts/utility-artificer-import.js",
     "scripts/window-artificer-item.js",
+    "scripts/item-sheet-artificer.js",
     "scripts/window-artificer-import.js",
     "scripts/panel-crafting-experiment.js",
     "scripts/manager-ingredients.js",

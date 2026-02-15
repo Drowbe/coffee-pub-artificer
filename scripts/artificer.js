@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
+import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerImportWindow } from './window-artificer-import.js';
 import { CraftingExperimentPanel } from './panel-crafting-experiment.js';
 
@@ -91,7 +92,9 @@ Hooks.once('ready', async () => {
 function initializeModule() {
     // Register menubar tool and secondary bar
     registerMenubarIntegration();
-    
+    // Inject Artificer section into item sheets + Edit button
+    registerItemSheetIntegration();
+
     console.log(`${MODULE.NAME}: Module initialized`);
 }
 

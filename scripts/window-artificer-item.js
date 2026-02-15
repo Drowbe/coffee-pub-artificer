@@ -3,7 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
-import { createArtificerItem, validateArtificerData } from './utility-artificer-item.js';
+import { createArtificerItem, updateArtificerItem, validateArtificerData } from './utility-artificer-item.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { COMPONENT_TYPES } from './schema-components.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
@@ -17,7 +17,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
         id: 'artificer-item-form',
-        title: 'Create Artificer Item',
+        title: 'Artificer Item',
         width: 600,
         height: 'auto',
         resizable: true,
@@ -39,6 +39,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         super(options);
         this.itemType = options.itemType || 'ingredient';
         this.itemData = options.itemData || null;
+        this.existingItem = options.item || null;
+        this.mode = options.mode || 'create';
+        this.options.title = this.isEditMode ? 'Edit Artificer Item' : 'Create Artificer Item';
+    }
+
+    get isEditMode() {
+        return this.mode === 'edit' && this.existingItem;
     }
 
     /**
@@ -129,6 +136,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         
         // Merge with existing context
         const mergedContext = foundry.utils.mergeObject(context, {
+            isEditMode: this.isEditMode,
             itemType: this.itemType,
             itemTypeName: itemTypeNames[this.itemType] || 'Item',
             isIngredient: this.itemType === 'ingredient',
@@ -268,20 +276,20 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             // Validate
             validateArtificerData(artificerData, this.itemType);
             
-            // Create item - pass type in options
-            const createdItem = await createArtificerItem(itemData, artificerData, {
-                type: this.itemType
-            });
-            
-            if (!createdItem) {
-                throw new Error('Failed to create item');
+            if (this.isEditMode) {
+                itemData.system = this.existingItem.system ?? {};
+                itemData.img = this.existingItem.img || itemData.img;
+                await updateArtificerItem(this.existingItem, itemData, artificerData);
+                await this.close();
+                ui.notifications.info(`Updated ${itemData.name}`);
+            } else {
+                const createdItem = await createArtificerItem(itemData, artificerData, {
+                    type: this.itemType
+                });
+                if (!createdItem) throw new Error('Failed to create item');
+                await this.close();
+                ui.notifications.info(`Created ${itemData.name}`);
             }
-            
-            // Close form
-            await this.close();
-            
-            // Show notification
-            ui.notifications.info(`Created ${itemData.name}`);
         } catch (error) {
             const errorMessage = error.message || String(error);
             ui.notifications.error(`Error creating item: ${errorMessage}`);
