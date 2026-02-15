@@ -3,42 +3,53 @@
 /* ------------------------------------ */
 
 .artificer-item-sheet-section {
-    margin: 1rem 0;
-    padding: 0.75rem 1rem;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    margin: .3rem 0;
+    padding: 0.75rem 0.7rem;
     border-radius: 4px;
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--dnd5e-background-card);
+    background: rgba(124, 133, 0, 0.15);
+    box-shadow: 0 0 6px var(--dnd5e-shadow-45);
+    border: 0px solid var(--color-fieldset-border);
+    color: var(--color-text-primary);
 }
 
 .artificer-sheet-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.9rem;
 }
 
 .artificer-sheet-title {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 1.0rem;
     font-weight: 600;
 }
+.artificer-sheet-title i {
+    margin: 0px 4px 0px 0px;
+    font-size: 0.85rem;
+}
+
 
 .artificer-sheet-edit-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.75rem;
+    flex-shrink: 0;
+    padding: 0rem;
     cursor: pointer;
-    background: rgba(59, 130, 246, 0.2);
-    border: 1px solid rgba(59, 130, 246, 0.5);
-    border-radius: 4px;
-    color: #2563eb;
+    color: var(--color-text-light-6);
+    opacity: 0.7;
 }
 
 .artificer-sheet-edit-btn:hover {
-    background: rgba(59, 130, 246, 0.3);
+    color: var(--color-text-light-6, rgba(0, 0, 0, 0.8));
+    opacity: 1;
+}
+
+.artificer-sheet-edit-btn i {
+    font-size: 0.9rem;
 }
 
 .artificer-sheet-body {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
 }
 
 .artificer-sheet-row {
@@ -49,11 +60,16 @@
 
 .artificer-sheet-label {
     flex: 0 0 120px;
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--color-form-label);
+    font-weight: 600;
+
 }
 
 .artificer-sheet-value {
     flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px 2px 6px;
+    border-radius: 4px;
 }
 
 .artificer-sheet-empty {

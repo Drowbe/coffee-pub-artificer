@@ -55,7 +55,8 @@ function onRenderItemSheet(app, html) {
     // Avoid double-injection
     if (element.querySelector('.artificer-item-sheet-section')) return;
 
-    const section = buildArtificerSection(item, flags, type, app.options.editable ?? false);
+    const canEdit = item.canUserModify?.(game.user, 'update') ?? app.options?.editable ?? game.user.isGM;
+    const section = buildArtificerSection(item, flags, type, !!canEdit);
     const descriptionTab = findDescriptionTab(element);
     if (descriptionTab) {
         descriptionTab.appendChild(section);
@@ -122,7 +123,7 @@ function buildArtificerSection(item, flags, type, editable) {
     section.innerHTML = `
         <div class="artificer-sheet-header">
             <h4 class="artificer-sheet-title"><i class="fa-solid fa-hammer"></i> Artificer Properties</h4>
-            ${editable ? '<button type="button" class="artificer-sheet-edit-btn" data-action="edit-artificer"><i class="fa-solid fa-pen-to-square"></i> Edit</button>' : ''}
+            ${editable ? '<a class="artificer-sheet-edit-btn" data-action="edit-artificer" title="Edit"><i class="fa-solid fa-feather"></i></a>' : ''}
         </div>
         <div class="artificer-sheet-body">
             ${rowsHtml || '<p class="artificer-sheet-empty">No Artificer data.</p>'}
