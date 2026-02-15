@@ -4,6 +4,8 @@
 
 This document contains variable blocks for every ingredient from the source PDF, formatted for Coffee Pub Artificer import. Each block uses the template from `prompts/artificer-ingredient.txt`.
 
+**Biomes:** Use only official D&D 5e monster habitats (Arctic, Coastal, Desert, Forest, Grassland, Hill, Mountain, Swamp, Underdark, Underwater, Urban). Avoid non-leverageable descriptors like "Sites of frequent or large-scale death" or "Wyvern poison burned soil"—put those in descriptions only.
+
 **Import JSON mapping:** When building import JSON, map `Source` → `system.source.value` and `system.source.custom`. For non-official content, set both so the Configure Source dialog's "Custom Label" is populated (e.g. `"source": { "value": "Potion Brewing and Ingredient Gathering", "custom": "Potion Brewing and Ingredient Gathering" }`).
 
 ---
@@ -54,7 +56,7 @@ Secondary tags: Floral, Toxic
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Forest, Hills
+Biomes: Forest, Hill
 Weight: 0.1
 Price: 50
 Description: Its name is based on the shape and beauty of the flower—purest white, trumpet-shaped with yellow stems. However, it is a dangerous plant. Inhaling the scent directly from the flower forces a saving throw. Harvest: Herbalism Kit (DC 15). Quantity: 1d8 flowers.
@@ -86,7 +88,7 @@ Secondary tags: Floral, Fire
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Desert, Volcano
+Biomes: Desert, Mountain
 Weight: 0.1
 Price: 50
 Description: This tiny flower is bright red with a yellow centre, found only in hot environments. It deals 1d4 fire damage when ingested, but can be used to brew many fire-related potions. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 blossoms.
@@ -182,7 +184,7 @@ Secondary tags: Toxic, Shadow
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Sites of frequent or large-scale death
+Biomes: Swamp, Urban
 Weight: 0.1
 Price: 50
 Description: This tarry substance harvested from the dark boughs of the death's head willow is a powerful intoxicant. For each dose consumed, a creature must succeed on a DC 15 Constitution saving throw or become poisoned for 2d4 hours. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 doses.
@@ -214,7 +216,7 @@ Secondary tags: Floral, Toxic
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Wyvern poison burned soil
+Biomes: Grassland, Mountain
 Weight: 0.1
 Price: 150
 Description: These flowers are very rare, found only in specialized herbalist gardens or on farmland previously raided by wyverns. Wyvern poison can change the soil to produce them. Harvest: Herbalism Kit (DC 20). Quantity: 1d4+1 parts per plant.
@@ -246,7 +248,7 @@ Secondary tags: Toxic, Arcane
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Blightshore Caves
+Biomes: Underdark
 Weight: 0.1
 Price: 50
 Description: Bright red spores from Blightshrooms, growing exclusively in caves on the Blightshore. A creature exposed to a large dose must succeed on a DC 16 Constitution saving throw or suffer effects. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 doses.
@@ -278,7 +280,7 @@ Secondary tags: Root, Medicinal
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Grassland, Savannah
+Biomes: Grassland
 Weight: 0.1
 Price: 10
 Description: On first glance these roots look like purple carrots, but when cut or broken they ooze a blood-red liquid. If processed properly, used as long-lasting dye or food colouring. Harvest: Herbalism Kit (DC 10). Quantity: 1d8 roots.
@@ -342,7 +344,7 @@ Secondary tags: Toxic, Shadow
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Forest, dry areas of Swamp
+Biomes: Forest, Swamp
 Weight: 0.1
 Price: 50
 Description: Though unassuming with a slender white stalk and white-to-lightly-brown cap, death cap is dangerous. 12 hours after ingesting, a creature must make a DC 17 Constitution saving throw or suffer severe effects. Harvest: Herbalism Kit (DC 20). Quantity: 1d4 heads.
@@ -374,7 +376,7 @@ Secondary tags: Floral, Arcane
 Tier: 1
 Rarity: Common
 Quirk: 
-Biomes: Grassland, Coast
+Biomes: Grassland, Coastal
 Weight: 0.1
 Price: 5
 Description: A white, slightly silvery 5-pointed flower with an intoxicating smell. Soaked in warm water it creates a psychoactive liquid that smells and tastes like your favourite beverage. Harvest: Herbalism Kit (DC 10). Quantity: 2d6 flowers.
@@ -438,7 +440,7 @@ Secondary tags: Arcane, Fey
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Feywild, Forest
+Biomes: Forest
 Weight: 0.1
 Price: 50
 Description: This small pink mushroom is most often found in fairy rings. Ingesting it causes blindness for 1 minute on a failed DC 20 Constitution saving throw, along with vivid hallucinations. Harvest: Herbalism Kit (DC 15). Quantity: 1d4 stalks.
@@ -470,7 +472,7 @@ Secondary tags: Fire, Spice
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Desert, Savannah
+Biomes: Desert, Grassland
 Weight: 0.1
 Price: 10
 Description: Though the pale blue flowers suggest otherwise, the pea pods of this low shrub are scorchingly spicy—a sought-after spice in certain areas. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 pods.
@@ -502,7 +504,7 @@ Secondary tags: Floral, Fire
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Desert, Savannah
+Biomes: Desert, Grassland
 Weight: 0.1
 Price: 10
 Description: Named for its red and orange 7-leafed flowers whose petals point skywards, resembling a flame. When used carefully, these flowers have curative properties. Harvest: Herbalism Kit (DC 15). Quantity: 1d8 flowers.
@@ -566,7 +568,7 @@ Secondary tags: Water, Medicinal
 Tier: 1
 Rarity: Common
 Quirk: 
-Biomes: Coast, Swamp
+Biomes: Coastal, Swamp
 Weight: 0.1
 Price: 5
 Description: This emerald green kelp is found underwater and is always covered in tiny air bubbles, making it easy to spot by a trained herbalist. Harvest: Herbalism Kit (DC 10). Quantity: 2d4 leaves.
@@ -630,7 +632,7 @@ Secondary tags: Floral, Arcane
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Hills, Mountains
+Biomes: Hill, Mountain
 Weight: 0.1
 Price: 50
 Description: An extremely long-lived, slow-growing creeper vine named after its equally long-lasting flowers—large clusters of claw-shaped, slightly fluorescent turquoise flowers. Harvest: Herbalism Kit (DC 15). Quantity: 1d4 pods.
@@ -662,7 +664,7 @@ Secondary tags: Lightning, Environmental
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Coast, Mountains
+Biomes: Coastal, Mountain
 Weight: 0.1
 Price: 10
 Description: This light blue moss grows only where lightning has struck and gives off a faint static electric shock when touched. If rubbed on feet or shoes, it can increase speed. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 clumps.
@@ -694,7 +696,7 @@ Secondary tags: Root, Toxic
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Underground
+Biomes: Underdark
 Weight: 0.1
 Price: 10
 Description: This twisted pale root resembles a gnarled humanoid infant. It inflicts the poisoned condition for 1 hour when ingested. Harvest: Herbalism Kit (DC 15). Quantity: 1d4 roots.
@@ -726,7 +728,7 @@ Secondary tags: Arcane, Psychic
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Underground
+Biomes: Underdark
 Weight: 0.1
 Price: 10
 Description: This purple fungus has slimy, tentacle-looking stalks and smells of rotting flesh. A creature who eats it must make a DC 10 Constitution saving throw. On success, can cast detect thoughts. Harvest: Herbalism Kit (DC 10). Quantity: 1d4 stalks.
@@ -758,7 +760,7 @@ Secondary tags: Floral, Arcane
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Coast, Swamp
+Biomes: Coastal, Swamp
 Weight: 0.1
 Price: 50
 Description: This pale blue flower grows in pairs and blooms only at night with an ethereal glow. It sheds dim light for 5 feet when blooming, often mistaken for glowing eyes. Harvest: Herbalism Kit (DC 10). Quantity: 1d4×2 flowers.
@@ -790,7 +792,7 @@ Secondary tags: Leaf, Medicinal
 Tier: 1
 Rarity: Common
 Quirk: 
-Biomes: Forest, Savannah
+Biomes: Forest, Grassland
 Weight: 0.1
 Price: 5
 Description: This plant grows into a large shrub or small tree and reproduces via root systems—it has no flowers. The long, narrow leaves are used in teas and medicine. Harvest: Herbalism Kit (DC 10). Quantity: 2d6 leaves.
@@ -822,7 +824,7 @@ Secondary tags: Fire, Medicinal
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Desert, Savannah
+Biomes: Desert, Grassland
 Weight: 0.1
 Price: 10
 Description: Growing in arid areas in savannahs and deserts, this bush seems utterly unaffected by heat and sun. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 twigs.
@@ -918,7 +920,7 @@ Secondary tags: Arcane, Fey
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Fallen logs in non-dry climates, Feywild (Common DC 10)
+Biomes: Forest
 Weight: 0.1
 Price: 50
 Description: A tiny mushroom with a bright blue cap, white stalk and gills—hard to miss. At night, bioluminescence makes them easy to find. Key ingredient in many mana potions. Harvest: Herbalism Kit (DC 15). Quantity: 1d12 stalks.
@@ -950,7 +952,7 @@ Secondary tags: Arcane, Fey
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Forest, Mountains, Hills
+Biomes: Forest, Mountain, Hill
 Weight: 0.1
 Price: 50
 Description: Appears ordinary—brown cap, black gills, white stem—until cut. The exposed flesh shifts from rosemary green to light blue, then through a rainbow of colours. Harvest: Herbalism Kit (DC 15). Quantity: 1d8 mushrooms.
@@ -1014,7 +1016,7 @@ Secondary tags: Metal, Piercing
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Arctic, Mountains
+Biomes: Arctic, Mountain
 Weight: 0.1
 Price: 50
 Description: This thorny vine is pale silver and hard as metal. Patches create difficult terrain and deal 1d6 piercing damage if moved through at normal speed. Harvest: Herbalism Kit (DC 15). Quantity: 1d6 thorns.
@@ -1046,7 +1048,7 @@ Secondary tags: Leaf, Thunder
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Swamp, Mountains, Forest
+Biomes: Swamp, Mountain, Forest
 Weight: 0.1
 Price: 10
 Description: This vine has sharp, stinging hairs. A creature touching them must make a DC 15 Wisdom saving throw or be overwhelmed by the urge to bellow a song at the top of their lungs. Harvest: Herbalism Kit (DC 15). Quantity: 2d4 leaves.
@@ -1078,7 +1080,7 @@ Secondary tags: Grass, Medicinal
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Grassland, Mountains
+Biomes: Grassland, Mountain
 Weight: 0.1
 Price: 10
 Description: Green, long-bladed grass with a pungent smell and flavour. Humanoids within 5 feet of uncut sourgrass must succeed on a DC 10 Constitution saving throw or become overwhelmed with nausea. Harvest: Herbalism Kit (DC 5). Quantity: 2d4 clumps.
@@ -1174,7 +1176,7 @@ Secondary tags: Seed, Life
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Forest, Coast
+Biomes: Forest, Coastal
 Weight: 0.1
 Price: 50
 Description: Rarely, ghost orchids produce a smaller pod holding a single white seed. Well known for properties in resurrection and healing potions. Harvest: Herbalism Kit (DC 10). Quantity: 1d4 seeds.
@@ -1206,7 +1208,7 @@ Secondary tags: Fruit, Medicinal
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Swamp, Coast, Riversides
+Biomes: Swamp, Coastal, Forest
 Weight: 0.1
 Price: 10
 Description: A pepper-shaped fruit with great digestive-aiding properties. Can be processed into Willowshade Oil. Harvest: Herbalism Kit (DC 15). Quantity: 1d8 fruit.
@@ -1238,7 +1240,7 @@ Secondary tags: Floral, Arcane
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Mountains
+Biomes: Mountain
 Weight: 0.1
 Price: 50
 Description: This white-grey flower blooms only on a full moon and at high altitudes. Canines within 10 feet must make a DC 15 Wisdom save or be forced to move away from it. Harvest: Herbalism Kit (DC 15). Quantity: 1d4 flowers.
@@ -1274,7 +1276,7 @@ Secondary tags: Lightning, Resonant
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: 
+Biomes: Coastal, Desert, Forest, Grassland, Hill, Mountain
 Weight: 0.5
 Price: 50
 Description: A piece of metal struck by lightning weighing at least 0.5 ounces. Coinage struck by lightning is excluded. No specific harvesting method—found or obtained through events.
@@ -1306,7 +1308,7 @@ Secondary tags: Arcane, Psychic
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Blightshore (Common DC 10 in Miskath Pit)
+Biomes: Underdark
 Weight: 1
 Price: 50
 Description: A geode covered in crystalline substance that can be extracted into soothsalts. Harvest: Pickaxe or Crowbar (DC 10, no modifier). Quantity: 1d4 geodes.
@@ -1342,7 +1344,7 @@ Secondary tags: Venom, Acid
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Nests beneath fields and forests
+Biomes: Grassland, Forest
 Weight: 0.1
 Price: 50
 Description: Mucus from an ankheg. A creature in contact must succeed on a DC 13 Constitution save or be poisoned for 1 minute; poisoned creature is paralyzed. Harvest: Poisoner's Kit (DC 15). Quantity: 1d4 vials. Creature: Dead or Incapacitated.
@@ -1374,7 +1376,7 @@ Secondary tags: MonsterBits
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Tropical Coastlines
+Biomes: Coastal
 Weight: 0.1
 Price: 50
 Description: Poison from the blue-ringed octopus. Bite: +4 to hit, 1 piercing and CON 14 save or 1d6 poison damage. Harvest: Poisoner's Kit (DC 15). Quantity: 1d4 vials. Creature: Dead or Incapacitated.
@@ -1406,7 +1408,7 @@ Secondary tags: Venom, Acid
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Caves, sewers, dungeons, forested swamps, battlefields, cemeteries
+Biomes: Underdark, Urban, Swamp, Forest
 Weight: 0.1
 Price: 150
 Description: Mucus from a carrion crawler. Contact requires DC 13 Constitution save or poisoned for 1 minute; poisoned creature is paralyzed. Harvest: Poisoner's Kit (DC 20). Quantity: 1d4 vials. Creature: Dead or Incapacitated.
@@ -1438,7 +1440,7 @@ Secondary tags: Blood, Arcane
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Where Death's Head Willows grow
+Biomes: Swamp
 Weight: 0.1
 Price: 150
 Description: Blood from the Dracula Parrot, which feeds only on Death's Head Willows. Harvest: Alchemist's Kit (DC 10). Quantity: 1d4 vials. Creature: Dead or Incapacitated.
@@ -1630,7 +1632,7 @@ Secondary tags: Fire, Arcane
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Desert, Volcano
+Biomes: Desert, Mountain
 Weight: 0.1
 Price: 150
 Description: Essence of a fire elemental. Harvest: Alchemist's Kit (DC 15). Quantity: 1d6 embers. Creature: Trade, Dead, or Incapacitated.
@@ -1694,7 +1696,7 @@ Secondary tags: Bone
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Hills/Forests (Hill), Arctic (Frost), Caves (Stone), Volcanoes (Fire), High mountains (Cloud), Extreme altitude (Storm)
+Biomes: Hill, Forest, Arctic, Underdark, Mountain
 Weight: 0.5
 Price: 150
 Description: A sliver of fingernail from a giant. Type determines Potion of Giant Strength effect. Harvest: Knife (DC 10). Quantity: 7 nails. Creature: Dead, Incapacitated, or trade.
@@ -1790,7 +1792,7 @@ Secondary tags:
 Tier: 2
 Rarity: Uncommon
 Quirk: 
-Biomes: Coast, Desert, Forest, Grassland, Hill
+Biomes: Coastal, Desert, Forest, Grassland, Hill
 Weight: 0.1
 Price: 10
 Description: Tufts of hair from a giant wolf spider. Harvest: Knife. Quantity: 1d8 tufts. Creature: Dead or Incapacitated.
@@ -1854,7 +1856,7 @@ Secondary tags: Arcane
 Tier: 4
 Rarity: Very Rare
 Quirk: 
-Biomes: Varies
+Biomes: Coastal, Desert, Forest, Grassland, Hill, Mountain, Swamp, Underdark, Urban
 Weight: 0.5
 Price: 150
 Description: The heart of an imp. Harvest: Knife (DC 15). Quantity: 1 heart. Creature: Dead.
@@ -1886,7 +1888,7 @@ Secondary tags: Arcane
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Locations of Magical Learning, Underdark
+Biomes: Urban, Underdark
 Weight: 0.1
 Price: 50
 Description: When used as eyedrops, provides 1d4 hours of darkvision. Harvest: None (trade or collect). Quantity: 1d4 vials. Creature: Dead, Incapacitated, or trade.
@@ -2014,7 +2016,7 @@ Secondary tags: Bone
 Tier: 3
 Rarity: Rare
 Quirk: 
-Biomes: Coast, Forest, Swamp, Underdark, Urban
+Biomes: Coastal, Forest, Swamp, Underdark, Urban
 Weight: 0.1
 Price: 50
 Description: Claws from a skulk. Harvest: Knife (DC 10). Quantity: 1d10 claws. Creature: Dead.
@@ -2046,7 +2048,7 @@ Secondary tags: Blood, Arcane
 Tier: 5
 Rarity: Legendary
 Quirk: 
-Biomes: Varies
+Biomes: Coastal, Desert, Forest, Grassland, Hill, Mountain, Swamp, Underdark, Urban
 Weight: 0.1
 Price: 500
 Description: Blood from a true dragon. Quantity depends on dragon size when dead; 1d4 when trading. Harvest: Knife (DC 10). Creature: Dead, Incapacitated, or Trade.
@@ -2078,7 +2080,7 @@ Secondary tags: MonsterBits
 Tier: 5
 Rarity: Legendary
 Quirk: 
-Biomes: Hills, Mountains
+Biomes: Hill, Mountain
 Weight: 0.1
 Price: 500
 Description: Weapon-coated: DC 15 CON save, 24 (7d6) poison damage on fail. Harvest: Poisoner's Kit (DC 15). Quantity: 1d8 vials. Creature: Dead or Incapacitated.
