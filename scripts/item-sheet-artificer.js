@@ -15,6 +15,27 @@ function registerItemSheetIntegration() {
 }
 
 /**
+ * Detect config/sub-sheets (Configure Source, Sheet Configuration, On-Use Macros, etc.) — skip injection.
+ * Only inject into the main item sheet's Description tab.
+ * @param {Application} app
+ * @returns {boolean}
+ */
+function isConfigOrSubSheet(app) {
+    const title = (app.options?.window?.title ?? app.title ?? '').toLowerCase();
+    const id = (app.id ?? app.options?.id ?? '').toLowerCase();
+    const className = (app.constructor?.name ?? '').toLowerCase();
+    return (
+        title.includes('configure source') ||
+        title.includes('sheet configuration') ||
+        id.includes('source-config') ||
+        id.includes('sourceconfig') ||
+        id.includes('sheet-config') ||
+        className.includes('sourceconfig') ||
+        className.includes('sheetconfig')
+    );
+}
+
+/**
  * @param {DocumentSheetV2} app - The sheet application
  * @param {HTMLElement} html - The rendered HTML element
  */
@@ -22,6 +43,7 @@ function onRenderItemSheet(app, html) {
     const item = app.object ?? app.document ?? app.item;
     if (!item) return;
     if (app.document?.documentName && app.document.documentName !== 'Item') return;
+    if (isConfigOrSubSheet(app)) return;
 
     const element = html instanceof HTMLElement ? html : html[0];
     if (!element) return;
@@ -34,34 +56,26 @@ function onRenderItemSheet(app, html) {
     if (element.querySelector('.artificer-item-sheet-section')) return;
 
     const section = buildArtificerSection(item, flags, type, app.options.editable ?? false);
-    const insertTarget = findInsertTarget(element);
-    if (insertTarget) {
-        insertTarget.after(section);
-    } else {
-        element.appendChild(section);
+    const descriptionTab = findDescriptionTab(element);
+    if (descriptionTab) {
+        descriptionTab.appendChild(section);
     }
 }
 
 /**
- * Find a suitable place to insert the Artificer section (after description/details area).
+ * Find the Description tab content container. Only inject here so Artificer Properties
+ * appears solely on the Description tab of the main item sheet.
  * @param {HTMLElement} root
  * @returns {HTMLElement|null}
  */
-function findInsertTarget(root) {
-    // Tidy5e: data-tidy-sheet-part="description" or similar
+function findDescriptionTab(root) {
+    // Tidy5e: data-tidy-sheet-part="description"
     const tidyDesc = root.querySelector('[data-tidy-sheet-part="description"]');
     if (tidyDesc) return tidyDesc;
 
-    // Default dnd5e: .tab[data-tab="description"] or .item-properties
+    // Default dnd5e: .tab[data-tab="description"] (the Description tab panel)
     const descTab = root.querySelector('.tab[data-tab="description"]');
     if (descTab) return descTab;
-
-    const props = root.querySelector('.item-properties');
-    if (props) return props;
-
-    // Fallback: first .form-group or form
-    const formGroup = root.querySelector('.form-group');
-    if (formGroup) return formGroup;
 
     return null;
 }
