@@ -45,6 +45,8 @@
             {{> partials/form-field name="itemPrice" label="Price (GP)" type="text" value=itemPrice placeholder="0"}}
             {{> partials/form-field name="itemRarity" label="Rarity" type="select" isSelect=true options=rarityOptions}}
             {{> partials/form-field name="itemDescription" label="Description" type="textarea" isTextarea=true value=itemDescription placeholder="Item description..."}}
+            {{> partials/form-field name="sourceCustom" label="Source (Custom Label)" type="text" value=sourceCustom placeholder="Artificer" title="Appears in Configure Source → Custom Label"}}
+            {{> partials/form-field name="sourceLicense" label="License" type="text" value=sourceLicense placeholder="" title="License for the item source (e.g. OGL, CC-BY). Appears in Configure Source."}}
         </div>
 
         {{!-- Artificer-Specific Fields --}}

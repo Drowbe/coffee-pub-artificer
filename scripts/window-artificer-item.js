@@ -156,6 +156,8 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             itemRarity: this.itemData?.rarity || 'Common',
             rarityOptions: rarityOptions,
             itemDescription: this.itemData?.description || '',
+            sourceCustom: this.itemData?.system?.source?.custom || 'Artificer',
+            sourceLicense: this.itemData?.system?.source?.license || '',
             primaryTag: this.itemData?.flags?.[MODULE.ID]?.primaryTag || '',
             secondaryTags: (this.itemData?.flags?.[MODULE.ID]?.secondaryTags || []).join(', '),
             tier: this.itemData?.flags?.[MODULE.ID]?.tier || 1,
@@ -276,7 +278,14 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             price: parseFloat(formObject.itemPrice) || 0, // Ensure price is a number
             rarity: formObject.itemRarity || 'Common',
             description: formObject.itemDescription || '',
-            img: ''
+            img: '',
+            system: {
+                source: {
+                    value: formObject.sourceCustom || 'Artificer',
+                    custom: formObject.sourceCustom || 'Artificer',
+                    license: formObject.sourceLicense || ''
+                }
+            }
         };
         
         // Parse artificer data
@@ -307,7 +316,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             validateArtificerData(artificerData, this.itemType);
             
             if (this.isEditMode) {
-                itemData.system = this.existingItem.system ?? {};
+                itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, {
+                    source: {
+                        value: formObject.sourceCustom || 'Artificer',
+                        custom: formObject.sourceCustom || 'Artificer',
+                        license: formObject.sourceLicense || ''
+                    }
+                });
                 itemData.img = this.existingItem.img || itemData.img;
                 await updateArtificerItem(this.existingItem, itemData, artificerData);
                 await this.close();

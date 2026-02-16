@@ -112,7 +112,8 @@ function buildItemSystem(payload) {
         },
         source: {
             value: payload.system?.source?.value ?? payload.system?.source?.custom ?? '',
-            custom: payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer'
+            custom: payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer',
+            license: payload.system?.source?.license ?? ''
         },
         quantity: payload.system?.quantity ?? 1,
         weight,
@@ -122,23 +123,37 @@ function buildItemSystem(payload) {
     };
 
     if (payload.type === 'consumable' || (hasSystem && (payload.system.consumableType || payload.system.type?.value))) {
-        // D&D 5e 5.5 schema: type.value (not consumableType), uses.autoDestroy (not destroyOnEmpty), properties (mgc = magical)
+        // D&D 5e 5.5 schema mappings (import JSON uses legacy names; we convert)
         const consumableType = payload.system?.type?.value ?? payload.system?.consumableType ?? 'other';
         const autoDestroy = payload.system?.uses?.autoDestroy ?? payload.system?.destroyOnEmpty ?? true;
         const isMagical = payload.system?.consumptionMagical ?? (Array.isArray(payload.system?.properties) && payload.system.properties.includes('mgc'));
+        // foodType → type.subtype when consumableType is "food"
+        const foodType = payload.system?.foodType ?? '';
+        const subtype = payload.system?.type?.subtype ?? (consumableType === 'food' ? foodType : '');
         defaults.type = {
             value: consumableType,
-            subtype: payload.system?.type?.subtype ?? '',
+            subtype,
             baseItem: payload.system?.type?.baseItem ?? ''
         };
+        // recoveryPeriod → uses.recovery (D&D 5e uses recovery array, not recoveryPeriod)
+        const recoveryPeriod = payload.system?.recoveryPeriod ?? payload.system?.uses?.recovery?.[0]?.period ?? 'none';
+        const recoveryPeriodNorm = String(recoveryPeriod).toLowerCase().replace(/\s+/g, '');
+        const recoveryPeriodMap = {
+            none: 'none',
+            never: 'none',
+            longrest: 'longRest',
+            shortrest: 'shortRest',
+            dawn: 'dawn'
+        };
+        const recoveryPeriodVal = recoveryPeriodMap[recoveryPeriodNorm] ?? 'none';
         const usesIn = payload.system?.uses ?? {};
         defaults.uses = {
             value: usesIn.value ?? 1,
             max: usesIn.max ?? 1,
             per: usesIn.per ?? 'charges',
-            autoDestroy
+            autoDestroy,
+            recovery: usesIn.recovery ?? [{ period: recoveryPeriodVal }]
         };
-        defaults.recoveryPeriod = payload.system?.recoveryPeriod ?? 'none';
         defaults.activities = Array.isArray(payload.system?.activities) ? [...payload.system.activities] : [];
         // Magical: D&D 5e uses properties set with "mgc"
         const existingProps = Array.isArray(payload.system?.properties) ? payload.system.properties : [];
@@ -153,13 +168,15 @@ function buildItemSystem(payload) {
         system = defaults;
     }
 
-    // Explicitly ensure source.value and source.custom are set (Configure Source → Custom Label)
+    // Explicitly ensure source.value, source.custom, and source.license are set (Configure Source dialog)
     const sourceValue = payload.system?.source?.value ?? payload.system?.source?.custom ?? '';
     const sourceCustom = payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer';
+    const sourceLicense = payload.system?.source?.license ?? '';
     system.source = {
         ...(typeof system.source === 'object' ? system.source : {}),
         value: sourceValue || system.source?.value || '',
-        custom: sourceCustom || system.source?.custom || 'Artificer'
+        custom: sourceCustom || system.source?.custom || 'Artificer',
+        license: sourceLicense || system.source?.license || ''
     };
 
     return system;
