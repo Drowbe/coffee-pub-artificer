@@ -41,7 +41,7 @@
         <div class="artificer-form-section">
             {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
             {{> partials/form-field name="itemType5e" label="D&D 5e Type" type="select" isSelect=true options=itemType5eOptions}}
-            {{> partials/form-field name="itemWeight" label="Weight" type="number" isNumber=true value=itemWeight placeholder="0" min="0"}}
+            {{> partials/form-field name="itemWeight" label="Weight" type="number" isNumber=true value=itemWeight placeholder="0" min="0" step="any"}}
             {{> partials/form-field name="itemPrice" label="Price (GP)" type="text" value=itemPrice placeholder="0"}}
             {{> partials/form-field name="itemRarity" label="Rarity" type="select" isSelect=true options=rarityOptions}}
             {{> partials/form-field name="itemDescription" label="Description" type="textarea" isTextarea=true value=itemDescription placeholder="Item description..."}}
@@ -56,7 +56,7 @@
         <div class="artificer-form-section">
             {{> partials/form-field name="primaryTag" label="Primary Tag" type="text" value=primaryTag placeholder="Primary tag (required)"}}
             {{> partials/form-field name="secondaryTags" label="Secondary Tags" type="text" value=secondaryTags placeholder="Tag1, Tag2 (comma-separated)"}}
-            {{> partials/form-field name="tier" label="Tier" type="number" isNumber=true value=tier placeholder="1" min="1" max="10"}}
+            {{> partials/form-field name="tier" label="Tier (1–10)" type="number" isNumber=true value=tier placeholder="1" min="1" max="10" step="1" title="Power/quality level (1–10). Higher tiers affect crafting outcomes, quality, and stability. Tags define category; tier defines potency."}}
             
             {{#if isIngredient}}
             {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}

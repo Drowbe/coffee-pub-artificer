@@ -5,7 +5,7 @@
 {{!-- For number: {{> partials/form-field name="fieldName" label="Label" type="number" value=fieldValue min="0" max="10"}} --}}
 <div class="artificer-form-group">
     {{#if label}}
-    <label for="{{name}}">{{label}}</label>
+    <label for="{{name}}" {{#if title}}title="{{title}}"{{/if}}>{{label}}</label>
     {{/if}}
     <div class="artificer-form-fields">
         {{#if isTextarea}}
@@ -17,7 +17,7 @@
             {{/each}}
         </select>
         {{else if isNumber}}
-        <input type="number" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}" {{#if min}}min="{{min}}"{{/if}} {{#if max}}max="{{max}}"{{/if}}>
+        <input type="number" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}" {{#if min}}min="{{min}}"{{/if}} {{#if max}}max="{{max}}"{{/if}} {{#if step}}step="{{step}}"{{/if}}>
         {{else}}
         <input type="{{type}}" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}">
         {{/if}}
