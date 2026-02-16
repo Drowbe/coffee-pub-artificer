@@ -14,12 +14,11 @@ const PROMPT_URL = 'modules/coffee-pub-artificer/prompts/artificer-ingredient.tx
  * Import Items Modal - Browse file, paste JSON, or copy prompt template
  */
 export class ArtificerImportWindow extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
         id: 'artificer-import-window',
-        title: 'Import Items from JSON',
-        width: 560,
-        height: 'auto',
-        resizable: true,
+        classes: ['window-artificer-import', 'artificer-import-window'],
+        position: { width: 560, height: 520 },
+        window: { title: 'Import Items from JSON', resizable: true, minimizable: true },
         tag: 'form',
         form: {
             handler: ArtificerImportWindow.handleForm,
@@ -34,26 +33,35 @@ export class ArtificerImportWindow extends HandlebarsApplicationMixin(Applicatio
         }
     };
 
+    constructor(options = {}) {
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? `${ArtificerImportWindow.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        super(opts);
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
-        const root = html.tagName === 'FORM' ? html : html.querySelector('form') ?? html;
+        if (html?.jquery ?? typeof html?.find === 'function') {
+            html = html[0] ?? html.get?.(0) ?? html;
+        }
+        const root = html?.matches?.('.artificer-window') ? html : html?.querySelector?.('.artificer-window') ?? (html?.tagName === 'FORM' ? html : html?.querySelector?.('form') ?? html);
 
-        root.querySelector('[data-action="cancel"]')?.addEventListener('click', (e) => {
+        root?.querySelector?.('[data-action="cancel"]')?.addEventListener('click', (e) => {
             e.preventDefault();
             this.close();
         });
 
-        root.querySelector('[data-action="copy-prompt"]')?.addEventListener('click', (e) => {
+        root?.querySelector?.('[data-action="copy-prompt"]')?.addEventListener('click', (e) => {
             e.preventDefault();
             this._copyPromptToClipboard();
         });
 
-        root.querySelector('[data-action="select-file"]')?.addEventListener('click', (e) => {
+        root?.querySelector?.('[data-action="select-file"]')?.addEventListener('click', (e) => {
             e.preventDefault();
             this._triggerFileSelect();
         });
 
-        const fileInput = root.querySelector('#artificer-import-file-input');
+        const fileInput = root?.querySelector?.('#artificer-import-file-input');
         fileInput?.addEventListener('change', (e) => this._onFileSelected(e));
     }
 

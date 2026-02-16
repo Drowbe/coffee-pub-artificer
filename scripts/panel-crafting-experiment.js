@@ -14,12 +14,11 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Crafting Experiment Panel - Minimal prototype UI
  */
 export class CraftingExperimentPanel extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
         id: 'artificer-crafting-experiment',
-        title: 'Artificer Experimentation',
-        width: 480,
-        height: 'auto',
-        resizable: true,
+        classes: ['window-artificer-experiment', 'artificer-crafting-experiment'],
+        position: { width: 480, height: 400 },
+        window: { title: 'Artificer Experimentation', resizable: true, minimizable: true },
         actions: {
             seed: CraftingExperimentPanel._actionSeed,
             craft: CraftingExperimentPanel._actionCraft,
@@ -36,13 +35,15 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
     };
 
     constructor(options = {}) {
-        super(options);
+        const opts = foundry.utils.mergeObject({}, options);
+        opts.id = opts.id ?? `${CraftingExperimentPanel.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        super(opts);
         this.selectedActorId = options.actorId || null;
         this.selectedSlots = [null, null, null];
         this.lastResult = null;
     }
 
-    async _prepareContext() {
+    async getData() {
         const actors = this._getActorOptions();
         const actor = actors.find(a => a.selected) ? game.actors.get(actors.find(a => a.selected).id) : null;
 
@@ -80,6 +81,11 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
             canCraft,
             lastResult: this.lastResult
         };
+    }
+
+    async _prepareContext(options = {}) {
+        const base = await super._prepareContext?.(options) ?? {};
+        return foundry.utils.mergeObject(base, await this.getData(options));
     }
 
     _getActorOptions() {
@@ -136,31 +142,35 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
         if (idx !== undefined) this._removeFromSlot(idx);
     }
 
-    _attachCraftingListeners() {
-        const root = this.window?.content ?? this.element;
-        if (!root) return;
+    _attachCraftingListeners(root) {
+        const el = root ?? this.window?.content ?? this.element;
+        if (!el) return;
 
-        root.querySelector('#crafting-actor')?.addEventListener('change', (e) => {
+        el.querySelector('#crafting-actor')?.addEventListener('change', (e) => {
             this.selectedActorId = e.target.value;
             this.selectedSlots = [null, null, null];
             this.render();
         });
 
-        root.querySelectorAll('.crafting-ingredient-item').forEach(el => {
-            el.addEventListener('click', () => this._addToSlot(el.dataset.itemId));
+        el.querySelectorAll('.crafting-ingredient-item').forEach(item => {
+            item.addEventListener('click', () => this._addToSlot(item.dataset.itemId));
         });
 
-        root.querySelectorAll('.slot-item').forEach(el => {
-            el.addEventListener('click', (e) => {
+        el.querySelectorAll('.slot-item').forEach(slot => {
+            slot.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this._removeFromSlot(el.closest('.crafting-slot')?.dataset?.slotIndex);
+                this._removeFromSlot(slot.closest('.crafting-slot')?.dataset?.slotIndex);
             });
         });
     }
 
     activateListeners(html) {
         super.activateListeners(html);
-        this._attachCraftingListeners();
+        if (html?.jquery ?? typeof html?.find === 'function') {
+            html = html[0] ?? html.get?.(0) ?? html;
+        }
+        const root = html?.matches?.('.artificer-crafting-panel') ? html : html?.querySelector?.('.artificer-crafting-panel') ?? html;
+        this._attachCraftingListeners(root);
     }
 
     _getActor() {

@@ -7,12 +7,19 @@ import { ArtificerItemForm } from './window-artificer-item.js';
 
 /**
  * Inject Artificer tags section into item sheets when the item has artificer flags.
- * Registers on renderDocumentSheetV2 (Foundry v13) and renderItemSheet (legacy) for compatibility.
+ * - renderItemSheet: legacy AppV1 Item sheets
+ * - renderDocumentSheetV2: v13 DocumentSheetV2 (Item, Actor, Image, Journal, etc.) - we must guard for Item only
  */
 function registerItemSheetIntegration() {
-    Hooks.on('renderDocumentSheetV2', onRenderItemSheet);
     Hooks.on('renderItemSheet', onRenderItemSheet);
+    Hooks.on('renderDocumentSheetV2', onRenderDocumentSheetV2);
     document.body.addEventListener('click', onDocumentClick, true);
+}
+
+/** Strict guard: only run for Item documents. Prevents affecting Actor, Image, Journal, Tile, etc. */
+function onRenderDocumentSheetV2(app, html) {
+    if (app.document?.documentName !== 'Item') return;
+    onRenderItemSheet(app, html);
 }
 
 function onDocumentClick(event) {

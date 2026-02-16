@@ -15,17 +15,19 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Unified form for creating ingredients, components, and essences
  */
 export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
         id: 'artificer-item-form',
-        title: 'Artificer Item',
-        width: 600,
-        height: 'auto',
-        resizable: true,
-        tag: 'form', // ApplicationV2 hosts the single form element
+        classes: ['window-artificer-item', 'artificer-item-form'],
+        position: { width: 600, height: 560 },
+        window: { title: 'Artificer Item', resizable: true, minimizable: true },
+        tag: 'form',
         form: {
             handler: ArtificerItemForm.handleForm,
             submitOnChange: false,
             closeOnSubmit: false
+        },
+        actions: {
+            submit: ArtificerItemForm.onSubmitAction
         }
     });
 
@@ -37,7 +39,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
-        opts.title = (options.mode === 'edit' && options.item) ? 'Edit Artificer Item' : 'Create Artificer Item';
+        const isEdit = (options.mode === 'edit' && options.item);
+        opts.id = opts.id ?? `${ArtificerItemForm.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        opts.window = foundry.utils.mergeObject(opts.window ?? {}, {
+            title: isEdit ? 'Edit Artificer Item' : 'Create Artificer Item'
+        });
         super(opts);
         this.itemType = options.itemType || 'ingredient';
         this.itemData = options.itemData || null;
@@ -50,12 +56,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     /**
-     * Prepare template context
-     * @param {Object} options - Render options
-     * @returns {Promise<Object>} Template context
+     * Template context for Handlebars (AppV2 best practice: use getData).
+     * _prepareContext delegates here for mixins that call it.
      */
-    async _prepareContext(options = {}) {
-        const context = await super._prepareContext(options);
+    async getData(options = {}) {
+        const context = {};
         
         // Item type options
         const itemTypeNames = {
@@ -167,27 +172,32 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         return mergedContext;
     }
 
-    /**
-     * Render the application
-     * @param {Object} options - Render options
-     * @returns {Promise<ApplicationV2>}
-     */
-    async render(options = {}) {
-        return await super.render(options);
+    async _prepareContext(options = {}) {
+        const base = await super._prepareContext?.(options) ?? {};
+        return foundry.utils.mergeObject(base, await this.getData(options));
     }
 
     /**
-     * Activate event listeners
-     * @param {HTMLElement} html - Root HTML element
+     * Activate event listeners (AppV2: normalize html, resolve root)
      */
     activateListeners(html) {
         super.activateListeners(html);
+        if (html?.jquery ?? typeof html?.find === 'function') {
+            html = html[0] ?? html.get?.(0) ?? html;
+        }
+        const root = html?.matches?.('.artificer-window') ? html : html?.querySelector?.('.artificer-window') ?? html;
+        const form = root?.tagName === 'FORM' ? root : root?.querySelector?.('form');
+        const query = (selector) => (form ?? root)?.querySelector?.(selector);
         
-        // Root element is the form (tag: 'form'); fall back to querying within html
-        const form = html?.tagName === 'FORM' ? html : html?.querySelector?.('form');
-        const query = (selector) => form?.querySelector?.(selector);
+        // Explicitly wire submit: ApplicationV2 actions may not fire when app is embedded (e.g. Blacksmith bar)
+        const submitBtn = query('[data-action="submit"]');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.submit();
+            });
+        }
         
-        // Type selector change - updates form when type changes
         const typeSelect = query('#itemType');
         if (typeSelect) {
             typeSelect.addEventListener('change', (event) => {
@@ -196,7 +206,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             });
         }
         
-        // Cancel button (direct binding so it always fires)
         const cancelButton = query('[data-action="cancel"]');
         if (cancelButton) {
             cancelButton.addEventListener('click', (event) => {
@@ -207,10 +216,18 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     /**
-     * ApplicationV2 form handler entrypoint (bound to the instance)
+     * ApplicationV2 action: triggers programmatic form submit (used when native submit doesn't fire).
+     */
+    static async onSubmitAction(event) {
+        event?.preventDefault?.();
+        return this.submit();
+    }
+
+    /**
+     * ApplicationV2 form handler (invoked by submit() or native form submit).
      * @param {SubmitEvent} event
      * @param {HTMLFormElement} form
-     * @param {FormData} formData
+     * @param {FormData|FormDataExtended} formData
      */
     static async handleForm(event, form, formData) {
         event.preventDefault();
@@ -223,19 +240,22 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
      * @param {FormData} formData
      */
     async _handleSubmit(formData) {
-        const formObject = {};
-        
-        // Convert FormData to object
-        for (const [key, value] of formData.entries()) {
-            if (key.endsWith('[]')) {
-                const arrayKey = key.slice(0, -2);
-                if (!formObject[arrayKey]) formObject[arrayKey] = [];
-                formObject[arrayKey].push(value);
-            } else {
-                formObject[key] = value;
+        const formObject = formData?.object ?? (() => {
+            const obj = {};
+            if (formData?.entries) {
+                for (const [key, value] of formData.entries()) {
+                    if (key.endsWith('[]')) {
+                        const arrayKey = key.slice(0, -2);
+                        if (!obj[arrayKey]) obj[arrayKey] = [];
+                        obj[arrayKey].push(value);
+                    } else {
+                        obj[key] = value;
+                    }
+                }
             }
-        }
-        
+            return obj;
+        })();
+
         // Track current item type from the form
         this.itemType = formObject.itemType || this.itemType || 'ingredient';
 
