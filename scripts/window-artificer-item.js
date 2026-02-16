@@ -15,7 +15,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Unified form for creating ingredients, components, and essences
  */
 export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: 'artificer-item-form',
         classes: ['window-artificer-item', 'artificer-item-form'],
         position: { width: 600, height: 560 },
@@ -185,19 +185,28 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         if (html?.jquery ?? typeof html?.find === 'function') {
             html = html[0] ?? html.get?.(0) ?? html;
         }
-        const root = html?.matches?.('.artificer-window') ? html : html?.querySelector?.('.artificer-window') ?? html;
-        const form = root?.tagName === 'FORM' ? root : root?.querySelector?.('form');
-        const query = (selector) => (form ?? root)?.querySelector?.(selector);
-        
-        // Explicitly wire submit: ApplicationV2 actions may not fire when app is embedded (e.g. Blacksmith bar)
-        const submitBtn = query('[data-action="submit"]');
-        if (submitBtn) {
-            submitBtn.addEventListener('click', (e) => {
+        const root = this.element ?? html?.closest?.('form') ?? html?.querySelector?.('.artificer-window') ?? html;
+        const query = (sel) => root?.querySelector?.(sel);
+
+        // Event delegation: submit button may not be found by direct query when app is embedded (Blacksmith bar)
+        root?.addEventListener?.('click', (e) => {
+            if (e.target?.closest?.('[data-action="submit"]')) {
                 e.preventDefault();
-                this.submit();
-            });
-        }
-        
+                e.stopPropagation();
+                const form = this.form ?? this.element;
+                if (form && typeof this.submit === 'function') {
+                    this.submit().catch((err) => {
+                        ui.notifications?.error?.(err?.message ?? 'Submit failed');
+                        console.error('Artificer Item Form submit error:', err);
+                    });
+                } else if (form) {
+                    // Fallback: call handler directly if submit() no-ops (e.g. form getter returns null)
+                    const fd = new FormData(form);
+                    this._handleSubmit(fd);
+                }
+            }
+        });
+
         const typeSelect = query('#itemType');
         if (typeSelect) {
             typeSelect.addEventListener('change', (event) => {

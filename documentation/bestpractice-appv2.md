@@ -13,10 +13,13 @@ These notes capture the working pattern we used to get the Artificer item form s
 - Mark secondary buttons (Cancel, etc.) as `type="button"` to avoid accidental submit.
 - In the handler, use the provided `FormDataExtended` and avoid re-querying the DOM unless necessary.
 
+## Critical: Do Not Mutate Parent Defaults
+**`mergeObject(target, source)` mutates `target`.** Never pass `super.DEFAULT_OPTIONS` as the first argument — that mutates the shared ApplicationV2 base defaults and affects ALL ApplicationV2 windows (changelog purge, Flush Chat Log, etc.). Use `mergeObject({}, super.DEFAULT_OPTIONS ?? {}, { ... })` or `mergeObject(mergeObject({}, super.DEFAULT_OPTIONS ?? {}), { ... })` so you merge into a copy.
+
 ## Minimal skeleton
 ```js
 export class MyApp extends ApplicationV2 {
-  static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
+  static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
     id: 'my-app',
     title: 'My App',
     tag: 'form',

@@ -14,7 +14,7 @@ const PROMPT_URL = 'modules/coffee-pub-artificer/prompts/artificer-ingredient.tx
  * Import Items Modal - Browse file, paste JSON, or copy prompt template
  */
 export class ArtificerImportWindow extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: 'artificer-import-window',
         classes: ['window-artificer-import', 'artificer-import-window'],
         position: { width: 560, height: 520 },

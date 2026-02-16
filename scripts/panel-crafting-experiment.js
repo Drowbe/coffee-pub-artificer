@@ -14,7 +14,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  * Crafting Experiment Panel - Minimal prototype UI
  */
 export class CraftingExperimentPanel extends HandlebarsApplicationMixin(ApplicationV2) {
-    static DEFAULT_OPTIONS = foundry.utils.mergeObject(super.DEFAULT_OPTIONS ?? {}, {
+    static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: 'artificer-crafting-experiment',
         classes: ['window-artificer-experiment', 'artificer-crafting-experiment'],
         position: { width: 480, height: 400 },
