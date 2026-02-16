@@ -2,10 +2,33 @@
    ===== IMPORT ITEMS WINDOW ========================================
    ================================================================== */
 
-.artificer-import-window .artificer-import-hint {
-    margin: 0 0 10px 0;
-    font-size: 0.9em;
-    color: rgba(255, 255, 255, 0.8);
+/* Layout: header + content (flex) + actions locked to bottom */
+.artificer-import-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+}
+
+.artificer-import-layout .artificer-content.artificer-import-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 12px;
+}
+
+.artificer-import-layout .artificer-form-actions {
+    flex-shrink: 0;
+}
+
+/* Compact toolbar: Copy Prompt + Load File */
+.artificer-import-toolbar {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-bottom: 8px;
 }
 
 .artificer-import-window .artificer-button-copy {
@@ -22,41 +45,20 @@
     background: rgba(40, 80, 50, 0.9) !important;
     color: rgba(255, 255, 255, 0.95) !important;
     border: 1px solid rgba(60, 120, 70, 0.9);
-    margin-bottom: 10px;
 }
 
 .artificer-import-window .artificer-button-select:hover {
     background: rgba(50, 100, 60, 1) !important;
 }
 
-.artificer-import-window .artificer-import-textarea-label {
-    display: block;
-    font-size: 0.85em;
-    margin-bottom: 4px;
-    color: rgba(255, 255, 255, 0.9);
-}
-
+/* Textarea: fills remaining space, scrolls internally */
 .artificer-import-window .artificer-import-textarea {
+    flex: 1;
+    min-height: 120px;
     width: 100% !important;
-    min-height: 180px;
-    resize: vertical;
+    resize: none;
+    overflow: auto;
     font-family: "Consolas", "Monaco", "Courier New", monospace;
     font-size: 0.9em;
-}
-
-.artificer-import-window .artificer-import-notes ul {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.artificer-import-window .artificer-import-notes li {
-    margin-bottom: 4px;
-    font-size: 0.9em;
-}
-
-.artificer-import-window .artificer-import-notes code {
-    background: rgba(0, 0, 0, 0.5);
-    padding: 1px 4px;
-    border-radius: 2px;
-    font-size: 0.9em;
+    padding: 8px;
 }
