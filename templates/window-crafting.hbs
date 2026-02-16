@@ -1,0 +1,123 @@
+<div class="artificer-crafting-window">
+    {{!-- Header --}}
+    <header class="crafting-window-header">
+        <h2><i class="fa-solid fa-hammer"></i> Artificer Crafting Station</h2>
+        <p class="crafting-window-subtitle">Combine ingredients in the bench. Tags determine the result. Use the right panel to learn combinations.</p>
+    </header>
+
+    {{!-- Three-zone layout: [ingredients] {bench} [feedback] --}}
+    <div class="crafting-three-zone">
+        {{!-- Zone 1: Thin ingredient list --}}
+        <aside class="zone-ingredients">
+            <div class="zone-header">Ingredients</div>
+            <div class="zone-ingredients-filters">
+                <select id="crafting-filter-family" title="Filter by family">
+                    {{#each familyOptions}}
+                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                </select>
+                <select id="crafting-filter-type" title="Filter by type">
+                    {{#each typeOptions}}
+                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                </select>
+                <input type="text" id="crafting-filter-search" placeholder="Search..." value="{{filterSearch}}" />
+            </div>
+            <div class="zone-ingredients-list">
+                {{#each ingredients}}
+                <div class="ingredient-row" data-action="addToSlot" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" title="{{this.tags}}">
+                    <img src="{{this.img}}" alt="" class="ingredient-row-img" />
+                    <div class="ingredient-row-info">
+                        <span class="ingredient-row-name">{{this.name}}</span>
+                        <span class="ingredient-row-tags">{{this.tags}}</span>
+                        <span class="ingredient-row-qty">×{{this.quantity}}</span>
+                    </div>
+                </div>
+                {{else}}
+                <div class="zone-empty">No ingredients. Import items or Seed (GM).</div>
+                {{/each}}
+            </div>
+            <div class="zone-ingredients-footer">
+                <span class="crafter-label">Crafting as: {{crafterName}}</span>
+                {{#if isGM}}
+                <button type="button" class="crafting-seed-btn" data-action="seed" title="Add test ingredients">Seed</button>
+                {{/if}}
+            </div>
+        </aside>
+
+        {{!-- Zone 2: Wide crafting bench --}}
+        <main class="zone-bench">
+            <div class="zone-header">Crafting Bench</div>
+            <p class="zone-desc">Click ingredients to add. Combine 1–3, then Craft.</p>
+            <div class="bench-slots">
+                {{#each slots}}
+                <div class="bench-slot" data-slot-index="{{@index}}">
+                    {{#if this.item}}
+                    <div class="bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" title="Click to remove">
+                        <img src="{{this.item.img}}" alt="" />
+                        <span class="slot-name">{{this.item.name}}</span>
+                        <span class="slot-tags">{{this.tags}}</span>
+                    </div>
+                    {{else}}
+                    <div class="bench-slot-empty">Empty</div>
+                    {{/if}}
+                </div>
+                {{/each}}
+            </div>
+            <div class="bench-actions">
+                <button type="button" class="crafting-craft-btn" data-action="craft" {{#unless canCraft}}disabled{{/unless}}>
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Craft
+                </button>
+                <button type="button" class="crafting-clear-btn" data-action="clear">
+                    <i class="fa-solid fa-eraser"></i> Clear
+                </button>
+            </div>
+        </main>
+
+        {{!-- Zone 3: Feedback and output --}}
+        <aside class="zone-feedback">
+            <div class="zone-header">Learn & Results</div>
+
+            {{!-- Tags in slots --}}
+            {{#if combinedTags.length}}
+            <div class="feedback-section">
+                <div class="feedback-label">Tags in bench:</div>
+                <div class="feedback-tags">
+                    {{#each combinedTags}}
+                    <span class="tag-badge">{{this}}</span>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+
+            {{!-- Last result --}}
+            {{#if lastResult}}
+            <div class="feedback-section feedback-result {{#if lastResult.success}}result-success{{else}}result-fail{{/if}}">
+                <div class="feedback-label">Last result:</div>
+                {{#if lastResult.success}}
+                <div class="feedback-success"><i class="fa-solid fa-check"></i> {{lastResult.name}}</div>
+                <div class="feedback-detail">Tags used: {{lastCraftTagsStr}}</div>
+                {{else}}
+                <div class="feedback-fail"><i class="fa-solid fa-times"></i> {{lastResult.name}}</div>
+                <div class="feedback-detail">Tags used: {{lastCraftTagsStr}}</div>
+                <div class="feedback-hint">Try a known combination below.</div>
+                {{/if}}
+            </div>
+            {{/if}}
+
+            {{!-- Known combinations --}}
+            <div class="feedback-section">
+                <div class="feedback-label">Known combinations:</div>
+                <div class="feedback-known-list">
+                    {{#each knownCombinations}}
+                    <div class="known-row">
+                        <span class="known-tags">{{#each this.tags}}{{this}}{{#unless @last}} + {{/unless}}{{/each}}</span>
+                        <span class="known-arrow">→</span>
+                        <span class="known-result">{{this.result}}</span>
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>

@@ -15,6 +15,9 @@
 /* --- Crafting Panel ------------- */
 @import "crafting-panel.css";
 
+/* --- Crafting Window ------------- */
+@import "window-crafting.css";
+
 /* --- Import Window --------------- */
 @import "import-items.css";
 

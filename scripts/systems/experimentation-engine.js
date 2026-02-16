@@ -234,6 +234,23 @@ export class ExperimentationEngine {
 
 let _engine = null;
 
+/** Human-readable rules for UI (tag combos → result name) */
+const KNOWN_COMBINATIONS = [
+    { tags: ['Herb', 'Medicinal', 'Life'], result: 'Healing Potion' },
+    { tags: ['Herb', 'Medicinal'], result: 'Basic Remedy (no essence)' },
+    { tags: ['Metal', 'Ore'], result: 'Crude Metal Shard' },
+    { tags: ['Crystal', 'Arcane', 'Essence'], result: 'Minor Arcane Dust (Life/Heat/Cold/Shadow/Light/Electric)' },
+    { tags: ['*'], result: 'Experimenter\'s Sludge (fallback)' }
+];
+
+/**
+ * Get known tag combinations for display in crafting UI
+ * @returns {Array<{tags: string[], result: string}>}
+ */
+export function getKnownCombinations() {
+    return KNOWN_COMBINATIONS;
+}
+
 /**
  * Get singleton ExperimentationEngine
  * @returns {ExperimentationEngine}

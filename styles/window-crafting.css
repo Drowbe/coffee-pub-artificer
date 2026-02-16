@@ -1,0 +1,340 @@
+/* Artificer Crafting Window - Three-Zone Layout */
+
+.artificer-crafting-window {
+    padding: 0.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.crafting-window-header {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+}
+
+.crafting-window-header h2 {
+    margin: 0 0 0.2rem 0;
+    font-size: 1.1rem;
+}
+
+.crafting-window-subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--color-text-dark-5);
+}
+
+/* Three-zone layout */
+.crafting-three-zone {
+    display: grid;
+    grid-template-columns: 200px 1fr 220px;
+    gap: 0.5rem;
+    flex: 1;
+    min-height: 320px;
+}
+
+/* Zone 1: Thin ingredient list */
+.zone-ingredients {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 4px;
+    background: var(--color-bg-dark-1);
+    min-width: 0;
+    min-height: 0;
+}
+
+.zone-ingredients .zone-header {
+    padding: 0.35rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--color-border-dark-2);
+    background: var(--color-bg-dark-2);
+}
+
+.zone-ingredients-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.35rem;
+    border-bottom: 1px solid var(--color-border-dark-2);
+}
+
+.zone-ingredients-filters select,
+.zone-ingredients-filters input {
+    font-size: 0.8rem;
+}
+
+.zone-ingredients-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.ingredient-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.35rem;
+    background: var(--color-bg-dark-2);
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.ingredient-row:hover {
+    border-color: var(--color-border-highlight);
+    background: var(--color-bg-dark-3);
+}
+
+.ingredient-row-img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.ingredient-row-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ingredient-row-name {
+    display: block;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ingredient-row-tags {
+    font-size: 0.7rem;
+    color: var(--color-text-dark-5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ingredient-row-qty {
+    font-size: 0.75rem;
+    color: var(--color-text-dark-5);
+}
+
+.zone-empty {
+    color: var(--color-text-dark-5);
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+.zone-ingredients-footer {
+    padding: 0.35rem;
+    border-top: 1px solid var(--color-border-dark-2);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.zone-ingredients-footer .crafter-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-text-dark-5);
+}
+
+.crafting-seed-btn {
+    white-space: nowrap;
+}
+
+/* Zone 2: Wide crafting bench */
+.zone-bench {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 4px;
+    background: var(--color-bg-dark-1);
+    min-width: 0;
+}
+
+.zone-bench .zone-header {
+    padding: 0.35rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--color-border-dark-2);
+    background: var(--color-bg-dark-2);
+}
+
+.zone-desc {
+    margin: 0.25rem 0.5rem 0;
+    font-size: 0.8rem;
+    color: var(--color-text-dark-5);
+}
+
+.bench-slots {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0.5rem;
+    flex-wrap: wrap;
+}
+
+.bench-slot {
+    width: 100px;
+    min-height: 80px;
+    border: 2px dashed var(--color-border-dark-3);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--color-bg-dark-2);
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.bench-slot:hover {
+    border-color: var(--color-border-highlight);
+    background: var(--color-bg-dark-3);
+}
+
+.bench-slot-empty {
+    color: var(--color-text-dark-5);
+    font-size: 0.85rem;
+}
+
+.bench-slot-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.35rem;
+    width: 100%;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.bench-slot-item img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    margin-bottom: 0.25rem;
+}
+
+.slot-name {
+    font-weight: 600;
+}
+
+.slot-tags {
+    font-size: 0.65rem;
+    color: var(--color-text-dark-5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90px;
+}
+
+.bench-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-top: 1px solid var(--color-border-dark-2);
+}
+
+.crafting-craft-btn {
+    flex: 1;
+}
+
+/* Zone 3: Feedback and output */
+.zone-feedback {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 4px;
+    background: var(--color-bg-dark-1);
+    min-width: 0;
+    overflow-y: auto;
+}
+
+.zone-feedback .zone-header {
+    padding: 0.35rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--color-border-dark-2);
+    background: var(--color-bg-dark-2);
+}
+
+.feedback-section {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--color-border-dark-2);
+}
+
+.feedback-section:last-child {
+    border-bottom: none;
+}
+
+.feedback-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--color-text-dark-5);
+}
+
+.feedback-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+}
+
+.tag-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.35rem;
+    background: var(--color-bg-dark-3);
+    border: 1px solid var(--color-border-dark-2);
+    border-radius: 3px;
+}
+
+.feedback-result.result-success .feedback-success { color: var(--color-success); }
+.feedback-result.result-fail .feedback-fail { color: var(--color-warning); }
+
+.feedback-detail {
+    font-size: 0.8rem;
+    color: var(--color-text-dark-5);
+    margin-top: 0.2rem;
+}
+
+.feedback-hint {
+    font-size: 0.75rem;
+    color: var(--color-text-dark-5);
+    font-style: italic;
+    margin-top: 0.2rem;
+}
+
+.feedback-known-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.known-row {
+    font-size: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem;
+}
+
+.known-tags {
+    color: var(--color-text-dark-3);
+}
+
+.known-arrow {
+    color: var(--color-text-dark-5);
+    font-size: 0.7rem;
+}
+
+.known-result {
+    font-weight: 600;
+}

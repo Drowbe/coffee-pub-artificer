@@ -8,7 +8,7 @@ import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerImportWindow } from './window-artificer-import.js';
-import { CraftingExperimentPanel } from './panel-crafting-experiment.js';
+import { CraftingWindow } from './window-crafting.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -27,6 +27,7 @@ Hooks.once('init', async () => {
         'modules/coffee-pub-artificer/templates/item-form.hbs',
         'modules/coffee-pub-artificer/templates/import-items.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
+        'modules/coffee-pub-artificer/templates/window-crafting.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
     ]);
@@ -156,16 +157,16 @@ function registerMenubarIntegration() {
         return;
     }
     
-    // Register secondary bar item for experimentation (crafting prototype)
-    const experimentItemId = 'artificer-experiment';
-    const experimentRegistered = blacksmith.registerSecondaryBarItem(barType, experimentItemId, {
-        icon: 'fa-solid fa-flask',
-        title: 'Experiment',
+    // Register secondary bar item for crafting
+    const craftingItemId = 'artificer-crafting';
+    const craftingRegistered = blacksmith.registerSecondaryBarItem(barType, craftingItemId, {
+        icon: 'fa-solid fa-hammer',
+        title: 'Craft',
         moduleId: MODULE.ID,
         visible: true,
         onClick: function() {
-            const panel = new CraftingExperimentPanel();
-            panel.render(true);
+            const win = new CraftingWindow();
+            win.render(true);
         }
     });
 
@@ -208,7 +209,7 @@ function registerMenubarIntegration() {
         }
     });
     
-    if (experimentRegistered && createItemRegistered && importItemRegistered) {
+    if (craftingRegistered && createItemRegistered && importItemRegistered) {
         console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and crafting buttons registered successfully`);
     } else {
         console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered})`);
