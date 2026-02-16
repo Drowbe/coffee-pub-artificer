@@ -121,9 +121,28 @@ function buildItemSystem(payload) {
         identified: payload.system?.identified ?? true
     };
 
-    if (payload.type === 'consumable' || (hasSystem && payload.system.consumableType)) {
-        defaults.consumableType = payload.system?.consumableType ?? 'other';
-        defaults.uses = payload.system?.uses ?? { value: 1, max: 1, per: 'charges' };
+    if (payload.type === 'consumable' || (hasSystem && (payload.system.consumableType || payload.system.type?.value))) {
+        // D&D 5e 5.5 schema: type.value (not consumableType), uses.autoDestroy (not destroyOnEmpty), properties (mgc = magical)
+        const consumableType = payload.system?.type?.value ?? payload.system?.consumableType ?? 'other';
+        const autoDestroy = payload.system?.uses?.autoDestroy ?? payload.system?.destroyOnEmpty ?? true;
+        const isMagical = payload.system?.consumptionMagical ?? (Array.isArray(payload.system?.properties) && payload.system.properties.includes('mgc'));
+        defaults.type = {
+            value: consumableType,
+            subtype: payload.system?.type?.subtype ?? '',
+            baseItem: payload.system?.type?.baseItem ?? ''
+        };
+        const usesIn = payload.system?.uses ?? {};
+        defaults.uses = {
+            value: usesIn.value ?? 1,
+            max: usesIn.max ?? 1,
+            per: usesIn.per ?? 'charges',
+            autoDestroy
+        };
+        defaults.recoveryPeriod = payload.system?.recoveryPeriod ?? 'none';
+        defaults.activities = Array.isArray(payload.system?.activities) ? [...payload.system.activities] : [];
+        // Magical: D&D 5e uses properties set with "mgc"
+        const existingProps = Array.isArray(payload.system?.properties) ? payload.system.properties : [];
+        defaults.properties = isMagical && !existingProps.includes('mgc') ? [...existingProps, 'mgc'] : existingProps.length ? existingProps : (isMagical ? ['mgc'] : []);
     }
 
     // If payload has full system, deep merge (payload.system wins for nested objects)

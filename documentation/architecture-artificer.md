@@ -33,10 +33,10 @@ Players break down:
 This produces Components used in advanced crafting.
 
 ### 2.3 Experimentation
-Players combine up to three ingredients (raw, refined, essence) to create new items.  
-Outcomes are based on tags rather than explicit recipes.  
+Players combine ingredients with the right amounts, a solvent (water, oil, etc.), and a process (heating with temperature and time) to trigger crafting.  
+See **§7.0 Experimentation Model** for the four required components.  
 Experimentation:
-- always creates something  
+- always creates something (when requirements are met)  
 - encourages discovery  
 - reveals tags gradually  
 
@@ -130,10 +130,12 @@ Categories include weapons, armor, consumables, tools, gadgets, trinkets, and ar
   - 5 uses: quirk
 
 ### 4.2 Combination Rules
-Crafts use up to three ingredients:
+Experimentation (see **§7.0**) requires: ingredients, quantities, solvent, and process (temp + time).  
+Within that framework, crafts use:
 - Base Material (raw or component)  
 - Essence/Affinity (optional but influential)  
 - Structural component (optional but enhances quality)  
+- Solvent (water, oil, etc.) — distinct from ingredients  
 
 Tags determine:
 - item category  
@@ -191,10 +193,29 @@ Salvage yields:
 
 ## 7. Crafting System
 
-### 7.1 Experimentation
+### 7.0 Experimentation Model (Four Required Components)
+
+For a valid craft, experimentation requires **all four** of the following:
+
+| Component | Role | Examples |
+|-----------|------|----------|
+| **Ingredients** | Herbs, minerals, essences, etc. — what you are crafting with | Lavender, Iron Ore, Life Essence |
+| **Quantities** | Right amounts and proportions; not just "1 of each" | 2 parts herb : 1 part essence |
+| **Solvent** | Water, oil, or other medium — required for the reaction | Spring Water, Cooking Oil, Alchemical Base |
+| **Process** | Heating (or similar) — triggers the chemical change | Temperature (low/medium/high) + Duration (minutes/hours) |
+
+**Result:** Ingredients + Quantities + Solvent + (Temperature × Time) → valid craft.
+
+- **Solvents** are a distinct input category (water/oil/base), not just another ingredient contributing tags.  
+- **Quantities** matter: ratios affect outcome and quality.  
+- **Process** (heating) requires both temperature and time; wrong settings may produce sludge or failure.
+
+*Note: Current implementation uses tag-based matching only. Quantities, solvent, and process (temp/time) are planned additions.*
+
+### 7.1 Experimentation Behavior
 Players freely combine ingredients.  
 The system always produces:
-- a valid item  
+- a valid item (when the model is satisfied)  
 - a variant  
 - or low-value sludge (never nothing)
 
@@ -291,7 +312,8 @@ scripts/
   ├── utility-*-parser.js             (HTML parsers for journal entries)
   ├── manager-*.js                    (data managers)
   ├── panel-*.js                      (UI panels - ApplicationV2)
-  ├── window-*.js                     (UI forms - FormApplication)
+  ├── window-*.js                     (UI windows/forms - ApplicationV2)
+  ├── systems/experimentation-engine.js  (tag rules, crafting logic)
   ├── api-artificer.js                (module API exports)
   └── utils.js                        (utility functions)
 
@@ -402,8 +424,8 @@ Following Codex/Quest patterns:
 - Flexible, version-tolerant, human-editable
 
 #### ✅ Form/Panel Pattern
-- **FormApplication** for creating/editing recipes/blueprints
-- **ApplicationV2 Panel** for browsing (like CodexPanel/QuestPanel)
+- **ApplicationV2** for all UI (create/edit forms, panels, windows) — no legacy FormApplication
+- ApplicationV2 for browsing (like CodexPanel/QuestPanel)
 - Drag & drop auto-population
 
 #### ✅ Status-Based Organization
@@ -474,10 +496,11 @@ Following Codex/Quest patterns:
 
 ### 11.7 UI Components
 
-**Crafting Interface (Secondary Bar):**
-- 100px height secondary bar (already implemented)
-- Opens via menubar tool (middle zone)
-- Will contain main crafting UI
+**Crafting Window:**
+- Three-zone layout: ingredient list | crafting bench | feedback
+- Opens via Artificer menubar tool (middle zone)
+- Ingredient list shows only Artificer ingredients (flags + type ingredient/component/essence)
+- Feedback zone shows tags in bench, craft result, known combinations
 
 **Recipe/Blueprint Browser:**
 - Status-based organization (like Quest system)
@@ -577,31 +600,30 @@ Following Codex/Quest patterns:
 - Menubar integration (Artificer tool in middle zone)
 - Secondary bar (100px height, ready for content)
 - Blacksmith API integration
-- ~~Resolve critical questions (Q1-Q6, Q11)~~ ✅ **COMPLETED**
-- Phase 0: Foundation & Architecture Setup ✅ **COMPLETED**
+- Resolve critical questions (Q1-Q6, Q11) ✅
+- Phase 0: Foundation & Architecture Setup ✅
   - Folder structure (resources/, templates/)
-  - Schema files with JSDoc type definitions
-  - Manager placeholder classes
-  - Module API structure
-- Phase 1: Item Creation & Import System (Partial) ✅ **IN PROGRESS**
+  - Schema files, manager placeholders, module API
+- Phase 1: Item Creation & Import System ✅
   - Core item creation utilities (`utility-artificer-item.js`)
-  - Architecture decisions documented (unified form, JSON import, menubar integration)
+  - Unified form (`window-artificer-item.js`), JSON import (`utility-artificer-import.js`)
+  - Menubar buttons for Create Item and Import Items
+- Crafting Window ✅
+  - Three-zone layout (ingredient list | bench | feedback)
+  - Experimentation engine (tag-based rules, `systems/experimentation-engine.js`)
+  - Ingredient filtering (Artificer ingredients only), known combinations in feedback
+  - Seed Test Ingredients for GMs
 
 ### 🔄 In Progress
-- Phase 1: Core Data System
-  - Item creation form (`window-artificer-item.js`)
-  - JSON import utilities (`utility-artificer-import.js`)
-  - Data models and storage managers
+- Recipe/Blueprint journal parser and browser
+- Skill system, workstation system
+- **Experimentation Model (§7.0):** Quantities, solvent, process (temp/time) — planned, not yet implemented
 
 ### 📋 Next Steps
-1. Complete Phase 1: Item Creation & Import System
-   - Create unified form for manual item creation
-   - Implement JSON import utilities
-   - Add menubar buttons
-2. Implement data models and storage systems
-3. Create parser classes for journal entries
-4. Implement manager functionality
-5. Create initial data set
+1. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
+2. Recipe parser and browser
+3. Skill levels, workstation modifiers
+4. Blueprint multi-stage flow
 
 ---
 
@@ -674,3 +696,20 @@ This crafting system supports:
 - See `documentation/DEVELOPMENT_PLAN.md` for detailed phased implementation plan
 - Architecture decisions based on analysis of Coffee Pub Codex and Quest systems
 - All patterns leverage FoundryVTT native systems (journals, flags, compendiums) for maximum compatibility
+
+---
+
+## 16. Architecture Review (Alignment Check)
+
+**Purpose:** Ensure the architecture document stays aligned with the implementation and the intended design.
+
+### Current Alignment
+- **§7.0 Experimentation Model** — Added. Defines four required components: Ingredients, Quantities, Solvent, Process (temp + time). *Implementation: tag-based only; quantities, solvent, and process planned.*
+- **§2.3, §4.2, §7.1** — Updated to reference §7.0 and solvent/process.
+- **§11.1 Module Structure** — Updated: window-* uses ApplicationV2; added `systems/experimentation-engine.js`.
+- **§11.4 Form/Panel** — Updated: ApplicationV2 only (no legacy FormApplication).
+- **§11.7 UI Components** — Updated: Crafting Window (three-zone layout) instead of "secondary bar will contain".
+- **§13 Implementation Status** — Updated to reflect completed Crafting Window, experimentation engine, and in-progress §7.0 model.
+
+### Data Conventions
+- **Flags:** Architecture refers to `flags.artificer.*`; implementation uses `flags[MODULE.ID]` (e.g. `flags["coffee-pub-artificer"]`). Same data, different key.
