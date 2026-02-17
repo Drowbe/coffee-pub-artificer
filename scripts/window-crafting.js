@@ -4,11 +4,12 @@
 
 import { MODULE } from './const.js';
 import { getExperimentationEngine, getTagsFromItem, getKnownCombinations } from './systems/experimentation-engine.js';
-import { createArtificerItem } from './utility-artificer-item.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
-import { ESSENCE_AFFINITIES } from './schema-essences.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+/** App ID prefix for unique element IDs */
+const CRAFTING_APP_ID = 'artificer-crafting';
 
 /**
  * Artificer Crafting Window - Main crafting UI
@@ -16,16 +17,17 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
  */
 export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
-        id: 'artificer-crafting',
+        id: CRAFTING_APP_ID,
         classes: ['window-artificer-crafting', 'artificer-crafting-window'],
-        position: { width: 820, height: 560 },
+        position: { width: 1100, height: 580 },
         window: { title: 'Artificer Crafting Station', resizable: true, minimizable: true },
         actions: {
             craft: CraftingWindow._actionCraft,
             clear: CraftingWindow._actionClear,
             addToSlot: CraftingWindow._actionAddToSlot,
+            addToContainer: CraftingWindow._actionAddToContainer,
             removeFromSlot: CraftingWindow._actionRemoveFromSlot,
-            seed: CraftingWindow._actionSeed
+            removeContainer: CraftingWindow._actionRemoveContainer
         }
     });
 
@@ -37,9 +39,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
-        opts.id = opts.id ?? `${CraftingWindow.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        opts.id = opts.id ?? `${CRAFTING_APP_ID}-${foundry.utils.randomID().slice(0, 8)}`;
         super(opts);
-        this.selectedSlots = [null, null, null];
+        this.selectedSlots = Array(6).fill(null);
+        this.selectedContainer = null;
+        this.heatValue = options.heatValue ?? 0;
+        this.timeValue = options.timeValue ?? 30;
         this.lastResult = null;
         this.lastCraftTags = [];
         this.filterFamily = options.filterFamily ?? '';
@@ -62,32 +67,56 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async getData(options = {}) {
         const actor = this._getCrafterActor();
 
-        let ingredients = actor
-            ? actor.items
-                .filter(i => {
-                    const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                    return f?.type && ['ingredient', 'component', 'essence'].includes(f.type);
-                })
-                .map(i => {
-                    const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                    return {
-                        id: i.id,
-                        uuid: i.uuid,
-                        name: i.name,
-                        img: i.img || 'icons/skills/melee/weapons-crossed-swords-yellow.webp',
-                        quantity: i.system?.quantity ?? 1,
-                        tags: getTagsFromItem(i).join(', '),
-                        type: f?.type || 'other',
-                        family: f?.family || ''
-                    };
-                })
+        const artificerItems = actor
+            ? actor.items.filter(i => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                return f?.type && ['ingredient', 'component', 'essence', 'container'].includes(f.type);
+            })
             : [];
 
-        // Apply filters
+        let ingredients = artificerItems
+            .filter(i => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                return ['ingredient', 'component', 'essence'].includes(f?.type);
+            })
+            .map(i => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                return {
+                    id: i.id,
+                    uuid: i.uuid,
+                    name: i.name,
+                    img: i.img || 'icons/skills/melee/weapons-crossed-swords-yellow.webp',
+                    quantity: i.system?.quantity ?? 1,
+                    tags: getTagsFromItem(i).join(', '),
+                    type: f?.type || 'other',
+                    family: f?.family || '',
+                    isContainer: false,
+                    addAction: 'addToSlot'
+                };
+            });
+
+        const containers = artificerItems
+            .filter(i => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                return f?.type === 'container';
+            })
+            .map(i => ({
+                id: i.id,
+                uuid: i.uuid,
+                name: i.name,
+                img: i.img || 'icons/containers/bags/pouch-simple-brown.webp',
+                quantity: i.system?.quantity ?? 1,
+                tags: '',
+                type: 'container',
+                isContainer: true,
+                addAction: 'addToContainer'
+            }));
+
+        // Apply filters to ingredients
         if (this.filterFamily) {
             ingredients = ingredients.filter(i => i.family === this.filterFamily);
         }
-        if (this.filterType && this.filterType !== 'all') {
+        if (this.filterType && this.filterType !== 'all' && this.filterType !== 'container') {
             ingredients = ingredients.filter(i => i.type === this.filterType);
         }
         if (this.filterSearch?.trim()) {
@@ -96,6 +125,14 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 i.name.toLowerCase().includes(q) || i.tags.toLowerCase().includes(q)
             );
         }
+        let filteredContainers = containers;
+        if (this.filterType === 'container' && this.filterSearch?.trim()) {
+            const q = this.filterSearch.trim().toLowerCase();
+            filteredContainers = containers.filter(i => i.name.toLowerCase().includes(q));
+        }
+
+        const showContainers = this.filterType === 'container';
+        const listItems = showContainers ? filteredContainers : ingredients;
 
         const slots = this.selectedSlots.map((item, i) => {
             if (!item) return { item: null, tags: '' };
@@ -116,8 +153,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             { value: 'all', label: 'All types', selected: !this.filterType },
             { value: 'ingredient', label: 'Ingredient', selected: this.filterType === 'ingredient' },
             { value: 'component', label: 'Component', selected: this.filterType === 'component' },
-            { value: 'essence', label: 'Essence', selected: this.filterType === 'essence' }
+            { value: 'essence', label: 'Essence', selected: this.filterType === 'essence' },
+            { value: 'container', label: 'Container', selected: this.filterType === 'container' }
         ];
+
+        const containerSlot = this.selectedContainer
+            ? { item: { id: this.selectedContainer.id, name: this.selectedContainer.name, img: this.selectedContainer.img } }
+            : { item: null };
 
         const canCraft = this.selectedSlots.some(s => s !== null);
         const hasRecipes = false; // Placeholder for Phase 5
@@ -131,8 +173,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
         return {
+            appId: this.id,
             crafterName: actor?.name ?? null,
             slots,
+            containerSlot,
+            listItems,
+            showContainers,
+            heatValue: this.heatValue,
+            timeValue: this.timeValue,
+            heatFillPercent: this.heatValue,
+            timeFillPercent: ((this.timeValue - 5) / 115) * 100,
             ingredients,
             canCraft,
             lastResult: this.lastResult,
@@ -144,8 +194,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             typeOptions,
             filterSearch: this.filterSearch,
             activeTab: this.activeTab ?? 'experimentation',
-            hasRecipes,
-            isGM: game.user?.isGM ?? false
+            hasRecipes
         };
     }
 
@@ -157,57 +206,108 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static _actionCraft(event, target) { this._craft(); }
     static _actionClear(event, target) {
-        this.selectedSlots = [null, null, null];
+        this.selectedSlots = Array(6).fill(null);
+        this.selectedContainer = null;
         this.render();
     }
     static _actionAddToSlot(event, target) {
-        const el = target.closest?.('.crafting-ingredient-item') ?? target;
+        const el = target.closest?.('.crafting-ingredient-row') ?? target;
         const itemId = el?.dataset?.itemId;
         if (itemId) this._addToSlot(itemId);
     }
+    static _actionAddToContainer(event, target) {
+        const el = target.closest?.('.crafting-ingredient-row') ?? target;
+        const itemId = el?.dataset?.itemId;
+        if (itemId) this._addToContainer(itemId);
+    }
     static _actionRemoveFromSlot(event, target) {
-        const el = target.closest?.('.bench-slot-item') ?? target.closest?.('.bench-slot');
-        const idx = el?.dataset?.slotIndex ?? el?.closest?.('.bench-slot')?.dataset?.slotIndex;
+        const el = target.closest?.('.crafting-bench-slot-item') ?? target.closest?.('.crafting-bench-slot');
+        const idx = el?.dataset?.slotIndex ?? el?.closest?.('.crafting-bench-slot')?.dataset?.slotIndex;
         if (idx !== undefined) this._removeFromSlot(idx);
     }
-    static _actionSeed(event, target) { this._seedIngredients(); }
+    static _actionRemoveContainer(event, target) {
+        this._removeContainer();
+    }
+
+    /** Attach document-level delegation for filters/search (runs once, survives re-renders) */
+    _attachDelegationOnce() {
+        const appId = this.id;
+        if (this._delegationAttached) return;
+        this._delegationAttached = true;
+
+        document.addEventListener('change', (e) => {
+            const el = e.target;
+            if (!el?.closest?.(`#${appId}`)) return;
+            const id = el.id ?? '';
+            if (id === `${appId}-filter-family`) {
+                this.filterFamily = el.value ?? '';
+                this.render();
+            } else if (id === `${appId}-filter-type`) {
+                const v = el.value;
+                this.filterType = v === 'all' ? '' : (v ?? '');
+                this.render();
+            }
+        });
+
+        document.addEventListener('input', (e) => {
+            const el = e.target;
+            if (!el?.closest?.(`#${appId}`)) return;
+            if ((el.id ?? '') === `${appId}-filter-search`) {
+                this.filterSearch = el.value ?? '';
+                this.render();
+            } else if (el?.dataset?.craftSetting === 'heat') {
+                this.heatValue = Math.max(0, Math.min(100, parseInt(el.value, 10) || 50));
+                this.render();
+            } else if (el?.dataset?.craftSetting === 'time') {
+                this.timeValue = Math.max(5, Math.min(120, parseInt(el.value, 10) || 30));
+                this.render();
+            }
+        });
+
+        document.addEventListener('change', (e) => {
+            const el = e.target;
+            if (!el?.closest?.(`#${appId}`)) return;
+            if (el?.dataset?.craftSetting === 'heat') {
+                this.heatValue = Math.max(0, Math.min(100, parseInt(el.value, 10) || 50));
+                this.render();
+            } else if (el?.dataset?.craftSetting === 'time') {
+                this.timeValue = Math.max(5, Math.min(120, parseInt(el.value, 10) || 30));
+                this.render();
+            }
+        });
+    }
+
+    async _onFirstRender(_context, options) {
+        await super._onFirstRender?.(_context, options);
+        this._attachDelegationOnce();
+    }
 
     _attachListeners(root) {
-        const el = root ?? this.window?.content ?? this.element;
+        const el = root ?? document.getElementById(this.id);
         if (!el) return;
 
-        el.querySelector('#crafting-filter-family')?.addEventListener('change', (e) => {
-            this.filterFamily = e.target.value ?? '';
-            this.render();
-        });
-        el.querySelector('#crafting-filter-type')?.addEventListener('change', (e) => {
-            const v = e.target.value;
-            this.filterType = v === 'all' ? '' : (v ?? '');
-            this.render();
-        });
-        el.querySelector('#crafting-filter-search')?.addEventListener('input', (e) => {
-            this.filterSearch = e.target.value ?? '';
-            this.render();
+        el.querySelectorAll('.crafting-ingredient-row').forEach(row => {
+            row.addEventListener('click', () => {
+                const itemId = row.dataset?.itemId;
+                const action = row.dataset?.addAction || row.getAttribute?.('data-action');
+                if (!itemId) return;
+                if (action === 'addToContainer') this._addToContainer(itemId);
+                else this._addToSlot(itemId);
+            });
         });
 
-        el.querySelectorAll('.ingredient-row').forEach(item => {
-            item.addEventListener('click', () => this._addToSlot(item.dataset.itemId));
-        });
-
-        el.querySelectorAll('.bench-slot-item').forEach(slot => {
+        el.querySelectorAll('.crafting-bench-slot-item').forEach(slot => {
             slot.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this._removeFromSlot(slot.closest('.crafting-slot')?.dataset?.slotIndex);
+                this._removeFromSlot(slot.closest('.crafting-bench-slot')?.dataset?.slotIndex);
             });
         });
     }
 
     activateListeners(html) {
         super.activateListeners(html);
-        if (html?.jquery ?? typeof html?.find === 'function') {
-            html = html[0] ?? html.get?.(0) ?? html;
-        }
-        const root = html?.matches?.('.artificer-crafting-window') ? html : html?.querySelector?.('.artificer-crafting-window') ?? html;
+        const raw = html?.jquery ? html[0] : html;
+        const root = raw?.closest?.('.crafting-window-root') ?? raw?.querySelector?.('.crafting-window-root') ?? document.getElementById(this.id);
         this._attachListeners(root);
     }
 
@@ -220,7 +320,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!actor) return;
         const item = actor.items.get(itemId);
         if (!item) return;
-        const idx = this.selectedSlots.findIndex(s => !s);
+        const idx = this.selectedSlots.findIndex(s => s === null);
         if (idx === -1) return;
         this.selectedSlots[idx] = item;
         this.render();
@@ -228,41 +328,26 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _removeFromSlot(slotIndex) {
         const i = parseInt(slotIndex, 10);
-        if (i >= 0 && i < 3) {
+        if (i >= 0 && i < 6) {
             this.selectedSlots[i] = null;
             this.render();
         }
     }
 
-    async _seedIngredients() {
+    _addToContainer(itemId) {
         const actor = this._getActor();
-        if (!actor) {
-            ui.notifications.warn('Select an actor first.');
-            return;
-        }
+        if (!actor) return;
+        const item = actor.items.get(itemId);
+        if (!item) return;
+        const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+        if (f?.type !== 'container') return;
+        this.selectedContainer = item;
+        this.render();
+    }
 
-        const seedData = [
-            { itemData: { name: 'Lavender', type: 'consumable', description: 'A fragrant herb.', weight: 0.1, price: 5, rarity: 'common' }, artificerData: { primaryTag: 'Herb', secondaryTags: ['Floral', 'Medicinal'], family: INGREDIENT_FAMILIES.HERBS, quirk: 'Soothing', tier: 1, rarity: 'Common' }, type: 'ingredient' },
-            { itemData: { name: 'Life Essence', type: 'consumable', description: 'Faintly glowing essence of life.', weight: 0, price: 25, rarity: 'uncommon' }, artificerData: { primaryTag: 'Life', secondaryTags: ['Light', 'Healing'], affinity: ESSENCE_AFFINITIES.LIFE, tier: 1, rarity: 'Uncommon' }, type: 'essence' },
-            { itemData: { name: 'Iron Ore', type: 'consumable', description: 'Raw iron ore.', weight: 5, price: 2, rarity: 'common' }, artificerData: { primaryTag: 'Metal', secondaryTags: ['Ore', 'Alloy-Friendly'], family: INGREDIENT_FAMILIES.MINERALS, quirk: null, tier: 1, rarity: 'Common' }, type: 'ingredient' },
-            { itemData: { name: 'Quartz Crystal', type: 'consumable', description: 'A clear crystal with arcane resonance.', weight: 0.5, price: 15, rarity: 'common' }, artificerData: { primaryTag: 'Crystal', secondaryTags: ['Resonant', 'Arcane'], family: INGREDIENT_FAMILIES.GEMS, quirk: null, tier: 1, rarity: 'Common' }, type: 'ingredient' },
-            { itemData: { name: 'Sage', type: 'consumable', description: 'A medicinal herb.', weight: 0.1, price: 3, rarity: 'common' }, artificerData: { primaryTag: 'Herb', secondaryTags: ['Medicinal'], family: INGREDIENT_FAMILIES.HERBS, quirk: null, tier: 1, rarity: 'Common' }, type: 'ingredient' }
-        ];
-
-        try {
-            for (const data of seedData) {
-                const item = await createArtificerItem(data.itemData, data.artificerData, { type: data.type, createInWorld: true, actor });
-                if (item) {
-                    const embedded = actor.items.find(i => i.name === item.name && (i.flags?.[MODULE.ID] || i.flags?.artificer));
-                    if (embedded) await embedded.update({ 'system.quantity': 2 });
-                }
-            }
-            ui.notifications.info(`Added ${seedData.length} test ingredients to ${actor.name}.`);
-            this.render();
-        } catch (err) {
-            console.error('Artificer seed error:', err);
-            ui.notifications.error(`Seed failed: ${err.message}`);
-        }
+    _removeContainer() {
+        this.selectedContainer = null;
+        this.render();
     }
 
     async _craft() {
@@ -287,7 +372,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const engine = getExperimentationEngine();
         this.lastResult = await engine.craft(actor, items);
-        this.selectedSlots = [null, null, null];
+        this.selectedSlots = Array(6).fill(null);
 
         if (this.lastResult.success) {
             ui.notifications.info(`Created: ${this.lastResult.name}`);

@@ -11,9 +11,6 @@
             <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
             {{/each}}
         </select>
-        <button type="button" class="crafting-seed-btn" data-action="seed" title="Add test ingredients to this actor">
-            <i class="fa-solid fa-plus"></i> Seed Test Ingredients
-        </button>
     </div>
 
     <div class="crafting-slots">
@@ -45,7 +42,7 @@
                 <span class="ingredient-qty">×{{this.quantity}}</span>
             </div>
             {{else}}
-            <div class="crafting-no-items">No ingredients. Use "Seed Test Ingredients" or Import items.</div>
+            <div class="crafting-no-items">No ingredients in inventory.</div>
             {{/each}}
         </div>
     </div>

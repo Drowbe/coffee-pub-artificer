@@ -5,8 +5,32 @@ Items to create for a minimal Artificer baseline. Use the Create Item form or Im
 **Format:** Each block lists the variables needed. For ingredients: use Family. For components: use Component type (replaces Family).
 
 ---
+NEEDED INGREDIENTS and COMPONENTS
 
+## Experimental Results (Crafted Items)
 
+These items are produced by the experimentation engine when crafting. **They must exist as Items in the world or compendiums.** The system looks up items by name and creates copies for the crafter—it does not create items from inline data.
+
+| Item Name | Tag Combo | Type | Notes |
+|-----------|-----------|------|-------|
+| Healing Tonic | Herb + Medicinal + Life | consumable (potion) | Restorative potion |
+| Basic Remedy | Herb + Medicinal (no essence) | consumable | Simple herbal remedy |
+| Crude Metal Shard | Metal + Ore | loot | Rough metal from smelting |
+| Minor Arcane Dust | Crystal + Arcane + (Life/Heat/Cold/Shadow/Light/Electric) | consumable | Faintly glowing arcane dust |
+| Experimenter's Sludge | * (fallback) | consumable | Failed experiment; any invalid combo |
+
+**Implementation:** Create these items (via Create Item form or Import). Place in a compendium pack (e.g. "Artificer Crafting Results") or in the world. The experimentation engine will resolve them by name and duplicate into the crafter's inventory. Compendium lookup will be added for Phase 2+.
+
+## Containers (Crafting Tools)
+
+Items used as the container slot (beaker, mortar, etc.). Must have `flags.artificer.type = "container"`.
+
+| Item Name | Notes |
+|-----------|-------|
+| Beaker | Glass vessel for liquid mixtures |
+| Mortar and Pestle | For grinding and blending solids |
+| Crucible | Heat-resistant container for metal/alchemy |
+| Mixing Bowl | General-purpose container |
 
 ---
 COMPLETE INGREDIENTS
@@ -54,8 +78,8 @@ COMPLETE INGREDIENTS
 
 | Item | Enables |
 |------|---------|
-| Lavender | Healing Potion (with Life Essence), Basic Remedy |
-| Sage | Healing Potion (with Life Essence), Basic Remedy |
+| Lavender | Healing Tonic (with Life Essence), Basic Remedy |
+| Sage | Healing Tonic (with Life Essence), Basic Remedy |
 | Iron Ingot | Component for future recipes; Metal + Refined |
 | Herbal Extract | Component for future recipes; Medicinal base |
 | Bone Shard | CreatureParts for future recipes |

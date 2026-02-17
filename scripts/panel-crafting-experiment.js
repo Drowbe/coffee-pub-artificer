@@ -4,9 +4,6 @@
 
 import { MODULE } from './const.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
-import { createArtificerItem } from './utility-artificer-item.js';
-import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
-import { ESSENCE_AFFINITIES } from './schema-essences.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -20,7 +17,6 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
         position: { width: 480, height: 400 },
         window: { title: 'Artificer Experimentation', resizable: true, minimizable: true },
         actions: {
-            seed: CraftingExperimentPanel._actionSeed,
             craft: CraftingExperimentPanel._actionCraft,
             clear: CraftingExperimentPanel._actionClear,
             addToSlot: CraftingExperimentPanel._actionAddToSlot,
@@ -117,10 +113,6 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
         return list;
     }
 
-    static _actionSeed(event, target) {
-        this._seedIngredients();
-    }
-
     static _actionCraft(event, target) {
         this._craft();
     }
@@ -193,64 +185,6 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
         if (i >= 0 && i < 3) {
             this.selectedSlots[i] = null;
             this.render();
-        }
-    }
-
-    async _seedIngredients() {
-        const root = this.window?.content ?? this.element;
-        const actorSelect = root?.querySelector('#crafting-actor');
-        if (actorSelect) this.selectedActorId = actorSelect.value || this.selectedActorId;
-        const actor = this._getActor();
-        if (!actor) {
-            ui.notifications.warn('Select an actor first.');
-            return;
-        }
-
-        const seedData = [
-            {
-                itemData: { name: 'Lavender', type: 'consumable', description: 'A fragrant herb.', weight: 0.1, price: 5, rarity: 'common' },
-                artificerData: { primaryTag: 'Herb', secondaryTags: ['Floral', 'Medicinal'], family: INGREDIENT_FAMILIES.HERBS, quirk: 'Soothing', tier: 1, rarity: 'Common' },
-                type: 'ingredient'
-            },
-            {
-                itemData: { name: 'Life Essence', type: 'consumable', description: 'Faintly glowing essence of life.', weight: 0, price: 25, rarity: 'uncommon' },
-                artificerData: { primaryTag: 'Life', secondaryTags: ['Light', 'Healing'], affinity: ESSENCE_AFFINITIES.LIFE, tier: 1, rarity: 'Uncommon' },
-                type: 'essence'
-            },
-            {
-                itemData: { name: 'Iron Ore', type: 'consumable', description: 'Raw iron ore.', weight: 5, price: 2, rarity: 'common' },
-                artificerData: { primaryTag: 'Metal', secondaryTags: ['Ore', 'Alloy-Friendly'], family: INGREDIENT_FAMILIES.MINERALS, quirk: null, tier: 1, rarity: 'Common' },
-                type: 'ingredient'
-            },
-            {
-                itemData: { name: 'Quartz Crystal', type: 'consumable', description: 'A clear crystal with arcane resonance.', weight: 0.5, price: 15, rarity: 'common' },
-                artificerData: { primaryTag: 'Crystal', secondaryTags: ['Resonant', 'Arcane'], family: INGREDIENT_FAMILIES.GEMS, quirk: null, tier: 1, rarity: 'Common' },
-                type: 'ingredient'
-            },
-            {
-                itemData: { name: 'Sage', type: 'consumable', description: 'A medicinal herb.', weight: 0.1, price: 3, rarity: 'common' },
-                artificerData: { primaryTag: 'Herb', secondaryTags: ['Medicinal'], family: INGREDIENT_FAMILIES.HERBS, quirk: null, tier: 1, rarity: 'Common' },
-                type: 'ingredient'
-            }
-        ];
-
-        try {
-            for (const data of seedData) {
-                const item = await createArtificerItem(data.itemData, data.artificerData, {
-                    type: data.type,
-                    createInWorld: true,
-                    actor
-                });
-                if (item) {
-                    const embedded = actor.items.find(i => i.name === item.name && (i.flags?.[MODULE.ID] || i.flags?.artificer));
-                    if (embedded) await embedded.update({ 'system.quantity': 2 });
-                }
-            }
-            ui.notifications.info(`Added ${seedData.length} test ingredients to ${actor.name}.`);
-            this.render();
-        } catch (err) {
-            console.error('Artificer seed error:', err);
-            ui.notifications.error(`Seed failed: ${err.message}`);
         }
     }
 

@@ -1,110 +1,265 @@
-/* Artificer Crafting Window - Three-Zone Layout */
+/* ================================================================== */
+/* Artificer Crafting Window - 4-zone layout                          */
+/* Design matches Quick Encounter: dark theme, section titles, etc.   */
+/* ================================================================== */
 
-.artificer-crafting-window {
-    padding: 0.5rem;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+/* Scope to the crafting window app */
+.window-artificer-crafting,
+.window-artificer-crafting .window-content {
+    --craft-border-color: #444;
+    --craft-accent-color: #ac9f81;
+    --craft-background: #232323;
+    --craft-header-bg: rgba(0, 0, 0, 0.7);
+    background: var(--craft-background) !important;
+    border: 0 solid var(--craft-border-color) !important;
+    color: rgba(224, 224, 224, 0.9);
+    font-family: "Signika", sans-serif;
 }
 
+.window-artificer-crafting .window-content {
+    min-height: 420px !important;
+    overflow: auto !important;
+    padding: 0 !important;
+}
+
+.window-artificer-crafting .window-header {
+    background: var(--craft-header-bg) !important;
+    border-bottom: 1px solid var(--craft-border-color) !important;
+    color: var(--craft-accent-color) !important;
+}
+
+/* ----- Root structure ----- */
+.crafting-window-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ----- Header (Quick Encounter style) ----- */
 .crafting-window-header {
     flex-shrink: 0;
-    margin-bottom: 0.5rem;
+    background: var(--craft-header-bg);
+    border-bottom: 1px solid var(--craft-border-color);
+    padding: 8px 12px;
+    min-height: 50px;
 }
 
-.crafting-window-header h2 {
-    margin: 0 0 0.2rem 0;
-    font-size: 1.1rem;
-}
-
-.crafting-window-subtitle {
-    margin: 0;
-    font-size: 0.8rem;
-    color: var(--color-text-dark-5);
-}
-
-/* Three-zone layout */
-.crafting-three-zone {
-    display: grid;
-    grid-template-columns: 200px 1fr 220px;
-    gap: 0.5rem;
-    flex: 1;
-    min-height: 320px;
-}
-
-/* Zone 1: Thin ingredient list */
-.zone-ingredients {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--color-border-dark-2);
-    border-radius: 4px;
-    background: var(--color-bg-dark-1);
-    min-width: 0;
-    min-height: 0;
-}
-
-.zone-ingredients .zone-header {
-    padding: 0.35rem 0.5rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    border-bottom: 1px solid var(--color-border-dark-2);
-    background: var(--color-bg-dark-2);
-}
-
-.zone-ingredients-filters {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.35rem;
-    border-bottom: 1px solid var(--color-border-dark-2);
-}
-
-.zone-ingredients-filters select,
-.zone-ingredients-filters input {
-    font-size: 0.8rem;
-}
-
-.zone-ingredients-list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0.25rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-}
-
-.ingredient-row {
+.crafting-window-header-content {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.25rem 0.35rem;
-    background: var(--color-bg-dark-2);
-    border: 1px solid var(--color-border-dark-2);
+    gap: 12px;
+}
+
+.crafting-window-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(172, 159, 129, 0.9);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.crafting-window-header-icon i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.4em;
+}
+
+.crafting-window-header-title {
+    flex: 1;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--craft-accent-color);
+    letter-spacing: 0.02em;
+}
+
+.crafting-window-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.crafting-window-crafter-label {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* ----- Body: 4-zone grid ----- */
+.crafting-window-body {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.2fr) minmax(220px, 1.5fr) minmax(180px, 1fr);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    gap: 0;
+    border-bottom: 1px solid var(--craft-border-color);
+}
+
+/* ----- Shared zone styling ----- */
+.crafting-zone {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--craft-border-color);
+}
+
+.crafting-zone:last-child {
+    border-right: none;
+}
+
+.crafting-zone-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 10px 12px;
+    overflow: hidden;
+}
+
+.crafting-zone-section-title {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--craft-accent-color);
+}
+
+.crafting-zone-desc {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: #b0b0b0;
+}
+
+.crafting-zone-empty {
+    font-size: 0.9em;
+    color: #999;
+    padding: 8px 0;
+}
+
+/* ----- Zone 1: Recipes ----- */
+.crafting-zone-recipes .crafting-zone-recipes-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.crafting-recipe-row {
+    font-size: 0.8em;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+}
+
+.crafting-recipe-tags {
+    color: rgba(201, 201, 201, 0.9);
+}
+
+.crafting-recipe-arrow {
+    color: var(--craft-accent-color);
+}
+
+.crafting-recipe-result {
+    font-weight: 600;
+    color: rgba(105, 213, 104, 0.9);
+}
+
+/* ----- Zone 2: Ingredients ----- */
+.crafting-zone-section-input-wrap {
+    margin-bottom: 8px;
+}
+
+.crafting-zone-section-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 0.9em;
+}
+
+.crafting-zone-section-input::placeholder {
+    color: #888;
+}
+
+.crafting-zone-section-input:focus {
+    outline: none;
+    border-color: var(--craft-accent-color);
+}
+
+.crafting-zone-filters-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.crafting-zone-select {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-family: inherit;
+    font-size: 0.85em;
+}
+
+.crafting-zone-ingredients-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.crafting-ingredient-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--craft-border-color);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.85em;
 }
 
-.ingredient-row:hover {
-    border-color: var(--color-border-highlight);
-    background: var(--color-bg-dark-3);
+.crafting-ingredient-row:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.15);
 }
 
-.ingredient-row-img {
+.crafting-ingredient-row-img {
     width: 28px;
     height: 28px;
     object-fit: contain;
     flex-shrink: 0;
 }
 
-.ingredient-row-info {
+.crafting-ingredient-row-info {
     flex: 1;
     min-width: 0;
 }
 
-.ingredient-row-name {
+.crafting-ingredient-row-name {
     display: block;
     font-weight: 600;
     white-space: nowrap;
@@ -112,229 +267,319 @@
     text-overflow: ellipsis;
 }
 
-.ingredient-row-tags {
-    font-size: 0.7rem;
-    color: var(--color-text-dark-5);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.crafting-ingredient-row-qty {
+    font-size: 0.85em;
+    color: #b0b0b0;
 }
 
-.ingredient-row-qty {
-    font-size: 0.75rem;
-    color: var(--color-text-dark-5);
-}
-
-.zone-empty {
-    color: var(--color-text-dark-5);
-    font-size: 0.85rem;
-    padding: 0.5rem;
-}
-
-.zone-ingredients-footer {
-    padding: 0.35rem;
-    border-top: 1px solid var(--color-border-dark-2);
-    font-size: 0.8rem;
+/* ----- Zone 3: Crafting bench ----- */
+.crafting-bench-tags {
     display: flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.zone-ingredients-footer .crafter-label {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--color-text-dark-5);
-}
-
-.crafting-seed-btn {
-    white-space: nowrap;
-}
-
-/* Zone 2: Wide crafting bench */
-.zone-bench {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--color-border-dark-2);
-    border-radius: 4px;
-    background: var(--color-bg-dark-1);
-    min-width: 0;
-}
-
-.zone-bench .zone-header {
-    padding: 0.35rem 0.5rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    border-bottom: 1px solid var(--color-border-dark-2);
-    background: var(--color-bg-dark-2);
-}
-
-.zone-desc {
-    margin: 0.25rem 0.5rem 0;
-    font-size: 0.8rem;
-    color: var(--color-text-dark-5);
-}
-
-.bench-slots {
-    display: flex;
-    gap: 0.5rem;
-    padding: 0.75rem 0.5rem;
     flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
 }
 
-.bench-slot {
-    width: 100px;
-    min-height: 80px;
-    border: 2px dashed var(--color-border-dark-3);
+.crafting-tag-badge {
+    font-size: 0.75em;
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--craft-border-color);
     border-radius: 4px;
+}
+
+/* 6 ingredient slots: 2 rows x 3 */
+.crafting-bench-ingredient-slots {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.crafting-bench-slot {
+    width: 100%;
+    min-height: 70px;
+    aspect-ratio: 1;
+    max-height: 90px;
+    border: 2px dashed var(--craft-border-color);
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
     cursor: pointer;
-    background: var(--color-bg-dark-2);
     transition: border-color 0.15s, background 0.15s;
 }
 
-.bench-slot:hover {
-    border-color: var(--color-border-highlight);
-    background: var(--color-bg-dark-3);
+.crafting-bench-slot:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.1);
 }
 
-.bench-slot-empty {
-    color: var(--color-text-dark-5);
-    font-size: 0.85rem;
+.crafting-bench-slot-empty {
+    color: #888;
+    font-size: 0.8em;
 }
 
-.bench-slot-item {
+.crafting-bench-slot-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.35rem;
+    padding: 6px;
     width: 100%;
-    font-size: 0.75rem;
+    font-size: 0.75em;
     text-align: center;
 }
 
-.bench-slot-item img {
-    width: 40px;
-    height: 40px;
+.crafting-bench-slot-item img {
+    width: 32px;
+    height: 32px;
     object-fit: contain;
-    margin-bottom: 0.25rem;
+    margin-bottom: 2px;
 }
 
-.slot-name {
+.crafting-slot-name {
     font-weight: 600;
 }
 
-.slot-tags {
-    font-size: 0.65rem;
-    color: var(--color-text-dark-5);
+.crafting-slot-tags {
+    font-size: 0.65em;
+    color: #b0b0b0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 90px;
+    max-width: 80px;
 }
 
-.bench-actions {
+/* Container + sliders row (per sketch) */
+.crafting-bench-process-row {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border-top: 1px solid var(--color-border-dark-2);
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--craft-border-color);
 }
 
-.crafting-craft-btn {
-    flex: 1;
-}
-
-/* Zone 3: Feedback and output */
-.zone-feedback {
+.crafting-bench-slider-wrap {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--color-border-dark-2);
+    align-items: center;
+    gap: 6px;
+}
+
+.crafting-bench-slider-label {
+    font-size: 0.75em;
+    color: #b0b0b0;
+}
+
+.crafting-bench-slider-top {
+    order: 1;
+}
+
+.crafting-bench-slider-bottom {
+    order: 3;
+}
+
+/* Vertical slider: rotate -90deg so 0 is bottom, max is top */
+.crafting-bench-vertical-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 16px;
+    background: transparent;
+    outline: none;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    order: 2;
+}
+
+.crafting-bench-vertical-slider::-webkit-slider-runnable-track {
+    width: 80px;
+    height: 12px;
+    background: linear-gradient(
+        to right,
+        rgba(43, 101, 49, 0.9) 0%,
+        rgba(43, 101, 49, 0.9) var(--slider-fill, 50%),
+        rgba(111, 39, 39, 0.6) var(--slider-fill, 50%),
+        rgba(111, 39, 39, 0.6) 100%
+    );
+    border: 1px solid var(--craft-border-color);
     border-radius: 4px;
-    background: var(--color-bg-dark-1);
-    min-width: 0;
-    overflow-y: auto;
 }
 
-.zone-feedback .zone-header {
-    padding: 0.35rem 0.5rem;
-    font-weight: 600;
-    font-size: 0.85rem;
-    border-bottom: 1px solid var(--color-border-dark-2);
-    background: var(--color-bg-dark-2);
+.crafting-bench-heat-slider .crafting-bench-vertical-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(
+        to right,
+        rgba(200, 80, 40, 0.8) 0%,
+        rgba(200, 80, 40, 0.8) var(--heat-fill, 50%),
+        rgba(60, 80, 120, 0.6) var(--heat-fill, 50%),
+        rgba(60, 80, 120, 0.6) 100%
+    );
 }
 
-.feedback-section {
-    padding: 0.5rem;
-    border-bottom: 1px solid var(--color-border-dark-2);
+.crafting-bench-vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -4px;
+    background: rgba(172, 159, 129, 0.9);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 50%;
+    cursor: grab;
 }
 
-.feedback-section:last-child {
-    border-bottom: none;
+.crafting-bench-vertical-slider::-webkit-slider-thumb:hover {
+    background: rgba(255, 100, 0, 0.6);
 }
 
-.feedback-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: var(--color-text-dark-5);
-}
-
-.feedback-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem;
-}
-
-.tag-badge {
-    font-size: 0.7rem;
-    padding: 0.15rem 0.35rem;
-    background: var(--color-bg-dark-3);
-    border: 1px solid var(--color-border-dark-2);
-    border-radius: 3px;
-}
-
-.feedback-result.result-success .feedback-success { color: var(--color-success); }
-.feedback-result.result-fail .feedback-fail { color: var(--color-warning); }
-
-.feedback-detail {
-    font-size: 0.8rem;
-    color: var(--color-text-dark-5);
-    margin-top: 0.2rem;
-}
-
-.feedback-hint {
-    font-size: 0.75rem;
-    color: var(--color-text-dark-5);
-    font-style: italic;
-    margin-top: 0.2rem;
-}
-
-.feedback-known-list {
+/* Container slot (larger, centered) */
+.crafting-bench-container-slot {
+    width: 100px;
+    min-height: 100px;
+    border: 2px dashed var(--craft-border-color);
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
 }
 
-.known-row {
-    font-size: 0.75rem;
+.crafting-bench-container-slot:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.1);
+}
+
+.crafting-bench-container-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #888;
+    font-size: 0.8em;
+}
+
+.crafting-bench-container-empty i {
+    font-size: 1.8em;
+    opacity: 0.7;
+}
+
+.crafting-bench-container-hint {
+    font-size: 0.7em;
+    color: #666;
+}
+
+.crafting-bench-container-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    width: 100%;
+    font-size: 0.8em;
+    text-align: center;
+}
+
+.crafting-bench-container-item img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    margin-bottom: 4px;
+}
+
+/* ----- Zone 4: Result ----- */
+.crafting-result-box {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--craft-border-color);
+}
+
+.crafting-result-success {
+    background: rgba(43, 101, 49, 0.3);
+    border-color: rgba(68, 137, 67, 0.6);
+}
+
+.crafting-result-success .crafting-result-icon {
+    color: rgba(105, 213, 104, 0.9);
+}
+
+.crafting-result-fail {
+    background: rgba(111, 39, 39, 0.3);
+    border-color: rgba(160, 60, 60, 0.6);
+}
+
+.crafting-result-fail .crafting-result-icon {
+    color: #f0a0a0;
+}
+
+.crafting-result-icon {
+    font-size: 1.2em;
+    margin-bottom: 4px;
+}
+
+.crafting-result-name {
+    font-weight: 600;
+    font-size: 1em;
+}
+
+.crafting-result-detail {
+    font-size: 0.85em;
+    color: #b0b0b0;
+    margin-top: 4px;
+}
+
+/* ----- Action bar (Quick Encounter style) ----- */
+.crafting-window-buttons {
+    flex-shrink: 0;
+    border-top: 1px solid var(--craft-border-color);
+    background: var(--craft-header-bg);
+    padding: 10px 12px;
+}
+
+.crafting-window-action-buttons {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.2rem;
+    gap: 8px;
 }
 
-.known-tags {
-    color: var(--color-text-dark-3);
+/* Button styles (match Quick Encounter) */
+.crafting-window-btn-primary,
+.crafting-window-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95em;
+    text-transform: uppercase;
 }
 
-.known-arrow {
-    color: var(--color-text-dark-5);
-    font-size: 0.7rem;
+.crafting-window-btn-primary {
+    background: rgba(41, 94, 47, 0.9);
+    color: #fff;
 }
 
-.known-result {
-    font-weight: 600;
+.crafting-window-btn-secondary {
+    background: rgba(33, 40, 46, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.crafting-window-btn-primary:hover:not(:disabled),
+.crafting-window-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 100, 0, 0.6);
+    border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}
+
+.crafting-window-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

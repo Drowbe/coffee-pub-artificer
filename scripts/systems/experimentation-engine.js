@@ -52,13 +52,13 @@ export class ExperimentationEngine {
      */
     _buildRules() {
         return [
-            // Herb + Medicinal + Life -> Healing Potion
+            // Herb + Medicinal + Life -> Healing Tonic
             {
                 match: (tags) =>
                     tags.includes('herb') && tags.includes('medicinal') && tags.includes('life'),
-                name: 'Healing Potion',
+                name: 'Healing Tonic',
                 result: {
-                    name: 'Healing Potion',
+                    name: 'Healing Tonic',
                     type: 'consumable',
                     img: 'icons/consumables/potions/bottle-round-corked-red.webp',
                     system: {
@@ -170,7 +170,7 @@ export class ExperimentationEngine {
      * @returns {Promise<{success: boolean, item: Item|null, name: string, quality: string}>}
      */
     async craft(actor, items) {
-        if (!actor || !items?.length || items.length > 3) {
+        if (!actor || !items?.length || items.length > 6) {
             return { success: false, item: null, name: 'Invalid input', quality: 'Failed' };
         }
 
@@ -236,7 +236,7 @@ let _engine = null;
 
 /** Human-readable rules for UI (tag combos → result name) */
 const KNOWN_COMBINATIONS = [
-    { tags: ['Herb', 'Medicinal', 'Life'], result: 'Healing Potion' },
+    { tags: ['Herb', 'Medicinal', 'Life'], result: 'Healing Tonic' },
     { tags: ['Herb', 'Medicinal'], result: 'Basic Remedy (no essence)' },
     { tags: ['Metal', 'Ore'], result: 'Crude Metal Shard' },
     { tags: ['Crystal', 'Arcane', 'Essence'], result: 'Minor Arcane Dust (Life/Heat/Cold/Shadow/Light/Electric)' },
