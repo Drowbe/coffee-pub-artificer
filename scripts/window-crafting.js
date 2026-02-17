@@ -133,13 +133,18 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             );
         }
         let filteredContainers = containers;
-        if (this.filterType === 'container' && this.filterSearch?.trim()) {
+        if (this.filterSearch?.trim()) {
             const q = this.filterSearch.trim().toLowerCase();
             filteredContainers = containers.filter(i => i.name.toLowerCase().includes(q));
         }
 
-        const showContainers = this.filterType === 'container';
-        const listItems = showContainers ? filteredContainers : ingredients;
+        const showContainersOnly = this.filterType === 'container';
+        const showAllTypes = !this.filterType || this.filterType === 'all';
+        const listItems = showContainersOnly
+            ? filteredContainers
+            : showAllTypes
+                ? [...ingredients, ...filteredContainers]
+                : ingredients;
 
         const slots = this.selectedSlots.map((entry, i) => {
             if (!entry) return { item: null, count: 0, tags: '', tooltip: '' };
@@ -200,7 +205,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             slots,
             containerSlot,
             listItems,
-            showContainers,
+            showContainersOnly,
             heatValue: this.heatValue,
             timeValue: this.timeValue,
             heatFillPercent: this.heatValue,
