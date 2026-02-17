@@ -41,6 +41,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${CRAFTING_APP_ID}-${foundry.utils.randomID().slice(0, 8)}`;
         super(opts);
+        /** @type {Array<{item: Item, count: number}|null>} */
         this.selectedSlots = Array(6).fill(null);
         this.selectedContainer = null;
         this.heatValue = options.heatValue ?? 0;
@@ -140,10 +141,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const showContainers = this.filterType === 'container';
         const listItems = showContainers ? filteredContainers : ingredients;
 
-        const slots = this.selectedSlots.map((item, i) => {
-            if (!item) return { item: null, tags: '' };
-            const tags = getTagsFromItem(item).join(', ');
-            return { item: { id: item.id, name: item.name, img: item.img }, tags };
+        const slots = this.selectedSlots.map((entry, i) => {
+            if (!entry) return { item: null, count: 0, tags: '', tooltip: '' };
+            const tags = getTagsFromItem(entry.item).join(', ');
+            const tooltip = [entry.item.name, tags ? `Tags: ${tags}` : ''].filter(Boolean).join('\n');
+            return {
+                item: { id: entry.item.id, name: entry.item.name, img: entry.item.img },
+                count: entry.count,
+                tags,
+                tooltip
+            };
         });
 
         const familyOptions = [
@@ -163,9 +170,18 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             { value: 'container', label: 'Container', selected: this.filterType === 'container' }
         ];
 
-        const containerSlot = this.selectedContainer
-            ? { item: { id: this.selectedContainer.id, name: this.selectedContainer.name, img: this.selectedContainer.img } }
-            : { item: null };
+        let containerSlot = { item: null, tooltip: '' };
+        if (this.selectedContainer) {
+            const c = this.selectedContainer;
+            const cf = c.flags?.[MODULE.ID] || c.flags?.artificer;
+            const ct = cf?.primaryTag
+                ? [cf.primaryTag, ...(Array.isArray(cf?.secondaryTags) ? cf.secondaryTags : [])].filter(Boolean).join(', ')
+                : '';
+            containerSlot = {
+                item: { id: c.id, name: c.name, img: c.img },
+                tooltip: [c.name, cf?.family ? `Family: ${cf.family}` : '', ct ? `Tags: ${ct}` : ''].filter(Boolean).join('\n')
+            };
+        }
 
         const canCraft = this.selectedSlots.some(s => s !== null);
         const hasRecipes = false; // Placeholder for Phase 5
@@ -174,7 +190,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         // Tags in slots for feedback
         const slotTags = this.selectedSlots
             .filter(Boolean)
-            .map(item => getTagsFromItem(item))
+            .flatMap(entry => getTagsFromItem(entry.item))
             .flat();
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
@@ -326,9 +342,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!actor) return;
         const item = actor.items.get(itemId);
         if (!item) return;
-        const idx = this.selectedSlots.findIndex(s => s === null);
-        if (idx === -1) return;
-        this.selectedSlots[idx] = item;
+        const available = item.system?.quantity ?? 1;
+        const existingIdx = this.selectedSlots.findIndex(s => s && s.item.id === itemId);
+        if (existingIdx !== -1) {
+            const totalInSlots = this.selectedSlots.reduce(
+                (sum, s) => sum + (s && s.item.id === itemId ? s.count : 0),
+                0
+            );
+            if (totalInSlots >= available) return;
+            this.selectedSlots[existingIdx].count++;
+        } else {
+            const idx = this.selectedSlots.findIndex(s => s === null);
+            if (idx === -1) return;
+            this.selectedSlots[idx] = { item, count: 1 };
+        }
         this.render();
     }
 
@@ -358,8 +385,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _craft() {
         const actor = this._getActor();
-        const items = this.selectedSlots.filter(Boolean);
-        if (!actor || items.length === 0) return;
+        const entries = this.selectedSlots.filter(Boolean);
+        if (!actor || entries.length === 0) return;
+
+        const items = entries.flatMap(e => Array(e.count).fill(e.item));
 
         const valid = items.every(i => {
             const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
@@ -378,6 +407,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const engine = getExperimentationEngine();
         this.lastResult = await engine.craft(actor, items);
+        /** @type {Array<{item: Item, count: number}|null>} */
         this.selectedSlots = Array(6).fill(null);
 
         if (this.lastResult.success) {

@@ -288,20 +288,20 @@
     border-radius: 4px;
 }
 
-/* 6 ingredient slots: 2 rows x 3 */
+/* 6 ingredient slots: 2 rows x 3, always square */
 .crafting-bench-ingredient-slots {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 12px;
+    aspect-ratio: 3 / 2;
 }
 
 .crafting-bench-slot {
     width: 100%;
-    min-height: 70px;
     aspect-ratio: 1;
-    max-height: 90px;
+    min-height: 0;
     border: 2px dashed var(--craft-border-color);
     border-radius: 6px;
     display: flex;
@@ -310,6 +310,8 @@
     background: rgba(0, 0, 0, 0.3);
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
+    overflow: hidden;
+    position: relative;
 }
 
 .crafting-bench-slot:hover {
@@ -323,33 +325,34 @@
 }
 
 .crafting-bench-slot-item {
+    position: absolute;
+    inset: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 6px;
+    justify-content: center;
+}
+
+.crafting-bench-slot-item .crafting-slot-img {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.crafting-bench-slot-count {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 4px;
     font-size: 0.75em;
-    text-align: center;
-}
-
-.crafting-bench-slot-item img {
-    width: 32px;
-    height: 32px;
-    object-fit: contain;
-    margin-bottom: 2px;
-}
-
-.crafting-slot-name {
     font-weight: 600;
-}
-
-.crafting-slot-tags {
-    font-size: 0.65em;
-    color: #b0b0b0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 80px;
+    color: #fff;
 }
 
 /* Container + sliders row (per sketch) */
@@ -435,19 +438,22 @@
     background: rgba(255, 100, 0, 0.6);
 }
 
-/* Container slot (larger, centered) */
+
+/* Container slot (square, image fills) */
 .crafting-bench-container-slot {
     width: 100px;
-    min-height: 100px;
+    min-width: 100px;
+    aspect-ratio: 1;
     border: 2px dashed var(--craft-border-color);
     border-radius: 8px;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.4);
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
+    overflow: hidden;
+    position: relative;
 }
 
 .crafting-bench-container-slot:hover {
@@ -475,20 +481,17 @@
 }
 
 .crafting-bench-container-item {
+    position: absolute;
+    inset: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 8px;
-    width: 100%;
-    font-size: 0.8em;
-    text-align: center;
+    justify-content: center;
 }
 
-.crafting-bench-container-item img {
-    width: 48px;
-    height: 48px;
-    object-fit: contain;
-    margin-bottom: 4px;
+.crafting-bench-container-item .crafting-container-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* ----- Zone 4: Result ----- */

@@ -57,7 +57,7 @@
                 </div>
                 <div class="crafting-zone-ingredients-list">
                     {{#each listItems}}
-                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" title="{{this.tags}}">
+                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" data-tooltip="{{this.name}}{{#if this.tags}}\nTags: {{this.tags}}{{/if}}" title="{{this.name}}">
                         <img src="{{this.img}}" alt="" class="crafting-ingredient-row-img" />
                         <div class="crafting-ingredient-row-info">
                             <span class="crafting-ingredient-row-name">{{this.name}}</span>
@@ -88,10 +88,9 @@
                     {{#each slots}}
                     <div class="crafting-bench-slot" data-slot-index="{{@index}}">
                         {{#if this.item}}
-                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" title="Click to remove">
-                            <img src="{{this.item.img}}" alt="" />
-                            <span class="crafting-slot-name">{{this.item.name}}</span>
-                            <span class="crafting-slot-tags">{{this.tags}}</span>
+                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="Click to remove">
+                            <img src="{{this.item.img}}" alt="" class="crafting-slot-img" />
+                            {{#if this.count}}<span class="crafting-slot-count">{{this.count}}</span>{{/if}}
                         </div>
                         {{else}}
                         <div class="crafting-bench-slot-empty">Empty</div>
@@ -106,11 +105,10 @@
                         <input type="range" id="{{appId}}-heat" class="crafting-bench-vertical-slider" min="0" max="100" value="{{heatValue}}" step="1" data-craft-setting="heat" style="--heat-fill: {{heatFillPercent}}%;" />
                         <span class="crafting-bench-slider-label crafting-bench-slider-bottom">None</span>
                     </div>
-                    <div class="crafting-bench-container-slot" data-action="removeContainer" title="Click to remove container">
+                    <div class="crafting-bench-container-slot" data-action="removeContainer" data-tooltip="{{containerSlot.tooltip}}" title="Click to remove container">
                         {{#if containerSlot.item}}
                         <div class="crafting-bench-container-item" data-action="removeContainer">
-                            <img src="{{containerSlot.item.img}}" alt="" />
-                            <span class="crafting-slot-name">{{containerSlot.item.name}}</span>
+                            <img src="{{containerSlot.item.img}}" alt="" class="crafting-container-img" />
                         </div>
                         {{else}}
                         <div class="crafting-bench-container-empty">
