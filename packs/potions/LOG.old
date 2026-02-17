@@ -1,5 +1,3 @@
-2026/02/17-02:28:39.105 1975c Delete type=3 #1
-2026/02/17-02:32:53.114 482c Level-0 table #5: started
-2026/02/17-02:32:53.118 482c Level-0 table #5: 2703 bytes OK
-2026/02/17-02:32:53.119 482c Delete type=0 #3
-2026/02/17-02:32:53.123 482c Manual compaction at level-0 from '!items!tAq9k5r3wUqpaJj0' @ 72057594037927935 : 1 .. '!items!tAq9k5r3wUqpaJj0' @ 0 : 0; will stop at (end)
+2026/02/17-02:34:58.932 1975c Recovering log #4
+2026/02/17-02:34:58.939 1975c Delete type=0 #4
+2026/02/17-02:34:58.939 1975c Delete type=3 #2

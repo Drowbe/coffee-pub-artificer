@@ -30,6 +30,10 @@ npm-debug.log*
 *.tmp
 *.temp
 
+# Foundry compendium pack lock files (created at runtime)
+packs/*/LOCK
+packs/*/CURRENT
+
 # Lock files (uncomment if you don't want to track these)
 # *.lock
 
