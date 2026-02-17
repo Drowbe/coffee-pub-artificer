@@ -222,7 +222,7 @@ Provide a valid, copy-pasteable JSON block inside json code fences. No image gen
 
 Unless instructed otherwise, when you generate a consumable item, you must also generate a square image based on that same item. The image should follow the rules below.
 
-Generate a tight, straight-on item portrait of a [ITEMNAME] found in a [BIOMS] environment, fantasy RPG ITEM, facing directly toward the camera with a, frontal perspective only.
+Generate a tight, straight-on item portrait of a [ITEMNAME] found in a [BIOMS] environment, fantasy RPG ITEM, facing directly toward the camera with a frontal perspective only.
 
 Framing is a close item portrait. The item dominates the frame. 
 

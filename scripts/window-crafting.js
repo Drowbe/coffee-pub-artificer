@@ -23,7 +23,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: CRAFTING_APP_ID,
         classes: ['window-artificer-crafting', 'artificer-crafting-window'],
-        position: { width: 1100, height: 580 },
+        position: { width: 1200, height: 700 },
         window: { title: 'Artificer Crafting Station', resizable: true, minimizable: true },
         actions: {
             craft: CraftingWindow._actionCraft,

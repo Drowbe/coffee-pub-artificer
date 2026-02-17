@@ -75,14 +75,6 @@
         <main class="crafting-zone crafting-zone-bench">
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Crafting Bench</h3>
-                <p class="crafting-zone-desc">Click ingredients to add. Combine 1–6 ingredients, set heat & time, then Craft.</p>
-                {{#if combinedTags.length}}
-                <div class="crafting-bench-tags">
-                    {{#each combinedTags}}
-                    <span class="crafting-tag-badge">{{this}}</span>
-                    {{/each}}
-                </div>
-                {{/if}}
                 {{!-- 6 ingredient slots (2 rows x 3) --}}
                 <div class="crafting-bench-ingredient-slots">
                     {{#each slots}}
@@ -90,8 +82,8 @@
                         {{#if this.item}}
                         <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="Click to remove">
                             <img src="{{this.item.img}}" alt="" class="crafting-slot-img" />
-                            <span class="crafting-slot-count">{{this.count}}</span>
                         </div>
+                        <span class="crafting-bench-slot-count">{{this.count}}</span>
                         {{else}}
                         <div class="crafting-bench-slot-empty">Empty</div>
                         {{/if}}
@@ -101,11 +93,11 @@
                 {{!-- Container + sliders row --}}
                 <div class="crafting-bench-process-row">
                     <div class="crafting-bench-slider-wrap crafting-bench-heat-slider" title="Heat: None to High">
-                        <div class="crafting-bench-slider-row">
-                            <span class="crafting-bench-slider-endpoint">None</span>
-                            <input type="range" id="{{appId}}-heat" class="crafting-bench-setting-slider crafting-bench-heat-slider-input" min="0" max="100" value="{{heatValue}}" step="1" data-craft-setting="heat" data-craft-setting-min="0" data-craft-setting-max="100" style="--heat-fill: {{heatFillPercent}}%;" />
-                            <span class="crafting-bench-slider-endpoint"><i class="fa-solid fa-fire-flame-curved"></i> High</span>
+                        <div class="crafting-bench-slider-top-label"><i class="fa-solid fa-fire-flame-curved"></i> High</div>
+                        <div class="crafting-bench-slider-track">
+                            <input type="range" id="{{appId}}-heat" class="crafting-bench-vertical-slider crafting-bench-heat-slider-input" min="0" max="100" value="{{heatValue}}" step="1" data-craft-setting="heat" data-craft-setting-min="0" data-craft-setting-max="100" style="--heat-fill: {{heatFillPercent}}%;" />
                         </div>
+                        <div class="crafting-bench-slider-bottom-label">None</div>
                     </div>
                     <div class="crafting-bench-container-slot" data-action="removeContainer" data-tooltip="{{containerSlot.tooltip}}" title="Click to remove container">
                         {{#if containerSlot.item}}
@@ -121,13 +113,22 @@
                         {{/if}}
                     </div>
                     <div class="crafting-bench-slider-wrap crafting-bench-time-slider" title="Time: 5 sec to 2 min">
-                        <div class="crafting-bench-slider-row">
-                            <span class="crafting-bench-slider-endpoint">5 sec</span>
-                            <input type="range" id="{{appId}}-time" class="crafting-bench-setting-slider" min="5" max="120" value="{{timeValue}}" step="5" data-craft-setting="time" data-craft-setting-min="5" data-craft-setting-max="120" style="--slider-fill: {{timeFillPercent}}%;" />
-                            <span class="crafting-bench-slider-endpoint">120 sec</span>
+                        <div class="crafting-bench-slider-top-label">120 sec</div>
+                        <div class="crafting-bench-slider-track">
+                            <input type="range" id="{{appId}}-time" class="crafting-bench-vertical-slider" min="5" max="120" value="{{timeValue}}" step="5" data-craft-setting="time" data-craft-setting-min="5" data-craft-setting-max="120" style="--slider-fill: {{timeFillPercent}}%;" />
                         </div>
+                        <div class="crafting-bench-slider-bottom-label">5 sec</div>
                     </div>
                 </div>
+
+                {{#if combinedTags.length}}
+                <p class="crafting-zone-desc">Tags for this combination:</p>
+                <div class="crafting-bench-tags">
+                    {{#each combinedTags}}
+                    <span class="crafting-tag-badge">{{this}}</span>
+                    {{/each}}
+                </div>
+                {{/if}}
             </section>
         </main>
 
