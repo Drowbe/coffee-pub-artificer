@@ -8,14 +8,24 @@ import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from './schema-recipes.js';
 
 /**
- * Resolve an item by name (world items; compendia require resultItemUuid)
+ * Resolve an item by name (world items; compendia require UUID)
  * @param {string} name
+ * @param {string} [type] - Optional filter: 'container' for containers only
  * @returns {Item|null}
  */
-function resolveItemByName(name) {
+function resolveItemByName(name, type) {
     if (!name || typeof name !== 'string') return null;
     const n = name.trim();
-    return game.items?.find((i) => (i.name || '').trim() === n) ?? null;
+    const items = game.items ?? [];
+    for (const i of items) {
+        if ((i.name || '').trim() !== n) continue;
+        if (type === 'container') {
+            const f = i.flags?.artificer || i.flags?.[MODULE.ID];
+            if (f?.type !== 'container') continue;
+        }
+        return i;
+    }
+    return null;
 }
 
 /** Default journal name when none configured */
@@ -72,6 +82,12 @@ export function validateRecipePayload(payload) {
     if (!resolvedUuid) {
         return { valid: false, error: `Recipe "${payload.name}" requires resultItemUuid or resultItemName matching an existing item` };
     }
+    let containerUuid = payload.containerUuid ?? null;
+    const containerName = payload.containerName ?? payload.container ?? null;
+    if (!containerUuid && containerName) {
+        const c = resolveItemByName(containerName, 'container');
+        if (c) containerUuid = c.uuid;
+    }
     const data = {
         name: payload.name,
         type: payload.type ?? ITEM_TYPES.CONSUMABLE,
@@ -86,7 +102,11 @@ export function validateRecipePayload(payload) {
         })),
         resultItemUuid: resolvedUuid,
         tags: Array.isArray(payload.tags) ? payload.tags : [],
-        description: payload.description ?? ''
+        description: payload.description ?? '',
+        heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= 100 ? Number(payload.heat) : null) : null,
+        time: payload.time != null ? (Number(payload.time) >= 0 ? Number(payload.time) : null) : null,
+        containerUuid: containerUuid ?? null,
+        containerName: containerName ?? null
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
@@ -107,6 +127,17 @@ function buildRecipePageHtml(data) {
     if (data.skill) parts.push(`<p><strong>Skill:</strong> ${escapeHtml(data.skill)}</p>`);
     if (data.skillLevel != null) parts.push(`<p><strong>Skill Level:</strong> ${data.skillLevel}</p>`);
     if (data.workstation) parts.push(`<p><strong>Workstation:</strong> ${escapeHtml(data.workstation)}</p>`);
+    if (data.heat != null && data.heat >= 0 && data.heat <= 100) parts.push(`<p><strong>Heat:</strong> ${data.heat}</p>`);
+    if (data.time != null && data.time >= 0) parts.push(`<p><strong>Time:</strong> ${data.time}</p>`);
+    if (data.containerUuid || data.containerName) {
+        const containerItem = data.containerUuid ? game.items?.find((i) => i.uuid === data.containerUuid) : null;
+        const containerLabel = containerItem ? containerItem.name : (data.containerName || '');
+        if (data.containerUuid) {
+            parts.push(`<p><strong>Container:</strong> @UUID[${data.containerUuid}]{${escapeHtml(containerLabel)}}</p>`);
+        } else if (containerLabel) {
+            parts.push(`<p><strong>Container:</strong> ${escapeHtml(containerLabel)}</p>`);
+        }
+    }
     const resultItem = game.items?.find((i) => i.uuid === data.resultItemUuid);
     const resultLabel = resultItem ? resultItem.name : data.name;
     parts.push(`<p><strong>Result:</strong> @UUID[${data.resultItemUuid}]{${escapeHtml(resultLabel)}}</p>`);

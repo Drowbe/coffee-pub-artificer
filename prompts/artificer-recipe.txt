@@ -29,6 +29,10 @@ OPTIONAL FIELDS
 | skill       | string  | Alchemy     | Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling |
 | skillLevel  | number  | 0           | Minimum skill level (0–100)                         |
 | workstation | string  | null        | Required workstation name or UUID                   |
+| heat        | number  | null        | Required heat level 0-100 (null = any)              |
+| time        | number  | null        | Required crafting time in seconds (null = any)      |
+| container   | string  | null        | Required container name (e.g., Beaker, Crucible)    |
+| containerUuid | string | null        | Container item UUID (use container if UUID unknown) |
 | tags        | array   | []          | Recipe tags (strings)                               |
 | description | string  | ''          | Recipe notes/description                            |
 
@@ -47,6 +51,9 @@ JSON TEMPLATE
   "ingredients": [
     { "type": "ingredient", "name": "Red Amanita Mushroom", "quantity": 1 }
   ],
+  "heat": 50,
+  "time": 30,
+  "container": "Beaker",
   "tags": ["healing", "potion", "common"],
   "description": "2d4+2 HP when consumed."
 }
@@ -89,5 +96,7 @@ RULES
 - Output valid JSON only. No trailing commas, no duplicate keys.
 - Escape double quotes (") in description strings.
 - Use resultItemName when the result item exists in the world under that name; use resultItemUuid when you have the UUID.
+- Use container (name) when the recipe needs a specific container (Beaker, Crucible, Mortar, etc.); container must match an existing Artificer container in the world.
+- Heat (0-100) and time (seconds) specify required crafting process; omit if recipe works with any heat/time.
 - Ingredient type "item" is for mundane D&D items (Flask of Oil, Charcoal, Ink, Sugar, etc.) that are not Artificer ingredients.
 - Ensure all ingredient names match existing items/ingredients in your world.

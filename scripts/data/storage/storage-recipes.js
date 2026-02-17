@@ -68,14 +68,10 @@ export class RecipeStorage {
         
         for (const page of pages) {
             try {
-                // Enrich HTML content (handles @UUID links, etc.)
-                const enrichedHtml = await TextEditor.enrichHTML(page.text.content, {
-                    async: true,
-                    relativeTo: journal
-                });
-                
-                // Parse recipe from page
-                const recipe = await RecipeParser.parseSinglePage(page, enrichedHtml);
+                if (page.type !== 'text') continue;
+                // Use RAW content for parsing—enriched HTML turns @UUID into links, breaking regex
+                const rawContent = page.text?.content ?? page.text?.markdown ?? '';
+                const recipe = await RecipeParser.parseSinglePage(page, rawContent);
                 if (recipe) {
                     this._cache.set(recipe.id, recipe);
                 }

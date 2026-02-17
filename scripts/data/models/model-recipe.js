@@ -23,6 +23,10 @@ export class ArtificerRecipe {
         this.skill = data.skill ?? CRAFTING_SKILLS.ALCHEMY;
         this.skillLevel = data.skillLevel ?? 0;
         this.workstation = data.workstation ?? null;
+        this.heat = data.heat ?? null;
+        this.time = data.time ?? null;
+        this.containerUuid = data.containerUuid ?? null;
+        this.containerName = data.containerName ?? null;
         this.ingredients = data.ingredients ?? [];
         this.resultItemUuid = data.resultItemUuid ?? '';
         this.tags = data.tags ?? [];
@@ -82,6 +86,18 @@ export class ArtificerRecipe {
         // Ensure tags is array
         if (!Array.isArray(this.tags)) {
             this.tags = [];
+        }
+
+        // Validate heat (0-100) and time (seconds)
+        if (this.heat != null) {
+            const h = Number(this.heat);
+            if (isNaN(h) || h < 0 || h > 100) this.heat = null;
+            else this.heat = h;
+        }
+        if (this.time != null) {
+            const t = Number(this.time);
+            if (isNaN(t) || t < 0) this.time = null;
+            else this.time = t;
         }
     }
     
@@ -197,6 +213,10 @@ export class ArtificerRecipe {
             skill: this.skill,
             skillLevel: this.skillLevel,
             workstation: this.workstation,
+            heat: this.heat,
+            time: this.time,
+            containerUuid: this.containerUuid,
+            containerName: this.containerName,
             ingredients: [...this.ingredients],
             resultItemUuid: this.resultItemUuid,
             tags: [...this.tags],

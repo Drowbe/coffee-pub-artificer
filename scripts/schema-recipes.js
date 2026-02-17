@@ -20,6 +20,10 @@
  * @property {string} skill - Required skill (Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling)
  * @property {number} skillLevel - Minimum skill level required
  * @property {string|null} workstation - Required workstation (if any)
+ * @property {number|null} heat - Required heat level 0-100 (null = any)
+ * @property {number|null} time - Required crafting time in seconds (null = any)
+ * @property {string|null} containerUuid - Required container item UUID (null = any)
+ * @property {string|null} containerName - Required container name (fallback when UUID not set)
  * @property {RecipeIngredient[]} ingredients - Required ingredients/components/essences
  * @property {string} resultItemUuid - UUID of resulting item (Item document UUID)
  * @property {string[]} tags - Recipe tags

@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { getAPI } from './api-artificer.js';
-import { getExperimentationEngine, getTagsFromItem, getKnownCombinations } from './systems/experimentation-engine.js';
+import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
 /**
@@ -14,7 +14,6 @@ import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 function getRecipesForDisplay() {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
-    if (recipes.length === 0) return getKnownCombinations();
     return recipes.map((r) => {
         const tags = (r.tags?.length ? r.tags : r.ingredients?.map((i) => i.name) ?? [])
             .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));

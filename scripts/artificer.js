@@ -118,7 +118,7 @@ function registerMenubarIntegration() {
         name: 'Artificer Crafting',
         title: 'Artificer Crafting Station',
         icon: 'fa-solid fa-hammer',
-        height: 100, // 100px height as requested
+        height: 40, // height
         persistence: 'manual', // Stay open until user closes
         moduleId: MODULE.ID
     });

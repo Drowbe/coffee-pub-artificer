@@ -60,6 +60,19 @@ export class RecipeParser {
                     data.skillLevel = parseInt(value) || 0;
                 } else if (labelLower === 'workstation') {
                     data.workstation = value || null;
+                } else if (labelLower === 'heat') {
+                    const n = parseInt(value);
+                    if (!isNaN(n) && n >= 0 && n <= 100) data.heat = n;
+                } else if (labelLower === 'time') {
+                    const sec = this._parseTimeToSeconds(value);
+                    if (sec != null) data.time = sec;
+                } else if (labelLower === 'container') {
+                    const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
+                    if (uuidMatch) {
+                        data.containerUuid = uuidMatch[1].trim();
+                    } else if (value.trim()) {
+                        data.containerName = value.trim();
+                    }
                 } else if (labelLower === 'result') {
                     // Extract UUID from @UUID format or plain text
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
@@ -105,6 +118,23 @@ export class RecipeParser {
         }
     }
     
+    /**
+     * Parse time string to seconds (e.g. "30", "30 sec", "2 min")
+     * @param {string} value
+     * @returns {number|null}
+     */
+    static _parseTimeToSeconds(value) {
+        if (!value || typeof value !== 'string') return null;
+        const s = value.trim();
+        const num = parseInt(s);
+        if (!isNaN(num) && num >= 0) return num;
+        const minMatch = s.match(/^(\d+)\s*(?:min|minute)/i);
+        if (minMatch) return (parseInt(minMatch[1]) || 0) * 60;
+        const secMatch = s.match(/^(\d+)\s*(?:sec|second)/i);
+        if (secMatch) return parseInt(secMatch[1]) || 0;
+        return null;
+    }
+
     /**
      * Parse ingredients from a <ul> element
      * @param {HTMLUListElement} ul - Unordered list element
