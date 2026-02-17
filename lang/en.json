@@ -35,10 +35,8 @@
 		"blueprintJournal-Hint": "Select the journal containing blueprint entries. Each page is parsed as a blueprint.",
 
 		"numIngredientCompendiums-Label": "Number of Compendiums",
-		"numIngredientCompendiums-Hint": "Number of compendiums to search for ingredients. Adjust the slider to add or remove priority slots.",
+		"numIngredientCompendiums-Hint": "Number of compendiums to search for ingredients. Adjust the slider to add or remove priority slots."
 
-		"exampleSetting-Label": "Example Setting",
-		"exampleSetting-Hint": "This is an example setting for the module."
 	}
 }
 

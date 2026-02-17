@@ -245,7 +245,7 @@ export const registerSettings = () => {
         config: true,
         default: 1,
         type: Number,
-        range: { min: 0, max: 10, step: 1 },
+        range: { min: 0, max: 30, step: 1 },
         requiresReload: true,
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
