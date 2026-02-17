@@ -1,0 +1,93 @@
+ARTIFICER RECIPE IMPORT PROMPT
+
+This prompt guides generation of JSON for the Coffee Pub Artificer "Import Recipes" flow. Recipes are stored as journal pages and parsed by the Artificer module.
+
+===============================
+REQUIRED FIELDS
+===============================
+
+- name: (string) Recipe name
+- ingredients: (array) List of required ingredients. Each element:
+  - type: (string) "ingredient" | "component" | "essence" | "item"
+    - ingredient, component, essence = Artificer crafting materials
+    - item = any D&D item by name (e.g., Flask of Oil, Charcoal)
+  - name: (string) Ingredient/component/essence/item name
+  - quantity: (number) Required amount
+
+- resultItemUuid OR resultItemName: One is required.
+  - resultItemUuid: (string) Foundry Item document UUID
+  - resultItemName: (string) Fallback when UUID unknown—matches by name among world items
+
+===============================
+OPTIONAL FIELDS
+===============================
+
+| Field       | Type    | Default     | Description                                        |
+|-------------|---------|-------------|----------------------------------------------------|
+| type        | string  | Consumable  | Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice |
+| category    | string  | ''          | e.g., Potion, Oil, Alchemical                       |
+| skill       | string  | Alchemy     | Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling |
+| skillLevel  | number  | 0           | Minimum skill level (0–100)                         |
+| workstation | string  | null        | Required workstation name or UUID                   |
+| tags        | array   | []          | Recipe tags (strings)                               |
+| description | string  | ''          | Recipe notes/description                            |
+
+===============================
+JSON TEMPLATE
+===============================
+
+```json
+{
+  "name": "Potion of Healing",
+  "resultItemName": "Potion of Healing",
+  "type": "Consumable",
+  "category": "Potion",
+  "skill": "Alchemy",
+  "skillLevel": 0,
+  "ingredients": [
+    { "type": "ingredient", "name": "Red Amanita Mushroom", "quantity": 1 }
+  ],
+  "tags": ["healing", "potion", "common"],
+  "description": "2d4+2 HP when consumed."
+}
+```
+
+===============================
+ARRAY FORMAT (BATCH IMPORT)
+===============================
+
+For multiple recipes, provide a JSON array:
+
+```json
+[
+  {
+    "name": "Potion of Climbing",
+    "resultItemName": "Potion of Climbing",
+    "type": "Consumable",
+    "category": "Potion",
+    "skill": "Alchemy",
+    "ingredients": [
+      { "type": "ingredient", "name": "Giant Wolf Spider Hair", "quantity": 2 }
+    ]
+  },
+  {
+    "name": "Basic Poison",
+    "resultItemName": "Basic Poison",
+    "category": "Poison",
+    "skill": "Alchemy",
+    "ingredients": [
+      { "type": "ingredient", "name": "Nightshade", "quantity": 1 }
+    ]
+  }
+]
+```
+
+===============================
+RULES
+===============================
+
+- Output valid JSON only. No trailing commas, no duplicate keys.
+- Escape double quotes (") in description strings.
+- Use resultItemName when the result item exists in the world under that name; use resultItemUuid when you have the UUID.
+- Ingredient type "item" is for mundane D&D items (Flask of Oil, Charcoal, Ink, Sugar, etc.) that are not Artificer ingredients.
+- Ensure all ingredient names match existing items/ingredients in your world.

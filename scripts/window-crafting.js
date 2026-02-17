@@ -3,8 +3,24 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem, getKnownCombinations } from './systems/experimentation-engine.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
+
+/**
+ * Map journal-loaded recipes to display format for the recipe list
+ * @returns {Array<{tags: string[], result: string}>}
+ */
+function getRecipesForDisplay() {
+    const api = getAPI();
+    const recipes = api?.recipes?.getAll?.() ?? [];
+    if (recipes.length === 0) return getKnownCombinations();
+    return recipes.map((r) => {
+        const tags = (r.tags?.length ? r.tags : r.ingredients?.map((i) => i.name) ?? [])
+            .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
+        return { tags: tags.length ? tags : [r.name], result: r.name };
+    });
+}
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -199,8 +215,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         const canCraft = this.selectedSlots.some(s => s !== null);
-        const hasRecipes = false; // Placeholder for Phase 5
-        const knownCombinations = getKnownCombinations();
+        const knownCombinations = getRecipesForDisplay();
+        const hasRecipes = knownCombinations.length > 0;
 
         // Tags in slots for feedback
         const slotTags = this.selectedSlots

@@ -1,0 +1,33 @@
+<div class="artificer-window artificer-import-recipes-window artificer-import-layout">
+    <div class="artificer-header">
+        <div class="artificer-header-content">
+            <div class="artificer-header-icon">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div class="artificer-header-title">
+                <div class="artificer-main-title">Import Recipes from JSON</div>
+                <div class="artificer-subtitle">Artificer recipes to journal pages</div>
+            </div>
+        </div>
+    </div>
+    <div class="artificer-content artificer-import-content">
+        <div class="artificer-import-toolbar">
+            <button type="button" class="artificer-button artificer-button-copy" data-action="copy-prompt" title="Copy recipe prompt to clipboard">
+                <i class="fa-solid fa-copy"></i> Copy Prompt
+            </button>
+            <button type="button" class="artificer-button artificer-button-select" data-action="select-file" title="Load JSON from file">
+                <i class="fa-solid fa-folder-open"></i> Load File
+            </button>
+        </div>
+        <input type="file" id="artificer-recipe-import-file-input" accept="application/json,.json" style="display: none;">
+        <textarea id="artificer-recipe-import-json" name="jsonContent" class="artificer-import-textarea" placeholder="Paste JSON here"></textarea>
+    </div>
+    <div class="artificer-form-actions">
+        <button type="button" class="artificer-button" data-action="cancel">
+            <i class="fa-solid fa-times"></i> Cancel
+        </button>
+        <button type="submit" class="artificer-button" data-action="import">
+            <i class="fa-solid fa-file-import"></i> Import Recipes
+        </button>
+    </div>
+</div>

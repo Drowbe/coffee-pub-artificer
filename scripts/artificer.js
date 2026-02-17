@@ -8,6 +8,7 @@ import { getAPI } from './api-artificer.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerImportWindow } from './window-artificer-import.js';
+import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js';
 import { CraftingWindow } from './window-crafting.js';
 
 // ================================================================== 
@@ -26,6 +27,7 @@ Hooks.once('init', async () => {
     await loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
         'modules/coffee-pub-artificer/templates/import-items.hbs',
+        'modules/coffee-pub-artificer/templates/import-recipes.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/window-crafting.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
@@ -208,11 +210,24 @@ function registerMenubarIntegration() {
             importWindow.render(true);
         }
     });
+
+    // Register secondary bar item for importing recipes
+    const importRecipeItemId = 'artificer-import-recipes';
+    const importRecipeRegistered = blacksmith.registerSecondaryBarItem(barType, importRecipeItemId, {
+        icon: 'fa-solid fa-book-open',
+        title: 'Import Recipes',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const win = new ArtificerRecipeImportWindow();
+            win.render(true);
+        }
+    });
     
-    if (craftingRegistered && createItemRegistered && importItemRegistered) {
-        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and crafting buttons registered successfully`);
+    if (craftingRegistered && createItemRegistered && importItemRegistered && importRecipeRegistered) {
+        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`);
     } else {
-        console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered})`);
+        console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered}, import-recipes: ${importRecipeRegistered})`);
     }
 }
 
