@@ -28,9 +28,11 @@ Items used as the container slot (beaker, mortar, etc.). Must have `flags.artifi
 | Item Name | Notes |
 |-----------|-------|
 | Beaker | Glass vessel for liquid mixtures |
+| Vial | Small vessel for concentrates and essences |
 | Mortar and Pestle | For grinding and blending solids |
 | Crucible | Heat-resistant container for metal/alchemy |
 | Mixing Bowl | General-purpose container |
+| Herb Bag | Cloth pouch for steeping and cold infusions |
 
 ---
 COMPLETE INGREDIENTS

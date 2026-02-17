@@ -69,7 +69,7 @@ function onRenderItemSheet(app, html) {
 
     const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
     const type = flags.type;
-    if (!type || !['ingredient', 'component', 'essence'].includes(type)) return;
+    if (!type || !['ingredient', 'component', 'essence', 'container'].includes(type)) return;
 
     // Avoid double-injection
     if (element.querySelector('.artificer-item-sheet-section')) return;
@@ -127,13 +127,13 @@ function buildArtificerSection(item, flags, type, editable) {
     const rows = [];
     if (primaryTag) rows.push({ label: 'Primary Tag', value: primaryTag });
     if (secondaryStr) rows.push({ label: 'Secondary Tags', value: secondaryStr });
-    if (type === 'ingredient' && family) rows.push({ label: 'Family', value: family });
+    if ((type === 'ingredient' || type === 'container') && family) rows.push({ label: 'Family', value: family });
     if (type === 'component' && componentType) rows.push({ label: 'Component Type', value: componentType });
     if (type === 'essence' && affinity) rows.push({ label: 'Affinity', value: affinity });
     rows.push({ label: 'Tier', value: String(tier) });
     rows.push({ label: 'Rarity', value: rarity });
-    if (type === 'ingredient' && quirk) rows.push({ label: 'Quirk', value: quirk });
-    if (type === 'ingredient' && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
+    if ((type === 'ingredient' || type === 'container') && quirk) rows.push({ label: 'Quirk', value: quirk });
+    if ((type === 'ingredient' || type === 'container') && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
 
     const rowsHtml = rows
         .map((r) => `<div class="artificer-sheet-row"><span class="artificer-sheet-label">${escapeHtml(r.label)}:</span><span class="artificer-sheet-value">${escapeHtml(r.value)}</span></div>`)

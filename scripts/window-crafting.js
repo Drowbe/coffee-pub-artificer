@@ -100,17 +100,23 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 return f?.type === 'container';
             })
-            .map(i => ({
-                id: i.id,
-                uuid: i.uuid,
-                name: i.name,
-                img: i.img || 'icons/containers/bags/pouch-simple-brown.webp',
-                quantity: i.system?.quantity ?? 1,
-                tags: '',
-                type: 'container',
-                isContainer: true,
-                addAction: 'addToContainer'
-            }));
+            .map(i => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                const primary = f?.primaryTag ?? '';
+                const secondary = Array.isArray(f?.secondaryTags) ? f.secondaryTags : (f?.secondaryTags ? [f.secondaryTags] : []);
+                const tags = [primary, ...secondary].filter(Boolean).join(', ');
+                return {
+                    id: i.id,
+                    uuid: i.uuid,
+                    name: i.name,
+                    img: i.img || 'icons/containers/bags/pouch-simple-brown.webp',
+                    quantity: i.system?.quantity ?? 1,
+                    tags,
+                    type: 'container',
+                    isContainer: true,
+                    addAction: 'addToContainer'
+                };
+            });
 
         // Apply filters to ingredients
         if (this.filterFamily) {

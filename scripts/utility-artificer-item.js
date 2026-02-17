@@ -9,7 +9,7 @@ import { MODULE } from './const.js';
  * @param {Object} itemData - D&D 5e item data structure
  * @param {Object} artificerData - Artificer-specific data (tags, family, tier, etc.)
  * @param {Object} options - Additional options
- * @param {string} options.type - Item type: 'ingredient', 'component', or 'essence'
+ * @param {string} options.type - Item type: 'ingredient', 'component', 'essence', or 'container'
  * @param {boolean} options.createInWorld - Create in world (default: true)
  * @param {Actor|null} options.actor - Optional actor to add item to
  * @returns {Promise<Item>} Created item
@@ -18,8 +18,8 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
     const { type, createInWorld = true, actor = null } = options;
     
     // Validate type
-    if (!['ingredient', 'component', 'essence'].includes(type)) {
-        throw new Error(`Invalid item type: ${type}. Must be 'ingredient', 'component', or 'essence'`);
+    if (!['ingredient', 'component', 'essence', 'container'].includes(type)) {
+        throw new Error(`Invalid item type: ${type}. Must be 'ingredient', 'component', 'essence', or 'container'`);
     }
     
     // Validate artificer data
@@ -220,7 +220,7 @@ function buildArtificerFlags(artificerData, type) {
     };
     
     // Type-specific flags
-    if (type === 'ingredient') {
+    if (type === 'ingredient' || type === 'container') {
         flags.family = artificerData.family || '';
         flags.quirk = artificerData.quirk || null;
         flags.biomes = artificerData.biomes || [];
@@ -250,12 +250,12 @@ export function validateArtificerData(artificerData, type) {
     }
     
     // Validate type-specific requirements
-    if (type === 'ingredient') {
+    if (type === 'ingredient' || type === 'container') {
         if (!artificerData.family) {
-            throw new Error('family is required for ingredients');
+            throw new Error(`family is required for ${type}s`);
         }
         if (artificerData.secondaryTags && artificerData.secondaryTags.length > 2) {
-            throw new Error('ingredients can have at most 2 secondary tags');
+            throw new Error(`${type}s can have at most 2 secondary tags`);
         }
     } else if (type === 'component') {
         if (!artificerData.componentType) {
@@ -306,7 +306,7 @@ export function isArtificerItem(item) {
 /**
  * Get the artificer type of an item
  * @param {Item} item - Item to check
- * @returns {string|null} 'ingredient', 'component', 'essence', or null
+ * @returns {string|null} 'ingredient', 'component', 'essence', 'container', or null
  */
 export function getArtificerType(item) {
     return item.flags[MODULE.ID]?.type || null;

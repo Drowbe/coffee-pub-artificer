@@ -1,0 +1,318 @@
+VARIABLES FOR THE ARTIFICER CONTAINER
+
+Name: 
+Type: 
+Source: 
+License:
+Artificer type: container
+Family: 
+Primary tag: 
+Secondary tags: 
+Tier: 
+Rarity: 
+Quirk: 
+Biomes: 
+Weight: 
+Price: 
+Description: 
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed.
+
+For the image, show the container as a crafting tool. Do not embed the JSON in the image!
+
+
+===============================
+CONTAINER ITEMS TO GENERATE
+===============================
+
+Generate one prompt block per container. Each container is a crafting tool used in the container slot. Artificer type is always "container". Containers are reusable tools (type "loot")—not consumables. Omit consumableType, Uses, Activity fields.
+
+-------------------
+1. BEAKER
+-------------------
+
+Name: Beaker
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: Glass
+Primary tag: Liquid
+Secondary tags: Heat-Safe
+Tier: 1
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 0.5
+Price: 5
+Description: A glass vessel with a flared lip, used for liquid mixtures, tinctures, and potion brewing. Sturdy enough for gentle heating over a flame.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/beaker.webp
+
+
+-------------------
+2. VIAL
+-------------------
+
+Name: Vial
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: Glass
+Primary tag: Liquid
+Secondary tags: Small
+Tier: 1
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 0.1
+Price: 2
+Description: A small glass vessel with a stopper, ideal for concentrates, essences, and small-batch mixtures. Commonly used by alchemists and herbalists.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/vial.webp
+
+
+-------------------
+3. MORTAR AND PESTLE
+-------------------
+
+Name: Mortar and Pestle
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: Ceramic
+Primary tag: Grinding
+Secondary tags: Dry
+Tier: 1
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 2
+Price: 10
+Description: A heavy bowl and grinding tool for crushing herbs, grinding powders, and blending dry ingredients. Essential for herbal remedies and alchemical preparations.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/mortar-pestle.webp
+
+
+-------------------
+4. CRUCIBLE
+-------------------
+
+Name: Crucible
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: Metal
+Primary tag: Metal
+Secondary tags: High-Heat
+Tier: 2
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 3
+Price: 25
+Description: A heat-resistant vessel of ceramic or metal, used for smelting ores, high-temperature alchemy, and metalwork. Withstands intense heat.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/crucible.webp
+
+
+-------------------
+5. MIXING BOWL
+-------------------
+
+Name: Mixing Bowl
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: General
+Primary tag: General
+Secondary tags: Mixing
+Tier: 1
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 1
+Price: 5
+Description: A broad, shallow bowl for combining dry or wet ingredients. Versatile for general mixing, infusions, and preparation work.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/mixing-bowl.webp
+
+
+-------------------
+6. HERB BAG
+-------------------
+
+Name: Herb Bag
+Type: loot
+Source: Artificer
+License: CC BY-NC 4.0
+Artificer type: container
+Family: Cloth
+Primary tag: Herbal
+Secondary tags: Infusion
+Tier: 1
+Rarity: Common
+Quirk: 
+Biomes: 
+Weight: 0.25
+Price: 3
+Description: A drawstring pouch of fine cloth, used for steeping herbs, cold infusions, and herbal preparations that require no heat. Lets liquid penetrate while containing the herbs.
+consumableType: 
+Food type: 
+Uses: 
+Max uses: 
+Destroy on empty: false
+Magical: false
+Consumption magical: false
+Activity type: 
+Activity name: 
+formula: 
+Activity effect type: 
+Activity effect die: 
+Activity effect bonus:
+Damage type:
+
+**Image path:** assets/images/objects/herb-bag.webp
+
+
+===============================
+JSON TEMPLATE FOR CONTAINERS
+===============================
+
+Containers use type "loot" and flags.artificer.type "container". Include core Artificer fields for recipe matching.
+
+CONTAINER FAMILIES (family):
+- Glass (Beaker, Vial)
+- Ceramic (Mortar and Pestle)
+- Metal (Crucible)
+- General (Mixing Bowl)
+- Cloth (Herb Bag)
+
+TAGS for recipe matching (primaryTag, secondaryTags):
+- Beaker: Liquid, Heat-Safe
+- Vial: Liquid, Small
+- Mortar and Pestle: Grinding, Dry
+- Crucible: Metal, High-Heat
+- Mixing Bowl: General, Mixing
+- Herb Bag: Herbal, Infusion
+
+{
+  "name": "CONTAINERNAME",
+  "type": "loot",
+  "img": "modules/coffee-pub-artificer/assets/images/objects/CONTAINERFILE.webp",
+  "description": "DESCRIPTION",
+  "weight": WEIGHT,
+  "price": PRICE,
+  "rarity": "common",
+  "system": {
+    "source": { "value": "Artificer", "custom": "Artificer", "license": "OGL" }
+  },
+  "flags": {
+    "coffee-pub-artificer": {
+      "type": "container",
+      "family": "FAMILY",
+      "primaryTag": "PRIMARYTAG",
+      "secondaryTags": ["TAG1", "TAG2"],
+      "tier": 1,
+      "rarity": "Common",
+      "quirk": null,
+      "biomes": []
+    }
+  }
+}
+
+REQUIRED:
+- source: Always set. Use system.source with value, custom, and license.
+- license: Use "OGL", "CC-BY-4.0", or project license. Never leave empty.
+- family: One of Glass, Ceramic, Metal, General, Cloth.
+- primaryTag, secondaryTags: For recipe/container matching. Tags help recipes require specific containers (e.g. potion recipes → Liquid container).
+
+Note: The Artificer import currently requires type "ingredient", "component", or "essence". Container support may need to be added to the import utility. Until then, create these items manually via the Create Item form with flags.artificer.type = "container".
