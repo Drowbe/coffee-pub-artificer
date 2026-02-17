@@ -25,10 +25,9 @@ export class ArtificerRecipe {
         this.workstation = data.workstation ?? null;
         this.heat = data.heat ?? null;
         this.time = data.time ?? null;
-        this.containerUuid = data.containerUuid ?? null;
         this.containerName = data.containerName ?? null;
         this.ingredients = data.ingredients ?? [];
-        this.resultItemUuid = data.resultItemUuid ?? '';
+        this.resultItemName = data.resultItemName ?? data.name ?? '';
         this.tags = data.tags ?? [];
         this.description = data.description ?? '';
         this.source = data.source ?? '';
@@ -215,10 +214,9 @@ export class ArtificerRecipe {
             workstation: this.workstation,
             heat: this.heat,
             time: this.time,
-            containerUuid: this.containerUuid,
             containerName: this.containerName,
             ingredients: [...this.ingredients],
-            resultItemUuid: this.resultItemUuid,
+            resultItemName: this.resultItemName,
             tags: [...this.tags],
             description: this.description,
             source: this.source,
@@ -239,8 +237,8 @@ export class ArtificerRecipe {
             console.error('ArtificerRecipe: Missing name');
             return false;
         }
-        if (!this.resultItemUuid) {
-            console.error('ArtificerRecipe: Missing resultItemUuid');
+        if (!this.resultItemName) {
+            console.error('ArtificerRecipe: Missing resultItemName');
             return false;
         }
         if (this.ingredients.length === 0) {

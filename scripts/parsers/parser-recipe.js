@@ -69,19 +69,16 @@ export class RecipeParser {
                 } else if (labelLower === 'container') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
-                        data.containerUuid = uuidMatch[1].trim();
+                        data.containerName = uuidMatch[2].trim(); // Use label, not UUID (portable)
                     } else if (value.trim()) {
                         data.containerName = value.trim();
                     }
                 } else if (labelLower === 'result') {
-                    // Extract UUID from @UUID format or plain text
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
-                        data.resultItemUuid = uuidMatch[1].trim();
-                    } else {
-                        // If no UUID format, try to find item by name
-                        // This is a fallback - ideally recipes should use @UUID format
-                        console.warn(`Recipe "${data.name}" result does not use @UUID format: ${value}`);
+                        data.resultItemName = uuidMatch[2].trim(); // Use label, not UUID (portable)
+                    } else if (value.trim()) {
+                        data.resultItemName = value.trim();
                     }
                 } else if (labelLower === 'tags') {
                     // Parse comma-separated tags
@@ -97,10 +94,9 @@ export class RecipeParser {
                 }
             }
             
-            // Validate required fields
-            if (!data.resultItemUuid) {
-                console.warn(`Recipe "${data.name}" is missing resultItemUuid`);
-                return null;
+            // Require resultItemName (name-based, no world UUIDs)
+            if (!data.resultItemName) {
+                data.resultItemName = data.name; // Fallback to recipe name
             }
             
             // Create recipe object

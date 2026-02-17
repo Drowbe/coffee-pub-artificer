@@ -595,13 +595,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.selectedSlots = newSlots;
 
-        if (recipe.containerUuid || recipe.containerName) {
-            // Match by name: actor items have different UUIDs than world items
-            let targetName = (recipe.containerName || '').trim();
-            if (!targetName && recipe.containerUuid) {
-                const ref = await fromUuid(recipe.containerUuid);
-                targetName = (ref?.name || '').trim();
-            }
+        if (recipe.containerName) {
+            const targetName = (recipe.containerName || '').trim();
             const containerItem = actor?.items?.find((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 if (f?.type !== 'container') return false;
@@ -671,13 +666,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const recipe = this.selectedRecipe;
         if (!recipe) return { success: false, item: null, name: 'No recipe', quality: 'Failed' };
 
-        let resultItem = null;
-        if (recipe.resultItemUuid) {
-            resultItem = await fromUuid(recipe.resultItemUuid);
-        }
-        if (!resultItem && recipe.name) {
-            resultItem = await resolveItemByName(recipe.name);
-        }
+        const resultName = (recipe.resultItemName || recipe.name || '').trim();
+        const resultItem = resultName ? await resolveItemByName(resultName) : null;
         if (!resultItem) {
             return {
                 success: false,

@@ -22,10 +22,9 @@
  * @property {string|null} workstation - Required workstation (if any)
  * @property {number|null} heat - Required heat level 0-100 (null = any)
  * @property {number|null} time - Required crafting time in seconds (null = any)
- * @property {string|null} containerUuid - Required container item UUID (null = any)
- * @property {string|null} containerName - Required container name (fallback when UUID not set)
+ * @property {string|null} containerName - Container item name (null = any). Resolved at runtime via compendia + world.
  * @property {RecipeIngredient[]} ingredients - Required ingredients/components/essences
- * @property {string} resultItemUuid - UUID of resulting item (Item document UUID)
+ * @property {string} resultItemName - Name of resulting item. Resolved at runtime via compendia + world.
  * @property {string[]} tags - Recipe tags
  * @property {string} description - Recipe description/notes
  * @property {string} source - Source journal UUID

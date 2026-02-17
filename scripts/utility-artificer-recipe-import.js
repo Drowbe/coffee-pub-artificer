@@ -53,22 +53,13 @@ export async function validateRecipePayload(payload) {
     if (!validIngs && ingredients.length > 0) {
         return { valid: false, error: 'Each ingredient must have a "name" field' };
     }
-    const resultItemUuid = payload.resultItemUuid ?? '';
     const resultItemName = payload.resultItemName ?? payload.name;
-    let resolvedUuid = resultItemUuid;
-    if (!resolvedUuid && resultItemName) {
-        const item = await resolveItemByName(resultItemName);
-        if (item) resolvedUuid = item.uuid;
+    if (!resultItemName?.trim()) {
+        return { valid: false, error: `Recipe "${payload.name}" requires resultItemName` };
     }
-    if (!resolvedUuid) {
-        return { valid: false, error: `Recipe "${payload.name}" requires resultItemUuid or resultItemName matching an existing item` };
-    }
-    let containerUuid = payload.containerUuid ?? null;
     const containerName = payload.containerName ?? payload.container ?? null;
-    if (!containerUuid && containerName) {
-        const c = await resolveItemByName(containerName, 'container');
-        if (c) containerUuid = c.uuid;
-    }
+
+    // Store names only—no world UUIDs. Recipes resolve items by name at runtime (compendia + world).
     const data = {
         name: payload.name,
         type: payload.type ?? ITEM_TYPES.CONSUMABLE,
@@ -81,14 +72,12 @@ export async function validateRecipePayload(payload) {
             name: typeof i === 'object' ? i.name : String(i),
             quantity: (typeof i === 'object' ? i.quantity : 1) ?? 1
         })),
-        resultItemUuid: resolvedUuid,
-        resultItemName: resultItemName ?? null,
+        resultItemName: resultItemName.trim(),
         tags: Array.isArray(payload.tags) ? payload.tags : [],
         description: payload.description ?? '',
         heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= 100 ? Number(payload.heat) : null) : null,
         time: payload.time != null ? (Number(payload.time) >= 0 ? Number(payload.time) : null) : null,
-        containerUuid: containerUuid ?? null,
-        containerName: containerName ?? null
+        containerName: containerName?.trim() || null
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
@@ -111,18 +100,10 @@ function buildRecipePageHtml(data) {
     if (data.workstation) parts.push(`<p><strong>Workstation:</strong> ${escapeHtml(data.workstation)}</p>`);
     if (data.heat != null && data.heat >= 0 && data.heat <= 100) parts.push(`<p><strong>Heat:</strong> ${data.heat}</p>`);
     if (data.time != null && data.time >= 0) parts.push(`<p><strong>Time:</strong> ${data.time}</p>`);
-    if (data.containerUuid || data.containerName) {
-        const containerItem = data.containerUuid ? game.items?.find((i) => i.uuid === data.containerUuid) : null;
-        const containerLabel = containerItem ? containerItem.name : (data.containerName || '');
-        if (data.containerUuid) {
-            parts.push(`<p><strong>Container:</strong> @UUID[${data.containerUuid}]{${escapeHtml(containerLabel)}}</p>`);
-        } else if (containerLabel) {
-            parts.push(`<p><strong>Container:</strong> ${escapeHtml(containerLabel)}</p>`);
-        }
+    if (data.containerName) {
+        parts.push(`<p><strong>Container:</strong> ${escapeHtml(data.containerName)}</p>`);
     }
-    const resultItem = game.items?.find((i) => i.uuid === data.resultItemUuid);
-    const resultLabel = resultItem ? resultItem.name : (data.resultItemName ?? data.name);
-    parts.push(`<p><strong>Result:</strong> @UUID[${data.resultItemUuid}]{${escapeHtml(resultLabel)}}</p>`);
+    parts.push(`<p><strong>Result:</strong> ${escapeHtml(data.resultItemName ?? data.name)}</p>`);
     if (data.tags?.length) parts.push(`<p><strong>Tags:</strong> ${data.tags.map((t) => escapeHtml(String(t))).join(', ')}</p>`);
     if (data.description) parts.push(`<p><strong>Description:</strong> ${escapeHtml(data.description)}</p>`);
     if (data.ingredients?.length) {

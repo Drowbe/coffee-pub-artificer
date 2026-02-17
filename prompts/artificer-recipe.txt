@@ -14,9 +14,7 @@ REQUIRED FIELDS
   - name: (string) Ingredient/component/essence/item name
   - quantity: (number) Required amount
 
-- resultItemUuid OR resultItemName: One is required.
-  - resultItemUuid: (string) Foundry Item document UUID
-  - resultItemName: (string) Fallback when UUID unknown—matches by name among world items
+- resultItemName: (string) Name of resulting item. Resolved at runtime from compendia + world (no UUIDs—portable).
 
 ===============================
 OPTIONAL FIELDS
@@ -95,7 +93,7 @@ RULES
 
 - Output valid JSON only. No trailing commas, no duplicate keys.
 - Escape double quotes (") in description strings.
-- Use resultItemName when the result item exists in the world under that name; use resultItemUuid when you have the UUID.
+- Use resultItemName only—recipes store names, not UUIDs, for portability across worlds.
 - Use container (name) when the recipe needs a specific container (Beaker, Crucible, Mortar, etc.); container must match an existing Artificer container in the world.
 - Heat (0-100) and time (seconds) specify required crafting process; omit if recipe works with any heat/time.
 - Ingredient type "item" is for mundane D&D items (Flask of Oil, Charcoal, Ink, Sugar, etc.) that are not Artificer ingredients.
