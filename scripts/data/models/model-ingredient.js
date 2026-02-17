@@ -2,6 +2,7 @@
 // ===== ARTIFICER INGREDIENT MODEL ================================
 // ================================================================== 
 
+import { MODULE } from '../../const.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 
 /**
@@ -17,7 +18,7 @@ export class ArtificerIngredient {
     static fromItem(item) {
         if (!item) return null;
         
-        const artificerData = item.flags?.artificer;
+        const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
         if (!artificerData || artificerData.type !== 'ingredient') {
             return null;
         }

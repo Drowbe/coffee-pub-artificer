@@ -18,6 +18,11 @@
 		"headingH3CompendiumSettings-Label": "Compendium Settings",
 		"headingH3CompendiumSettings-Hint": "Configure which compendiums to search for ingredients. They are in priority order and we stop looking when we find a match.",
 
+		"itemLookupOrder-Label": "Item Lookup Order",
+		"itemLookupOrder-Hint": "When resolving items by name (e.g. recipe results, containers): compendia first, world first, or compendia only.",
+		"ingredientStorageSource-Label": "Ingredient Storage Source",
+		"ingredientStorageSource-Hint": "Where the Ingredient API loads from: compendia only, world items only, or both (with priority order). Requires reload when changed.",
+
 		"headingH3ExampleSubheader-Label": "Example Subheader",
 		"headingH3ExampleSubheader-Hint": "This is an example subheader for the module.",
 

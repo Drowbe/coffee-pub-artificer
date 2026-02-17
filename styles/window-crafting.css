@@ -77,8 +77,21 @@
     font-size: 1.4em;
 }
 
-.crafting-window-header-title {
+.crafting-window-header-icon .crafting-window-header-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.crafting-window-header-title-block {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.crafting-window-header-title {
     font-size: 1.2em;
     font-weight: bold;
     text-transform: uppercase;
@@ -86,13 +99,7 @@
     letter-spacing: 0.02em;
 }
 
-.crafting-window-header-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.crafting-window-crafter-label {
+.crafting-window-header-crafter {
     font-size: 0.85em;
     color: rgba(255, 255, 255, 0.75);
 }

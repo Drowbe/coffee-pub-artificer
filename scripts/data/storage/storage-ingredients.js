@@ -36,85 +36,101 @@ export class IngredientStorage {
     
     /**
      * Refresh cache - reload all ingredients
+     * Source(s) and order are controlled by ingredientStorageSource setting:
+     * - compendia-only: compendia only
+     * - world-only: world items only
+     * - compendia-then-world: compendia first, then world (names from world skipped if already in cache)
+     * - world-then-compendia: world first, then compendia (names from compendia skipped if already in cache)
      * @returns {Promise<void>}
      */
     async refresh() {
         this._cache.clear();
-        
-        // Load from compendiums
-        await this._loadFromCompendiums();
-        
-        // Load from journals (if configured)
+        const source = game.settings.get(MODULE.ID, 'ingredientStorageSource') ?? 'compendia-only';
+
+        if (source === 'compendia-only') {
+            await this._loadFromCompendiums();
+        } else if (source === 'world-only') {
+            await this._loadFromWorld();
+        } else if (source === 'compendia-then-world') {
+            await this._loadFromCompendiums();
+            await this._loadFromWorld((name) => this._cache.has(this._getKeyByName(name)));
+        } else if (source === 'world-then-compendia') {
+            await this._loadFromWorld();
+            await this._loadFromCompendiums((name) => this._cache.has(this._getKeyByName(name)));
+        }
+
         await this._loadFromJournals();
+    }
+
+    /**
+     * Get cache key by ingredient name (for dedup when merging sources)
+     * @private
+     */
+    _getKeyByName(name) {
+        for (const [k, v] of this._cache.entries()) {
+            if ((v.name ?? '').trim() === (name ?? '').trim()) return k;
+        }
+        return null;
     }
     
     /**
      * Load ingredients from compendium packs
      * Only loads from compendiums configured in settings
      * @private
+     * @param {Function} [skipIf] - Optional: (name) => boolean; skip item if true
      * @returns {Promise<void>}
      */
-    async _loadFromCompendiums() {
-        // Get configured compendiums from settings
+    async _loadFromCompendiums(skipIf = null) {
         const configuredCompendiums = this._getConfiguredCompendiums();
-        
-        if (configuredCompendiums.length === 0) {
-            // No compendiums configured, skip loading
-            return;
-        }
-        
-        // Load from each configured compendium in priority order
+        if (configuredCompendiums.length === 0) return;
+
         for (const compendiumId of configuredCompendiums) {
             try {
                 const pack = game.packs.get(compendiumId);
-                if (!pack || pack.documentName !== 'Item') {
-                    continue; // Skip invalid or non-Item compendiums
-                }
-                
-                // Use index to get item IDs without fully loading items
+                if (!pack || pack.documentName !== 'Item') continue;
+
                 const index = pack.index;
-                if (!index || index.size === 0) {
-                    continue; // Skip empty packs
-                }
-                
-                // Load items individually to avoid bulk initialization errors
+                if (!index || index.size === 0) continue;
+
                 const itemIds = Array.from(index.keys());
-                
                 for (const itemId of itemIds) {
                     try {
-                        // Load individual item
                         const item = await pack.getDocument(itemId);
-                        
-                        if (!item) {
-                            continue;
-                        }
-                        
-                        // Check if item has artificer flags before processing
-                        if (!item?.flags?.artificer) {
-                            continue; // Skip items without artificer flags
-                        }
-                        
-                        // Only process ingredients (not components or essences)
-                        if (item.flags.artificer.type !== 'ingredient') {
-                            continue;
-                        }
-                        
+                        if (!item) continue;
+
+                        const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
+                        if (!artificerData || artificerData.type !== 'ingredient') continue;
+
+                        if (skipIf?.(item.name)) continue;
+
                         const ingredient = ArtificerIngredient.fromItem(item);
-                        if (ingredient) {
-                            // Store by UUID
-                            this._cache.set(ingredient.id, ingredient);
-                        }
-                    } catch (error) {
-                        // Skip items that fail to load or process
-                        // This is expected for malformed items (e.g., midi-qol errors)
+                        if (ingredient) this._cache.set(ingredient.id, ingredient);
+                    } catch {
                         continue;
                     }
                 }
             } catch (error) {
-                // Error at pack level - log and continue
                 console.warn(`Error processing compendium "${compendiumId}":`, error.message);
-                continue;
             }
+        }
+    }
+
+    /**
+     * Load ingredients from world items (game.items)
+     * @private
+     * @param {Function} [skipIf] - Optional: (name) => boolean; skip item if true
+     * @returns {Promise<void>}
+     */
+    async _loadFromWorld(skipIf = null) {
+        const items = game.items ?? [];
+        for (const item of items) {
+            const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
+            if (!artificerData || artificerData.type !== 'ingredient') continue;
+
+            if (skipIf?.(item.name)) continue;
+
+            const ingredient = ArtificerIngredient.fromItem(item);
+            if (ingredient) this._cache.set(ingredient.id, ingredient);
         }
     }
     

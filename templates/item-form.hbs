@@ -1,26 +1,19 @@
-<div class="artificer-window artificer-item-form">
-    {{!-- Header --}}
-    <div class="artificer-header">
-        <div class="artificer-header-content">
-            <div class="artificer-header-icon">
+<div class="artificer-window artificer-item-form item-form-crafting-style">
+    {{!-- Header (matches crafting window) --}}
+    <header class="item-form-header">
+        <div class="item-form-header-content">
+            <div class="item-form-header-icon">
                 <i class="fa-solid fa-hammer"></i>
             </div>
-            <div class="artificer-header-title">
-                <div class="artificer-main-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} {{itemTypeName}}</div>
-                <div class="artificer-subtitle">{{#if isEditMode}}Artificer Item Properties{{else}}Artificer Item Creation{{/if}}</div>
-            </div>
+            <div class="item-form-header-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} {{itemTypeName}}</div>
         </div>
-    </div>
+    </header>
 
     {{!-- Content --}}
-    <div class="artificer-content">
+    <div class="item-form-body">
         {{!-- Type Selector --}}
-        <div class="artificer-section-header">
-            <div class="artificer-section-header-left">
-                <i class="fa-solid fa-list"></i> Item Type
-            </div>
-        </div>
-        <div class="artificer-form-section">
+        <section class="item-form-section">
+            <h3 class="item-form-section-title"><i class="fa-solid fa-list"></i> Item Type</h3>
             <div class="artificer-form-group">
                 <div class="artificer-form-fields">
                     <select name="itemType" id="itemType">
@@ -30,15 +23,11 @@
                     </select>
                 </div>
             </div>
-        </div>
+        </section>
 
         {{!-- D&D 5e Item Fields --}}
-        <div class="artificer-section-header">
-            <div class="artificer-section-header-left">
-                <i class="fa-solid fa-scroll"></i> Item Details
-            </div>
-        </div>
-        <div class="artificer-form-section">
+        <section class="item-form-section">
+            <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
             {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
             {{> partials/form-field name="itemType5e" label="D&D 5e Type" type="select" isSelect=true options=itemType5eOptions}}
             {{> partials/form-field name="itemWeight" label="Weight" type="number" isNumber=true value=itemWeight placeholder="0" min="0" step="any"}}
@@ -47,15 +36,11 @@
             {{> partials/form-field name="itemDescription" label="Description" type="textarea" isTextarea=true value=itemDescription placeholder="Item description..."}}
             {{> partials/form-field name="sourceCustom" label="Source (Custom Label)" type="text" value=sourceCustom placeholder="Artificer" title="Appears in Configure Source → Custom Label"}}
             {{> partials/form-field name="sourceLicense" label="License" type="text" value=sourceLicense placeholder="" title="License for the item source (e.g. OGL, CC-BY). Appears in Configure Source."}}
-        </div>
+        </section>
 
         {{!-- Artificer-Specific Fields --}}
-        <div class="artificer-section-header">
-            <div class="artificer-section-header-left">
-                <i class="fa-solid fa-tags"></i> Artificer Properties
-            </div>
-        </div>
-        <div class="artificer-form-section">
+        <section class="item-form-section">
+            <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
             {{> partials/form-field name="primaryTag" label="Primary Tag" type="text" value=primaryTag placeholder="Primary tag (required)"}}
             {{> partials/form-field name="secondaryTags" label="Secondary Tags" type="text" value=secondaryTags placeholder="Tag1, Tag2 (comma-separated)"}}
             {{> partials/form-field name="tier" label="Tier (1–10)" type="number" isNumber=true value=tier placeholder="1" min="1" max="10" step="1" title="Power/quality level (1–10). Higher tiers affect crafting outcomes, quality, and stability. Tags define category; tier defines potency."}}
@@ -71,16 +56,16 @@
             {{#if isEssence}}
             {{> partials/form-field name="affinity" label="Affinity" type="select" isSelect=true options=affinityOptions}}
             {{/if}}
-        </div>
+        </section>
     </div>
 
-    {{!-- Form Actions --}}
-    <div class="artificer-form-actions">
-        <button type="button" data-action="submit" class="artificer-button">
+    {{!-- Form Actions (matches crafting window action bar) --}}
+    <section class="item-form-actions">
+        <button type="button" data-action="submit" class="item-form-btn-primary">
             <i class="fa-solid fa-check"></i> {{#if isEditMode}}Save Changes{{else}}Create Item{{/if}}
         </button>
-        <button type="button" class="artificer-button" data-action="cancel">
+        <button type="button" class="item-form-btn-secondary" data-action="cancel">
             <i class="fa-solid fa-times"></i> Cancel
         </button>
-    </div>
+    </section>
 </div>

@@ -203,6 +203,40 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('CompendiumSettings', 'headingH3CompendiumSettings-Label', 'headingH3CompendiumSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
+    // -- Item Lookup Order (result items, containers) --
+	game.settings.register(MODULE.ID, 'itemLookupOrder', {
+        name: MODULE.ID + '.itemLookupOrder-Label',
+        hint: MODULE.ID + '.itemLookupOrder-Hint',
+        scope: 'world',
+        config: true,
+        default: 'compendia-first',
+        type: String,
+        choices: {
+            'compendia-first': 'Compendia first, world fallback',
+            'world-first': 'World first, compendia fallback',
+            'compendia-only': 'Compendia only (no world)'
+        },
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // -- Ingredient Storage Source --
+	game.settings.register(MODULE.ID, 'ingredientStorageSource', {
+        name: MODULE.ID + '.ingredientStorageSource-Label',
+        hint: MODULE.ID + '.ingredientStorageSource-Hint',
+        scope: 'world',
+        config: true,
+        default: 'compendia-only',
+        type: String,
+        choices: {
+            'compendia-only': 'Compendia only',
+            'world-only': 'World only',
+            'compendia-then-world': 'Compendia first, then world',
+            'world-then-compendia': 'World first, then compendia'
+        },
+        requiresReload: true,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
     // -- Number of Ingredient Compendiums --
 	game.settings.register(MODULE.ID, 'numIngredientCompendiums', {
         name: MODULE.ID + '.numIngredientCompendiums-Label',

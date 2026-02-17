@@ -1,18 +1,172 @@
-/* ================================================================== 
-   ===== ITEM FORM SPECIFIC STYLES =================================
-   ================================================================== 
-
-   Uses shared components from shared.css
-   Only form-specific overrides and additions here
+/* ==================================================================
+   ===== ITEM FORM - Crafting Window Look & Feel ====================
+   ==================================================================
+   Matches the crafting window design: header, sections, action bar.
+   Scope: .item-form-crafting-style (used by Create/Edit Artificer Item)
 */
 
-.artificer-item-form .artificer-form-section {
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+/* Design tokens (match window-crafting.css) */
+.item-form-crafting-style,
+.window-artificer-item .window-content {
+    --craft-border-color: #444;
+    --craft-accent-color: #ac9f81;
+    --craft-background: #232323;
+    --craft-header-bg: rgba(0, 0, 0, 0.7);
+    background: var(--craft-background);
+    color: rgba(224, 224, 224, 0.9);
+    font-family: "Signika", sans-serif;
 }
 
-.artificer-item-form .artificer-form-section:last-child {
+.window-artificer-item .window-content {
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+/* ----- Header (matches crafting-window-header) ----- */
+.item-form-crafting-style .item-form-header {
+    flex-shrink: 0;
+    background: var(--craft-header-bg);
+    border-bottom: 1px solid var(--craft-border-color);
+    padding: 8px 12px;
+    min-height: 50px;
+}
+
+.item-form-crafting-style .item-form-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.item-form-crafting-style .item-form-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(172, 159, 129, 0.9);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.item-form-crafting-style .item-form-header-icon i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.4em;
+}
+
+.item-form-crafting-style .item-form-header-title {
+    flex: 1;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--craft-accent-color);
+    letter-spacing: 0.02em;
+}
+
+/* ----- Body ----- */
+.item-form-crafting-style .item-form-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ----- Section (matches crafting-zone-section) ----- */
+.item-form-crafting-style .item-form-section {
+    border-bottom: 1px solid var(--craft-border-color);
+    padding: 10px 12px;
+}
+
+.item-form-crafting-style .item-form-section:last-of-type {
     border-bottom: none;
 }
 
+.item-form-crafting-style .item-form-section-title {
+    font-size: 0.9em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--craft-accent-color);
+    margin: 0 0 8px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(172, 159, 129, 0.4);
+}
+
+.item-form-crafting-style .item-form-section-title i {
+    margin-right: 6px;
+    font-size: 0.85em;
+}
+
+/* Form groups and fields - dark theme to match crafting */
+.item-form-crafting-style .artificer-form-group {
+    margin-bottom: 8px;
+}
+
+.item-form-crafting-style .artificer-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.item-form-crafting-style .artificer-form-group label {
+    color: rgba(201, 201, 201, 0.95);
+    font-size: 0.85em;
+}
+
+.item-form-crafting-style .artificer-form-fields input[type="text"],
+.item-form-crafting-style .artificer-form-fields input[type="number"],
+.item-form-crafting-style .artificer-form-fields select,
+.item-form-crafting-style .artificer-form-fields textarea {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid var(--craft-border-color) !important;
+    border-radius: 4px;
+    color: #e0e0e0;
+    font-size: 0.9em;
+}
+
+.item-form-crafting-style .artificer-form-fields input:focus,
+.item-form-crafting-style .artificer-form-fields select:focus,
+.item-form-crafting-style .artificer-form-fields textarea:focus {
+    border-color: rgba(255, 100, 0, 0.6) !important;
+    outline: none;
+}
+
+/* ----- Action bar (matches crafting-window-buttons) ----- */
+.item-form-crafting-style .item-form-actions {
+    flex-shrink: 0;
+    border-top: 1px solid var(--craft-border-color);
+    background: var(--craft-header-bg);
+    padding: 10px 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.item-form-crafting-style .item-form-btn-primary,
+.item-form-crafting-style .item-form-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95em;
+    text-transform: uppercase;
+}
+
+.item-form-crafting-style .item-form-btn-primary {
+    background: rgba(41, 94, 47, 0.9);
+    color: #fff;
+}
+
+.item-form-crafting-style .item-form-btn-secondary {
+    background: rgba(33, 40, 46, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.item-form-crafting-style .item-form-btn-primary:hover,
+.item-form-crafting-style .item-form-btn-secondary:hover {
+    background: rgba(255, 100, 0, 0.6);
+    border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}

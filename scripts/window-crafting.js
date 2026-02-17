@@ -307,6 +307,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             appId: this.id,
             crafterName: actor?.name ?? null,
+            crafterImg: actor?.img ?? null,
             slots,
             containerSlot,
             listItems,

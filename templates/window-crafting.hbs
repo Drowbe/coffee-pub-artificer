@@ -7,11 +7,15 @@
     <header class="crafting-window-header">
         <div class="crafting-window-header-content">
             <div class="crafting-window-header-icon">
+                {{#if crafterImg}}
+                <img src="{{crafterImg}}" alt="" class="crafting-window-header-portrait" />
+                {{else}}
                 <i class="fa-solid fa-hammer"></i>
+                {{/if}}
             </div>
-            <div class="crafting-window-header-title">Artificer Crafting Station</div>
-            <div class="crafting-window-header-controls">
-                <span class="crafting-window-crafter-label">{{#if crafterName}}Crafting as: {{crafterName}}{{else}}Select a crafter{{/if}}</span>
+            <div class="crafting-window-header-title-block">
+                <div class="crafting-window-header-title">Artificer Crafting Station</div>
+                <div class="crafting-window-header-crafter">{{#if crafterName}}{{crafterName}}{{else}}Select a crafter{{/if}}</div>
             </div>
         </div>
     </header>
@@ -136,10 +140,10 @@
             </section>
         </main>
 
-        {{!-- Zone 4: Result --}}
+        {{!-- Zone 4: Details (result in craft mode; recipe design in create mode) --}}
         <aside class="crafting-zone crafting-zone-result">
             <section class="crafting-zone-section">
-                <h3 class="crafting-zone-section-title">Result</h3>
+                <h3 class="crafting-zone-section-title">Details</h3>
                 {{#if lastResult}}
                 <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
                     <div class="crafting-result-row crafting-ingredient-row">
