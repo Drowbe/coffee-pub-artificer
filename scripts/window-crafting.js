@@ -9,15 +9,20 @@ import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
 /**
  * Map journal-loaded recipes to display format for the recipe list
- * @returns {Array<{tags: string[], result: string}>}
+ * @returns {Array<{recipeId: string, tags: string[], result: string, selected?: boolean}>}
  */
-function getRecipesForDisplay() {
+function getRecipesForDisplay(selectedRecipeId) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
     return recipes.map((r) => {
         const tags = (r.tags?.length ? r.tags : r.ingredients?.map((i) => i.name) ?? [])
             .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
-        return { tags: tags.length ? tags : [r.name], result: r.name };
+        return {
+            recipeId: r.id,
+            tags: tags.length ? tags : [r.name],
+            result: r.name,
+            selected: selectedRecipeId === r.id
+        };
     });
 }
 
@@ -46,7 +51,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             addToSlot: CraftingWindow._actionAddToSlot,
             addToContainer: CraftingWindow._actionAddToContainer,
             removeFromSlot: CraftingWindow._actionRemoveFromSlot,
-            removeContainer: CraftingWindow._actionRemoveContainer
+            removeContainer: CraftingWindow._actionRemoveContainer,
+            selectRecipe: CraftingWindow._actionSelectRecipe
         }
     });
 
@@ -67,9 +73,34 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.timeValue = options.timeValue ?? 30;
         this.lastResult = null;
         this.lastCraftTags = [];
+        /** @type {ArtificerRecipe|null} */
+        this.selectedRecipe = null;
         this.filterFamily = options.filterFamily ?? '';
         this.filterType = options.filterType ?? '';
         this.filterSearch = options.filterSearch ?? '';
+        this.filterRecipeSearch = options.filterRecipeSearch ?? '';
+        /** @type {ReturnType<typeof setTimeout>|null} */
+        this._searchDebounceTimer = null;
+    }
+
+    /**
+     * Debounced render for search inputs; avoids re-creating inputs on every keystroke (cursor reset bug)
+     * @param {HTMLElement} inputEl - The search input that had focus
+     */
+    _debouncedSearchRender(inputEl) {
+        clearTimeout(this._searchDebounceTimer ?? 0);
+        const saveId = inputEl?.id ?? '';
+        const saveStart = inputEl?.selectionStart ?? 0;
+        const saveEnd = inputEl?.selectionEnd ?? 0;
+        this._searchDebounceTimer = setTimeout(async () => {
+            this._searchDebounceTimer = null;
+            await this.render();
+            const newEl = saveId ? document.getElementById(saveId) : null;
+            if (newEl && typeof newEl.focus === 'function') {
+                newEl.focus();
+                if (typeof newEl.setSelectionRange === 'function') newEl.setSelectionRange(saveStart, saveEnd);
+            }
+        }, 150);
     }
 
     /**
@@ -171,15 +202,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 ? [...ingredients, ...filteredContainers]
                 : ingredients;
 
-        const slots = this.selectedSlots.map((entry, i) => {
-            if (!entry) return { item: null, count: 0, tags: '', tooltip: '' };
-            const tags = getTagsFromItem(entry.item).join(', ');
-            const tooltip = [entry.item.name, tags ? `Tags: ${tags}` : ''].filter(Boolean).join('\n');
+        const slots = this.selectedSlots.map((entry) => {
+            if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
+            const item = entry.item;
+            const name = item?.name ?? entry.name ?? '?';
+            const img = item?.img ?? entry.img ?? 'icons/skills/melee/weapons-crossed-swords-yellow.webp';
+            const tags = item ? getTagsFromItem(item).join(', ') : '';
+            const tooltip = entry.isMissing
+                ? `${name} (need ${entry.count}, have ${entry.have ?? 0})`
+                : [name, tags ? `Tags: ${tags}` : ''].filter(Boolean).join('\n');
             return {
-                item: { id: entry.item.id, name: entry.item.name, img: entry.item.img },
+                item: { id: item?.id, name, img },
                 count: entry.count,
                 tags,
-                tooltip
+                tooltip,
+                isMissing: !!entry.isMissing
             };
         });
 
@@ -213,8 +250,18 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             };
         }
 
-        const canCraft = this.selectedSlots.some(s => s !== null);
-        const knownCombinations = getRecipesForDisplay();
+        const hasSlots = this.selectedSlots.some(s => s !== null);
+        const anyMissing = this.selectedSlots.some(s => s?.isMissing);
+        const canCraft = hasSlots && !anyMissing;
+        let knownCombinations = getRecipesForDisplay(this.selectedRecipe?.id ?? null);
+        if (this.filterRecipeSearch?.trim()) {
+            const q = this.filterRecipeSearch.trim().toLowerCase();
+            knownCombinations = knownCombinations.filter(
+                (r) =>
+                    (r.result ?? '').toLowerCase().includes(q) ||
+                    (r.tags ?? []).some((t) => String(t).toLowerCase().includes(q))
+            );
+        }
         const hasRecipes = knownCombinations.length > 0;
 
         // Tags in slots for feedback
@@ -245,6 +292,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             familyOptions,
             typeOptions,
             filterSearch: this.filterSearch,
+            filterRecipeSearch: this.filterRecipeSearch,
             activeTab: this.activeTab ?? 'experimentation',
             hasRecipes
         };
@@ -260,6 +308,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static _actionClear(event, target) {
         this.selectedSlots = Array(6).fill(null);
         this.selectedContainer = null;
+        this.selectedRecipe = null;
         this.render();
     }
     static _actionAddToSlot(event, target) {
@@ -280,6 +329,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static _actionRemoveContainer(event, target) {
         this._removeContainer();
     }
+    static _actionSelectRecipe(event, target) {
+        const row = target?.closest?.('.crafting-recipe-row');
+        const recipeId = row?.dataset?.recipeId;
+        if (recipeId) this._selectRecipe(recipeId).catch(() => {});
+    }
 
     /** Attach document-level delegation (encounter pattern: ref + root.contains) */
     _attachDelegationOnce() {
@@ -292,6 +346,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
+            const recipeRow = e.target?.closest?.('.crafting-recipe-row');
+            if (recipeRow?.dataset?.recipeId) {
+                w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});
+                return;
+            }
             const row = e.target?.closest?.('.crafting-ingredient-row');
             if (row?.dataset?.itemId) {
                 const action = row.dataset.action || row.getAttribute?.('data-action');
@@ -346,7 +405,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const el = e.target;
             if ((el.id ?? '') === `${appId}-filter-search`) {
                 w.filterSearch = el.value ?? '';
-                w.render();
+                w._debouncedSearchRender(el);
+                return;
+            }
+            if ((el.id ?? '') === `${appId}-filter-recipes`) {
+                w.filterRecipeSearch = el.value ?? '';
+                w._debouncedSearchRender(el);
                 return;
             }
             const slider = el?.closest?.('[data-craft-setting]');
@@ -434,9 +498,96 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.render();
     }
 
+    /**
+     * Populate crafting bench from a selected recipe
+     * @param {string} recipeId - Recipe UUID (journal page UUID)
+     */
+    async _selectRecipe(recipeId) {
+        const api = getAPI();
+        const recipe = api?.recipes?.getById?.(recipeId) ?? null;
+        const actor = this._getCrafterActor();
+        if (!recipe) return;
+
+        this.selectedRecipe = recipe;
+
+        /** @type {Array<{item: Item|null, name?: string, img?: string, count: number, have?: number, isMissing?: boolean}|null>} */
+        const newSlots = Array(6).fill(null);
+        const ingredients = recipe.ingredients ?? [];
+        const placeholderImg = 'icons/skills/melee/weapons-crossed-swords-yellow.webp';
+
+        for (let i = 0; i < Math.min(6, ingredients.length); i++) {
+            const ing = ingredients[i];
+            const need = ing.quantity ?? 1;
+            let have = 0;
+            let matchedItem = null;
+
+            if (actor) {
+                const candidates = actor.items.filter((item) => {
+                    const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+                    const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+                    if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) {
+                        return (f.type === (ing.type || 'ingredient')) && nameMatches;
+                    }
+                    return nameMatches;
+                });
+                const getQty = (item) => {
+                    const q = item.system?.quantity;
+                    return typeof q === 'number' ? q : (q?.value ?? 1);
+                };
+                have = candidates.reduce((sum, item) => sum + getQty(item), 0);
+                matchedItem = candidates[0] ?? null;
+            }
+
+            const isMissing = have < need;
+            const img = matchedItem?.img ?? (game.items?.find((i) => (i.name || '').trim() === (ing.name || '').trim())?.img ?? placeholderImg);
+
+            if (matchedItem) {
+                newSlots[i] = {
+                    item: matchedItem,
+                    count: need,
+                    have,
+                    isMissing
+                };
+            } else {
+                newSlots[i] = {
+                    item: null,
+                    name: ing.name ?? '?',
+                    img,
+                    count: need,
+                    have: 0,
+                    isMissing: true
+                };
+            }
+        }
+
+        this.selectedSlots = newSlots;
+
+        if (recipe.containerUuid || recipe.containerName) {
+            // Match by name: actor items have different UUIDs than world items
+            let targetName = (recipe.containerName || '').trim();
+            if (!targetName && recipe.containerUuid) {
+                const ref = await fromUuid(recipe.containerUuid);
+                targetName = (ref?.name || '').trim();
+            }
+            const containerItem = actor?.items?.find((i) => {
+                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                if (f?.type !== 'container') return false;
+                return (i.name || '').trim() === targetName;
+            });
+            this.selectedContainer = containerItem ?? null;
+        } else {
+            this.selectedContainer = null;
+        }
+
+        if (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) this.heatValue = recipe.heat;
+        if (recipe.time != null && recipe.time >= 0) this.timeValue = recipe.time;
+
+        this.render();
+    }
+
     async _craft() {
         const actor = this._getActor();
-        const entries = this.selectedSlots.filter(Boolean);
+        const entries = this.selectedSlots.filter(s => s && s.item && !s.isMissing);
         if (!actor || entries.length === 0) return;
 
         const items = entries.flatMap(e => Array(e.count).fill(e.item));

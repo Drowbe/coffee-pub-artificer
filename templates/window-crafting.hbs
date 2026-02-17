@@ -22,9 +22,12 @@
         <aside class="crafting-zone crafting-zone-recipes">
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Recipes</h3>
+                <div class="crafting-zone-section-input-wrap">
+                    <input type="text" id="{{appId}}-filter-recipes" class="crafting-zone-section-input" placeholder="Search recipes..." value="{{filterRecipeSearch}}" dir="ltr" />
+                </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
-                    <div class="crafting-recipe-row">
+                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
                         <span class="crafting-recipe-tags">{{#each this.tags}}{{this}}{{#unless @last}} + {{/unless}}{{/each}}</span>
                         <span class="crafting-recipe-arrow">→</span>
                         <span class="crafting-recipe-result">{{this.result}}</span>
@@ -41,7 +44,7 @@
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Ingredients</h3>
                 <div class="crafting-zone-section-input-wrap">
-                    <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search..." value="{{filterSearch}}" />
+                    <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search ingredients..." value="{{filterSearch}}" dir="ltr" />
                 </div>
                 <div class="crafting-zone-filters-row">
                     <select id="{{appId}}-filter-family" class="crafting-zone-select" title="Filter by family">
@@ -78,12 +81,12 @@
                 {{!-- 6 ingredient slots (2 rows x 3) --}}
                 <div class="crafting-bench-ingredient-slots">
                     {{#each slots}}
-                    <div class="crafting-bench-slot" data-slot-index="{{@index}}">
+                    <div class="crafting-bench-slot {{#if this.isMissing}}crafting-bench-slot-missing{{/if}}" data-slot-index="{{@index}}">
                         {{#if this.item}}
-                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="Click to remove">
+                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="{{this.tooltip}}">
                             <img src="{{this.item.img}}" alt="" class="crafting-slot-img" />
                         </div>
-                        <span class="crafting-bench-slot-count">{{this.count}}</span>
+                        <span class="crafting-bench-slot-count {{#if this.isMissing}}missing{{/if}}">{{this.count}}</span>
                         {{else}}
                         <div class="crafting-bench-slot-empty">Empty</div>
                         {{/if}}
@@ -138,15 +141,21 @@
                 <h3 class="crafting-zone-section-title">Result</h3>
                 {{#if lastResult}}
                 <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
-                    {{#if lastResult.success}}
-                    <i class="fa-solid fa-check crafting-result-icon"></i>
-                    <div class="crafting-result-name">{{lastResult.name}}</div>
-                    <div class="crafting-result-detail">Tags: {{lastCraftTagsStr}}</div>
-                    {{else}}
-                    <i class="fa-solid fa-times crafting-result-icon"></i>
-                    <div class="crafting-result-name">{{lastResult.name}}</div>
-                    <div class="crafting-result-detail">Tags: {{lastCraftTagsStr}}</div>
-                    {{/if}}
+                    <div class="crafting-result-row crafting-ingredient-row">
+                        {{#if lastResult.item}}
+                        <img src="{{lastResult.item.img}}" alt="" class="crafting-ingredient-row-img" />
+                        {{else}}
+                        <i class="fa-solid {{#if lastResult.success}}fa-check{{else}}fa-times{{/if}} crafting-result-fallback-icon"></i>
+                        {{/if}}
+                        <div class="crafting-ingredient-row-info">
+                            <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
+                            {{#if lastResult.item}}
+                            <span class="crafting-ingredient-row-qty">×1</span>
+                            {{else}}
+                            <span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>
+                            {{/if}}
+                        </div>
+                    </div>
                 </div>
                 {{else}}
                 <div class="crafting-zone-empty">Result will appear here after crafting.</div>

@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Healing Tonic",
+    "type": "consumable",
+    "img": "icons/consumables/potions/bottle-round-corked-red.webp",
+    "system": {
+      "description": { "value": "A restorative potion created through experimentation.", "chat": "", "unidentified": "" },
+      "source": { "value": "", "custom": "Artificer" },
+      "quantity": 1,
+      "weight": 0.5,
+      "price": { "value": 50, "denomination": "gp" },
+      "rarity": "common",
+      "identified": true,
+      "type": { "value": "potion", "subtype": "", "baseItem": "" },
+      "uses": { "value": 1, "max": 1, "per": "charges", "autoDestroy": true, "recovery": [{ "period": "none" }] }
+    }
+  },
+  {
+    "name": "Basic Remedy",
+    "type": "consumable",
+    "img": "icons/consumables/potions/bottle-round-corked-green.webp",
+    "system": {
+      "description": { "value": "A simple herbal remedy.", "chat": "", "unidentified": "" },
+      "source": { "value": "", "custom": "Artificer" },
+      "quantity": 1,
+      "weight": 0.25,
+      "price": { "value": 10, "denomination": "gp" },
+      "rarity": "common",
+      "identified": true,
+      "type": { "value": "other", "subtype": "", "baseItem": "" },
+      "uses": { "value": 1, "max": 1, "per": "charges", "autoDestroy": true, "recovery": [{ "period": "none" }] }
+    }
+  },
+  {
+    "name": "Crude Metal Shard",
+    "type": "loot",
+    "img": "icons/skills/melee/weapons-crossed-swords-yellow.webp",
+    "system": {
+      "description": { "value": "A rough shard of metal from experimentation.", "chat": "", "unidentified": "" },
+      "source": { "value": "", "custom": "Artificer" },
+      "quantity": 1,
+      "weight": 1,
+      "price": { "value": 5, "denomination": "gp" },
+      "rarity": "common",
+      "identified": true
+    }
+  },
+  {
+    "name": "Minor Arcane Dust",
+    "type": "consumable",
+    "img": "icons/magic/symbols/runes-carved-stone-blue.webp",
+    "system": {
+      "description": { "value": "Faintly glowing dust with arcane properties.", "chat": "", "unidentified": "" },
+      "source": { "value": "", "custom": "Artificer" },
+      "quantity": 1,
+      "weight": 0.1,
+      "price": { "value": 25, "denomination": "gp" },
+      "rarity": "uncommon",
+      "identified": true,
+      "type": { "value": "other", "subtype": "", "baseItem": "" },
+      "uses": { "value": 1, "max": 1, "per": "charges", "autoDestroy": true, "recovery": [{ "period": "none" }] }
+    }
+  },
+  {
+    "name": "Experimenter's Sludge",
+    "type": "consumable",
+    "img": "icons/consumables/potions/bottle-round-corked.webp",
+    "system": {
+      "description": { "value": "A failed experiment. Perhaps the combination was wrong, or more practice is needed.", "chat": "", "unidentified": "" },
+      "source": { "value": "", "custom": "Artificer" },
+      "quantity": 1,
+      "weight": 0.5,
+      "price": { "value": 1, "denomination": "gp" },
+      "rarity": "common",
+      "identified": true,
+      "type": { "value": "other", "subtype": "", "baseItem": "" },
+      "uses": { "value": 1, "max": 1, "per": "charges", "autoDestroy": true, "recovery": [{ "period": "none" }] }
+    }
+  }
+]

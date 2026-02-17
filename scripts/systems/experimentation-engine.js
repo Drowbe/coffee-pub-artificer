@@ -38,128 +38,36 @@ export function getTagsFromItem(item) {
 }
 
 /**
- * Minimal ExperimentationEngine - hardcoded tag rules for prototype validation
+ * ExperimentationEngine - tag-based crafting rules.
+ * Uses only world items. No hardcoded templates. See documentation/core-items-required.md.
  */
 export class ExperimentationEngine {
     constructor() {
-        /** @type {Array<{match: (tags: string[]) => boolean, result: Object, name: string}>} */
+        /** @type {Array<{match: (tags: string[]) => boolean, name: string}>} */
         this._rules = this._buildRules();
     }
 
     /**
-     * Build hardcoded tag combination rules
+     * Tag combination rules (result name only; item must exist in world)
      * @private
      */
     _buildRules() {
         return [
-            // Herb + Medicinal + Life -> Healing Tonic
-            {
-                match: (tags) =>
-                    tags.includes('herb') && tags.includes('medicinal') && tags.includes('life'),
-                name: 'Healing Tonic',
-                result: {
-                    name: 'Healing Tonic',
-                    type: 'consumable',
-                    img: 'icons/consumables/potions/bottle-round-corked-red.webp',
-                    system: {
-                        description: { value: 'A restorative potion created through experimentation.', chat: '', unidentified: '' },
-                        source: { value: '' },
-                        quantity: 1,
-                        weight: 0.5,
-                        price: 50,
-                        rarity: 'common',
-                        identified: true,
-                        consumableType: 'potion',
-                        uses: { value: 1, max: 1, per: 'charges' }
-                    }
-                }
-            },
-            // Herb + Medicinal (no essence) -> Basic Remedy
+            { match: (tags) => tags.includes('herb') && tags.includes('medicinal') && tags.includes('life'), name: 'Healing Tonic' },
             {
                 match: (tags) =>
                     tags.includes('herb') && tags.includes('medicinal') &&
                     !tags.some(t => ['life', 'heat', 'cold', 'shadow'].includes(t)),
-                name: 'Basic Remedy',
-                result: {
-                    name: 'Basic Remedy',
-                    type: 'consumable',
-                    img: 'icons/consumables/potions/bottle-round-corked-green.webp',
-                    system: {
-                        description: { value: 'A simple herbal remedy.', chat: '', unidentified: '' },
-                        source: { value: '' },
-                        quantity: 1,
-                        weight: 0.25,
-                        price: 10,
-                        rarity: 'common',
-                        identified: true,
-                        consumableType: 'other',
-                        uses: { value: 1, max: 1, per: 'charges' }
-                    }
-                }
+                name: 'Basic Remedy'
             },
-            // Metal + Ore -> Crude Metal Shard
-            {
-                match: (tags) => tags.includes('metal') && tags.includes('ore'),
-                name: 'Crude Metal Shard',
-                result: {
-                    name: 'Crude Metal Shard',
-                    type: 'loot',
-                    img: 'icons/skills/melee/weapons-crossed-swords-yellow.webp',
-                    system: {
-                        description: { value: 'A rough shard of metal from experimentation.', chat: '', unidentified: '' },
-                        source: { value: '' },
-                        quantity: 1,
-                        weight: 1,
-                        price: 5,
-                        rarity: 'common',
-                        identified: true
-                    }
-                }
-            },
-            // Crystal + Arcane + (any essence) -> Minor Arcane Dust
+            { match: (tags) => tags.includes('metal') && tags.includes('ore'), name: 'Crude Metal Shard' },
             {
                 match: (tags) =>
                     tags.includes('crystal') && tags.includes('arcane') &&
                     tags.some(t => ['life', 'heat', 'cold', 'shadow', 'light', 'electric'].includes(t)),
-                name: 'Minor Arcane Dust',
-                result: {
-                    name: 'Minor Arcane Dust',
-                    type: 'consumable',
-                    img: 'icons/magic/symbols/runes-carved-stone-blue.webp',
-                    system: {
-                        description: { value: 'Faintly glowing dust with arcane properties.', chat: '', unidentified: '' },
-                        source: { value: '' },
-                        quantity: 1,
-                        weight: 0.1,
-                        price: 25,
-                        rarity: 'uncommon',
-                        identified: true,
-                        consumableType: 'other',
-                        uses: { value: 1, max: 1, per: 'charges' }
-                    }
-                }
+                name: 'Minor Arcane Dust'
             },
-            // Fallback: any valid combination -> Sludge
-            {
-                match: () => true,
-                name: 'Experimenter\'s Sludge',
-                result: {
-                    name: 'Experimenter\'s Sludge',
-                    type: 'consumable',
-                    img: 'icons/consumables/potions/bottle-round-corked.webp',
-                    system: {
-                        description: { value: 'A failed experiment. Perhaps the combination was wrong, or more practice is needed.', chat: '', unidentified: '' },
-                        source: { value: '' },
-                        quantity: 1,
-                        weight: 0.5,
-                        price: 1,
-                        rarity: 'common',
-                        identified: true,
-                        consumableType: 'other',
-                        uses: { value: 1, max: 1, per: 'charges' }
-                    }
-                }
-            }
+            { match: () => true, name: "Experimenter's Sludge" }
         ];
     }
 
@@ -186,10 +94,22 @@ export class ExperimentationEngine {
             return { success: false, item: null, name: 'No matching rule', quality: 'Failed' };
         }
 
-        const itemData = rule.result;
+        const worldItem = game.items?.find((i) => (i.name || '').trim() === (rule.name || '').trim());
+        if (!worldItem) {
+            return {
+                success: false,
+                item: null,
+                name: `Required world item "${rule.name}" not found. Create it in the Items directory (see documentation/core-items-required.md).`,
+                quality: 'Failed'
+            };
+        }
+
+        const obj = worldItem.toObject();
+        delete obj._id;
+        if (obj.id !== undefined) delete obj.id;
 
         try {
-            const createdItems = await actor.createEmbeddedDocuments('Item', [itemData]);
+            const createdItems = await actor.createEmbeddedDocuments('Item', [obj]);
             const createdItem = createdItems?.[0];
 
             if (createdItem) {

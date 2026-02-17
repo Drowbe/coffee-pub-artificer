@@ -9,7 +9,7 @@ NEEDED INGREDIENTS and COMPONENTS
 
 ## Experimental Results (Crafted Items)
 
-These items are produced by the experimentation engine when crafting. **They must exist as Items in the world or compendiums.** The system looks up items by name and creates copies for the crafter—it does not create items from inline data.
+These items are produced by the experimentation engine when crafting. **They must exist as Items in the world.** The module uses only world items—no hardcoded templates. See `documentation/core-items-required.md` for full item definitions.
 
 | Item Name | Tag Combo | Type | Notes |
 |-----------|-----------|------|-------|
@@ -18,8 +18,6 @@ These items are produced by the experimentation engine when crafting. **They mus
 | Crude Metal Shard | Metal + Ore | loot | Rough metal from smelting |
 | Minor Arcane Dust | Crystal + Arcane + (Life/Heat/Cold/Shadow/Light/Electric) | consumable | Faintly glowing arcane dust |
 | Experimenter's Sludge | * (fallback) | consumable | Failed experiment; any invalid combo |
-
-**Implementation:** Create these items (via Create Item form or Import). Place in a compendium pack (e.g. "Artificer Crafting Results") or in the world. The experimentation engine will resolve them by name and duplicate into the crafter's inventory. Compendium lookup will be added for Phase 2+.
 
 ## Containers (Crafting Tools)
 

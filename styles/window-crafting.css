@@ -170,6 +170,18 @@
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--craft-border-color);
     border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.crafting-recipe-row:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.1);
+}
+
+.crafting-recipe-row-selected {
+    border-color: var(--craft-accent-color);
+    background: rgba(172, 159, 129, 0.15);
 }
 
 .crafting-recipe-tags {
@@ -194,6 +206,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: 6px 10px;
+    direction: ltr;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--craft-border-color);
     border-radius: 4px;
@@ -326,6 +339,16 @@
     background: rgba(255, 100, 0, 0.1);
 }
 
+/* Dimmed slot when ingredient is missing from inventory */
+.crafting-bench-slot-missing {
+    opacity: 0.5;
+}
+
+.crafting-bench-slot-missing .crafting-slot-img {
+    filter: grayscale(0.6);
+}
+
+
 .crafting-bench-slot-empty {
     color: #888;
     font-size: 0.8em;
@@ -357,15 +380,21 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(143, 30, 12, 0.9);
+    background: rgba(59, 132, 66, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.3);
     border-radius: 4px;
     font-size: 0.8em;
     font-weight: 700;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
     z-index: 100;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     pointer-events: none;
+}
+
+/* Missing ingredient count badge */
+.crafting-bench-slot-count.missing {
+    background: rgba(143, 30, 12, 0.9);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Container + sliders row (per sketch) */
@@ -529,6 +558,37 @@
     padding: 12px;
     border-radius: 6px;
     border: 1px solid var(--craft-border-color);
+}
+
+.crafting-result-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.crafting-result-box .crafting-ingredient-row-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.crafting-result-fallback-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    flex-shrink: 0;
+}
+
+.crafting-result-success .crafting-result-fallback-icon {
+    color: rgba(105, 213, 104, 0.9);
+}
+
+.crafting-result-fail .crafting-result-fallback-icon {
+    color: #f0a0a0;
 }
 
 .crafting-result-success {
