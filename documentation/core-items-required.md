@@ -1,8 +1,11 @@
 # Core Items Required
 
-The experimentation engine uses **only** world items. It never creates items from hardcoded templates. You must create these items in the Items directory before tag-based crafting can succeed.
+The experimentation engine uses **only** existing items (no hardcoded templates). It looks up items in this order:
 
-**Exact name required.** The engine looks up items by name; spelling and punctuation must match exactly.
+1. **Configured compendia** – Uses module compendium settings (ingredient priority list) in order; stops at first match.
+2. **World items** – Falls back to the Items directory if not found in compendia.
+
+**Exact name required.** Spelling and punctuation must match exactly.
 
 ---
 

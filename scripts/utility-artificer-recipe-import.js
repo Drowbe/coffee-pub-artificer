@@ -6,27 +6,7 @@ import { MODULE } from './const.js';
 import { getOrCreateJournal } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from './schema-recipes.js';
-
-/**
- * Resolve an item by name (world items; compendia require UUID)
- * @param {string} name
- * @param {string} [type] - Optional filter: 'container' for containers only
- * @returns {Item|null}
- */
-function resolveItemByName(name, type) {
-    if (!name || typeof name !== 'string') return null;
-    const n = name.trim();
-    const items = game.items ?? [];
-    for (const i of items) {
-        if ((i.name || '').trim() !== n) continue;
-        if (type === 'container') {
-            const f = i.flags?.artificer || i.flags?.[MODULE.ID];
-            if (f?.type !== 'container') continue;
-        }
-        return i;
-    }
-    return null;
-}
+import { resolveItemByName } from './utility-artificer-item.js';
 
 /** Default journal name when none configured */
 const DEFAULT_RECIPE_JOURNAL_NAME = 'Artificer Recipes';
@@ -54,10 +34,11 @@ export async function parseRecipeImportInput(input) {
 
 /**
  * Validate recipe payload and return normalized data
+ * Uses compendium settings (priority order), then world items for result/container lookup.
  * @param {Object} payload
- * @returns {Object} { valid: boolean, data: Object, error?: string }
+ * @returns {Promise<Object>} { valid: boolean, data: Object, error?: string }
  */
-export function validateRecipePayload(payload) {
+export async function validateRecipePayload(payload) {
     if (!payload || typeof payload !== 'object') {
         return { valid: false, error: 'Payload must be an object' };
     }
@@ -76,7 +57,7 @@ export function validateRecipePayload(payload) {
     const resultItemName = payload.resultItemName ?? payload.name;
     let resolvedUuid = resultItemUuid;
     if (!resolvedUuid && resultItemName) {
-        const item = resolveItemByName(resultItemName);
+        const item = await resolveItemByName(resultItemName);
         if (item) resolvedUuid = item.uuid;
     }
     if (!resolvedUuid) {
@@ -85,7 +66,7 @@ export function validateRecipePayload(payload) {
     let containerUuid = payload.containerUuid ?? null;
     const containerName = payload.containerName ?? payload.container ?? null;
     if (!containerUuid && containerName) {
-        const c = resolveItemByName(containerName, 'container');
+        const c = await resolveItemByName(containerName, 'container');
         if (c) containerUuid = c.uuid;
     }
     const data = {
@@ -101,6 +82,7 @@ export function validateRecipePayload(payload) {
             quantity: (typeof i === 'object' ? i.quantity : 1) ?? 1
         })),
         resultItemUuid: resolvedUuid,
+        resultItemName: resultItemName ?? null,
         tags: Array.isArray(payload.tags) ? payload.tags : [],
         description: payload.description ?? '',
         heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= 100 ? Number(payload.heat) : null) : null,
@@ -139,7 +121,7 @@ function buildRecipePageHtml(data) {
         }
     }
     const resultItem = game.items?.find((i) => i.uuid === data.resultItemUuid);
-    const resultLabel = resultItem ? resultItem.name : data.name;
+    const resultLabel = resultItem ? resultItem.name : (data.resultItemName ?? data.name);
     parts.push(`<p><strong>Result:</strong> @UUID[${data.resultItemUuid}]{${escapeHtml(resultLabel)}}</p>`);
     if (data.tags?.length) parts.push(`<p><strong>Tags:</strong> ${data.tags.map((t) => escapeHtml(String(t))).join(', ')}</p>`);
     if (data.description) parts.push(`<p><strong>Description:</strong> ${escapeHtml(data.description)}</p>`);
@@ -195,7 +177,7 @@ export async function importRecipes(payloads, options = {}) {
     for (let i = 0; i < payloads.length; i++) {
         const payload = payloads[i];
         const name = payload?.name ?? `Recipe ${i + 1}`;
-        const validated = validateRecipePayload(payload);
+        const validated = await validateRecipePayload(payload);
         if (!validated.valid) {
             result.errors.push({ name, error: validated.error, index: i });
             result.errorCount++;

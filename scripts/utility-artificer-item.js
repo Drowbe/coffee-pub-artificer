@@ -5,6 +5,77 @@
 import { MODULE } from './const.js';
 
 /**
+ * Get configured compendium IDs from settings (in priority order)
+ * @returns {string[]}
+ */
+function getConfiguredCompendiumIds() {
+    const compendiums = [];
+    let numCompendiums = 1;
+    try {
+        numCompendiums = game.settings.get(MODULE.ID, 'numIngredientCompendiums') ?? 1;
+    } catch {
+        return [];
+    }
+    for (let i = 1; i <= numCompendiums; i++) {
+        try {
+            const id = game.settings.get(MODULE.ID, `ingredientCompendium${i}`);
+            if (id && id !== 'none' && id !== '') compendiums.push(id);
+        } catch {
+            continue;
+        }
+    }
+    return compendiums;
+}
+
+/**
+ * Resolve an item by name: searches configured compendia first (priority order), then world items.
+ * Honors module compendium settings.
+ * @param {string} name - Item name (exact match, trimmed)
+ * @param {string} [type] - Optional filter: 'container' for container-type only
+ * @returns {Promise<Item|null>}
+ */
+export async function resolveItemByName(name, type) {
+    if (!name || typeof name !== 'string') return null;
+    const targetName = name.trim();
+
+    // 1. Search configured compendia first (priority order)
+    const compendiumIds = getConfiguredCompendiumIds();
+    for (const compendiumId of compendiumIds) {
+        try {
+            const pack = game.packs.get(compendiumId);
+            if (!pack || pack.documentName !== 'Item') continue;
+            const index = await pack.getIndex();
+            const raw = index?.contents ?? index?.index ?? index?.entries ?? (Array.isArray(index) ? index : []);
+            const entries = Array.isArray(raw) ? raw : [];
+            const entry = entries.find((c) => (c?.name ?? '').trim() === targetName);
+            if (!entry) continue;
+            const item = await pack.getDocument(entry._id ?? entry.id);
+            if (!item) continue;
+            if (type === 'container') {
+                const f = item.flags?.artificer ?? item.flags?.[MODULE.ID];
+                if (f?.type !== 'container') continue;
+            }
+            return item;
+        } catch (err) {
+            console.warn(`[Artificer] Error searching compendium "${compendiumId}" for "${targetName}":`, err?.message);
+            continue;
+        }
+    }
+
+    // 2. Fall back to world items
+    const items = game.items ?? [];
+    for (const i of items) {
+        if ((i.name ?? '').trim() !== targetName) continue;
+        if (type === 'container') {
+            const f = i.flags?.artificer ?? i.flags?.[MODULE.ID];
+            if (f?.type !== 'container') continue;
+        }
+        return i;
+    }
+    return null;
+}
+
+/**
  * Create a FoundryVTT Item with Artificer flags
  * @param {Object} itemData - D&D 5e item data structure
  * @param {Object} artificerData - Artificer-specific data (tags, family, tier, etc.)

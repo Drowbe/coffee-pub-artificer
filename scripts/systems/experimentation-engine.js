@@ -4,6 +4,7 @@
 
 import { MODULE } from '../const.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
+import { resolveItemByName } from '../utility-artificer-item.js';
 
 /**
  * Extract all tags from a Foundry Item (ingredient, component, or essence)
@@ -94,12 +95,12 @@ export class ExperimentationEngine {
             return { success: false, item: null, name: 'No matching rule', quality: 'Failed' };
         }
 
-        const worldItem = game.items?.find((i) => (i.name || '').trim() === (rule.name || '').trim());
+        const worldItem = await resolveItemByName(rule.name);
         if (!worldItem) {
             return {
                 success: false,
                 item: null,
-                name: `Required world item "${rule.name}" not found. Create it in the Items directory (see documentation/core-items-required.md).`,
+                name: `Required item "${rule.name}" not found in compendia or world. Create it (see documentation/core-items-required.md).`,
                 quality: 'Failed'
             };
         }

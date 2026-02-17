@@ -3,7 +3,6 @@
   "title": "Coffee Pub Artificer",
   "description": "A crafting, recipe, and blueprint system.",
   "version": "13.0.1",
-  
   "manifest": "https://github.com/Drowbe/coffee-pub-artificer/releases/latest/download/module.json",
   "download": "https://github.com/Drowbe/coffee-pub-artificer/releases/latest/download/coffee-pub-artificer.zip",
   "url": "https://github.com/Drowbe/coffee-pub-artificer",
@@ -11,29 +10,22 @@
   "readme": "README.md",
   "changelog": "CHANGELOG.md",
   "license": "LICENSE",
-  
   "compatibility": {
     "minimum": "13",
     "verified": "13",
     "maximum": "13"
   },
-  "socket": false,
-  "library": false,
-
   "authors": [
     {
       "name": "COFFEE PUB",
       "discord": "drowbe",
       "url": "https://github.com/Drowbe",
-      "patreon": "Coffee Pub",
-      "github": "Drowbe",
       "flags": {
         "isMaintainer": true,
         "contribution": "owner"
       }
     }
   ],
-  
   "languages": [
     {
       "lang": "en",
@@ -43,7 +35,9 @@
     }
   ],
   "styles": [
-    "styles/default.css"
+    {
+      "src": "styles/default.css"
+    }
   ],
   "esmodules": [
     "scripts/const.js",
@@ -87,10 +81,119 @@
     "scripts/api-artificer.js",
     "scripts/artificer.js"
   ],
-  "packs": [],
-  
+  "packs": [
+    {
+      "name": "recipies",
+      "label": "Recipies",
+      "path": "packs/recipies",
+      "type": "JournalEntry",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "blueprints",
+      "label": "Blueprints",
+      "path": "packs/blueprints",
+      "type": "JournalEntry",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "ingredients",
+      "label": "Ingredients",
+      "path": "packs/ingredients",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "potions",
+      "label": "Potions",
+      "path": "packs/potions",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "poisons",
+      "label": "Poisons",
+      "path": "packs/poisons",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "containers",
+      "label": "Containers",
+      "path": "packs/containers",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "food",
+      "label": "Food",
+      "path": "packs/food",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "beverages",
+      "label": "Beverages",
+      "path": "packs/beverages",
+      "type": "Item",
+      "system": "dnd5e",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
+    },
+    {
+      "name": "objects",
+      "label": "Objects",
+      "path": "packs/objects",
+      "type": "Item",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "system": "dnd5e"
+    },
+    {
+      "name": "user-guide",
+      "label": "User Guide",
+      "path": "packs/user-guide",
+      "type": "JournalEntry",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "system": "dnd5e"
+    }
+  ],
   "relationships": {
-    "systems": [],
     "requires": [
       {
         "id": "coffee-pub-blacksmith",
@@ -98,8 +201,7 @@
         "manifest": "https://github.com/Drowbe/coffee-pub-blacksmith/releases/latest/download/module.json",
         "compatibility": {}
       }
-    ],
-    "conflicts": []
-  }
+    ]
+  },
+  "flags": {}
 }
-
