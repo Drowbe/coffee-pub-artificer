@@ -5,6 +5,7 @@
 import { MODULE } from './const.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
+import { resolveItemByName } from './utility-artificer-item.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
 /**
@@ -601,14 +602,22 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        const allTags = [];
-        for (const item of items) {
-            allTags.push(...getTagsFromItem(item));
-        }
-        this.lastCraftTags = [...new Set(allTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
+        const anyMissing = this.selectedSlots.some(s => s?.isMissing);
 
-        const engine = getExperimentationEngine();
-        this.lastResult = await engine.craft(actor, items);
+        // Recipe takes precedence: if recipe selected and all ingredients present, use recipe result
+        if (this.selectedRecipe && !anyMissing) {
+            this.lastResult = await this._craftFromRecipe(actor, items);
+        } else {
+            // Fall back to tag-based experimentation
+            const allTags = [];
+            for (const item of items) {
+                allTags.push(...getTagsFromItem(item));
+            }
+            this.lastCraftTags = [...new Set(allTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
+            const engine = getExperimentationEngine();
+            this.lastResult = await engine.craft(actor, items);
+        }
+
         /** @type {Array<{item: Item, count: number}|null>} */
         this.selectedSlots = Array(6).fill(null);
 
@@ -618,5 +627,77 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             ui.notifications.warn(this.lastResult.name);
         }
         this.render();
+    }
+
+    /**
+     * Craft from recipe: use recipe's result item (100% success when ingredients present)
+     * @param {Actor} actor
+     * @param {Item[]} items - Items to consume
+     * @returns {Promise<{success: boolean, item: Item|null, name: string, quality: string}>}
+     */
+    async _craftFromRecipe(actor, items) {
+        const recipe = this.selectedRecipe;
+        if (!recipe) return { success: false, item: null, name: 'No recipe', quality: 'Failed' };
+
+        let resultItem = null;
+        if (recipe.resultItemUuid) {
+            resultItem = await fromUuid(recipe.resultItemUuid);
+        }
+        if (!resultItem && recipe.name) {
+            resultItem = await resolveItemByName(recipe.name);
+        }
+        if (!resultItem) {
+            return {
+                success: false,
+                item: null,
+                name: `Recipe result "${recipe.name}" not found in compendia or world. Create it (see documentation/core-items-required.md).`,
+                quality: 'Failed'
+            };
+        }
+
+        try {
+            const obj = resultItem.toObject();
+            delete obj._id;
+            if (obj.id !== undefined) delete obj.id;
+
+            const created = await actor.createEmbeddedDocuments('Item', [obj]);
+            const createdItem = created?.[0];
+            if (!createdItem) {
+                return { success: false, item: null, name: 'Creation failed', quality: 'Failed' };
+            }
+
+            await this._consumeIngredients(actor, items);
+            this.lastCraftTags = [recipe.name];
+            return {
+                success: true,
+                item: createdItem,
+                name: recipe.name,
+                quality: 'Basic'
+            };
+        } catch (err) {
+            console.error('[Artificer] Recipe craft error:', err);
+            return { success: false, item: null, name: err?.message ?? 'Craft failed', quality: 'Failed' };
+        }
+    }
+
+    /**
+     * Consume ingredients from actor inventory
+     * @param {Actor} actor
+     * @param {Item[]} items
+     */
+    async _consumeIngredients(actor, items) {
+        for (const item of items) {
+            const actorItem = actor.items.get(item.id);
+            if (!actorItem) continue;
+
+            const qty = actorItem.system?.quantity ?? actorItem.system?.uses?.value ?? 1;
+            if (qty > 1) {
+                await actorItem.update({
+                    'system.quantity': Math.max(0, qty - 1)
+                });
+            } else {
+                await actorItem.delete();
+            }
+        }
     }
 }
