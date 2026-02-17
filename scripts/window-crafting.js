@@ -9,10 +9,41 @@ import { resolveItemByName } from './utility-artificer-item.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
 /**
- * Map journal-loaded recipes to display format for the recipe list
- * @returns {Array<{recipeId: string, tags: string[], result: string, selected?: boolean}>}
+ * Check if actor has all ingredients for a recipe (name + type + quantity)
+ * @param {Actor|null} actor
+ * @param {Object} recipe - ArtificerRecipe with ingredients array
+ * @returns {boolean}
  */
-function getRecipesForDisplay(selectedRecipeId) {
+function recipeCanCraft(actor, recipe) {
+    if (!actor || !recipe?.ingredients?.length) return false;
+    const ingredients = recipe.ingredients ?? [];
+    for (const ing of ingredients) {
+        const need = ing.quantity ?? 1;
+        const candidates = actor.items.filter((item) => {
+            const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+            const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+            if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) {
+                return (f.type === (ing.type || 'ingredient')) && nameMatches;
+            }
+            return nameMatches;
+        });
+        const getQty = (item) => {
+            const q = item.system?.quantity;
+            return typeof q === 'number' ? q : (q?.value ?? 1);
+        };
+        const have = candidates.reduce((sum, item) => sum + getQty(item), 0);
+        if (have < need) return false;
+    }
+    return true;
+}
+
+/**
+ * Map journal-loaded recipes to display format for the recipe list
+ * @param {string|null} selectedRecipeId
+ * @param {Actor|null} actor - Crafter actor for canCraft check
+ * @returns {Array<{recipeId: string, tags: string[], result: string, selected?: boolean, canCraft?: boolean}>}
+ */
+function getRecipesForDisplay(selectedRecipeId, actor) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
     return recipes.map((r) => {
@@ -22,7 +53,8 @@ function getRecipesForDisplay(selectedRecipeId) {
             recipeId: r.id,
             tags: tags.length ? tags : [r.name],
             result: r.name,
-            selected: selectedRecipeId === r.id
+            selected: selectedRecipeId === r.id,
+            canCraft: recipeCanCraft(actor, r)
         };
     });
 }
@@ -254,7 +286,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const hasSlots = this.selectedSlots.some(s => s !== null);
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
         const canCraft = hasSlots && !anyMissing;
-        let knownCombinations = getRecipesForDisplay(this.selectedRecipe?.id ?? null);
+        let knownCombinations = getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor);
         if (this.filterRecipeSearch?.trim()) {
             const q = this.filterRecipeSearch.trim().toLowerCase();
             knownCombinations = knownCombinations.filter(

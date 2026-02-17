@@ -184,6 +184,12 @@
     background: rgba(172, 159, 129, 0.15);
 }
 
+.crafting-recipe-craftable-icon {
+    flex-shrink: 0;
+    font-size: 0.85em;
+    color: rgba(105, 213, 104, 0.9);
+}
+
 .crafting-recipe-tags {
     color: rgba(201, 201, 201, 0.9);
 }

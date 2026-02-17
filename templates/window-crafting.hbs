@@ -28,6 +28,7 @@
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
                     <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
+                        {{#if this.canCraft}}<i class="crafting-recipe-craftable-icon fa-solid fa-hammer" title="All ingredients available"></i>{{/if}}
                         <span class="crafting-recipe-tags">{{#each this.tags}}{{this}}{{#unless @last}} + {{/unless}}{{/each}}</span>
                         <span class="crafting-recipe-arrow">→</span>
                         <span class="crafting-recipe-result">{{this.result}}</span>
