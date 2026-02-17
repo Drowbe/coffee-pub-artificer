@@ -11,6 +11,10 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /** App ID prefix for unique element IDs */
 const CRAFTING_APP_ID = 'artificer-crafting';
 
+/** Module-level ref for delegation (like Quick Encounter) */
+let _currentCraftingWindowRef = null;
+let _craftingDelegationAttached = false;
+
 /**
  * Artificer Crafting Window - Main crafting UI
  * Ingredient browser with filtering, experimentation slots, recipe placeholder
@@ -56,6 +60,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     /**
      * Get the crafter actor: player → their character; GM → selected token's actor (or character fallback)
      */
+    _getCraftingRoot() {
+        const byId = document.getElementById(this.id);
+        if (byId) return byId;
+        return document.querySelector('.crafting-window-root') ?? this.element ?? null;
+    }
+
     _getCrafterActor() {
         if (game.user?.isGM) {
             const controlled = canvas.ready ? canvas.tokens.controlled : [];
@@ -256,50 +266,89 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._removeContainer();
     }
 
-    /** Attach document-level delegation for filters/search (runs once, survives re-renders) */
+    /** Attach document-level delegation (encounter pattern: ref + root.contains) */
     _attachDelegationOnce() {
-        const appId = this.id;
-        if (this._delegationAttached) return;
-        this._delegationAttached = true;
+        _currentCraftingWindowRef = this;
+        if (_craftingDelegationAttached) return;
+        _craftingDelegationAttached = true;
+
+        document.addEventListener('click', (e) => {
+            const w = _currentCraftingWindowRef;
+            if (!w) return;
+            const root = w._getCraftingRoot();
+            if (!root?.contains?.(e.target)) return;
+            const row = e.target?.closest?.('.crafting-ingredient-row');
+            if (row?.dataset?.itemId) {
+                const action = row.dataset.action || row.getAttribute?.('data-action');
+                if (action === 'addToContainer') w._addToContainer(row.dataset.itemId);
+                else w._addToSlot(row.dataset.itemId);
+                return;
+            }
+            const slotItem = e.target?.closest?.('.crafting-bench-slot-item');
+            if (slotItem) {
+                const slot = slotItem.closest('.crafting-bench-slot');
+                if (slot?.dataset?.slotIndex !== undefined) w._removeFromSlot(slot.dataset.slotIndex);
+                return;
+            }
+            const containerSlot = e.target?.closest?.('.crafting-bench-container-slot');
+            if (containerSlot && w.selectedContainer) w._removeContainer();
+        });
 
         document.addEventListener('change', (e) => {
+            const w = _currentCraftingWindowRef;
+            if (!w) return;
+            const root = w._getCraftingRoot();
+            if (!root?.contains?.(e.target)) return;
+            const appId = w.id;
             const el = e.target;
-            if (!el?.closest?.(`#${appId}`)) return;
             const id = el.id ?? '';
             if (id === `${appId}-filter-family`) {
-                this.filterFamily = el.value ?? '';
-                this.render();
+                w.filterFamily = el.value ?? '';
+                w.render();
             } else if (id === `${appId}-filter-type`) {
                 const v = el.value;
-                this.filterType = v === 'all' ? '' : (v ?? '');
-                this.render();
+                w.filterType = v === 'all' ? '' : (v ?? '');
+                w.render();
+            }
+            const slider = el?.closest?.('[data-craft-setting]');
+            if (slider) {
+                const key = slider.getAttribute('data-craft-setting');
+                const min = parseFloat(slider.getAttribute('data-craft-setting-min')) || 0;
+                const max = parseFloat(slider.getAttribute('data-craft-setting-max')) || 100;
+                const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
+                if (key === 'heat') w.heatValue = val;
+                else if (key === 'time') w.timeValue = val;
+                w.render();
             }
         });
 
         document.addEventListener('input', (e) => {
+            const w = _currentCraftingWindowRef;
+            if (!w) return;
+            const root = w._getCraftingRoot();
+            if (!root?.contains?.(e.target)) return;
+            const appId = w.id;
             const el = e.target;
-            if (!el?.closest?.(`#${appId}`)) return;
             if ((el.id ?? '') === `${appId}-filter-search`) {
-                this.filterSearch = el.value ?? '';
-                this.render();
-            } else if (el?.dataset?.craftSetting === 'heat') {
-                this.heatValue = Math.max(0, Math.min(100, parseInt(el.value, 10) || 50));
-                this.render();
-            } else if (el?.dataset?.craftSetting === 'time') {
-                this.timeValue = Math.max(5, Math.min(120, parseInt(el.value, 10) || 30));
-                this.render();
+                w.filterSearch = el.value ?? '';
+                w.render();
+                return;
             }
-        });
-
-        document.addEventListener('change', (e) => {
-            const el = e.target;
-            if (!el?.closest?.(`#${appId}`)) return;
-            if (el?.dataset?.craftSetting === 'heat') {
-                this.heatValue = Math.max(0, Math.min(100, parseInt(el.value, 10) || 50));
-                this.render();
-            } else if (el?.dataset?.craftSetting === 'time') {
-                this.timeValue = Math.max(5, Math.min(120, parseInt(el.value, 10) || 30));
-                this.render();
+            const slider = el?.closest?.('[data-craft-setting]');
+            if (slider) {
+                const key = slider.getAttribute('data-craft-setting');
+                const min = parseFloat(slider.getAttribute('data-craft-setting-min')) || 0;
+                const max = parseFloat(slider.getAttribute('data-craft-setting-max')) || 100;
+                const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
+                if (key === 'heat') {
+                    w.heatValue = val;
+                    const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+                    slider.style?.setProperty?.('--heat-fill', `${pct}%`);
+                } else if (key === 'time') {
+                    w.timeValue = val;
+                    const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+                    slider.style?.setProperty?.('--slider-fill', `${pct}%`);
+                }
             }
         });
     }
@@ -309,26 +358,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._attachDelegationOnce();
     }
 
-    _attachListeners(root) {
-        const el = root ?? document.getElementById(this.id);
-        if (!el) return;
-
-        el.querySelectorAll('.crafting-ingredient-row').forEach(row => {
-            row.addEventListener('click', () => {
-                const itemId = row.dataset?.itemId;
-                const action = row.dataset?.addAction || row.getAttribute?.('data-action');
-                if (!itemId) return;
-                if (action === 'addToContainer') this._addToContainer(itemId);
-                else this._addToSlot(itemId);
-            });
-        });
-
-        el.querySelectorAll('.crafting-bench-slot-item').forEach(slot => {
-            slot.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this._removeFromSlot(slot.closest('.crafting-bench-slot')?.dataset?.slotIndex);
-            });
-        });
+    _attachListeners(_root) {
+        /* Ingredient add, slot remove, container remove: handled by document-level delegation */
     }
 
     activateListeners(html) {

@@ -10,10 +10,12 @@
     --craft-accent-color: #ac9f81;
     --craft-background: #232323;
     --craft-header-bg: rgba(0, 0, 0, 0.7);
+    --craft-banner-image: url('../images/backgrounds/background-skull-red.webp');       
     background: var(--craft-background) !important;
     border: 0 solid var(--craft-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
     font-family: "Signika", sans-serif;
+    
 }
 
 .window-artificer-crafting .window-content {
@@ -23,7 +25,13 @@
 }
 
 .window-artificer-crafting .window-header {
+
     background: var(--craft-header-bg) !important;
+    background-image: var(--craft-banner-image);
+    background-blend-mode: multiply;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
     border-bottom: 1px solid var(--craft-border-color) !important;
     color: var(--craft-accent-color) !important;
 }
@@ -327,12 +335,12 @@
 .crafting-bench-slot-item {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: block;
 }
 
 .crafting-bench-slot-item .crafting-slot-img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -353,6 +361,7 @@
     font-size: 0.75em;
     font-weight: 600;
     color: #fff;
+    z-index: 2;
 }
 
 /* Container + sliders row (per sketch) */
@@ -369,60 +378,61 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
 }
 
-.crafting-bench-slider-label {
+.crafting-bench-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 120px;
+}
+
+.crafting-bench-slider-endpoint {
     font-size: 0.75em;
+    font-weight: 600;
     color: #b0b0b0;
+    white-space: nowrap;
 }
 
-.crafting-bench-slider-top {
-    order: 1;
-}
-
-.crafting-bench-slider-bottom {
-    order: 3;
-}
-
-/* Vertical slider: rotate -90deg so 0 is bottom, max is top */
-.crafting-bench-vertical-slider {
+.crafting-bench-setting-slider {
+    flex: 1;
+    min-width: 0;
+    height: 16px;
     -webkit-appearance: none;
     appearance: none;
-    width: 80px;
-    height: 16px;
     background: transparent;
     outline: none;
-    transform: rotate(-90deg);
-    transform-origin: center center;
-    order: 2;
+    cursor: pointer;
 }
 
-.crafting-bench-vertical-slider::-webkit-slider-runnable-track {
-    width: 80px;
+.crafting-bench-setting-slider::-webkit-slider-runnable-track {
     height: 12px;
-    background: linear-gradient(
-        to right,
-        rgba(43, 101, 49, 0.9) 0%,
-        rgba(43, 101, 49, 0.9) var(--slider-fill, 50%),
-        rgba(111, 39, 39, 0.6) var(--slider-fill, 50%),
-        rgba(111, 39, 39, 0.6) 100%
-    );
-    border: 1px solid var(--craft-border-color);
     border-radius: 4px;
+    border: 1px solid var(--craft-border-color);
 }
 
-.crafting-bench-heat-slider .crafting-bench-vertical-slider::-webkit-slider-runnable-track {
+.crafting-bench-setting-slider.crafting-bench-heat-slider-input::-webkit-slider-runnable-track {
     background: linear-gradient(
         to right,
         rgba(200, 80, 40, 0.8) 0%,
-        rgba(200, 80, 40, 0.8) var(--heat-fill, 50%),
-        rgba(60, 80, 120, 0.6) var(--heat-fill, 50%),
+        rgba(200, 80, 40, 0.8) var(--heat-fill, 0%),
+        rgba(60, 80, 120, 0.6) var(--heat-fill, 0%),
         rgba(60, 80, 120, 0.6) 100%
     );
 }
 
-.crafting-bench-vertical-slider::-webkit-slider-thumb {
+.crafting-bench-setting-slider:not(.crafting-bench-heat-slider-input)::-webkit-slider-runnable-track {
+    background: linear-gradient(
+        to right,
+        rgba(43, 101, 49, 0.9) 0%,
+        rgba(43, 101, 49, 0.9) var(--slider-fill, 0%),
+        rgba(111, 39, 39, 0.6) var(--slider-fill, 0%),
+        rgba(111, 39, 39, 0.6) 100%
+    );
+}
+
+.crafting-bench-setting-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 18px;
@@ -434,7 +444,7 @@
     cursor: grab;
 }
 
-.crafting-bench-vertical-slider::-webkit-slider-thumb:hover {
+.crafting-bench-setting-slider::-webkit-slider-thumb:hover {
     background: rgba(255, 100, 0, 0.6);
 }
 
