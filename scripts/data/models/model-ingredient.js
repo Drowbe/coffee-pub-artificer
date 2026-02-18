@@ -47,6 +47,34 @@ export class ArtificerIngredient {
     }
     
     /**
+     * Create an ArtificerIngredient from a cache record (no Item fetch).
+     * Use when loading from persisted cache to avoid compendium hits.
+     * @param {Object} record - Cache record { uuid, name, img, family, tags, tier, rarity, source, artificerType }
+     * @returns {ArtificerIngredient|null} Parsed ingredient or null if not an ingredient
+     */
+    static fromRecord(record) {
+        if (!record?.uuid) return null;
+        const type = record.artificerType;
+        const isIngredient = type === 'ingredient' || type === 'Component';
+        if (!isIngredient) return null;
+        const tags = Array.isArray(record.tags) ? record.tags : [];
+        return new ArtificerIngredient({
+            id: record.uuid,
+            name: record.name ?? '',
+            family: record.family ?? INGREDIENT_FAMILIES.HERBS,
+            tier: Math.max(1, record.tier ?? 1),
+            rarity: record.rarity ?? INGREDIENT_RARITIES.COMMON,
+            primaryTag: tags[0] ?? '',
+            secondaryTags: tags.slice(1) ?? [],
+            quirk: null,
+            biomes: [],
+            description: '',
+            image: record.img ?? null,
+            source: record.source ?? null
+        });
+    }
+
+    /**
      * Create an ArtificerIngredient from raw data
      * @param {Object} data - Ingredient data
      */

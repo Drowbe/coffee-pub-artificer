@@ -215,7 +215,7 @@ function loadFromPersisted() {
     _status.hasCache = true;
     _status.compendiumCount = payload.compendiumIds.length;
     _status.itemCount = payload.entries.length;
-    _status.message = `${payload.compendiumIds.length} compendiums, ${payload.entries.length} items (from saved cache)`;
+    _status.message = `${payload.compendiumIds.length} Compendiums, ${payload.entries.length} Items`;
 }
 
 /**
@@ -267,7 +267,7 @@ export async function refreshCache(onProgress) {
                 compendiumIndex: i + 1,
                 compendiumCount: compendiumIds.length,
                 itemCount: entries.length,
-                message: `Building cache... ${i + 1}/${compendiumIds.length} compendiums, ${entries.length} items`
+                message: `Building Cache: ${i + 1}/${compendiumIds.length} Compendiums, ${entries.length} Items`
             });
         }
         try {
@@ -378,7 +378,22 @@ export async function getFromCache(name, typeFilter) {
 }
 
 /**
+ * Get all records from persisted cache. NO compendium/fromUuid calls.
+ * Use this for fast init: build ArtificerIngredient etc. from records.
+ * @returns {Array<{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null }>}
+ */
+export function getAllRecordsFromCache() {
+    if (_status.building) return [];
+    if (!_status.hasCache) {
+        loadFromPersisted();
+        if (!_status.hasCache) return [];
+    }
+    return Array.from(_recordsByUuid.values());
+}
+
+/**
  * Get all unique items from cache. When restored from persisted, fetches each by uuid.
+ * ONLY use when full Item documents are required (e.g. adding to actor). Avoid on init.
  * @returns {Promise<Item[]>}
  */
 export async function getAllItemsFromCache() {

@@ -4,7 +4,7 @@
 
 import { MODULE } from '../../const.js';
 import { ArtificerIngredient } from '../models/model-ingredient.js';
-import { getCacheStatus, getAllItemsFromCache } from '../../cache/cache-items.js';
+import { getCacheStatus, getAllRecordsFromCache } from '../../cache/cache-items.js';
 
 /**
  * IngredientStorage - Manages loading ingredients from compendiums and journals
@@ -47,11 +47,10 @@ export class IngredientStorage {
         const needsCompendia = source === 'compendia-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
 
         if (cacheStatus.hasCache && !cacheStatus.building) {
-            const allItems = await getAllItemsFromCache();
-            for (const item of allItems) {
-                const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
-                if (!artificerData || artificerData.type !== 'ingredient') continue;
-                const ingredient = ArtificerIngredient.fromItem(item);
+            // Use persisted records ONLY — no fromUuid/compendium hits on load
+            const records = getAllRecordsFromCache();
+            for (const record of records) {
+                const ingredient = ArtificerIngredient.fromRecord(record);
                 if (ingredient) this._cache.set(ingredient.id, ingredient);
             }
             await this._loadFromJournals();

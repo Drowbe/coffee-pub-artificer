@@ -170,3 +170,38 @@
     border-color: rgba(255, 100, 0, 0.6);
     color: #fff;
 }
+
+/* Skill Level slider (1–20) */
+.item-form-crafting-style .artificer-skill-slider-group {
+    margin-bottom: 8px;
+}
+.item-form-crafting-style .artificer-skill-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.item-form-crafting-style .artificer-skill-slider-label {
+    font-size: 0.8em;
+    color: rgba(201, 201, 201, 0.7);
+}
+.item-form-crafting-style .artificer-skill-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    background: linear-gradient(to right, rgba(172, 159, 129, 0.5) 0%, rgba(172, 159, 129, 0.5) var(--skill-fill, 0%), rgba(100, 100, 100, 0.4) var(--skill-fill, 0%), rgba(100, 100, 100, 0.4) 100%);
+    border-radius: 3px;
+}
+.item-form-crafting-style .artificer-skill-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--craft-accent-color);
+    cursor: pointer;
+}
+.item-form-crafting-style .artificer-skill-current-value {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.9em;
+    color: var(--craft-accent-color);
+}

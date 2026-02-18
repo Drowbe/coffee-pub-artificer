@@ -104,47 +104,6 @@
     color: rgba(255, 255, 255, 0.75);
 }
 
-.crafting-window-header-cache {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-}
-
-.crafting-window-cache-status {
-    font-size: 0.85em;
-    color: rgba(255, 255, 255, 0.8);
-    white-space: nowrap;
-}
-
-.crafting-window-cache-status .fa-spinner {
-    margin-right: 4px;
-}
-
-.crafting-window-btn-refresh-cache {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(172, 159, 129, 0.6);
-    border-radius: 4px;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.9em;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.crafting-window-btn-refresh-cache:hover {
-    background: rgba(0, 0, 0, 0.8);
-    border-color: var(--craft-accent-color);
-}
-
-.crafting-window-btn-refresh-cache:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 /* ----- Body: 4-zone grid ----- */
 .crafting-window-body {
     display: grid;
@@ -710,10 +669,56 @@
     padding: 10px 12px;
 }
 
-.crafting-window-action-buttons {
+.crafting-window-action-bar {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.crafting-window-action-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.crafting-window-action-right {
+    display: flex;
+    align-items: center;
     gap: 8px;
+}
+
+.crafting-window-btn-refresh-cache {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(172, 159, 129, 0.6);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.crafting-window-btn-refresh-cache:hover {
+    background: rgba(0, 0, 0, 0.8);
+    border-color: var(--craft-accent-color);
+}
+
+.crafting-window-btn-refresh-cache:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.crafting-window-cache-status {
+    font-size: 0.9em;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.crafting-window-cache-status .fa-spinner {
+    margin-right: 4px;
 }
 
 /* Button styles (match Quick Encounter) */

@@ -73,6 +73,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             selected: t === artificerType
         }));
 
+        // Family options driven by selected type (like crafting window)
         const families = FAMILIES_BY_TYPE[artificerType] || [];
         const familyOptions = families.map(f => ({
             value: f,
@@ -113,6 +114,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
         const tagManager = getTagManager();
         const traitCandidates = tagManager.getAllTags();
+        const skillLevel = Math.max(1, Math.min(20, Math.floor(flags.skillLevel ?? 1)));
 
         const mergedContext = {
             isEditMode: this.isEditMode,
@@ -130,7 +132,8 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             itemDescription: (this.itemData?.system?.description?.value ?? this.itemData?.description ?? '') || '',
             traitsValue: existingTraits.join(','),
             traitCandidates,
-            skillLevel: flags.skillLevel ?? 1,
+            skillLevel,
+            skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
             family: selectedFamily,
             biomes: (flags.biomes || []).join(', '),
             componentType: flags.componentType || '',
@@ -180,10 +183,14 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const artificerTypeSelect = query('#artificerType');
         if (artificerTypeSelect) {
             artificerTypeSelect.addEventListener('change', (event) => {
-                this.itemType = event.target.value;
+                const newType = event.target.value;
+                this.itemType = newType;
                 this._formState = this._formState ?? {};
-                this._formState.artificerType = event.target.value;
-                this._formState.family = null;
+                this._formState.artificerType = newType;
+                const families = FAMILIES_BY_TYPE[newType] ?? [];
+                if (this._formState.family && !families.includes(this._formState.family)) {
+                    this._formState.family = null;
+                }
                 this.render();
             });
         }
@@ -194,6 +201,14 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 this._formState = this._formState ?? {};
                 this._formState.family = event.target.value || null;
                 this.render();
+            });
+        }
+
+        const skillSlider = query('#skillLevel');
+        const skillValueEl = root?.querySelector('.artificer-skill-current-value');
+        if (skillSlider && skillValueEl) {
+            skillSlider.addEventListener('input', () => {
+                skillValueEl.textContent = skillSlider.value;
             });
         }
 
@@ -382,7 +397,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             type: this.itemType,
             family: formObject.family || '',
             traits,
-            skillLevel: Math.max(1, parseInt(formObject.skillLevel, 10) || 1),
+            skillLevel: Math.max(1, Math.min(20, parseInt(formObject.skillLevel, 10) || 1)),
             rarity: 'Common'
         };
 

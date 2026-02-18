@@ -17,20 +17,6 @@
                 <div class="crafting-window-header-title">Artificer Crafting Station</div>
                 <div class="crafting-window-header-crafter">{{#if crafterName}}{{crafterName}}{{else}}Select a crafter{{/if}}</div>
             </div>
-            <div class="crafting-window-header-cache">
-                <span class="crafting-window-cache-status">
-                    {{#if cacheStatus.building}}
-                    <i class="fa-solid fa-spinner fa-spin"></i> {{cacheStatus.message}}
-                    {{else if cacheStatus.hasCache}}
-                    Cache: {{cacheStatus.message}}
-                    {{else}}
-                    Cache: No cache — click Refresh to build
-                    {{/if}}
-                </span>
-                <button type="button" class="crafting-window-btn-refresh-cache" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
-                    <i class="fa-solid fa-database"></i> Refresh Cache
-                </button>
-            </div>
         </div>
     </header>
 
@@ -204,15 +190,31 @@
         </aside>
     </div>
 
-    {{!-- ACTION BAR (Quick Encounter style) --}}
+    {{!-- ACTION BAR: [ REFRESH ] status text                    [ CLEAR ] [ CRAFT ] --}}
     <section class="crafting-window-buttons">
-        <div class="crafting-window-action-buttons">
-            <button type="button" class="crafting-window-btn-primary" data-action="craft" {{#unless canCraft}}disabled{{/unless}} title="Craft with selected ingredients">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Craft
-            </button>
-            <button type="button" class="crafting-window-btn-secondary" data-action="clear" title="Clear all slots">
-                <i class="fa-solid fa-eraser"></i> Clear
-            </button>
+        <div class="crafting-window-action-bar">
+            <div class="crafting-window-action-left">
+                <button type="button" class="crafting-window-btn-refresh-cache" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
+                    <i class="fa-solid fa-database"></i> Refresh
+                </button>
+                <span class="crafting-window-cache-status">
+                    {{#if cacheStatus.building}}
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{cacheStatus.message}}
+                    {{else if cacheStatus.hasCache}}
+                    {{cacheStatus.message}}
+                    {{else}}
+                    No cache — click Refresh to build
+                    {{/if}}
+                </span>
+            </div>
+            <div class="crafting-window-action-right">
+                <button type="button" class="crafting-window-btn-secondary" data-action="clear" title="Clear all slots">
+                    <i class="fa-solid fa-eraser"></i> Clear
+                </button>
+                <button type="button" class="crafting-window-btn-primary" data-action="craft" {{#unless canCraft}}disabled{{/unless}} title="Craft with selected ingredients">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Craft
+                </button>
+            </div>
         </div>
     </section>
 </div>
