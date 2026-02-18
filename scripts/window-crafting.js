@@ -5,10 +5,9 @@
 import { MODULE } from './const.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
-import { resolveItemByName } from './utility-artificer-item.js';
+import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
-import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
-import { ARTIFICER_TYPES } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 
 /** D&D consumable subtype → family when item has no artificer flags */
 const DND_CONSUMABLE_FAMILY = {
@@ -148,7 +147,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         /** @type {ArtificerRecipe|null} */
         this.selectedRecipe = null;
         this.filterFamily = options.filterFamily ?? '';
-        this.filterType = options.filterType ?? '';
+        /** Artificer TYPE (Component | Creation | Tool) for left dropdown; '' = All types */
+        this.filterArtificerType = options.filterArtificerType ?? '';
         this.filterSearch = options.filterSearch ?? '';
         this.filterRecipeSearch = options.filterRecipeSearch ?? '';
         /** @type {ReturnType<typeof setTimeout>|null} */
@@ -208,14 +208,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let ingredients = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                if (f?.type && (['ingredient', 'component', 'essence'].includes(f.type) || f.type === ARTIFICER_TYPES.COMPONENT)) return true;
+                const at = getArtificerTypeFromFlags(f);
+                if (at === ARTIFICER_TYPES.COMPONENT || at === ARTIFICER_TYPES.CREATION) return true;
+                if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
                 return asCraftableConsumable(i).ok;
             })
             .map(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 const cc = asCraftableConsumable(i);
-                const type = f?.type || (cc.ok ? cc.type : 'other');
-                const family = f?.family || (cc.ok ? cc.family : '');
+                const syntheticFlags = cc.ok ? { type: cc.type, family: cc.family } : f;
+                const artificerType = getArtificerTypeFromFlags(f || syntheticFlags) ?? ARTIFICER_TYPES.COMPONENT;
+                const family = getFamilyFromFlags(f || syntheticFlags) || (cc.ok ? (LEGACY_FAMILY_TO_FAMILY[cc.family] ?? cc.family) : '');
                 const tags = getTagsFromItem(i).join(', ');
                 return {
                     id: i.id,
@@ -224,7 +227,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     img: i.img || 'icons/skills/melee/weapons-crossed-swords-yellow.webp',
                     quantity: i.system?.quantity ?? 1,
                     tags: tags || (cc.ok ? 'consumable' : ''),
-                    type,
+                    artificerType,
                     family,
                     isContainer: false,
                     addAction: 'addToSlot'
@@ -237,7 +240,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 return f?.type === 'apparatus' || f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Apparatus');
             })
-            .map(i => ({ ...toListRow(i, 'addToApparatus', true, 'apparatus') }));
+            .map(i => ({ ...toListRow(i, 'addToApparatus', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Apparatus' }));
 
         /** Container: vessel to put result in (vial, herb bag). */
         const containerItems = artificerItems
@@ -245,7 +248,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 return f?.type === 'resultContainer' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
             })
-            .map(i => ({ ...toListRow(i, 'addToContainer', true, 'container') }));
+            .map(i => ({ ...toListRow(i, 'addToContainer', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Container' }));
 
         /** Tools: kits (Alchemist's Supplies, etc.). Match actor items by name. */
         const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Poisoner\'s Kit'];
@@ -256,12 +259,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             img: i.img || 'icons/tools/instruments/lute-gold-brown.webp',
             quantity: 1,
             tags: '',
-            type: 'tool',
+            artificerType: ARTIFICER_TYPES.TOOL,
+            family: '',
             isContainer: false,
             addAction: 'addToTool'
         })) ?? [];
 
-        function toListRow(item, addAction, isContainer, type) {
+        function toListRow(item, addAction, isContainer) {
             const tags = getTagsFromItem(item).join(', ');
             return {
                 id: item.id,
@@ -270,18 +274,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 img: item.img || 'icons/containers/bags/pouch-simple-brown.webp',
                 quantity: item.system?.quantity ?? 1,
                 tags,
-                type,
                 isContainer,
                 addAction
             };
         }
 
-        // Apply filters to ingredients
+        // Apply filters: left = Artificer TYPE, right = FAMILY (driven by type)
+        if (this.filterArtificerType) {
+            ingredients = ingredients.filter(i => i.artificerType === this.filterArtificerType);
+        }
         if (this.filterFamily) {
             ingredients = ingredients.filter(i => i.family === this.filterFamily);
-        }
-        if (this.filterType && this.filterType !== 'all' && !['apparatus', 'container', 'tool'].includes(this.filterType)) {
-            ingredients = ingredients.filter(i => i.type === this.filterType);
         }
         if (this.filterSearch?.trim()) {
             const q = this.filterSearch.trim().toLowerCase();
@@ -294,11 +297,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const filteredContainers = qSearch ? containerItems.filter(i => i.name.toLowerCase().includes(qSearch)) : containerItems;
         const filteredTools = qSearch ? toolItems.filter(i => i.name.toLowerCase().includes(qSearch)) : toolItems;
 
-        const showApparatusOnly = this.filterType === 'apparatus';
-        const showContainerOnly = this.filterType === 'container';
-        const showToolOnly = this.filterType === 'tool';
-        const showAllTypes = !this.filterType || this.filterType === 'all';
-        const listItems = showApparatusOnly ? filteredApparatus : showContainerOnly ? filteredContainers : showToolOnly ? filteredTools : showAllTypes ? [...ingredients, ...filteredApparatus, ...filteredContainers, ...filteredTools] : ingredients;
+        const showApparatusOnly = this.filterArtificerType === ARTIFICER_TYPES.TOOL && this.filterFamily === 'Apparatus';
+        const showContainerOnly = this.filterArtificerType === ARTIFICER_TYPES.TOOL && this.filterFamily === 'Container';
+        const showToolTypeAll = this.filterArtificerType === ARTIFICER_TYPES.TOOL && !this.filterFamily;
+        const showToolOnly = this.filterArtificerType === ARTIFICER_TYPES.TOOL;
+        const showAllTypes = !this.filterArtificerType;
+        const listItems = showApparatusOnly
+            ? filteredApparatus
+            : showContainerOnly
+                ? filteredContainers
+                : showAllTypes
+                    ? [...ingredients, ...filteredApparatus, ...filteredContainers, ...filteredTools]
+                    : showToolTypeAll
+                        ? [...filteredApparatus, ...filteredContainers, ...filteredTools]
+                        : ingredients;
 
         const slots = this.selectedSlots.map((entry) => {
             if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
@@ -318,23 +330,24 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             };
         });
 
-        const familyOptions = [
-            { value: '', label: 'All families', selected: !this.filterFamily },
-            ...Object.values(INGREDIENT_FAMILIES).map(f => ({
-                value: f,
-                label: f,
-                selected: this.filterFamily === f
+        // Left dropdown = Artificer TYPE (Component, Creation, Tool)
+        const typeOptions = [
+            { value: '', label: 'All types', selected: !this.filterArtificerType },
+            ...Object.values(ARTIFICER_TYPES).map(t => ({
+                value: t,
+                label: t,
+                selected: this.filterArtificerType === t
             }))
         ];
-
-        const typeOptions = [
-            { value: 'all', label: 'All types', selected: !this.filterType },
-            { value: 'ingredient', label: 'Ingredient', selected: this.filterType === 'ingredient' },
-            { value: 'component', label: 'Component', selected: this.filterType === 'component' },
-            { value: 'essence', label: 'Essence', selected: this.filterType === 'essence' },
-            { value: 'apparatus', label: 'Apparatus', selected: this.filterType === 'apparatus' },
-            { value: 'container', label: 'Container', selected: this.filterType === 'container' },
-            { value: 'tool', label: 'Tool', selected: this.filterType === 'tool' }
+        // Right dropdown = FAMILY (options driven by selected type)
+        const familiesForType = this.filterArtificerType ? (FAMILIES_BY_TYPE[this.filterArtificerType] ?? []) : [];
+        const familyOptions = [
+            { value: '', label: 'All families', selected: !this.filterFamily },
+            ...familiesForType.map(f => ({
+                value: f,
+                label: FAMILY_LABELS[f] ?? f,
+                selected: this.filterFamily === f
+            }))
         ];
 
         const toSlotData = (item) => {
@@ -505,12 +518,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const appId = w.id;
             const el = e.target;
             const id = el.id ?? '';
-            if (id === `${appId}-filter-family`) {
-                w.filterFamily = el.value ?? '';
+            if (id === `${appId}-filter-type`) {
+                w.filterArtificerType = el.value ?? '';
+                // Clear family if it's not in the new type's families
+                if (w.filterFamily && w.filterArtificerType) {
+                    const families = FAMILIES_BY_TYPE[w.filterArtificerType] ?? [];
+                    if (!families.includes(w.filterFamily)) w.filterFamily = '';
+                }
                 w.render();
-            } else if (id === `${appId}-filter-type`) {
-                const v = el.value;
-                w.filterType = v === 'all' ? '' : (v ?? '');
+            } else if (id === `${appId}-filter-family`) {
+                w.filterFamily = el.value ?? '';
                 w.render();
             }
             const slider = el?.closest?.('[data-craft-setting]');

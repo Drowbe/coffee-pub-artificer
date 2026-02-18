@@ -68,13 +68,13 @@
                     <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search components..." value="{{filterSearch}}" dir="ltr" />
                 </div>
                 <div class="crafting-zone-filters-row">
-                    <select id="{{appId}}-filter-family" class="crafting-zone-select" title="Filter by family">
-                        {{#each familyOptions}}
+                    <select id="{{appId}}-filter-type" class="crafting-zone-select" title="Filter by type (Component, Creation, Tool)">
+                        {{#each typeOptions}}
                         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
                         {{/each}}
                     </select>
-                    <select id="{{appId}}-filter-type" class="crafting-zone-select" title="Filter by type">
-                        {{#each typeOptions}}
+                    <select id="{{appId}}-filter-family" class="crafting-zone-select" title="Filter by family (options depend on type)">
+                        {{#each familyOptions}}
                         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
                         {{/each}}
                     </select>
@@ -172,7 +172,7 @@
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Details</h3>
                 {{#if combinedTags.length}}
-                <p class="crafting-zone-desc">Tags for this combination:</p>
+                <p class="crafting-zone-desc">Traits for this combination:</p>
                 <div class="crafting-bench-tags">
                     {{#each combinedTags}}
                     <span class="crafting-tag-badge">{{this}}</span>
