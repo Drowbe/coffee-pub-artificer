@@ -26,9 +26,9 @@ const DND_CONSUMABLE_FAMILY = {
  */
 function asCraftableConsumable(item) {
     const sys = item?.system ?? {};
-    const typeVal = (sys?.type?.value ?? item?.type ?? '').toLowerCase();
-    const subtype = ((sys?.type?.subtype ?? sys?.consumableType ?? '') + '').toLowerCase();
-    if (typeVal !== 'consumable') return { ok: false, family: '', type: '' };
+    const docType = (item?.type ?? '').toLowerCase();
+    if (docType !== 'consumable') return { ok: false, family: '', type: '' };
+    const subtype = ((sys?.type?.value ?? sys?.type?.subtype ?? sys?.consumableType ?? '') + '').toLowerCase();
     const family = DND_CONSUMABLE_FAMILY[subtype] ?? 'Environmental';
     return { ok: true, family, type: 'ingredient' };
 }
