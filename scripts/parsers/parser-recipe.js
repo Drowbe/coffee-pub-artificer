@@ -66,13 +66,22 @@ export class RecipeParser {
                 } else if (labelLower === 'time') {
                     const sec = this._parseTimeToSeconds(value);
                     if (sec != null) data.time = sec;
-                } else if (labelLower === 'container') {
+                } else if (labelLower === 'apparatus') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
-                        data.containerName = uuidMatch[2].trim(); // Use label, not UUID (portable)
+                        data.apparatusName = uuidMatch[2].trim();
                     } else if (value.trim()) {
-                        data.containerName = value.trim();
+                        data.apparatusName = value.trim();
                     }
+                } else if (labelLower === 'container') {
+                    const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
+                    const val = uuidMatch ? uuidMatch[2].trim() : value.trim();
+                    if (val) {
+                        if (!data.apparatusName) data.apparatusName = val;
+                        else data.containerName = val;
+                    }
+                } else if (labelLower === 'tool') {
+                    if (value.trim()) data.toolName = value.trim();
                 } else if (labelLower === 'result') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {

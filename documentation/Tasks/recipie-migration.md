@@ -50,13 +50,15 @@ These fields come from `scripts/schema-recipes.js` and `scripts/data/models/mode
 
 The source document uses additional metadata. **Add `containerName`, `heat`, and `time` to each recipe block** when converting to JSON. These recipes are marked homebrew in the source but are core Artificer content.
 
-### Add to Each Recipe (container, heat, time)
+### Add to Each Recipe (apparatus, container, tool, heat, time)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `containerName` | string | Required container (e.g., Beaker, Mortar, Crucible, Alchemist's Supplies) |
-| `heat` | number | Process heat 0–100. Map from DC/rarity if desired (e.g., Common=25, Uncommon=50, Rare=75, Very Rare=100) |
-| `time` | number | Process time in seconds. Source has `workHours` (8, 24, 80, 240); map to slider range (e.g., 8→30, 24→60, 80→90, 240→120) or store `workHours` separately for in-game duration |
+| `apparatusName` | string | Apparatus: vessel to craft in (Beaker, Mortar, Crucible) |
+| `containerName` | string | Container: vessel to put result in (Vial, Flask, Herb Bag) |
+| `toolName` | string | Required kit (Alchemist's Supplies, Herbalism Kit, Poisoner's Kit) |
+| `heat` | number | Process heat 0–100. Map from DC/rarity if desired |
+| `time` | number | Process time in seconds. Map `workHours` to slider range or store `workHours` for Phase 2 |
 
 ### Source Metadata (for reference / flags)
 

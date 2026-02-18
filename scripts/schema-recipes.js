@@ -22,7 +22,11 @@
  * @property {string|null} workstation - Required workstation (if any)
  * @property {number|null} heat - Required heat level 0-100 (null = any)
  * @property {number|null} time - Required crafting time in seconds (null = any)
- * @property {string|null} containerName - Container item name (null = any). Resolved at runtime via compendia + world.
+ * @property {string|null} apparatusName - Apparatus item name: vessel to craft in (beaker, mortar, crucible). Resolved at runtime.
+ * @property {string|null} containerName - Container item name: vessel to put result in (vial, flask, herb bag). Resolved at runtime.
+ * @property {string|null} toolName - Required kit (Alchemist's Supplies, Herbalism Kit, Poisoner's Kit). Actor must have in inventory.
+ * @property {number|null} goldCost - Cost to make in gp after ingredient deduction (Phase 2)
+ * @property {number|null} workHours - Hours to craft (Phase 2)
  * @property {RecipeIngredient[]} ingredients - Required ingredients/components/essences
  * @property {string} resultItemName - Name of resulting item. Resolved at runtime via compendia + world.
  * @property {string[]} tags - Recipe tags

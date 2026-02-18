@@ -57,7 +57,9 @@ export async function validateRecipePayload(payload) {
     if (!resultItemName?.trim()) {
         return { valid: false, error: `Recipe "${payload.name}" requires resultItemName` };
     }
-    const containerName = payload.containerName ?? payload.container ?? null;
+    const apparatusName = payload.apparatusName ?? payload.containerName ?? payload.container ?? null;
+    const containerName = payload.containerName ?? null;
+    const toolName = payload.toolName ?? payload.tool ?? null;
 
     // Store names only—no world UUIDs. Recipes resolve items by name at runtime (compendia + world).
     const data = {
@@ -77,7 +79,11 @@ export async function validateRecipePayload(payload) {
         description: payload.description ?? '',
         heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= 100 ? Number(payload.heat) : null) : null,
         time: payload.time != null ? (Number(payload.time) >= 0 ? Number(payload.time) : null) : null,
-        containerName: containerName?.trim() || null
+        apparatusName: apparatusName?.trim() || null,
+        containerName: containerName?.trim() || null,
+        toolName: toolName?.trim() || null,
+        goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
+        workHours: payload.workHours != null ? Number(payload.workHours) : null
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
@@ -100,9 +106,9 @@ function buildRecipePageHtml(data) {
     if (data.workstation) parts.push(`<p><strong>Workstation:</strong> ${escapeHtml(data.workstation)}</p>`);
     if (data.heat != null && data.heat >= 0 && data.heat <= 100) parts.push(`<p><strong>Heat:</strong> ${data.heat}</p>`);
     if (data.time != null && data.time >= 0) parts.push(`<p><strong>Time:</strong> ${data.time}</p>`);
-    if (data.containerName) {
-        parts.push(`<p><strong>Container:</strong> ${escapeHtml(data.containerName)}</p>`);
-    }
+    if (data.apparatusName) parts.push(`<p><strong>Apparatus:</strong> ${escapeHtml(data.apparatusName)}</p>`);
+    if (data.containerName) parts.push(`<p><strong>Container:</strong> ${escapeHtml(data.containerName)}</p>`);
+    if (data.toolName) parts.push(`<p><strong>Tool:</strong> ${escapeHtml(data.toolName)}</p>`);
     parts.push(`<p><strong>Result:</strong> ${escapeHtml(data.resultItemName ?? data.name)}</p>`);
     if (data.tags?.length) parts.push(`<p><strong>Tags:</strong> ${data.tags.map((t) => escapeHtml(String(t))).join(', ')}</p>`);
     if (data.description) parts.push(`<p><strong>Description:</strong> ${escapeHtml(data.description)}</p>`);

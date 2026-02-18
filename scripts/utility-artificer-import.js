@@ -65,7 +65,7 @@ export function validateImportPayload(payload) {
     const artificerFlags = payload.flags?.[MODULE.ID] || payload.artificer || {};
     const artificerType = artificerFlags.type;
     
-    if (!artificerType || !['ingredient', 'component', 'essence', 'container'].includes(artificerType)) {
+    if (!artificerType || !['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(artificerType)) {
         throw new Error(`Payload must have flags.${MODULE.ID}.type or artificer.type set to 'ingredient', 'component', 'essence', or 'container'`);
     }
     
@@ -90,12 +90,14 @@ export function validateImportPayload(payload) {
         artificerData.componentType = artificerFlags.componentType || '';
     } else if (artificerType === 'essence') {
         artificerData.affinity = artificerFlags.affinity || '';
-    } else if (artificerType === 'container') {
+    } else if (artificerType === 'container' || artificerType === 'apparatus' || artificerType === 'resultContainer') {
         artificerData.family = artificerFlags.family || '';
         artificerData.quirk = artificerFlags.quirk ?? null;
         artificerData.biomes = Array.isArray(artificerFlags.biomes)
             ? artificerFlags.biomes
             : (artificerFlags.biomes ? [artificerFlags.biomes] : []);
+    } else if (artificerType === 'tool') {
+        artificerData.family = artificerFlags.family || '';
     }
     
     // Validate artificer data

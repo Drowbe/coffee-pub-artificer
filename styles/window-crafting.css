@@ -569,10 +569,13 @@
 
 
 
-/* Container slot (25% larger than ingredient slots, square, image fills) */
-.crafting-bench-container-slot {
-    width: 175px;
-    min-width: 175px;
+/* Apparatus, Container, Tool slots (vessel row - smaller to fit 3 + sliders) */
+.crafting-bench-vessel-slot,
+.crafting-bench-container-slot,
+.crafting-bench-apparatus-slot,
+.crafting-bench-tool-slot {
+    width: 70px;
+    min-width: 70px;
     aspect-ratio: 1;
     border: 2px dashed var(--craft-border-color);
     border-radius: 8px;
@@ -586,7 +589,10 @@
     position: relative;
 }
 
-.crafting-bench-container-slot:hover {
+.crafting-bench-vessel-slot:hover,
+.crafting-bench-container-slot:hover,
+.crafting-bench-apparatus-slot:hover,
+.crafting-bench-tool-slot:hover {
     border-color: rgba(255, 100, 0, 0.6);
     background: rgba(255, 100, 0, 0.1);
 }

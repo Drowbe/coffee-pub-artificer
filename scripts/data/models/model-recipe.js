@@ -25,7 +25,11 @@ export class ArtificerRecipe {
         this.workstation = data.workstation ?? null;
         this.heat = data.heat ?? null;
         this.time = data.time ?? null;
+        this.apparatusName = data.apparatusName ?? data.containerName ?? null;
         this.containerName = data.containerName ?? null;
+        this.toolName = data.toolName ?? data.tool ?? null;
+        this.goldCost = data.goldCost != null ? Number(data.goldCost) : null;
+        this.workHours = data.workHours != null ? Number(data.workHours) : null;
         this.ingredients = data.ingredients ?? [];
         this.resultItemName = data.resultItemName ?? data.name ?? '';
         this.tags = data.tags ?? [];
@@ -214,7 +218,11 @@ export class ArtificerRecipe {
             workstation: this.workstation,
             heat: this.heat,
             time: this.time,
+            apparatusName: this.apparatusName,
             containerName: this.containerName,
+            toolName: this.toolName,
+            goldCost: this.goldCost,
+            workHours: this.workHours,
             ingredients: [...this.ingredients],
             resultItemName: this.resultItemName,
             tags: [...this.tags],

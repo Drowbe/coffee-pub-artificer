@@ -112,8 +112,8 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
     const { type, createInWorld = true, actor = null } = options;
     
     // Validate type
-    if (!['ingredient', 'component', 'essence', 'container'].includes(type)) {
-        throw new Error(`Invalid item type: ${type}. Must be 'ingredient', 'component', 'essence', or 'container'`);
+    if (!['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type)) {
+        throw new Error(`Invalid item type: ${type}. Must be 'ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', or 'tool'`);
     }
     
     // Validate artificer data

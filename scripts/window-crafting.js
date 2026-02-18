@@ -112,9 +112,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             craft: CraftingWindow._actionCraft,
             clear: CraftingWindow._actionClear,
             addToSlot: CraftingWindow._actionAddToSlot,
+            addToApparatus: CraftingWindow._actionAddToApparatus,
             addToContainer: CraftingWindow._actionAddToContainer,
+            addToTool: CraftingWindow._actionAddToTool,
             removeFromSlot: CraftingWindow._actionRemoveFromSlot,
+            removeApparatus: CraftingWindow._actionRemoveApparatus,
             removeContainer: CraftingWindow._actionRemoveContainer,
+            removeTool: CraftingWindow._actionRemoveTool,
             selectRecipe: CraftingWindow._actionSelectRecipe,
             refreshCache: CraftingWindow._actionRefreshCache
         }
@@ -132,7 +136,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         super(opts);
         /** @type {Array<{item: Item, count: number}|null>} */
         this.selectedSlots = Array(6).fill(null);
+        this.selectedApparatus = null;
         this.selectedContainer = null;
+        this.selectedTool = null;
         this.heatValue = options.heatValue ?? 0;
         this.timeValue = options.timeValue ?? 0;
         this.lastResult = null;
@@ -191,7 +197,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const artificerItems = actor
             ? actor.items.filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                if (f?.type && ['ingredient', 'component', 'essence', 'container'].includes(f.type)) return true;
+                if (f?.type && ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer'].includes(f.type)) return true;
                 const cc = asCraftableConsumable(i);
                 return cc.ok;
             })
@@ -223,55 +229,77 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 };
             });
 
-        const containers = artificerItems
+        /** Apparatus: vessel to craft in (beaker, mortar). Accepts 'apparatus' or legacy 'container'. */
+        const apparatusItems = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type === 'container';
+                return f?.type === 'apparatus' || f?.type === 'container';
             })
-            .map(i => {
+            .map(i => ({ ...toListRow(i, 'addToApparatus', true, 'apparatus') }));
+
+        /** Container: vessel to put result in (vial, herb bag). */
+        const containerItems = artificerItems
+            .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                const primary = f?.primaryTag ?? '';
-                const secondary = Array.isArray(f?.secondaryTags) ? f.secondaryTags : (f?.secondaryTags ? [f.secondaryTags] : []);
-                const tags = [primary, ...secondary].filter(Boolean).join(', ');
-                return {
-                    id: i.id,
-                    uuid: i.uuid,
-                    name: i.name,
-                    img: i.img || 'icons/containers/bags/pouch-simple-brown.webp',
-                    quantity: i.system?.quantity ?? 1,
-                    tags,
-                    type: 'container',
-                    isContainer: true,
-                    addAction: 'addToContainer'
-                };
-            });
+                return f?.type === 'resultContainer';
+            })
+            .map(i => ({ ...toListRow(i, 'addToContainer', true, 'container') }));
+
+        /** Tools: kits (Alchemist's Supplies, etc.). Match actor items by name. */
+        const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Poisoner\'s Kit'];
+        const toolItems = actor?.items.filter(i => KNOWN_TOOLS.includes((i.name || '').trim()))?.map(i => ({
+            id: i.id,
+            uuid: i.uuid,
+            name: i.name,
+            img: i.img || 'icons/tools/instruments/lute-gold-brown.webp',
+            quantity: 1,
+            tags: '',
+            type: 'tool',
+            isContainer: false,
+            addAction: 'addToTool'
+        })) ?? [];
+
+        function toListRow(item, addAction, isContainer, type) {
+            const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+            const primary = f?.primaryTag ?? '';
+            const secondary = Array.isArray(f?.secondaryTags) ? f.secondaryTags : (f?.secondaryTags ? [f.secondaryTags] : []);
+            const tags = [primary, ...secondary].filter(Boolean).join(', ');
+            return {
+                id: item.id,
+                uuid: item.uuid,
+                name: item.name,
+                img: item.img || 'icons/containers/bags/pouch-simple-brown.webp',
+                quantity: item.system?.quantity ?? 1,
+                tags,
+                type,
+                isContainer,
+                addAction
+            };
+        }
 
         // Apply filters to ingredients
         if (this.filterFamily) {
             ingredients = ingredients.filter(i => i.family === this.filterFamily);
         }
-        if (this.filterType && this.filterType !== 'all' && this.filterType !== 'container') {
+        if (this.filterType && this.filterType !== 'all' && !['apparatus', 'container', 'tool'].includes(this.filterType)) {
             ingredients = ingredients.filter(i => i.type === this.filterType);
         }
         if (this.filterSearch?.trim()) {
             const q = this.filterSearch.trim().toLowerCase();
             ingredients = ingredients.filter(i =>
-                i.name.toLowerCase().includes(q) || i.tags.toLowerCase().includes(q)
+                i.name.toLowerCase().includes(q) || (i.tags || '').toLowerCase().includes(q)
             );
         }
-        let filteredContainers = containers;
-        if (this.filterSearch?.trim()) {
-            const q = this.filterSearch.trim().toLowerCase();
-            filteredContainers = containers.filter(i => i.name.toLowerCase().includes(q));
-        }
+        const qSearch = this.filterSearch?.trim().toLowerCase() || '';
+        const filteredApparatus = qSearch ? apparatusItems.filter(i => i.name.toLowerCase().includes(qSearch)) : apparatusItems;
+        const filteredContainers = qSearch ? containerItems.filter(i => i.name.toLowerCase().includes(qSearch)) : containerItems;
+        const filteredTools = qSearch ? toolItems.filter(i => i.name.toLowerCase().includes(qSearch)) : toolItems;
 
-        const showContainersOnly = this.filterType === 'container';
+        const showApparatusOnly = this.filterType === 'apparatus';
+        const showContainerOnly = this.filterType === 'container';
+        const showToolOnly = this.filterType === 'tool';
         const showAllTypes = !this.filterType || this.filterType === 'all';
-        const listItems = showContainersOnly
-            ? filteredContainers
-            : showAllTypes
-                ? [...ingredients, ...filteredContainers]
-                : ingredients;
+        const listItems = showApparatusOnly ? filteredApparatus : showContainerOnly ? filteredContainers : showToolOnly ? filteredTools : showAllTypes ? [...ingredients, ...filteredApparatus, ...filteredContainers, ...filteredTools] : ingredients;
 
         const slots = this.selectedSlots.map((entry) => {
             if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
@@ -305,21 +333,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             { value: 'ingredient', label: 'Ingredient', selected: this.filterType === 'ingredient' },
             { value: 'component', label: 'Component', selected: this.filterType === 'component' },
             { value: 'essence', label: 'Essence', selected: this.filterType === 'essence' },
-            { value: 'container', label: 'Container', selected: this.filterType === 'container' }
+            { value: 'apparatus', label: 'Apparatus', selected: this.filterType === 'apparatus' },
+            { value: 'container', label: 'Container', selected: this.filterType === 'container' },
+            { value: 'tool', label: 'Tool', selected: this.filterType === 'tool' }
         ];
 
-        let containerSlot = { item: null, tooltip: '' };
-        if (this.selectedContainer) {
-            const c = this.selectedContainer;
-            const cf = c.flags?.[MODULE.ID] || c.flags?.artificer;
-            const ct = cf?.primaryTag
-                ? [cf.primaryTag, ...(Array.isArray(cf?.secondaryTags) ? cf.secondaryTags : [])].filter(Boolean).join(', ')
-                : '';
-            containerSlot = {
-                item: { id: c.id, name: c.name, img: c.img },
-                tooltip: [c.name, cf?.family ? `Family: ${cf.family}` : '', ct ? `Tags: ${ct}` : ''].filter(Boolean).join('\n')
-            };
-        }
+        const toSlotData = (item) => {
+            if (!item) return { item: null, tooltip: '' };
+            const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+            const ct = f?.primaryTag ? [f.primaryTag, ...(Array.isArray(f?.secondaryTags) ? f.secondaryTags : [])].filter(Boolean).join(', ') : '';
+            return { item: { id: item.id, name: item.name, img: item.img }, tooltip: [item.name, f?.family ? `Family: ${f.family}` : '', ct ? `Tags: ${ct}` : ''].filter(Boolean).join('\n') };
+        };
+        let apparatusSlot = toSlotData(this.selectedApparatus);
+        let containerSlot = toSlotData(this.selectedContainer);
+        let toolSlot = toSlotData(this.selectedTool);
 
         const hasSlots = this.selectedSlots.some(s => s !== null);
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
@@ -350,9 +377,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             crafterImg: actor?.img ?? null,
             cacheStatus: { hasCache: cacheStatus.hasCache, building: cacheStatus.building, message: cacheStatus.message },
             slots,
+            apparatusSlot,
             containerSlot,
+            toolSlot,
             listItems,
-            showContainersOnly,
+            showApparatusOnly,
+            showContainerOnly,
+            showToolOnly,
             heatValue: this.heatValue,
             timeValue: this.timeValue,
             heatFillPercent: this.heatValue,
@@ -382,7 +413,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static _actionCraft(event, target) { this._craft(); }
     static _actionClear(event, target) {
         this.selectedSlots = Array(6).fill(null);
+        this.selectedApparatus = null;
         this.selectedContainer = null;
+        this.selectedTool = null;
         this.selectedRecipe = null;
         this.render();
     }
@@ -391,19 +424,26 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const itemId = el?.dataset?.itemId;
         if (itemId) this._addToSlot(itemId);
     }
+    static _actionAddToApparatus(event, target) {
+        const el = target.closest?.('.crafting-ingredient-row') ?? target;
+        if (el?.dataset?.itemId) this._addToApparatus(el.dataset.itemId);
+    }
     static _actionAddToContainer(event, target) {
         const el = target.closest?.('.crafting-ingredient-row') ?? target;
-        const itemId = el?.dataset?.itemId;
-        if (itemId) this._addToContainer(itemId);
+        if (el?.dataset?.itemId) this._addToContainer(el.dataset.itemId);
+    }
+    static _actionAddToTool(event, target) {
+        const el = target.closest?.('.crafting-ingredient-row') ?? target;
+        if (el?.dataset?.itemId) this._addToTool(el.dataset.itemId);
     }
     static _actionRemoveFromSlot(event, target) {
         const el = target.closest?.('.crafting-bench-slot-item') ?? target.closest?.('.crafting-bench-slot');
         const idx = el?.dataset?.slotIndex ?? el?.closest?.('.crafting-bench-slot')?.dataset?.slotIndex;
         if (idx !== undefined) this._removeFromSlot(idx);
     }
-    static _actionRemoveContainer(event, target) {
-        this._removeContainer();
-    }
+    static _actionRemoveApparatus(event, target) { this._removeApparatus(); }
+    static _actionRemoveContainer(event, target) { this._removeContainer(); }
+    static _actionRemoveTool(event, target) { this._removeTool(); }
     static _actionSelectRecipe(event, target) {
         const row = target?.closest?.('.crafting-recipe-row');
         const recipeId = row?.dataset?.recipeId;
@@ -437,7 +477,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const row = e.target?.closest?.('.crafting-ingredient-row');
             if (row?.dataset?.itemId) {
                 const action = row.dataset.action || row.getAttribute?.('data-action');
-                if (action === 'addToContainer') w._addToContainer(row.dataset.itemId);
+                if (action === 'addToApparatus') w._addToApparatus(row.dataset.itemId);
+                else if (action === 'addToContainer') w._addToContainer(row.dataset.itemId);
+                else if (action === 'addToTool') w._addToTool(row.dataset.itemId);
                 else w._addToSlot(row.dataset.itemId);
                 return;
             }
@@ -447,8 +489,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (slot?.dataset?.slotIndex !== undefined) w._removeFromSlot(slot.dataset.slotIndex);
                 return;
             }
-            const containerSlot = e.target?.closest?.('.crafting-bench-container-slot');
-            if (containerSlot && w.selectedContainer) w._removeContainer();
+            const apparatusEl = e.target?.closest?.('.crafting-bench-apparatus-slot');
+            if (apparatusEl && w.selectedApparatus) { w._removeApparatus(); return; }
+            const containerEl = e.target?.closest?.('.crafting-bench-container-slot');
+            if (containerEl && w.selectedContainer) { w._removeContainer(); return; }
+            const toolEl = e.target?.closest?.('.crafting-bench-tool-slot');
+            if (toolEl && w.selectedTool) { w._removeTool(); return; }
         });
 
         document.addEventListener('change', (e) => {
@@ -565,21 +611,40 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
     }
 
+    _addToApparatus(itemId) {
+        const actor = this._getActor();
+        if (!actor) return;
+        const item = actor.items.get(itemId);
+        if (!item) return;
+        const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
+        if (f?.type !== 'apparatus' && f?.type !== 'container') return;
+        this.selectedApparatus = item;
+        this.render();
+    }
+
     _addToContainer(itemId) {
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
         if (!item) return;
         const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-        if (f?.type !== 'container') return;
+        if (f?.type !== 'resultContainer') return;
         this.selectedContainer = item;
         this.render();
     }
 
-    _removeContainer() {
-        this.selectedContainer = null;
+    _addToTool(itemId) {
+        const actor = this._getActor();
+        if (!actor) return;
+        const item = actor.items.get(itemId);
+        if (!item) return;
+        this.selectedTool = item;
         this.render();
     }
+
+    _removeApparatus() { this.selectedApparatus = null; this.render(); }
+    _removeContainer() { this.selectedContainer = null; this.render(); }
+    _removeTool() { this.selectedTool = null; this.render(); }
 
     async _refreshCache() {
         try {
@@ -659,17 +724,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.selectedSlots = newSlots;
 
-        if (recipe.containerName) {
-            const targetName = (recipe.containerName || '').trim();
-            const containerItem = actor?.items?.find((i) => {
-                const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                if (f?.type !== 'container') return false;
-                return (i.name || '').trim() === targetName;
-            });
-            this.selectedContainer = containerItem ?? null;
-        } else {
-            this.selectedContainer = null;
-        }
+        const matchByName = (items, name, typeFilter) => {
+            const target = (name || '').trim();
+            if (!target) return null;
+            return items?.find((i) => {
+                if (typeFilter) {
+                    const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                    if (!typeFilter(f?.type)) return false;
+                }
+                return (i.name || '').trim() === target;
+            }) ?? null;
+        };
+        this.selectedApparatus = matchByName(actor?.items, recipe.apparatusName, (t) => t === 'apparatus' || t === 'container');
+        this.selectedContainer = matchByName(actor?.items, recipe.containerName, (t) => t === 'resultContainer');
+        this.selectedTool = matchByName(actor?.items, recipe.toolName);
 
         this.heatValue = (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) ? recipe.heat : 0;
         this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;

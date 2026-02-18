@@ -69,7 +69,7 @@ function onRenderItemSheet(app, html) {
 
     const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
     const type = flags.type;
-    if (!type || !['ingredient', 'component', 'essence', 'container'].includes(type)) return;
+    if (!type || !['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type)) return;
 
     // Avoid double-injection
     if (element.querySelector('.artificer-item-sheet-section')) return;
