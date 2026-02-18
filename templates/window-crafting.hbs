@@ -144,7 +144,13 @@
                         <div class="crafting-bench-slider-bottom-label">0 sec</div>
                     </div>
                 </div>
+            </section>
+        </main>
 
+        {{!-- Zone 4: Details (result in craft mode; recipe design in create mode) --}}
+        <aside class="crafting-zone crafting-zone-result">
+            <section class="crafting-zone-section">
+                <h3 class="crafting-zone-section-title">Details</h3>
                 {{#if combinedTags.length}}
                 <p class="crafting-zone-desc">Tags for this combination:</p>
                 <div class="crafting-bench-tags">
@@ -153,13 +159,6 @@
                     {{/each}}
                 </div>
                 {{/if}}
-            </section>
-        </main>
-
-        {{!-- Zone 4: Details (result in craft mode; recipe design in create mode) --}}
-        <aside class="crafting-zone crafting-zone-result">
-            <section class="crafting-zone-section">
-                <h3 class="crafting-zone-section-title">Details</h3>
                 {{#if lastResult}}
                 <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
                     <div class="crafting-result-row crafting-ingredient-row">
