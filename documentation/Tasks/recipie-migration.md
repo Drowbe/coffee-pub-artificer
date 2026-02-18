@@ -40,23 +40,36 @@ These fields come from `scripts/schema-recipes.js` and `scripts/data/models/mode
 | `description` | string | `''` | Recipe description/notes |
 | `source` | string | `''` | Source journal UUID |
 | `journalPageId` | string | `''` | Journal page ID within source |
+| `containerName` | string\|null | null | Required container (e.g., Beaker, Mortar, Crucible). Resolved by name at runtime. |
+| `heat` | number\|null | null | Process heat (0–100). Slider value; null = any. |
+| `time` | number\|null | null | Process time in seconds (0–120). Slider value; null = any. Maps from source `workHours` if needed. |
 
 ---
 
-## GM Binder Extension Fields (Optional)
+## GM Binder Extension Fields
 
-The source document uses additional metadata. Consider supporting these in import or as recipe flags:
+The source document uses additional metadata. **Add `containerName`, `heat`, and `time` to each recipe block** when converting to JSON. These recipes are marked homebrew in the source but are core Artificer content.
+
+### Add to Each Recipe (container, heat, time)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `containerName` | string | Required container (e.g., Beaker, Mortar, Crucible, Alchemist's Supplies) |
+| `heat` | number | Process heat 0–100. Map from DC/rarity if desired (e.g., Common=25, Uncommon=50, Rare=75, Very Rare=100) |
+| `time` | number | Process time in seconds. Source has `workHours` (8, 24, 80, 240); map to slider range (e.g., 8→30, 24→60, 80→90, 240→120) or store `workHours` separately for in-game duration |
+
+### Source Metadata (for reference / flags)
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `tool` | string | Required kit: Alchemist's Supplies, Herbalism Kit, Poisoner's Kit |
 | `dc` | number | Crafting check DC (8=Common, 12=Uncommon, 15=Rare, 18=Very Rare) |
-| `workHours` | number | Hours to craft (8, 24, 80, 240) |
-| `goldCost` | number | Gold cost after ingredient deduction (25, 100, 500, 1000) |
+| `workHours` | number | Hours to craft (8, 24, 80, 240). In-game duration. |
+| `goldCost` | number | **Cost to make** (gp) after ingredient deduction (25, 100, 500, 1000) |
 | `productValue` | number | Product market value in gp (50, 200, 1000, 2000) |
 | `rarity` | string | Common, Uncommon, Rare, Very Rare |
 | `resultItemName` | string | Fallback when resultItemUuid not yet available—match by name |
-| `isHomebrew` | boolean | True if marked with * in source (non-official D&D item) |
+| `isHomebrew` | boolean | True if marked with * in source. These recipes are core Artificer content; field retained for provenance. |
 
 ---
 
