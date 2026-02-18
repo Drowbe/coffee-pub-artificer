@@ -91,12 +91,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             itemType5eOptions.forEach(opt => { if (opt.value === this.itemData.type) opt.selected = true; });
         }
 
-        const rarityOptions = Object.values(INGREDIENT_RARITIES).map(r => ({
-            value: r,
-            label: r,
-            selected: (this.itemData?.rarity || 'Common') === r
-        }));
-
         const consumableSubtypeOptions = [
             { value: 'potion', label: 'Potion', selected: false },
             { value: 'poison', label: 'Poison', selected: false },
@@ -133,13 +127,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             isConsumable: (this.itemData?.type || 'consumable') === 'consumable',
             consumableSubtype: consumableTypeValue,
             consumableSubtypeOptions,
-            itemWeight: this.itemData?.weight || 0,
-            itemPrice: this.itemData?.price || '',
-            itemRarity: this.itemData?.rarity || 'Common',
-            rarityOptions,
-            itemDescription: this.itemData?.description || '',
-            sourceCustom: this.itemData?.system?.source?.custom || 'Artificer',
-            sourceLicense: this.itemData?.system?.source?.license || '',
+            itemDescription: (this.itemData?.system?.description?.value ?? this.itemData?.description ?? '') || '',
             traitsValue: existingTraits.join(','),
             traitCandidates,
             skillLevel: flags.skillLevel ?? 1,
@@ -370,24 +358,22 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
         this.itemType = formObject.artificerType || this.itemType || ARTIFICER_TYPES.COMPONENT;
 
-        // Parse item data
+        // Core item fields only; source and license hard-coded. Price, rarity, weight not set (user can set in item sheet).
+        const SOURCE_LABEL = 'Artificer';
+        const SOURCE_LICENSE = 'Use CC BY-NC 4.0';
         const itemData = {
-            name: formObject.itemName || '',
+            name: (formObject.itemName || '').trim() || 'Unnamed Item',
             type: formObject.itemType5e || 'consumable',
-            weight: parseFloat(formObject.itemWeight) || 0,
-            price: parseFloat(formObject.itemPrice) || 0, // Ensure price is a number
-            rarity: formObject.itemRarity || 'Common',
-            description: formObject.itemDescription || '',
             img: '',
             system: {
-                source: {
-                    value: formObject.sourceCustom || 'Artificer',
-                    custom: formObject.sourceCustom || 'Artificer',
-                    license: formObject.sourceLicense || ''
-                }
+                description: { value: formObject.itemDescription ?? '', chat: '', unidentified: '' },
+                source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
             }
         };
-        
+        if (itemData.type === 'consumable' && formObject.consumableSubtype) {
+            itemData.system.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
+        }
+
         const traits = (formObject.traits || '')
             ? formObject.traits.split(',').map(t => t.trim()).filter(Boolean)
             : [];
@@ -397,13 +383,8 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             family: formObject.family || '',
             traits,
             skillLevel: Math.max(1, parseInt(formObject.skillLevel, 10) || 1),
-            rarity: formObject.itemRarity || 'Common'
+            rarity: 'Common'
         };
-
-        if (itemData.type === 'consumable' && formObject.consumableSubtype) {
-            itemData.system = itemData.system ?? {};
-            itemData.system.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
-        }
 
         if (this.itemType === ARTIFICER_TYPES.COMPONENT) {
             artificerData.biomes = formObject.biomes
@@ -414,16 +395,12 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         }
         
         try {
-            // Validate
-            validateArtificerData(artificerData, this.itemType);
-            
+            validateArtificerData(artificerData);
+
             if (this.isEditMode) {
                 const systemMerge = {
-                    source: {
-                        value: formObject.sourceCustom || 'Artificer',
-                        custom: formObject.sourceCustom || 'Artificer',
-                        license: formObject.sourceLicense || ''
-                    }
+                    description: itemData.system?.description ?? {},
+                    source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
                 };
                 if (itemData.type === 'consumable' && formObject.consumableSubtype) {
                     systemMerge.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
@@ -437,7 +414,8 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 const createdItem = await createArtificerItem(itemData, artificerData, {});
                 if (!createdItem) throw new Error('Failed to create item');
                 await this.close();
-                ui.notifications.info(`Created ${itemData.name}`);
+                createdItem.sheet?.render(true);
+                ui.notifications.info(`Created ${itemData.name}. Open the item sheet to set price, weight, and other details.`);
             }
         } catch (error) {
             const errorMessage = error.message || String(error);
