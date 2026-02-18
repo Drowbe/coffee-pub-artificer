@@ -9,6 +9,30 @@ import { resolveItemByName } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
+/** D&D consumable subtype → family when item has no artificer flags */
+const DND_CONSUMABLE_FAMILY = {
+    potion: 'Herbs',
+    poison: 'CreatureParts',
+    scroll: 'Environmental',
+    oil: 'Herbs',
+    food: 'Herbs',
+    ammunition: 'Minerals'
+};
+
+/**
+ * Check if item is a consumable we can treat as ingredient (no artificer flags)
+ * @param {Item} item
+ * @returns {{ ok: boolean, family: string, type: string }}
+ */
+function asCraftableConsumable(item) {
+    const sys = item?.system ?? {};
+    const typeVal = (sys?.type?.value ?? item?.type ?? '').toLowerCase();
+    const subtype = ((sys?.type?.subtype ?? sys?.consumableType ?? '') + '').toLowerCase();
+    if (typeVal !== 'consumable') return { ok: false, family: '', type: '' };
+    const family = DND_CONSUMABLE_FAMILY[subtype] ?? 'Environmental';
+    return { ok: true, family, type: 'ingredient' };
+}
+
 /**
  * Check if actor has all ingredients for a recipe (name + type + quantity)
  * @param {Actor|null} actor
@@ -42,22 +66,27 @@ function recipeCanCraft(actor, recipe) {
  * Map journal-loaded recipes to display format for the recipe list
  * @param {string|null} selectedRecipeId
  * @param {Actor|null} actor - Crafter actor for canCraft check
- * @returns {Array<{recipeId: string, tags: string[], result: string, selected?: boolean, canCraft?: boolean}>}
+ * @returns {Promise<Array<{recipeId: string, tags: string[], result: string, resultImg: string, selected?: boolean, canCraft?: boolean}>>}
  */
-function getRecipesForDisplay(selectedRecipeId, actor) {
+async function getRecipesForDisplay(selectedRecipeId, actor) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
-    return recipes.map((r) => {
+    const results = await Promise.all(recipes.map(async (r) => {
         const tags = (r.tags?.length ? r.tags : r.ingredients?.map((i) => i.name) ?? [])
             .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
+        const resultName = (r.resultItemName || r.name || '').trim();
+        const resultItem = resultName ? await resolveItemByName(resultName) : null;
+        const resultImg = resultItem?.img ?? 'icons/svg/item-bag.svg';
         return {
             recipeId: r.id,
             tags: tags.length ? tags : [r.name],
             result: r.name,
+            resultImg,
             selected: selectedRecipeId === r.id,
             canCraft: recipeCanCraft(actor, r)
         };
-    });
+    }));
+    return results;
 }
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -162,26 +191,33 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const artificerItems = actor
             ? actor.items.filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type && ['ingredient', 'component', 'essence', 'container'].includes(f.type);
+                if (f?.type && ['ingredient', 'component', 'essence', 'container'].includes(f.type)) return true;
+                const cc = asCraftableConsumable(i);
+                return cc.ok;
             })
             : [];
 
         let ingredients = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return ['ingredient', 'component', 'essence'].includes(f?.type);
+                if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
+                return asCraftableConsumable(i).ok;
             })
             .map(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+                const cc = asCraftableConsumable(i);
+                const type = f?.type || (cc.ok ? cc.type : 'other');
+                const family = f?.family || (cc.ok ? cc.family : '');
+                const tags = getTagsFromItem(i).join(', ');
                 return {
                     id: i.id,
                     uuid: i.uuid,
                     name: i.name,
                     img: i.img || 'icons/skills/melee/weapons-crossed-swords-yellow.webp',
                     quantity: i.system?.quantity ?? 1,
-                    tags: getTagsFromItem(i).join(', '),
-                    type: f?.type || 'other',
-                    family: f?.family || '',
+                    tags: tags || (cc.ok ? 'consumable' : ''),
+                    type,
+                    family,
                     isContainer: false,
                     addAction: 'addToSlot'
                 };
@@ -288,7 +324,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const hasSlots = this.selectedSlots.some(s => s !== null);
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
         const canCraft = hasSlots && !anyMissing;
-        let knownCombinations = getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor);
+        let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor);
         if (this.filterRecipeSearch?.trim()) {
             const q = this.filterRecipeSearch.trim().toLowerCase();
             knownCombinations = knownCombinations.filter(
