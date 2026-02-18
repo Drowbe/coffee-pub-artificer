@@ -42,6 +42,7 @@
   "esmodules": [
     "scripts/const.js",
     "scripts/settings.js",
+    "scripts/schema-artificer-item.js",
     "scripts/schema-ingredients.js",
     "scripts/schema-components.js",
     "scripts/schema-essences.js",
@@ -80,6 +81,7 @@
     "scripts/manager-workstations.js",
     "scripts/manager-skills.js",
     "scripts/api-artificer.js",
+    "scripts/migrations/migrate-artificer-flags.js",
     "scripts/artificer.js"
   ],
   "packs": [

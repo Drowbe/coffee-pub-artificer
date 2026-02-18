@@ -4,6 +4,12 @@
 
 import { MODULE } from './const.js';
 import { getFromCache } from './cache/cache-items.js';
+import {
+    ARTIFICER_TYPES,
+    LEGACY_TYPE_TO_ARTIFICER_TYPE,
+    LEGACY_FAMILY_TO_FAMILY,
+    FAMILIES_BY_TYPE
+} from './schema-artificer-item.js';
 
 /**
  * Get configured compendium IDs from settings (in priority order)
@@ -62,7 +68,8 @@ export async function resolveItemByName(name, type) {
                 if (!item) continue;
                 if (type === 'container') {
                     const f = item.flags?.artificer ?? item.flags?.[MODULE.ID];
-                    if (f?.type !== 'container') continue;
+                    const isContainer = f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
+                    if (!isContainer) continue;
                 }
                 return item;
             } catch (err) {
@@ -79,7 +86,8 @@ export async function resolveItemByName(name, type) {
             if ((i.name ?? '').trim() !== targetName) continue;
             if (type === 'container') {
                 const f = i.flags?.artificer ?? i.flags?.[MODULE.ID];
-                if (f?.type !== 'container') continue;
+                const isContainer = f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
+                if (!isContainer) continue;
             }
             return i;
         }
@@ -99,34 +107,25 @@ export async function resolveItemByName(name, type) {
 }
 
 /**
- * Create a FoundryVTT Item with Artificer flags
+ * Create a FoundryVTT Item with Artificer flags (TYPE > FAMILY > TRAITS).
  * @param {Object} itemData - D&D 5e item data structure
- * @param {Object} artificerData - Artificer-specific data (tags, family, tier, etc.)
- * @param {Object} options - Additional options
- * @param {string} options.type - Item type: 'ingredient', 'component', 'essence', or 'container'
- * @param {boolean} options.createInWorld - Create in world (default: true)
- * @param {Actor|null} options.actor - Optional actor to add item to
+ * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, componentType?, affinity? }
+ * @param {Object} options - { createInWorld, actor }
  * @returns {Promise<Item>} Created item
  */
 export async function createArtificerItem(payload, artificerData, options = {}) {
-    const { type, createInWorld = true, actor = null } = options;
-    
-    // Validate type
-    if (!['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type)) {
-        throw new Error(`Invalid item type: ${type}. Must be 'ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', or 'tool'`);
-    }
-    
-    // Validate artificer data
-    validateArtificerData(artificerData, type);
-    
-    // Build item structure
+    const { createInWorld = true, actor = null } = options;
+    const type = artificerData.type || ARTIFICER_TYPES.COMPONENT;
+
+    validateArtificerData(artificerData);
+
     const itemStructure = {
         name: payload.name || 'Unnamed Item',
         type: payload.type || 'consumable',
         img: payload.img || '',
         system: buildItemSystem(payload),
         flags: {
-            [MODULE.ID]: buildArtificerFlags(artificerData, type)
+            [MODULE.ID]: buildArtificerFlags(artificerData)
         }
     };
     
@@ -162,22 +161,16 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
  * @returns {Promise<Item>} Updated item
  */
 export async function updateArtificerItem(item, itemData, artificerData) {
-    // Determine type from existing flags or default
-    const existingFlags = item.flags[MODULE.ID] || {};
-    const type = existingFlags.type || 'ingredient';
-    
-    // Validate artificer data
-    validateArtificerData(artificerData, type);
-    
-    // Build update data
+    validateArtificerData(artificerData);
+
     const updateData = {
         name: itemData.name,
         type: itemData.type,
         img: itemData.img,
         system: buildItemSystem(itemData),
-        [`flags.${MODULE.ID}`]: buildArtificerFlags(artificerData, type)
+        [`flags.${MODULE.ID}`]: buildArtificerFlags(artificerData)
     };
-    
+
     return await item.update(updateData);
 }
 
@@ -299,97 +292,105 @@ function deepMergeSystem(defaults, incoming) {
 }
 
 /**
- * Build Artificer flags structure
- * @param {Object} artificerData - Artificer data
- * @param {string} type - Item type
+ * Build Artificer flags (TYPE > FAMILY > TRAITS).
+ * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, componentType?, affinity? }
  * @returns {Object} Flags structure
  */
-function buildArtificerFlags(artificerData, type) {
+function buildArtificerFlags(artificerData) {
+    const type = artificerData.type || ARTIFICER_TYPES.COMPONENT;
     const flags = {
-        type: type,
-        primaryTag: artificerData.primaryTag || '',
-        secondaryTags: artificerData.secondaryTags || [],
+        type,
+        family: artificerData.family || '',
+        traits: Array.isArray(artificerData.traits) ? artificerData.traits : [],
         skillLevel: Math.max(1, parseInt(artificerData.skillLevel, 10) || 1),
-        tier: artificerData.tier ?? 1,
         rarity: artificerData.rarity || 'Common'
     };
-    
-    // Type-specific flags
-    if (type === 'ingredient' || type === 'container') {
-        flags.family = artificerData.family || '';
-        flags.quirk = artificerData.quirk || null;
-        flags.biomes = artificerData.biomes || [];
-    } else if (type === 'component') {
-        flags.componentType = artificerData.componentType || '';
-    } else if (type === 'essence') {
-        flags.affinity = artificerData.affinity || '';
+    if (type === ARTIFICER_TYPES.COMPONENT && Array.isArray(artificerData.biomes)) {
+        flags.biomes = artificerData.biomes;
     }
-    
+    if (artificerData.componentType) flags.componentType = artificerData.componentType;
+    if (artificerData.affinity) flags.affinity = artificerData.affinity;
     return flags;
 }
 
 /**
- * Validate artificer data
- * @param {Object} artificerData - Artificer data to validate
- * @param {string} type - Item type
+ * Validate artificer data (TYPE > FAMILY > TRAITS).
+ * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, ... }
  * @throws {Error} If validation fails
  */
-export function validateArtificerData(artificerData, type) {
-    if (!artificerData) {
-        throw new Error('Artificer data is required');
+export function validateArtificerData(artificerData) {
+    if (!artificerData) throw new Error('Artificer data is required');
+
+    const type = artificerData.type || ARTIFICER_TYPES.COMPONENT;
+    if (!Object.values(ARTIFICER_TYPES).includes(type)) {
+        throw new Error(`type must be one of: ${Object.values(ARTIFICER_TYPES).join(', ')}`);
     }
-    
-    // Validate required fields (primaryTag optional for apparatus/tool)
-    const tagOptional = ['apparatus', 'tool'].includes(type);
-    if (!tagOptional && !artificerData.primaryTag) {
-        throw new Error('primaryTag is required');
+
+    const families = FAMILIES_BY_TYPE[type];
+    if (families && !families.includes(artificerData.family)) {
+        if (artificerData.family) {
+            throw new Error(`family must be one of: ${families.join(', ')}`);
+        }
+        throw new Error('family is required');
     }
-    
-    // Validate type-specific requirements
-    if (type === 'ingredient' || type === 'container') {
-        if (!artificerData.family) {
-            throw new Error(`family is required for ${type}s`);
-        }
-        if (artificerData.secondaryTags && artificerData.secondaryTags.length > 10) {
-            throw new Error(`${type}s can have at most 10 secondary tags`);
-        }
-    } else if (type === 'component') {
-        if (!artificerData.componentType) {
-            throw new Error('componentType is required for components');
-        }
-    } else if (type === 'essence') {
-        if (!artificerData.affinity) {
-            throw new Error('affinity is required for essences');
-        }
+
+    if (Array.isArray(artificerData.traits) && artificerData.traits.length > 20) {
+        throw new Error('traits: at most 20 allowed');
     }
-    
-    // Validate tier (optional)
-    if (artificerData.tier != null && (artificerData.tier < 1 || artificerData.tier > 10)) {
-        throw new Error('tier must be between 1 and 10');
-    }
-    // Validate skillLevel (required, 1+)
+
     const sl = artificerData.skillLevel != null ? parseInt(artificerData.skillLevel, 10) : 1;
-    if (Number.isNaN(sl) || sl < 1) {
-        throw new Error('skillLevel must be at least 1');
-    }
+    if (Number.isNaN(sl) || sl < 1) throw new Error('skillLevel must be at least 1');
 }
 
 /**
- * Extract artificer data from an item
+ * Get artificer type from flags (supports legacy type values).
+ * @param {Object} flags - flags[MODULE.ID]
+ * @returns {string|null} Component | Creation | Tool | null
+ */
+export function getArtificerTypeFromFlags(flags) {
+    if (!flags) return null;
+    if (Object.values(ARTIFICER_TYPES).includes(flags.type)) return flags.type;
+    return LEGACY_TYPE_TO_ARTIFICER_TYPE[flags.type] ?? null;
+}
+
+/**
+ * Get family from flags (supports legacy family values).
+ * @param {Object} flags - flags[MODULE.ID]
+ * @returns {string|null}
+ */
+export function getFamilyFromFlags(flags) {
+    if (!flags) return null;
+    if (flags.family && !flags.primaryTag) return flags.family;
+    return LEGACY_FAMILY_TO_FAMILY[flags.family] ?? flags.family ?? null;
+}
+
+/**
+ * Get traits array from flags (supports legacy primaryTag/secondaryTags/quirk).
+ * @param {Object} flags - flags[MODULE.ID]
+ * @returns {string[]}
+ */
+export function getTraitsFromFlags(flags) {
+    if (!flags) return [];
+    if (Array.isArray(flags.traits)) return flags.traits;
+    const primary = flags.primaryTag ? [flags.primaryTag] : [];
+    const secondary = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
+    const quirk = flags.quirk ? [flags.quirk] : [];
+    return [...primary, ...secondary, ...quirk].filter(Boolean);
+}
+
+/**
+ * Extract artificer data from an item (normalized; supports legacy flags).
  * @param {Item} item - Item to extract data from
- * @returns {Object} Artificer data
+ * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, componentType, affinity)
  */
 export function extractArtificerData(item) {
     const flags = item.flags[MODULE.ID] || {};
     return {
-        type: flags.type,
-        primaryTag: flags.primaryTag,
-        secondaryTags: flags.secondaryTags || [],
+        type: getArtificerTypeFromFlags(flags) || ARTIFICER_TYPES.COMPONENT,
+        family: getFamilyFromFlags(flags) || '',
+        traits: getTraitsFromFlags(flags),
         skillLevel: flags.skillLevel ?? 1,
-        tier: flags.tier ?? 1,
         rarity: flags.rarity || 'Common',
-        family: flags.family || null,
-        quirk: flags.quirk || null,
         biomes: flags.biomes || [],
         componentType: flags.componentType || null,
         affinity: flags.affinity || null
@@ -397,20 +398,21 @@ export function extractArtificerData(item) {
 }
 
 /**
- * Check if an item is an artificer item
+ * Check if an item is an artificer item (has type in flags, including legacy).
  * @param {Item} item - Item to check
- * @returns {boolean} True if item has artificer flags
+ * @returns {boolean}
  */
 export function isArtificerItem(item) {
-    return !!(item.flags[MODULE.ID]?.type);
+    const t = item.flags[MODULE.ID]?.type;
+    return !!(t && (Object.values(ARTIFICER_TYPES).includes(t) || LEGACY_TYPE_TO_ARTIFICER_TYPE[t]));
 }
 
 /**
- * Get the artificer type of an item
+ * Get the artificer type of an item (Component | Creation | Tool or legacy equivalent).
  * @param {Item} item - Item to check
- * @returns {string|null} 'ingredient', 'component', 'essence', 'container', or null
+ * @returns {string|null}
  */
 export function getArtificerType(item) {
-    return item.flags[MODULE.ID]?.type || null;
+    return getArtificerTypeFromFlags(item.flags[MODULE.ID] || null);
 }
 

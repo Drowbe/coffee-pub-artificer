@@ -3,11 +3,12 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
-import { createArtificerItem, updateArtificerItem, validateArtificerData } from './utility-artificer-item.js';
-import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from './schema-ingredients.js';
+import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
+import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { COMPONENT_TYPES } from './schema-components.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
-import { getTagManager, TAG_CATEGORIES } from './systems/tag-manager.js';
+import { getTagManager } from './systems/tag-manager.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -46,7 +47,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             title: isEdit ? 'Edit Artificer Item' : 'Create Artificer Item'
         });
         super(opts);
-        this.itemType = options.itemType || 'ingredient';
+        this.itemType = options.itemType || ARTIFICER_TYPES.COMPONENT;
         this.itemData = options.itemData || null;
         this.existingItem = options.item || null;
         this.mode = options.mode || 'create';
@@ -61,57 +62,41 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
      * _prepareContext delegates here for mixins that call it.
      */
     async getData(options = {}) {
-        const context = {};
-        
-        // Item type options (Artificer types)
-        const itemTypeNames = {
-            ingredient: 'Ingredient',
-            component: 'Component',
-            essence: 'Essence',
-            apparatus: 'Apparatus',
-            container: 'Container',
-            tool: 'Tool'
-        };
-        
-        // D&D 5e item type options (most ingredients are consumables)
+        const flags = this.itemData?.flags?.[MODULE.ID] ?? {};
+        const artificerType = this._formState?.artificerType ?? getArtificerTypeFromFlags(flags) ?? this.itemType ?? ARTIFICER_TYPES.COMPONENT;
+        const selectedFamily = this._formState?.family ?? getFamilyFromFlags(flags) ?? '';
+        const existingTraits = getTraitsFromFlags(flags);
+
+        const artificerTypeOptions = Object.values(ARTIFICER_TYPES).map(t => ({
+            value: t,
+            label: t,
+            selected: t === artificerType
+        }));
+
+        const families = FAMILIES_BY_TYPE[artificerType] || [];
+        const familyOptions = families.map(f => ({
+            value: f,
+            label: FAMILY_LABELS[f] ?? f,
+            selected: f === selectedFamily
+        }));
+
         const itemType5eOptions = [
-            { value: 'consumable', label: 'Consumable', selected: (this.itemType === 'ingredient') },
+            { value: 'consumable', label: 'Consumable', selected: (this.itemData?.type || 'consumable') === 'consumable' },
             { value: 'weapon', label: 'Weapon', selected: false },
             { value: 'equipment', label: 'Equipment', selected: false },
             { value: 'tool', label: 'Tool', selected: false },
             { value: 'loot', label: 'Loot', selected: false }
         ];
-        
-        // Rarity options
-        const rarityOptions = Object.values(INGREDIENT_RARITIES).map(rarity => ({
-            value: rarity,
-            label: rarity,
-            selected: false
+        if (this.itemData?.type) {
+            itemType5eOptions.forEach(opt => { if (opt.value === this.itemData.type) opt.selected = true; });
+        }
+
+        const rarityOptions = Object.values(INGREDIENT_RARITIES).map(r => ({
+            value: r,
+            label: r,
+            selected: (this.itemData?.rarity || 'Common') === r
         }));
-        
-        // Family options (for ingredients/containers); display "Creature Parts" for CreatureParts
-        const familyDisplayLabels = { CreatureParts: 'Creature Parts' };
-        const familyOptions = Object.values(INGREDIENT_FAMILIES).map(family => ({
-            value: family,
-            label: familyDisplayLabels[family] ?? family,
-            selected: false
-        }));
-        
-        // Component type options
-        const componentTypeOptions = Object.values(COMPONENT_TYPES).map(type => ({
-            value: type,
-            label: type,
-            selected: false
-        }));
-        
-        // Affinity options (for essences)
-        const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(affinity => ({
-            value: affinity,
-            label: affinity,
-            selected: false
-        }));
-        
-        // Consumable subtype options (D&D 5e) - when item type is consumable
+
         const consumableSubtypeOptions = [
             { value: 'potion', label: 'Potion', selected: false },
             { value: 'poison', label: 'Poison', selected: false },
@@ -119,158 +104,52 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             { value: 'other', label: 'Other', selected: false }
         ];
         const consumableTypeValue = this.itemData?.system?.type?.value ?? this.itemData?.system?.consumableType ?? 'other';
-        consumableSubtypeOptions.forEach(opt => {
-            if (opt.value === consumableTypeValue) opt.selected = true;
-        });
+        consumableSubtypeOptions.forEach(opt => { if (opt.value === consumableTypeValue) opt.selected = true; });
 
-        // Set selected options
-        if (this.itemData?.flags?.[MODULE.ID]?.family) {
-            const selectedFamily = this.itemData.flags[MODULE.ID].family;
-            familyOptions.forEach(opt => {
-                if (opt.value === selectedFamily) opt.selected = true;
-            });
-        }
-        
-        if (this.itemData?.flags?.[MODULE.ID]?.componentType) {
-            const selectedType = this.itemData.flags[MODULE.ID].componentType;
-            componentTypeOptions.forEach(opt => {
-                if (opt.value === selectedType) opt.selected = true;
-            });
-        }
-        
-        if (this.itemData?.flags?.[MODULE.ID]?.affinity) {
-            const selectedAffinity = this.itemData.flags[MODULE.ID].affinity;
-            affinityOptions.forEach(opt => {
-                if (opt.value === selectedAffinity) opt.selected = true;
-            });
-        }
-        
-        if (this.itemData?.rarity) {
-            rarityOptions.forEach(opt => {
-                if (opt.value === this.itemData.rarity) opt.selected = true;
-            });
-        }
-        
-        if (this.itemData?.type) {
-            itemType5eOptions.forEach(opt => {
-                if (opt.value === this.itemData.type) opt.selected = true;
-            });
-        }
+        const componentTypeOptions = Object.values(COMPONENT_TYPES).map(t => ({
+            value: t,
+            label: t,
+            selected: (flags.componentType || '') === t
+        }));
+        const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(a => ({
+            value: a,
+            label: a,
+            selected: (flags.affinity || '') === a
+        }));
 
-        // TagManager-driven tag options
         const tagManager = getTagManager();
-        const selectedFamily = this._formState?.family ?? this.itemData?.flags?.[MODULE.ID]?.family ?? '';
-        const selectedPrimaryTag = this._formState?.primaryTag ?? this.itemData?.flags?.[MODULE.ID]?.primaryTag ?? '';
-        const existingSecondary = this.itemData?.flags?.[MODULE.ID]?.secondaryTags || [];
+        const traitCandidates = tagManager.getAllTags();
 
-        const emptyOption = { value: '', label: '—', selected: false };
-
-        const buildPrimaryTagOptions = () => {
-            const opts = [emptyOption];
-            if (this.itemType === 'ingredient' || this.itemType === 'container') {
-                const tags = selectedFamily
-                    ? tagManager.getTagsForFamily(selectedFamily)
-                    : Object.values(INGREDIENT_FAMILIES).flatMap(f => tagManager.getTagsForFamily(f));
-                const seen = new Set();
-                for (const tag of tags) {
-                    if (!seen.has(tag)) {
-                        seen.add(tag);
-                        opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag });
-                    }
-                }
-            } else if (this.itemType === 'component') {
-                const tags = tagManager.getTagsByCategory(TAG_CATEGORIES.STRUCTURAL);
-                tags.forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
-            } else if (this.itemType === 'essence') {
-                const tags = tagManager.getTagsByCategory(TAG_CATEGORIES.ELEMENT);
-                tags.forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
-            } else if (this.itemType === 'apparatus' || this.itemType === 'tool') {
-                tagManager.getAllTags().forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
-            }
-            return opts;
-        };
-
-        const buildSecondaryTagOptions = () => {
-            const opts = [emptyOption];
-            let candidates = [];
-            if (this.itemType === 'ingredient' || this.itemType === 'container') {
-                candidates = selectedFamily && selectedPrimaryTag
-                    ? tagManager.suggestSecondaryTags(selectedFamily, selectedPrimaryTag)
-                    : selectedFamily
-                        ? tagManager.getTagsForFamily(selectedFamily).filter(t => t !== selectedPrimaryTag)
-                        : Object.values(INGREDIENT_FAMILIES).flatMap(f => tagManager.getTagsForFamily(f));
-            } else if (this.itemType === 'component') {
-                candidates = tagManager.getTagsByCategory(TAG_CATEGORIES.STRUCTURAL).filter(t => t !== selectedPrimaryTag);
-            } else if (this.itemType === 'essence') {
-                candidates = tagManager.getTagsByCategory(TAG_CATEGORIES.ELEMENT).filter(t => t !== selectedPrimaryTag);
-            } else {
-                candidates = tagManager.getAllTags().filter(t => t !== selectedPrimaryTag);
-            }
-            const seen = new Set();
-            for (const tag of candidates) {
-                if (!seen.has(tag)) {
-                    seen.add(tag);
-                    opts.push({ value: tag, label: tag, selected: false });
-                }
-            }
-            return opts;
-        };
-
-        const buildQuirkTagOptions = () => {
-            const opts = [emptyOption];
-            const selectedQuirk = this.itemData?.flags?.[MODULE.ID]?.quirk || '';
-            tagManager.getTagsByCategory(TAG_CATEGORIES.QUIRK).forEach(tag => {
-                opts.push({ value: tag, label: tag, selected: tag === selectedQuirk });
-            });
-            return opts;
-        };
-
-        const primaryTagOptions = buildPrimaryTagOptions();
-        const secondaryTagCandidates = buildSecondaryTagOptions().filter(o => o.value).map(o => o.value);
-        const quirkTagOptions = buildQuirkTagOptions();
-        const secondaryTagsValue = existingSecondary.join(',');
-
-        // Merge with existing context
-        const mergedContext = foundry.utils.mergeObject(context, {
+        const mergedContext = {
             isEditMode: this.isEditMode,
-            itemType: this.itemType,
-            itemTypeName: itemTypeNames[this.itemType] || 'Item',
-            isIngredient: this.itemType === 'ingredient',
-            isComponent: this.itemType === 'component',
-            isEssence: this.itemType === 'essence',
-            isApparatus: this.itemType === 'apparatus',
-            isContainer: this.itemType === 'container',
-            isTool: this.itemType === 'tool',
+            itemType: artificerType,
+            itemTypeName: artificerType,
+            isComponent: artificerType === ARTIFICER_TYPES.COMPONENT,
+            artificerTypeOptions,
+            familyOptions,
             itemName: this.itemData?.name || '',
             itemType5e: this.itemData?.type || 'consumable',
-            itemType5eOptions: itemType5eOptions,
+            itemType5eOptions,
             isConsumable: (this.itemData?.type || 'consumable') === 'consumable',
             consumableSubtype: consumableTypeValue,
-            consumableSubtypeOptions: consumableSubtypeOptions,
+            consumableSubtypeOptions,
             itemWeight: this.itemData?.weight || 0,
             itemPrice: this.itemData?.price || '',
             itemRarity: this.itemData?.rarity || 'Common',
-            rarityOptions: rarityOptions,
+            rarityOptions,
             itemDescription: this.itemData?.description || '',
             sourceCustom: this.itemData?.system?.source?.custom || 'Artificer',
             sourceLicense: this.itemData?.system?.source?.license || '',
-            primaryTag: selectedPrimaryTag,
-            primaryTagOptions: primaryTagOptions,
-            secondaryTagsValue: secondaryTagsValue,
-            secondaryTagCandidates: secondaryTagCandidates,
-            skillLevel: this.itemData?.flags?.[MODULE.ID]?.skillLevel ?? 1,
-            tier: this.itemData?.flags?.[MODULE.ID]?.tier ?? 1,
-            family: this.itemData?.flags?.[MODULE.ID]?.family || '',
-            familyOptions: familyOptions,
-            quirk: this.itemData?.flags?.[MODULE.ID]?.quirk || '',
-            quirkTagOptions: quirkTagOptions,
-            biomes: (this.itemData?.flags?.[MODULE.ID]?.biomes || []).join(', '),
-            componentType: this.itemData?.flags?.[MODULE.ID]?.componentType || '',
-            componentTypeOptions: componentTypeOptions,
-            affinity: this.itemData?.flags?.[MODULE.ID]?.affinity || '',
-            affinityOptions: affinityOptions
-        });
-        
+            traitsValue: existingTraits.join(','),
+            traitCandidates,
+            skillLevel: flags.skillLevel ?? 1,
+            family: selectedFamily,
+            biomes: (flags.biomes || []).join(', '),
+            componentType: flags.componentType || '',
+            componentTypeOptions,
+            affinity: flags.affinity || '',
+            affinityOptions
+        };
         this._lastContext = mergedContext;
         return mergedContext;
     }
@@ -310,13 +189,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             }
         });
 
-        const typeSelect = query('#itemType');
-        if (typeSelect) {
-            typeSelect.addEventListener('change', (event) => {
+        const artificerTypeSelect = query('#artificerType');
+        if (artificerTypeSelect) {
+            artificerTypeSelect.addEventListener('change', (event) => {
                 this.itemType = event.target.value;
                 this._formState = this._formState ?? {};
+                this._formState.artificerType = event.target.value;
                 this._formState.family = null;
-                this._formState.primaryTag = null;
                 this.render();
             });
         }
@@ -326,16 +205,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             familySelect.addEventListener('change', (event) => {
                 this._formState = this._formState ?? {};
                 this._formState.family = event.target.value || null;
-                this._formState.primaryTag = null;
-                this.render();
-            });
-        }
-
-        const primaryTagSelect = query('#primaryTag');
-        if (primaryTagSelect) {
-            primaryTagSelect.addEventListener('change', (event) => {
-                this._formState = this._formState ?? {};
-                this._formState.primaryTag = event.target.value || null;
                 this.render();
             });
         }
@@ -359,11 +228,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const input = root?.querySelector('#artificer-tag-input');
         const suggestionsEl = root?.querySelector('#artificer-tag-suggestions');
         const pillsEl = root?.querySelector('#artificer-tag-pills');
-        const hiddenInput = root?.querySelector('#artificer-secondary-tags-hidden');
+        const hiddenInput = root?.querySelector('#artificer-traits-hidden');
         const clearBtn = root?.querySelector('.artificer-tag-input-clear');
         if (!input || !suggestionsEl || !pillsEl || !hiddenInput) return;
 
-        const candidates = (this._lastContext?.secondaryTagCandidates ?? []).slice();
+        const candidates = (this._lastContext?.traitCandidates ?? []).slice();
 
         const getSelectedTags = () => {
             const val = hiddenInput?.value ?? '';
@@ -499,8 +368,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             return obj;
         })();
 
-        // Track current item type from the form
-        this.itemType = formObject.itemType || this.itemType || 'ingredient';
+        this.itemType = formObject.artificerType || this.itemType || ARTIFICER_TYPES.COMPONENT;
 
         // Parse item data
         const itemData = {
@@ -520,38 +388,30 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             }
         };
         
-        // Parse artificer data (secondary tags from tag picker hidden input)
-        const secondaryTags = (formObject.secondaryTags || '')
-            ? formObject.secondaryTags.split(',').map(t => t.trim()).filter(t => t)
+        const traits = (formObject.traits || '')
+            ? formObject.traits.split(',').map(t => t.trim()).filter(Boolean)
             : [];
 
         const artificerData = {
-            primaryTag: formObject.primaryTag || '',
-            secondaryTags,
+            type: this.itemType,
+            family: formObject.family || '',
+            traits,
             skillLevel: Math.max(1, parseInt(formObject.skillLevel, 10) || 1),
-            tier: parseInt(formObject.tier, 10) || 1,
             rarity: formObject.itemRarity || 'Common'
         };
-        
-        // Consumable subtype (D&D 5e) when type is consumable
+
         if (itemData.type === 'consumable' && formObject.consumableSubtype) {
             itemData.system = itemData.system ?? {};
             itemData.system.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
         }
-        
-        // Add type-specific fields
-        if (this.itemType === 'ingredient' || this.itemType === 'container') {
-            artificerData.family = formObject.family || '';
-            artificerData.quirk = formObject.quirk || null;
-            artificerData.biomes = formObject.biomes 
-                ? formObject.biomes.split(',').map(b => b.trim()).filter(b => b)
+
+        if (this.itemType === ARTIFICER_TYPES.COMPONENT) {
+            artificerData.biomes = formObject.biomes
+                ? formObject.biomes.split(',').map(b => b.trim()).filter(Boolean)
                 : [];
-        } else if (this.itemType === 'component') {
-            artificerData.componentType = formObject.componentType || '';
-        } else if (this.itemType === 'essence') {
-            artificerData.affinity = formObject.affinity || '';
+            if (formObject.componentType) artificerData.componentType = formObject.componentType;
+            if (formObject.affinity) artificerData.affinity = formObject.affinity;
         }
-        // apparatus and tool: no extra fields beyond tags, skillLevel, tier, rarity
         
         try {
             // Validate
@@ -574,9 +434,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 await this.close();
                 ui.notifications.info(`Updated ${itemData.name}`);
             } else {
-                const createdItem = await createArtificerItem(itemData, artificerData, {
-                    type: this.itemType
-                });
+                const createdItem = await createArtificerItem(itemData, artificerData, {});
                 if (!createdItem) throw new Error('Failed to create item');
                 await this.close();
                 ui.notifications.info(`Created ${itemData.name}`);

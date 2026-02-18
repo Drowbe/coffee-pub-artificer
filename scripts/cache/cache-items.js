@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { LEGACY_FAMILY_TO_FAMILY } from '../schema-artificer-item.js';
 
 /** Schema version for cache invalidation */
 const ITEM_CACHE_VERSION = 1;
@@ -92,14 +93,16 @@ function itemToRecord(item, source) {
     const typeVal = sys?.type?.value ?? item.type ?? '';
     const subtype = (sys?.type?.subtype ?? sys?.consumableType ?? '').toLowerCase?.() ?? '';
     let family = flags.family ?? '';
+    family = LEGACY_FAMILY_TO_FAMILY[family] ?? family;
     if (!family && typeVal === 'consumable' && subtype) {
-        family = DND_CONSUMABLE_FAMILY[subtype] ?? 'Environmental';
+        const legacyFamily = DND_CONSUMABLE_FAMILY[subtype] ?? 'Environmental';
+        family = LEGACY_FAMILY_TO_FAMILY[legacyFamily] ?? legacyFamily;
     }
     if (!family) family = 'Environmental';
 
-    const primaryTag = flags.primaryTag ?? '';
-    const secondaryTags = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
-    const tags = primaryTag ? [primaryTag, ...secondaryTags] : secondaryTags;
+    const tags = Array.isArray(flags.traits)
+        ? flags.traits
+        : [flags.primaryTag, ...(Array.isArray(flags.secondaryTags) ? flags.secondaryTags : []), flags.quirk].filter(Boolean);
 
     return {
         name: item.name ?? '',

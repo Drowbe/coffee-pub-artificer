@@ -4,6 +4,7 @@
 
 import { MODULE } from './const.js';
 import { createArtificerItem, validateArtificerData } from './utility-artificer-item.js';
+import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, LEGACY_FAMILY_TO_FAMILY, FAMILIES_BY_TYPE } from './schema-artificer-item.js';
 
 /**
  * Parse import input (File, string, or object/array) into array of payloads
@@ -61,53 +62,45 @@ export function validateImportPayload(payload) {
         throw new Error('Payload must have a "name" field (string)');
     }
     
-    // Check artificer flags
     const artificerFlags = payload.flags?.[MODULE.ID] || payload.artificer || {};
-    const artificerType = artificerFlags.type;
-    
-    if (!artificerType || !['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(artificerType)) {
-        throw new Error(`Payload must have flags.${MODULE.ID}.type or artificer.type set to 'ingredient', 'component', 'essence', or 'container'`);
+    let type = artificerFlags.type;
+    const legacyTypes = ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'];
+    if (!type || (!Object.values(ARTIFICER_TYPES).includes(type) && !legacyTypes.includes(type))) {
+        throw new Error(`Payload must have flags.${MODULE.ID}.type (Component, Creation, Tool, or legacy)`);
     }
-    
-    // Build artificerData structure (extracted for validation only)
+    if (legacyTypes.includes(type)) type = LEGACY_TYPE_TO_ARTIFICER_TYPE[type] ?? ARTIFICER_TYPES.COMPONENT;
+
+    let family = artificerFlags.family ?? '';
+    family = LEGACY_FAMILY_TO_FAMILY[family] ?? family;
+    if (!family && FAMILIES_BY_TYPE[type]?.length) family = FAMILIES_BY_TYPE[type][0];
+
+    let traits = Array.isArray(artificerFlags.traits) ? artificerFlags.traits : [];
+    if (traits.length === 0) {
+        const p = artificerFlags.primaryTag ? [artificerFlags.primaryTag] : [];
+        const s = Array.isArray(artificerFlags.secondaryTags) ? artificerFlags.secondaryTags : [];
+        const q = artificerFlags.quirk ? [artificerFlags.quirk] : [];
+        traits = [...p, ...s, ...q].filter(Boolean);
+    }
+
     const artificerData = {
-        primaryTag: artificerFlags.primaryTag || '',
-        secondaryTags: Array.isArray(artificerFlags.secondaryTags)
-            ? artificerFlags.secondaryTags
-            : (artificerFlags.secondaryTags ? [artificerFlags.secondaryTags] : []),
-        tier: artificerFlags.tier || 1,
+        type,
+        family,
+        traits,
+        skillLevel: Math.max(1, parseInt(artificerFlags.skillLevel, 10) || 1),
         rarity: artificerFlags.rarity || payload.rarity || payload.system?.rarity || 'Common'
     };
-    
-    // Add type-specific fields
-    if (artificerType === 'ingredient') {
-        artificerData.family = artificerFlags.family || '';
-        artificerData.quirk = artificerFlags.quirk ?? null;
-        artificerData.biomes = Array.isArray(artificerFlags.biomes)
-            ? artificerFlags.biomes
-            : (artificerFlags.biomes ? [artificerFlags.biomes] : []);
-    } else if (artificerType === 'component') {
-        artificerData.componentType = artificerFlags.componentType || '';
-    } else if (artificerType === 'essence') {
-        artificerData.affinity = artificerFlags.affinity || '';
-    } else if (artificerType === 'container' || artificerType === 'apparatus' || artificerType === 'resultContainer') {
-        artificerData.family = artificerFlags.family || '';
-        artificerData.quirk = artificerFlags.quirk ?? null;
-        artificerData.biomes = Array.isArray(artificerFlags.biomes)
-            ? artificerFlags.biomes
-            : (artificerFlags.biomes ? [artificerFlags.biomes] : []);
-    } else if (artificerType === 'tool') {
-        artificerData.family = artificerFlags.family || '';
+    if (type === ARTIFICER_TYPES.COMPONENT) {
+        artificerData.biomes = Array.isArray(artificerFlags.biomes) ? artificerFlags.biomes : [];
+        if (artificerFlags.componentType) artificerData.componentType = artificerFlags.componentType;
+        if (artificerFlags.affinity) artificerData.affinity = artificerFlags.affinity;
     }
-    
-    // Validate artificer data
-    validateArtificerData(artificerData, artificerType);
-    
-    // Return full payload — do NOT strip system, activities, or other fields
+
+    validateArtificerData(artificerData);
+
     return {
         payload,
         artificerData,
-        type: artificerType
+        type
     };
 }
 
@@ -142,11 +135,7 @@ export async function importItems(payloads, options = {}) {
             const item = await createArtificerItem(
                 validated.payload,
                 validated.artificerData,
-                {
-                    type: validated.type,
-                    createInWorld,
-                    actor
-                }
+                { createInWorld, actor }
             );
             
             result.created.push({

@@ -4,35 +4,42 @@
 
 import { MODULE } from '../../const.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from '../../schema-ingredients.js';
+import { getArtificerTypeFromFlags, getFamilyFromFlags, getTraitsFromFlags } from '../../utility-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../../schema-artificer-item.js';
 
 /**
  * ArtificerIngredient - Raw material data model
- * Represents ingredients stored as FoundryVTT Items with artificer flags
+ * Represents ingredients stored as FoundryVTT Items with artificer flags.
+ * Supports both new (type/family/traits) and legacy (ingredient + primaryTag/secondaryTags/quirk) flags.
  */
 export class ArtificerIngredient {
     /**
      * Create an ArtificerIngredient from a FoundryVTT Item
      * @param {Item} item - FoundryVTT Item document
-     * @returns {ArtificerIngredient|null} Parsed ingredient or null if invalid
+     * @returns {ArtificerIngredient|null} Parsed ingredient or null if not a component (ingredient)
      */
     static fromItem(item) {
         if (!item) return null;
-        
-        const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
-        if (!artificerData || artificerData.type !== 'ingredient') {
-            return null;
-        }
-        
+        const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer;
+        const type = getArtificerTypeFromFlags(flags);
+        const family = getFamilyFromFlags(flags);
+        const traits = getTraitsFromFlags(flags) ?? [];
+        const isLegacyIngredient = flags?.type === 'ingredient';
+        const isComponent = type === ARTIFICER_TYPES.COMPONENT;
+        if (!isComponent && !isLegacyIngredient) return null;
+        const primaryTag = traits[0] ?? flags?.primaryTag ?? '';
+        const secondaryTags = traits.length > 1 ? traits.slice(1) : (Array.isArray(flags?.secondaryTags) ? flags.secondaryTags : []);
+        const quirk = flags?.quirk ?? null;
         return new ArtificerIngredient({
             id: item.uuid,
             name: item.name,
-            family: artificerData.family,
-            tier: artificerData.tier ?? 1,
-            rarity: artificerData.rarity ?? INGREDIENT_RARITIES.COMMON,
-            primaryTag: artificerData.primaryTag,
-            secondaryTags: artificerData.secondaryTags ?? [],
-            quirk: artificerData.quirk ?? null,
-            biomes: artificerData.biomes ?? [],
+            family: family || flags?.family || INGREDIENT_FAMILIES.HERBS,
+            tier: Math.max(1, parseInt(flags?.skillLevel ?? flags?.tier, 10) || 1),
+            rarity: flags?.rarity ?? INGREDIENT_RARITIES.COMMON,
+            primaryTag,
+            secondaryTags,
+            quirk,
+            biomes: Array.isArray(flags?.biomes) ? flags.biomes : [],
             description: item.system?.description?.value ?? '',
             image: item.img ?? null,
             source: item.compendium?.collection?.metadata?.id ?? null
@@ -66,8 +73,10 @@ export class ArtificerIngredient {
      * @private
      */
     _validateAndNormalize() {
-        // Validate family
-        if (!Object.values(INGREDIENT_FAMILIES).includes(this.family)) {
+        const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
+        const legacyFamilies = Object.values(INGREDIENT_FAMILIES);
+        const validFamily = componentFamilies.includes(this.family) || legacyFamilies.includes(this.family);
+        if (!validFamily) {
             console.warn(`Invalid ingredient family: ${this.family}. Defaulting to ${INGREDIENT_FAMILIES.HERBS}`);
             this.family = INGREDIENT_FAMILIES.HERBS;
         }

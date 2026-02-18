@@ -8,6 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
+import { ARTIFICER_TYPES } from './schema-artificer-item.js';
 
 /** D&D consumable subtype → family when item has no artificer flags */
 const DND_CONSUMABLE_FAMILY = {
@@ -47,8 +48,9 @@ function recipeCanCraft(actor, recipe) {
         const candidates = actor.items.filter((item) => {
             const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
             const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
-            if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) {
-                return (f.type === (ing.type || 'ingredient')) && nameMatches;
+            const effectiveType = f?.type === ARTIFICER_TYPES.COMPONENT ? 'component' : f?.type;
+            if (effectiveType && ['ingredient', 'component', 'essence'].includes(effectiveType)) {
+                return (effectiveType === (ing.type || 'ingredient')) && nameMatches;
             }
             return nameMatches;
         });
@@ -197,7 +199,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const artificerItems = actor
             ? actor.items.filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                if (f?.type && ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer'].includes(f.type)) return true;
+                if (f?.type && (['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer'].includes(f.type) || f.type === ARTIFICER_TYPES.COMPONENT || f.type === ARTIFICER_TYPES.TOOL)) return true;
                 const cc = asCraftableConsumable(i);
                 return cc.ok;
             })
@@ -206,7 +208,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let ingredients = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
+                if (f?.type && (['ingredient', 'component', 'essence'].includes(f.type) || f.type === ARTIFICER_TYPES.COMPONENT)) return true;
                 return asCraftableConsumable(i).ok;
             })
             .map(i => {
@@ -233,7 +235,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const apparatusItems = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type === 'apparatus' || f?.type === 'container';
+                return f?.type === 'apparatus' || f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Apparatus');
             })
             .map(i => ({ ...toListRow(i, 'addToApparatus', true, 'apparatus') }));
 
@@ -241,7 +243,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const containerItems = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type === 'resultContainer';
+                return f?.type === 'resultContainer' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
             })
             .map(i => ({ ...toListRow(i, 'addToContainer', true, 'container') }));
 
@@ -260,10 +262,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         })) ?? [];
 
         function toListRow(item, addAction, isContainer, type) {
-            const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-            const primary = f?.primaryTag ?? '';
-            const secondary = Array.isArray(f?.secondaryTags) ? f.secondaryTags : (f?.secondaryTags ? [f.secondaryTags] : []);
-            const tags = [primary, ...secondary].filter(Boolean).join(', ');
+            const tags = getTagsFromItem(item).join(', ');
             return {
                 id: item.id,
                 uuid: item.uuid,
@@ -341,8 +340,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const toSlotData = (item) => {
             if (!item) return { item: null, tooltip: '' };
             const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-            const ct = f?.primaryTag ? [f.primaryTag, ...(Array.isArray(f?.secondaryTags) ? f.secondaryTags : [])].filter(Boolean).join(', ') : '';
-            return { item: { id: item.id, name: item.name, img: item.img }, tooltip: [item.name, f?.family ? `Family: ${f.family}` : '', ct ? `Tags: ${ct}` : ''].filter(Boolean).join('\n') };
+            const traits = getTagsFromItem(item).join(', ');
+            const family = f?.family ?? '';
+            return { item: { id: item.id, name: item.name, img: item.img }, tooltip: [item.name, family ? `Family: ${family}` : '', traits ? `Traits: ${traits}` : ''].filter(Boolean).join('\n') };
         };
         let apparatusSlot = toSlotData(this.selectedApparatus);
         let containerSlot = toSlotData(this.selectedContainer);

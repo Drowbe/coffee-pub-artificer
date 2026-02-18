@@ -127,15 +127,13 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 
 ### 2.6.2 Migration Macro Tasks (Implementation)
 
-- [ ] Create a Foundry macro (or module script) that runs in context of the world.
-- [ ] Iterate target items (world items + optionally compendium items from settings).
-- [ ] Implement mapping tables: old family → new family; old type → new TYPE.
-- [ ] Implement merge + dedupe for traits from primaryTag, secondaryTags, quirk.
-- [ ] Perform update in place (item.update) or collect updates and batch.
-- [ ] Add idempotency check; skip already-migrated items.
-- [ ] Add backup recommendation in macro description / docs (e.g. export items or clone world before run).
-- [ ] Test on a copy of the world with a subset of items first.
-- [ ] Document macro in user docs (where to find it, how to run, when to run).
+- [x] Migration logic: `scripts/migrations/migrate-artificer-flags.js`; API: `game.modules.get('coffee-pub-artificer').api.runMigration(options)`.
+- [x] Iterate world items; optional `options.includeCompendia: ['packId', ...]` for compendium packs.
+- [x] Mapping: `LEGACY_TYPE_TO_ARTIFICER_TYPE`, `LEGACY_FAMILY_TO_FAMILY`; traits from primaryTag + secondaryTags + quirk (merge + dedupe).
+- [x] Idempotency: skip items that already have `traits` and no legacy tag fields.
+- [x] **Macro for GMs:** Example script at `resources/migration-macro-example.js`. Create a Script macro in Foundry, paste the script, run as GM. Backup world or run on a copy first.
+- [ ] Test on a copy of the world with a subset of items first (manual).
+- [x] Document: macro header + plan §2.6 + TODO.md.
 
 ---
 

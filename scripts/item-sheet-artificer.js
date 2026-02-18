@@ -4,7 +4,14 @@
 
 import { MODULE } from './const.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
-import { isArtificerItem } from './utility-artificer-item.js';
+import {
+    isArtificerItem,
+    getArtificerTypeFromFlags,
+    getFamilyFromFlags,
+    getTraitsFromFlags
+} from './utility-artificer-item.js';
+import { ARTIFICER_TYPES } from './schema-artificer-item.js';
+import { FAMILY_LABELS } from './schema-artificer-item.js';
 
 /**
  * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
@@ -73,11 +80,11 @@ function onRenderItemSheet(app, html) {
     if (element.querySelector('.artificer-item-sheet-section')) return;
 
     const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
-    const type = flags.type;
-    const hasArtificerData = type && ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type);
+    const artificerType = getArtificerTypeFromFlags(flags);
+    const hasArtificerData = !!artificerType;
     const canEdit = item.canUserModify?.(game.user, 'update') ?? app.options?.editable ?? game.user.isGM;
     const section = hasArtificerData
-        ? buildArtificerSection(item, flags, type, !!canEdit)
+        ? buildArtificerSection(item, flags, !!canEdit)
         : buildConvertSection(item, !!canEdit);
     const descriptionTab = findDescriptionTab(element);
     if (descriptionTab) {
@@ -125,41 +132,37 @@ function buildConvertSection(item, editable) {
 }
 
 /**
- * Build the Artificer section DOM
+ * Build the Artificer section DOM (TYPE > FAMILY > TRAITS; supports legacy flags).
  * @param {Item} item
  * @param {Object} flags
- * @param {string} type
  * @param {boolean} editable
  * @returns {HTMLElement}
  */
-function buildArtificerSection(item, flags, type, editable) {
+function buildArtificerSection(item, flags, editable) {
     const section = document.createElement('div');
     section.className = 'artificer-item-sheet-section';
 
-    const primaryTag = flags.primaryTag ?? '';
-    const secondaryTags = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
-    const secondaryStr = secondaryTags.join(', ');
-    const family = flags.family ?? '';
-    const tier = flags.tier ?? 1;
+    const artificerType = getArtificerTypeFromFlags(flags);
+    const family = getFamilyFromFlags(flags);
+    const traits = getTraitsFromFlags(flags);
+    const familyLabel = family ? (FAMILY_LABELS[family] ?? family) : '';
+    const traitsStr = traits.length ? traits.join(', ') : '';
     const rarity = flags.rarity ?? 'Common';
-    const quirk = flags.quirk ?? '';
     const biomes = Array.isArray(flags.biomes) ? flags.biomes : [];
     const biomesStr = biomes.join(', ');
     const componentType = flags.componentType ?? '';
     const affinity = flags.affinity ?? '';
+    const skillLevel = flags.skillLevel ?? 1;
 
     const rows = [];
-    const skillLevel = flags.skillLevel ?? 1;
-    if (primaryTag) rows.push({ label: 'Primary Tag', value: primaryTag });
-    if (secondaryStr) rows.push({ label: 'Secondary Tags', value: secondaryStr });
-    if ((type === 'ingredient' || type === 'container') && family) rows.push({ label: 'Family', value: family });
-    if (type === 'component' && componentType) rows.push({ label: 'Component Type', value: componentType });
-    if (type === 'essence' && affinity) rows.push({ label: 'Affinity', value: affinity });
+    if (artificerType) rows.push({ label: 'Type', value: artificerType });
+    if (familyLabel) rows.push({ label: 'Family', value: familyLabel });
+    if (traitsStr) rows.push({ label: 'Traits', value: traitsStr });
     rows.push({ label: 'Skill Level', value: String(skillLevel) });
-    rows.push({ label: 'Tier', value: String(tier) });
     rows.push({ label: 'Rarity', value: rarity });
-    if ((type === 'ingredient' || type === 'container') && quirk) rows.push({ label: 'Quirk', value: quirk });
-    if ((type === 'ingredient' || type === 'container') && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
+    if (componentType) rows.push({ label: 'Component Type', value: componentType });
+    if (affinity) rows.push({ label: 'Affinity', value: affinity });
+    if (artificerType === ARTIFICER_TYPES.COMPONENT && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
 
     const rowsHtml = rows
         .map((r) => `<div class="artificer-sheet-row"><span class="artificer-sheet-label">${escapeHtml(r.label)}:</span><span class="artificer-sheet-value">${escapeHtml(r.value)}</span></div>`)
@@ -191,11 +194,12 @@ function escapeHtml(str) {
 function openEditForm(item) {
     const itemData = itemToFormData(item);
     const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
+    const artificerType = getArtificerTypeFromFlags(flags) || ARTIFICER_TYPES.COMPONENT;
     const form = new ArtificerItemForm({
         itemData,
         item,
         mode: 'edit',
-        itemType: flags.type || 'ingredient'
+        itemType: artificerType
     });
     form.render(true);
 }

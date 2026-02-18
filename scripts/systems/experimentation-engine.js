@@ -4,38 +4,31 @@
 
 import { MODULE } from '../const.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
-import { resolveItemByName } from '../utility-artificer-item.js';
+import { resolveItemByName, getTraitsFromFlags } from '../utility-artificer-item.js';
+import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
 
 /**
- * Extract all tags from a Foundry Item (ingredient, component, or essence)
+ * Extract all traits (tags) from a Foundry Item. Supports TYPE > FAMILY > TRAITS and legacy flags.
  * @param {Item} item - FoundryVTT Item
- * @returns {string[]} Normalized tags (lowercase)
+ * @returns {string[]} Normalized traits (lowercase)
  */
 export function getTagsFromItem(item) {
     const flags = item?.flags?.[MODULE.ID] || item?.flags?.artificer;
     if (!flags) return [];
     const type = flags.type;
 
-    if (type === 'ingredient') {
-        const f = flags;
-        const primary = f.primaryTag ?? '';
-        const secondary = Array.isArray(f.secondaryTags) ? f.secondaryTags : [];
-        const quirk = f.quirk ?? '';
-        return [primary, ...secondary, quirk].filter(Boolean).map(t => String(t).toLowerCase());
+    if (type === ARTIFICER_TYPES.COMPONENT || type === ARTIFICER_TYPES.CREATION || type === ARTIFICER_TYPES.TOOL) {
+        return getTraitsFromFlags(flags).map(t => String(t).toLowerCase());
     }
-    if (type === 'component') {
-        const comp = ArtificerComponent.fromItem(item);
-        return (comp?.tags ?? []).map(t => t.toLowerCase());
+    if (type === 'ingredient' || type === 'component' || type === 'essence') {
+        return getTraitsFromFlags(flags).map(t => String(t).toLowerCase());
     }
-    if (type === 'essence') {
-        const f = flags;
-        const tags = f.tags ?? [];
-        const affinity = f.affinity ?? '';
-        const primary = f.primaryTag ?? '';
-        const secondary = Array.isArray(f.secondaryTags) ? f.secondaryTags : [];
-        return [...tags, affinity, primary, ...secondary].filter(Boolean).map(t => String(t).toLowerCase());
+    if (type === 'apparatus' || type === 'container' || type === 'tool') {
+        return getTraitsFromFlags(flags).map(t => String(t).toLowerCase());
     }
-    return [];
+    const comp = ArtificerComponent.fromItem(item);
+    if (comp?.tags?.length) return comp.tags.map(t => t.toLowerCase());
+    return getTraitsFromFlags(flags).map(t => String(t).toLowerCase());
 }
 
 /**

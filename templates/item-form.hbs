@@ -11,21 +11,11 @@
 
     {{!-- Content --}}
     <div class="item-form-body">
-        {{!-- Type Selector --}}
+        {{!-- TYPE > FAMILY > TRAITS --}}
         <section class="item-form-section">
-            <h3 class="item-form-section-title"><i class="fa-solid fa-list"></i> Item Type</h3>
-            <div class="artificer-form-group">
-                <div class="artificer-form-fields">
-                    <select name="itemType" id="itemType">
-                        <option value="ingredient" {{#if isIngredient}}selected{{/if}}>Ingredient</option>
-                        <option value="component" {{#if isComponent}}selected{{/if}}>Component</option>
-                        <option value="essence" {{#if isEssence}}selected{{/if}}>Essence</option>
-                        <option value="apparatus" {{#if isApparatus}}selected{{/if}}>Apparatus</option>
-                        <option value="container" {{#if isContainer}}selected{{/if}}>Container</option>
-                        <option value="tool" {{#if isTool}}selected{{/if}}>Tool</option>
-                    </select>
-                </div>
-            </div>
+            <h3 class="item-form-section-title"><i class="fa-solid fa-list"></i> Artificer Type & Family</h3>
+            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions}}
+            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}
         </section>
 
         {{!-- D&D 5e Item Fields --}}
@@ -44,14 +34,11 @@
             {{> partials/form-field name="sourceLicense" label="License" type="text" value=sourceLicense placeholder="" title="License for the item source (e.g. OGL, CC-BY). Appears in Configure Source."}}
         </section>
 
-        {{!-- Artificer-Specific Fields --}}
+        {{!-- Artificer Properties: Traits + Skill Level + optional fields --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
-            {{#if isIngredient}}{{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}{{/if}}
-            {{#if isContainer}}{{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}{{/if}}
-            {{> partials/form-field name="primaryTag" label="Primary Tag" type="select" isSelect=true options=primaryTagOptions}}
             <div class="artificer-form-group artificer-tag-picker-group">
-                <label for="artificer-tag-input">Secondary Tags</label>
+                <label for="artificer-tag-input">Traits</label>
                 <div class="artificer-tag-picker">
                     <div class="artificer-tag-input-wrap">
                         <input type="text" id="artificer-tag-input" class="artificer-tag-input" placeholder="e.g. Medicinal, Floral" autocomplete="off" />
@@ -59,24 +46,14 @@
                     </div>
                     <div class="artificer-tag-suggestions" id="artificer-tag-suggestions" role="listbox"></div>
                     <div class="artificer-tag-pills" id="artificer-tag-pills"></div>
-                    <input type="hidden" name="secondaryTags" id="artificer-secondary-tags-hidden" value="{{secondaryTagsValue}}" />
+                    <input type="hidden" name="traits" id="artificer-traits-hidden" value="{{traitsValue}}" />
                 </div>
             </div>
             {{> partials/form-field name="skillLevel" label="Skill Level (min.)" type="number" isNumber=true value=skillLevel placeholder="1" min="1" step="1" title="Minimum crafting skill level required to create or use this item."}}
-            {{> partials/form-field name="tier" label="Tier (1–10)" type="number" isNumber=true value=tier placeholder="1" min="1" max="10" step="1" title="Optional. Power/quality level. May be deprecated in favor of rarity/skillLevel."}}
-            {{#if isIngredient}}
-            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="select" isSelect=true options=quirkTagOptions}}
-            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
-            {{/if}}
-            {{#if isContainer}}
-            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="select" isSelect=true options=quirkTagOptions}}
-            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
-            {{/if}}
             {{#if isComponent}}
-            {{> partials/form-field name="componentType" label="Component Type" type="select" isSelect=true options=componentTypeOptions}}
-            {{/if}}
-            {{#if isEssence}}
-            {{> partials/form-field name="affinity" label="Affinity" type="select" isSelect=true options=affinityOptions}}
+            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
+            {{> partials/form-field name="componentType" label="Component Type (optional)" type="select" isSelect=true options=componentTypeOptions}}
+            {{> partials/form-field name="affinity" label="Affinity (optional, for Essence family)" type="select" isSelect=true options=affinityOptions}}
             {{/if}}
         </section>
     </div>

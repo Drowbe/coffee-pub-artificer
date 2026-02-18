@@ -11,6 +11,7 @@ import { BlueprintManager } from './manager-blueprints.js';
 import { WorkstationManager } from './manager-workstations.js';
 import { SkillManager } from './manager-skills.js';
 import { getTagManager } from './systems/tag-manager.js';
+import { runArtificerMigration } from './migrations/migrate-artificer-flags.js';
 
 /**
  * Module API - Public interface for external access
@@ -26,6 +27,16 @@ export class ArtificerAPI {
         this.workstations = new WorkstationManager();
         this.skills = new SkillManager();
         this.tags = getTagManager();
+    }
+
+    /**
+     * One-time migration: convert legacy item flags (primaryTag, secondaryTags, quirk) to TYPE > FAMILY > TRAITS.
+     * Back up your world before running. Idempotent (skips items already migrated).
+     * @param {Object} [options] - { includeCompendia: string[] } optional compendium pack IDs to migrate
+     * @returns {Promise<{ migrated: number, errors: string[], skipped: number }>}
+     */
+    async runMigration(options = {}) {
+        return runArtificerMigration(options);
     }
 
     /**
