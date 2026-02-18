@@ -3,6 +3,29 @@
 
 ---
 
+## 0. System at a Glance
+
+**What it is:** A tag-based crafting system that encourages experimentation and discovery. Players gather raw materials, salvage items for components, and craft through experimentation, recipes, or multi-stage blueprints.
+
+**The core loop:** Gather → Salvage → Experiment → (Recipes & Blueprints) → Crafted Items. Experimentation combines up to 3 ingredients; tag matching determines the result. Recipes give predictable outcomes; blueprints are multi-stage narrative projects.
+
+**Material hierarchy:**
+- **Raw Materials** (Ingredients): Herbs, Minerals, Gems, Creature Parts, Environmental — each with 2–5 tags
+- **Components**: Refined materials (Ingots, Extracts, Bone Shards, Mana Thread, etc.)
+- **Essences**: Magical affinities (Heat, Cold, Life, Shadow, etc.)
+- **Finished Items**: Weapons, armor, consumables, tools, arcane devices
+
+**Tags:** Each ingredient has primary tag, 1–2 secondary tags, and optional quirk. Tags reveal progressively (1 use → primary; 3 uses → secondary; 5 uses → quirk). Tags determine item category, elemental effects, and quality.
+
+**Three crafting methods:**
+1. **Experimentation** — Free-form; tag combination rules; may produce sludge if no match
+2. **Recipes** — Structured journal entries; predictable outcomes; reduced cost, quality bonus
+3. **Blueprints** — Multi-stage journal entries; narrative-driven; staged assembly
+
+*For detailed user-facing explanation, see `documentation/overview.md`.*
+
+---
+
 ## 1. Design Goals
 - Create a fun, tactile, exploration-driven crafting loop.  
 - Support gathering, salvaging, refining, experimenting, recipe-based crafting, and blueprint-driven aspirational items.  
@@ -300,24 +323,32 @@ This preserves system stability.
 
 ### 11.1 Module Structure
 
-Following Codex/Quest naming patterns, the module uses a flat file structure:
+Following Codex/Quest naming patterns:
 
 ```
 scripts/
   ├── artificer.js                    (main entry point)
   ├── const.js                        (module constants)
   ├── settings.js                     (settings registration)
+  ├── api-artificer.js                (module API exports)
   │
   ├── schema-*.js                     (JSDoc type definitions)
-  ├── utility-*-parser.js             (HTML parsers for journal entries)
-  ├── manager-*.js                    (data managers)
+  ├── utility-artificer-item.js       (item creation, resolveItemByName)
+  ├── utility-artificer-import.js     (JSON import)
+  ├── utility-artificer-recipe-import.js
+  │
+  ├── cache/cache-items.js            (item cache: build, lookup, status)
+  ├── data/models/                    (ArtificerIngredient, Component, Essence, Recipe, Blueprint)
+  ├── data/storage/                   (IngredientStorage, RecipeStorage, BlueprintStorage)
+  ├── parsers/                        (parser-recipe.js, parser-blueprint.js)
+  ├── systems/                        (experimentation-engine.js, tag-manager.js)
+  │
+  ├── manager-*.js                    (facades over storage; refresh, getters)
   ├── panel-*.js                      (UI panels - ApplicationV2)
   ├── window-*.js                     (UI windows/forms - ApplicationV2)
-  ├── systems/experimentation-engine.js  (tag rules, crafting logic)
-  ├── api-artificer.js                (module API exports)
-  └── utils.js                        (utility functions)
+  └── utils/helpers.js
 
-resources/                             (JSON data files)
+resources/                             (JSON: translation-item.json, etc.)
 templates/                             (Handlebars templates)
 styles/                                (CSS files)
 ```
@@ -494,7 +525,52 @@ Following Codex/Quest patterns:
 - Import Items button (opens file picker or JSON paste dialog)
 - Integrated into existing Artificer menubar tool
 
-### 11.7 UI Components
+### 11.7 Item Cache Strategy
+
+The item cache provides fast name-based lookup for ingredients, recipe results, and containers. GM must click "Refresh Cache" to build it; this avoids implicit compendium scans on world load.
+
+#### Current Behavior (In-Memory)
+- Cache built on Refresh from configured compendia + world items
+- Keyed by normalized name; supports alias mapping via `itemTranslation` setting
+- `getFromCache(name)` returns full Item; `getAllItemsFromCache()` returns Item[]
+- IngredientStorage uses cache when available; otherwise notifies GM to build it
+
+#### Target: Persisted Lightweight Cache
+
+**Top-level document (persisted):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `schemaVersion` | `number` | Schema version for migrations (start at 1) |
+| `lastBuilt` | `string` | ISO 8601 timestamp when cache was built |
+| `compendiumIds` | `string[]` | Compendium IDs scanned (for cache validation) |
+| `records` | `Object<string, CacheRecord>` | Map of `uuid` → lightweight record |
+
+**Per-item record (`CacheRecord`):**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | `string` | Display name (canonical from source) |
+| `uuid` | `string` | Item UUID for `fromUuid()` lookups |
+| `img` | `string` | Image path |
+| `type` | `string` | Foundry item type (e.g. `consumable`, `equipment`) |
+| `dndType` | `string` | D&D consumable type (`potion`, `poison`, `scroll`, `oil`) from `system.type.subtype` |
+| `family` | `string` | From `flags.artificer.family` or derived from `dndType` for consumables |
+| `tags` | `string[]` | `[primaryTag, ...secondaryTags]` from flags |
+| `tier` | `number` | From flags, default 1 |
+| `rarity` | `string` | From flags (`Common`, `Very Rare`, etc.) |
+| `source` | `string` | Compendium pack ID or `"world"` |
+| `artificerType` | `string \| null` | `ingredient`, `component`, `essence`, `container`, or `null` |
+
+**Index (in-memory only):** Built at load from `records` + `resources/translation-item.json`. Normalized name and all aliases → `uuid`. Translation format: `{ "canonical": ["alias1", "alias2"], ... }`.
+
+**Flow:** Refresh Cache → scan compendia + world → build records → persist. World load → read persisted records → build name index → optionally pre-fetch Items to warm in-memory cache. Lookup: index → uuid → `fromUuid(uuid)` for full Item.
+
+**Related:** `scripts/cache/cache-items.js`, `resources/translation-item.json`, `itemTranslation` setting, `ingredientStorageSource`, `itemLookupOrder`.
+
+---
+
+### 11.8 UI Components
 
 **Crafting Window:**
 - Three-zone layout: ingredient list | crafting bench | feedback
@@ -572,8 +648,8 @@ Following Codex/Quest patterns:
 - **Status:** ✅ Decided
 
 **Q11: Item System Integration**
-- **Decision:** D&D 5e
-- **Rationale:** Primary target system for item structure and stats
+- **Decision:** D&D 5e (version 5.5+)
+- **Rationale:** Primary target system for item structure and stats; 5.5+ for schema compatibility
 - **Status:** ✅ Decided
 
 ### Nice to Have (Can Decide During Implementation)
@@ -600,30 +676,39 @@ Following Codex/Quest patterns:
 - Menubar integration (Artificer tool in middle zone)
 - Secondary bar (100px height, ready for content)
 - Blacksmith API integration
-- Resolve critical questions (Q1-Q6, Q11) ✅
+- Resolve critical and important questions (Q1–Q11) ✅
 - Phase 0: Foundation & Architecture Setup ✅
   - Folder structure (resources/, templates/)
   - Schema files, manager placeholders, module API
-- Phase 1: Item Creation & Import System ✅
+- Phase 1: Core Data System (major pieces) ✅
   - Core item creation utilities (`utility-artificer-item.js`)
   - Unified form (`window-artificer-item.js`), JSON import (`utility-artificer-import.js`)
-  - Menubar buttons for Create Item and Import Items
+  - Data models (Ingredient, Component, Essence, Recipe, Blueprint)
+  - Storage managers (ingredients, recipes, blueprints) with configurable compendium mapping
+  - TagManager
 - Crafting Window ✅
   - Three-zone layout (ingredient list | bench | feedback)
-  - Experimentation engine (tag-based rules, `systems/experimentation-engine.js`)
-  - Ingredient filtering (Artificer ingredients only), known combinations in feedback
-  - Seed Test Ingredients for GMs
+  - Crafter portrait/name in header; "Results" → "Details"
+  - Experimentation engine (tag-based rules)
+  - Ingredient filtering (Artificer ingredients only), known combinations
+  - Refresh Cache button
+- Item cache (in-memory) ✅
+  - GM-initiated refresh from compendia + world
+  - Name-based lookup, alias support via `itemTranslation` setting
+  - IngredientStorage uses cache when available; otherwise notifies GM
+- Settings: `itemLookupOrder`, `ingredientStorageSource`, `itemTranslation`
+- Rarity: Very Rare (D&D 5e standard; no "Epic")
 
 ### 🔄 In Progress
-- Recipe/Blueprint journal parser and browser
+- **Persisted Item Cache:** Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; D&D consumable → family mapping
+- Recipe/Blueprint journal parser and browser (parsers exist; UI integration ongoing)
 - Skill system, workstation system
-- **Experimentation Model (§7.0):** Quantities, solvent, process (temp/time) — planned, not yet implemented
 
 ### 📋 Next Steps
-1. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
-2. Recipe parser and browser
-3. Skill levels, workstation modifiers
-4. Blueprint multi-stage flow
+1. Persisted item cache (schema §11.7)
+2. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
+3. Recipe/Blueprint browser UI
+4. Skill levels, workstation modifiers
 
 ---
 
@@ -647,7 +732,7 @@ Items (Ingredients, Components, Essences) use a hybrid JSON structure:
       "primaryTag": "string",
       "secondaryTags": ["string"],
       "tier": 1,
-      "rarity": "Common|Uncommon|Rare|Epic|Legendary",
+      "rarity": "Common|Uncommon|Rare|Very Rare|Legendary",
       // Ingredient-specific:
       "family": "Herbs|Minerals|Gems|CreatureParts|Environmental",
       "quirk": "string|null",
@@ -691,15 +776,43 @@ This crafting system supports:
 
 ---
 
-## Notes
+## 16. Gaps, Open Items & Document Reconciliation
 
-- See `documentation/DEVELOPMENT_PLAN.md` for detailed phased implementation plan
-- Architecture decisions based on analysis of Coffee Pub Codex and Quest systems
-- All patterns leverage FoundryVTT native systems (journals, flags, compendiums) for maximum compatibility
+**This document is the canonical source** for architecture, decisions, and implementation status. Other docs (plan-artificer, overview, TODO) should align with it.
+
+### 16.1 Gaps & Issues to Address
+
+| Item | Description | Action |
+|------|-------------|--------|
+| **Custom ingredients in journals** | overview.md and storage-ingredients `_loadFromJournals` imply journal-based custom ingredients. Not implemented (TODO stub). | Decide: implement journal ingredient parsing, or remove from docs. |
+| **D&D version** | Architecture says D&D 5e; user rules say 5.5+. | Explicitly target D&D 5e 5.5+ in §11 and schema docs. |
+| **Persisted cache storage** | §11.7 defines schema but not where to persist (journal vs world flags). | Decide during implementation; document in §11.7 once chosen. |
+| **Experimentation §7.0** | Quantities, solvent, process (temp/time) are designed but not implemented. | Phase 2; tag-based matching works, full model is enhancement. |
+
+### 16.2 Old/Outdated Decisions
+
+- **Rarity "Epic"** — Replaced with "Very Rare" per D&D 5e; schema and docs updated.
+- **Phase 1 "~60% complete"** — Many Phase 1 items are done (models, storage, TagManager, crafting window, cache); Item Creation UI and initial data set remain.
+
+### 16.3 Related Documents
+
+| Document | Purpose | Relationship |
+|----------|---------|--------------|
+| **architecture-artificer.md** | Canonical architecture, decisions, schema | **Source of truth** |
+| **TODO.md** | Active task list, next steps | Tracks current focus; references architecture |
+| **plan-artificer.md** | Phased breakdown (Phase 0–14), MVP path, technical notes | Merged from DEVELOPMENT_PLAN + IMPLEMENTATION_ROADMAP |
+| **overview.md** | User-facing system explanation | Product/design; correct any storage/tier mismatches per §11.2 |
+| **recipie-migration.md** | Recipe import schema | Reference for recipe structure |
+
+### 16.4 Document Alignment Checklist
+
+- [ ] overview.md Tier 2: Remove or clarify "Custom Ingredients (Journal Pages)" — journals are recipes/blueprints; ingredients are Items (compendium/world).
+- [x] Consolidated DEVELOPMENT_PLAN and IMPLEMENTATION_ROADMAP into plan-artificer.md.
+- [ ] Add `scripts/cache/` and `scripts/data/` to any doc that lists module structure.
 
 ---
 
-## 16. Architecture Review (Alignment Check)
+## 17. Architecture Review (Alignment Check)
 
 **Purpose:** Ensure the architecture document stays aligned with the implementation and the intended design.
 
@@ -713,3 +826,13 @@ This crafting system supports:
 
 ### Data Conventions
 - **Flags:** Architecture refers to `flags.artificer.*`; implementation uses `flags[MODULE.ID]` (e.g. `flags["coffee-pub-artificer"]`). Same data, different key.
+
+---
+
+## Notes
+
+- **architecture-artificer.md** is the canonical source for architecture and decisions.
+- See `documentation/TODO.md` for current task focus.
+- See `documentation/plan-artificer.md` for phased implementation detail.
+- Architecture decisions based on Coffee Pub Codex and Quest systems.
+- All patterns use FoundryVTT v13+ and ApplicationV2.

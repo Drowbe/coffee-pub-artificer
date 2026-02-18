@@ -1,5 +1,31 @@
 # TODO - Active Issues and Future Tasks
 
+## IN PROGRESS / CURRENT FOCUS
+
+### Next Step: Persisted Lightweight Item Cache
+
+**Goal:** Replace in-memory item cache with a persisted cache for fast name-based lookup, fewer compendium calls, and alias support.
+
+**Tasks:**
+- [ ] Replace in-memory cache with persisted storage (journal or world flags)
+- [ ] Add cache schema: `name`, `uuid`, `img`, `type`, `dndType`, `family`, `tags`, `tier`, `rarity`, `source`
+- [ ] Include schema version and last-built timestamp
+- [ ] Integrate `resources/translation-item.json`: index canonical name + all aliases
+- [ ] Implement lookup: normalized name → index → record
+- [ ] Map D&D consumable type to family (potion, poison, food, oil, etc.)
+- [ ] Support overlay metadata for core items
+- [ ] Wire cache refresh to existing "Refresh Cache" button in crafting UI
+
+**Related files:** `scripts/cache/cache-items.js`, `scripts/data/storage/storage-ingredients.js`, `scripts/utility-artificer-item.js`, `scripts/settings.js`, `resources/translation-item.json`
+
+### Recently Completed
+- [x] Rarity: EPIC → VERY_RARE (Very Rare) per D&D 5e
+- [x] IngredientStorage: use item cache when available, else notify GM
+- [x] Crafting window: crafter portrait/name in header, "Results" → "Details"
+- [x] Ingredient settings: `itemLookupOrder`, `ingredientStorageSource`
+
+---
+
 ## ACTIVE ISSUES
 
 ### CRITICAL PRIORITY
@@ -163,7 +189,7 @@
 ## Notes
 
 - Questions marked with **Q##** reference questions in `documentation/architecture-artificer.md` section 12
-- Phases reference `documentation/DEVELOPMENT_PLAN.md` for detailed task breakdowns
+- Phases reference `documentation/plan-artificer.md` for detailed task breakdowns
 - Critical priority items are blockers - cannot proceed without decisions
 - High priority items form the MVP (core crafting functionality)
 - Medium priority items enhance the core system

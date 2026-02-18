@@ -1,5 +1,7 @@
 # Coffee Pub Artificer - System Explanation
 
+> **For implementation:** Architecture, data storage, and technical decisions are in `documentation/architecture-artificer.md`. This document explains the system for users and designers.
+
 ## Overview: How the Crafting System Works
 
 The Coffee Pub Artificer system is a **tag-based crafting system** that encourages experimentation and discovery. Players gather materials, combine them based on their tags, and create items through experimentation, recipes, or multi-stage blueprints.
@@ -474,11 +476,13 @@ TIER 2: World Content (Journals)
     ┌─────────────────────────────────────┐
     │ Recipes (Journal Pages)             │
     │ Blueprints (Journal Pages)          │
-    │ Custom Ingredients (Journal Pages)  │
     │                                      │
     │ Human-editable HTML                 │
     │ Parser-based architecture           │
     │ Built-in permissions                │
+    │                                      │
+    │ Note: Ingredients are Items         │
+    │ (compendium + world), not journals  │
     └─────────────────────────────────────┘
               │
               ▼ (Parsed into)
