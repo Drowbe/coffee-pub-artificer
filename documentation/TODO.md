@@ -2,6 +2,19 @@
 
 ## IN PROGRESS / CURRENT FOCUS
 
+### Data Model: TYPE > FAMILY > TRAITS (Priority)
+
+**Goal:** Adopt the single hierarchy (TYPE → FAMILY → TRAITS); remove primary tag, secondary tags, and quirk as separate fields. Family is identity; traits are modifiers.
+
+**Tasks:**
+- [ ] Update schemas (schema-ingredients, schema-components, schema-essences) to use `type` (Component|Creation|Tool), `family` (by type), `traits` (array).
+- [ ] Update item form UI: TYPE select, FAMILY select (options by type), TRAITS tagging UI (no primary/secondary/quirk).
+- [ ] Update utility-artificer-item.js, item-sheet-artificer.js, cache, and any code reading `primaryTag`/`secondaryTags`/`quirk` to use `family` + `traits`.
+- [ ] **Migration macro:** Create one-time Foundry macro to convert existing items (hundreds) from legacy flags to new shape. See `documentation/plan-artificer.md` §2.6 and `documentation/architecture-artificer.md` §14.2. Run on backup/copy first.
+- [ ] Document macro location and usage for GMs.
+
+**Related files:** All schema-*.js, window-artificer-item.js, item-sheet-artificer.js, utility-artificer-item.js, cache, TagManager/systems.
+
 ### Persisted Lightweight Item Cache ✅
 
 **Goal:** Replace in-memory item cache with a persisted cache for fast name-based lookup, fewer compendium calls, and alias support.
@@ -77,12 +90,12 @@
   - [ ] Example recipes (2-3)
   - [ ] Example blueprint (1)
 
-**Phase 2: Tag Logic & Experimentation Engine**
-- [ ] Implement tag combination algorithm
+**Phase 2: Trait Logic & Experimentation Engine**
+- [ ] Implement family + trait combination algorithm (see plan §6)
 - [ ] Create `ExperimentationEngine` class
-- [ ] Implement tag discovery system (track usage per actor, progressive reveal)
-- [ ] Implement item generation from tag combinations
-- [ ] Add quality/stability calculation (based on skill, workstation, tier, rarity)
+- [ ] Implement trait discovery (optional: track usage per actor, progressive reveal)
+- [ ] Implement item generation from family + trait combinations
+- [ ] Add quality/stability calculation (based on skill, workstation, rarity)
 
 **Phase 3: Basic Crafting UI**
 - [ ] Create crafting window (ApplicationV2)
@@ -144,7 +157,7 @@
 **Integration Features:**
 - [ ] Recipe/Blueprint export/import system
 - [ ] Community content format and sharing
-- [ ] Notification integration (tag discoveries, skill increases, crafting events)
+- [ ] Notification integration (trait discoveries, skill increases, crafting events)
 
 ## DEFERRED
 

@@ -62,56 +62,80 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 **Blocking:** This work must be completed before any other implementation. It defines how items are classified, edited, and used across the module.
 
-### 2.5.1 Three-Category System
+### 2.5.1 Data Hierarchy: TYPE > FAMILY > TRAITS
 
-Items are organized into three main categories:
+Single, non-redundant hierarchy. **Family** is the identity; **traits** are modifiers. There is no separate "primary tag"—family fills that role.
 
-| Category   | Description                               | Sub-types                                                                 |
-|-----------|-------------------------------------------|----------------------------------------------------------------------------|
-| Components | Gathered, harvested, or created inputs    | Creature Parts, Environmental, Essences, Gems, Minerals, Plants            |
-| Creations  | Results of recipes/blueprints             | Food, Materials, Poisons, Potions                                          |
-| Tools      | Used for crafting                         | Apparatus (beaker, mortar), Containers (vial, herb bag)                    |
+| TYPE       | Description | FAMILIES (examples) |
+|-----------|-------------|----------------------|
+| **Component** | Gathered, harvested, or refined inputs | Creature Part, Environmental, Essence, Gem, Mineral, Plant |
+| **Creation**  | Results of recipes/blueprints | Food, Material, Poison, Potion |
+| **Tool**      | Used for crafting | Apparatus, Container |
 
-**Terminology:** Use **Creature Parts** (not "Creatures") for components harvested from creatures.
+**TRAITS:** Modifiers (e.g. Floral, Medicinal, Arcane) that do not repeat type or family. Stored as a single array; old "quirk" is folded into traits.
+
+**Example:** `[COMPONENT] > [PLANT] > [FLORAL, MEDICINAL, ARCANE]`
+
+**Terminology:** Use **Creature Part** / **Creature Parts** for components harvested from creatures.
 
 ### 2.5.2 Skill Level (Required) vs Tier (Redundant)
 
-- **skillLevel (required):** Minimum crafting skill level required to create, use, or work with the item. This is a functional requirement, not quality.
-- **Tier:** If tier represents only rarity/difficulty, it is redundant—we already have rarity. We may not need tier; we **100% need skillLevel**. Tier can be dropped or repurposed in favor of skillLevel.
+- **skillLevel (required):** Minimum crafting skill level required to create, use, or work with the item.
+- **Tier:** Redundant with rarity; can be dropped or repurposed.
 
-### 2.5.3 Hierarchy: Category → Type → Family
+### 2.5.3 Item Editing Strategy: Artificer Bar + Partial Editor
 
-- **Category:** Components | Creations | Tools
-- **Type:** Sub-type within the category (e.g., Creature Parts, Potions, Apparatus)
-- **Family:** Tag-family grouping (e.g., INGREDIENT_FAMILIES: Herbs, Minerals, Gems, CreatureParts, Environmental)
+- **Artificer bar on all items:** Every item sheet shows an "Artificer" section; non-Artificer items offer **Convert to Artificer item**.
+- **We only edit our stuff:** Edit only Artificer fields (type, family, traits, skillLevel, biomes, etc.); D&D 5e item sheet handles the rest.
 
-### 2.5.4 Item Editing Strategy: Artificer Bar + Partial Editor
+### 2.5.4 Item Form Updates (Artificer-Only Fields)
 
-**Goal:** Add Artificer data and tags to items without reinventing the full item editor.
+1. **TYPE:** Component | Creation | Tool (replaces old ingredient/component/essence/apparatus/container/tool).
+2. **FAMILY:** Single select; options depend on TYPE (see §2.5.1).
+3. **TRAITS:** Tagging UI (input + pills); options from trait lists; no primary/secondary/quirk—just traits.
+4. **Consumable subtype:** Expose D&D 5e Consumable subtype when item type is Consumable.
 
-- **Artificer bar on all items:** Every item sheet can show an "Artificer" section (tab, bar, or block). If the item is not yet an Artificer item, the section offers a **Convert to Artificer item** action.
-- **Convert to Artificer item:** Designating an item as an Artificer item attaches our flags and exposes the Artificer properties UI. The core item (name, description, weight, cost, rarity, etc.) remains edited via the standard D&D 5e item sheet.
-- **We only edit our stuff:** The module provides editors only for Artificer-specific fields (tags, family, skillLevel, type/category, biomes, etc.). We do not duplicate or replace support for every item field—the item sheet does the heavy lifting.
-- **Benefits:** Single source of truth for item basics, no incomplete or inconsistent support for system fields, simpler maintenance, and a clear "ARTIFICER PROPERTIES" block (as in the current Bloodroot-style sheet) so users know where our data lives.
+### 2.5.5 Implementation Checklist
 
-### 2.5.5 Item Form Updates (Artificer-Only Fields)
-
-1. **Artificer type options:** Add Apparatus, Container, Tool (alongside Ingredient, Component, Essence).
-2. **Consumable subtype:** Expose D&D 5e Consumable subtype when the item type is Consumable (read-only or link to system field).
-3. **Tags:** Replace free-text tag input with TagManager-driven dropdowns.
-4. **Family:** Use "Creature Parts" in schema and UI; align family values with the three-category system.
-
-### 2.5.6 Implementation Checklist
-
-- [ ] **Item editing strategy:** Artificer bar/section on all item sheets; "Convert to Artificer item" for non-Artificer items; edit only Artificer-specific fields (see §2.5.4).
-- [ ] Add `skillLevel` to item flags/schema (crafting requirement).
-- [ ] Decide fate of tier: drop or repurpose; do not conflate with rarity.
-- [ ] Rename "Creatures" → "Creature Parts" in schema (e.g. `schema-ingredients.js` INGREDIENT_FAMILIES).
-- [ ] Item form: add Apparatus, Container, Tool type options.
+- [ ] **Item editing strategy:** Artificer bar/section; Convert to Artificer; edit only Artificer fields (see §2.5.3).
+- [ ] Add `skillLevel` to item flags/schema.
+- [ ] Decide fate of tier.
+- [ ] Implement TYPE > FAMILY > TRAITS in schemas and UI (type, family, traits; remove primaryTag, secondaryTags, quirk).
+- [ ] Item form: TYPE (Component/Creation/Tool), FAMILY (by type), TRAITS (tagging UI).
 - [ ] Item form: expose Consumable subtype when applicable.
-- [x] Item form: tag dropdowns via TagManager.
-- [ ] Align category → type → family hierarchy across schemas and UI.
-- [ ] Update documentation (architecture, schemas) to reflect the three-category system.
+- [x] Item form: tagging UI for traits (replaces primary/secondary dropdowns).
+- [ ] **Migration macro:** One-time migration of existing items (see §2.6).
+- [ ] Update documentation to reflect TYPE > FAMILY > TRAITS.
+
+---
+
+## 2.6 Migration: Legacy Data → TYPE > FAMILY > TRAITS
+
+**Purpose:** Convert hundreds of existing items from the old flag shape to the new hierarchy without data loss.
+
+### 2.6.1 What the Macro Does
+
+1. **Scope:** All Items in the world and/or in configured Artificer compendia that have `flags[MODULE.ID]` (or `flags.artificer`) with legacy fields.
+2. **Detect legacy:** Presence of `primaryTag` or `secondaryTags` or `quirk` (or old `type` values: ingredient, component, essence, apparatus, container, tool).
+3. **Compute new values:**
+   - **TYPE:** ingredient | component | essence → Component; apparatus | container | tool → Tool; (Creation if we have a creation type).
+   - **FAMILY:** Map existing `family` to new family list (e.g. Herbs → Plant, Minerals → Mineral, CreatureParts → Creature Part, Environmental → Environmental, Gems → Gem). For components with componentType/affinity, map to Essence or appropriate family. Default if missing.
+   - **TRAITS:** Merge into one array: [primaryTag (if not same as family), ...secondaryTags, quirk]. Dedupe; remove any entry that equals the chosen family name; trim.
+4. **Write:** Set `type`, `family`, `traits`; remove `primaryTag`, `secondaryTags`, `quirk`.
+5. **Idempotency:** Skip items that already have `traits` and no `primaryTag`/`secondaryTags` (already migrated).
+6. **Reporting:** Log or return count of migrated items and any errors/skips.
+
+### 2.6.2 Migration Macro Tasks (Implementation)
+
+- [ ] Create a Foundry macro (or module script) that runs in context of the world.
+- [ ] Iterate target items (world items + optionally compendium items from settings).
+- [ ] Implement mapping tables: old family → new family; old type → new TYPE.
+- [ ] Implement merge + dedupe for traits from primaryTag, secondaryTags, quirk.
+- [ ] Perform update in place (item.update) or collect updates and batch.
+- [ ] Add idempotency check; skip already-migrated items.
+- [ ] Add backup recommendation in macro description / docs (e.g. export items or clone world before run).
+- [ ] Test on a copy of the world with a subset of items first.
+- [ ] Document macro in user docs (where to find it, how to run, when to run).
 
 ---
 
@@ -262,14 +286,15 @@ Items are organized into three main categories:
 
 ## 5. Immediate Next Steps
 
-**First:** Complete **§2.5 Organizing Principles & Item Form** (blocking). See the checklist in §2.5.6.
+**First:** Complete **§2.5 Organizing Principles & Item Form** (blocking). See the checklist in §2.5.5.
 
-**Then** (see `documentation/TODO.md`):
+**Then:**
 
-1. **Persisted Item Cache** — Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; D&D consumable → family mapping.
-2. **Initial Data Set** — Starter ingredients, components, essences, example recipes/blueprint.
-3. **Recipe/Blueprint Browser** — Integrate parsers with crafting window.
-4. **§7.0 Experimentation Model** — Quantities, solvent, process (temp/time) — enhancement to tag-based matching.
+1. **§2.6 Migration Macro** — Implement and run one-time migration of existing items from legacy flags (primaryTag, secondaryTags, quirk) to TYPE > FAMILY > TRAITS. Run on a backup/copy first.
+2. **Persisted Item Cache** — Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; align cache schema with type/family/traits.
+3. **Initial Data Set** — Starter components, creations, tools using new hierarchy.
+4. **Recipe/Blueprint Browser** — Integrate parsers with crafting window.
+5. **§7.0 Experimentation Model** — Quantities, solvent, process (temp/time) — enhancement to family+trait matching.
 
 ---
 
@@ -281,12 +306,12 @@ Items are organized into three main categories:
 - **Actor flags:** Skills, tag discoveries, blueprint progress, unlocked recipes
 - **Scene/World flags:** Workstations, gathering nodes, biome data
 
-### Tag Combination Algorithm
-1. Collect tags from input ingredients
-2. Categorize (primary, secondary, element, structural)
+### Trait Combination Algorithm (crafting)
+1. Collect family + traits from input components
+2. Categorize (family drives broad category; traits drive element, behavior, structural)
 3. Apply priority-based matching rules
-4. Generate item type from dominant tags
-5. Apply modifiers from secondary tags
+4. Generate result type from family + dominant traits
+5. Apply modifiers from remaining traits
 6. Fallback to sludge if no match
 
 ### Integration Points

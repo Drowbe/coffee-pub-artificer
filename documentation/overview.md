@@ -38,111 +38,83 @@ The Coffee Pub Artificer system is a **tag-based crafting system** that encourag
 
 ---
 
-## 📦 Material Types & Hierarchy
+## 📦 Item Data Hierarchy: TYPE > FAMILY > TRAITS
+
+Every Artificer item is organized by a single hierarchy. **Family** is the identity; **traits** are modifiers (no separate "primary tag").
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    MATERIAL TAXONOMY                        │
+│                    TYPE > FAMILY > TRAITS                   │
 └─────────────────────────────────────────────────────────────┘
 
-RAW MATERIALS (Ingredients)
-├── Herbs & Plants
-│   └── Tags: Herb, Floral, Medicinal, Toxic
-├── Minerals & Ores
-│   └── Tags: Metal, Ore, Alloy-Friendly
-├── Gems & Crystals
-│   └── Tags: Crystal, Resonant, Arcane
-├── Creature Parts
-│   └── Tags: MonsterBits, Bone, Venom
-└── Environmental
-    └── Tags: Water, Fire, Earth, Air, Corrupted
+TYPE: Component | Creation | Tool
 
-        │
-        ▼ (Salvage/Refine)
+COMPONENTS (gathered, harvested, or refined inputs)
+├── Family: Plant      → Traits: Floral, Medicinal, Toxic, Arcane, ...
+├── Family: Mineral    → Traits: Ore, Alloy-Friendly, Dense, ...
+├── Family: Gem        → Traits: Resonant, Arcane, Brilliant, ...
+├── Family: Creature Part → Traits: Bone, Venom, Scale, ...
+├── Family: Environmental → Traits: Water, Fire, Earth, Air, ...
+└── Family: Essence    → Traits: Heat, Cold, Electric, Life, Shadow, ...
 
-COMPONENTS (Refined Materials)
-├── Metals: Ingots, Plates, Wires
-├── Alchemical: Extracts, Oils, Powders
-├── Monster: Hardened Bone, Spirit Ash
-├── Arcane: Mana Thread, Runic Ink
-└── Structural: Haft Cores, Leather Straps
+CREATIONS (results of recipes/blueprints)
+├── Family: Food, Material, Poison, Potion
+└── Traits from combined components
 
-        │
-        ▼ (Combine)
-
-ESSENCES (Magical Affinities)
-├── Heat, Cold, Electric
-├── Light, Shadow
-├── Life, Death
-└── Time, Mind
+TOOLS (used for crafting)
+├── Family: Apparatus (beaker, mortar)
+└── Family: Container (vial, herb bag)
 
         │
         ▼ (Craft)
 
-FINISHED ITEMS
-├── Weapons
-├── Armor
-├── Consumables (Potions, etc.)
-├── Tools
-└── Arcane Devices
+FINISHED ITEMS (Creations)
+├── Weapons, Armor
+├── Consumables (Potions, Food, etc.)
+├── Tools, Arcane Devices
+└── ...
 ```
 
 ---
 
-## 🏷️ Tag System: The Heart of Crafting
+## 🏷️ Family & Traits: The Heart of Crafting
 
-### How Tags Work
+### How It Works
 
-Every ingredient has **2-5 tags** that describe what it is and what it does:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    TAG STRUCTURE                             │
-└─────────────────────────────────────────────────────────────┘
-
-INGREDIENT: Lavender
-├── Primary Tag: Herb (always visible)
-├── Secondary Tags: Floral, Medicinal (revealed after 3 uses)
-└── Quirk: Soothing (revealed after 5 uses)
-
-INGREDIENT: Iron Ore
-├── Primary Tag: Metal
-├── Secondary Tags: Ore, Alloy-Friendly
-└── Quirk: (none)
-
-ESSENCE: Life Essence
-└── Tags: Life, Light, Healing
-```
-
-### Tag Discovery (Progressive Reveal)
+Each item has a **TYPE**, a **FAMILY** (identity), and **TRAITS** (modifiers). Traits don’t repeat the family name.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              TAG DISCOVERY PROGRESSION                       │
+│                    FAMILY + TRAITS                           │
 └─────────────────────────────────────────────────────────────┘
 
-Use 1:  [Herb] ??? ???
-        └─ Primary tag revealed
+COMPONENT: Lavender
+├── Type: Component
+├── Family: Plant
+└── Traits: Floral, Medicinal, Soothing
 
-Use 3:  [Herb] [Floral] [Medicinal] ???
-        └─ Secondary tags revealed
+COMPONENT: Iron Ore
+├── Type: Component
+├── Family: Mineral
+└── Traits: Ore, Alloy-Friendly
 
-Use 5:  [Herb] [Floral] [Medicinal] [Soothing]
-        └─ Quirk revealed (if present)
+COMPONENT: Life Essence
+├── Type: Component
+├── Family: Essence
+└── Traits: Life, Light, Healing
 ```
 
-**Why This Matters:**
-- Encourages experimentation (players want to discover tags)
-- Creates mystery and discovery
-- Makes ingredients feel more valuable as you learn about them
+### Trait Discovery (Optional)
+
+Traits can be revealed gradually (e.g. after 1, 3, or 5 uses) so players discover what an ingredient does over time. That’s configured per trait or globally; the data model is just “traits” (no separate quirk field).
 
 ---
 
-## 🔬 Experimentation: Tag-Based Crafting
+## 🔬 Experimentation: Family + Trait Crafting
 
 ### How Experimentation Works
 
-Players combine **up to 3 ingredients** and the system uses **tag matching** to determine the result:
+Players combine **up to 3 components** and the system uses **family + traits** to determine the result:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -157,12 +129,12 @@ Step 1: Player Selects Ingredients
     │ [Medicinal] │  │ [Healing]   │  │             │
     └─────────────┘  └─────────────┘  └─────────────┘
 
-Step 2: System Analyzes Tags
-    Collect all tags: Herb, Floral, Medicinal, Life, Light, Healing
-    └─ Match against tag combination rules
+Step 2: System Analyzes Family + Traits
+    Collect family and traits: Plant + Floral, Medicinal; Essence + Life, Light, Healing
+    └─ Match against combination rules
 
 Step 3: Determine Result
-    Tags suggest: Consumable + Healing + Life
+    Family + traits suggest: Consumable + Healing + Life
     └─ Result: Healing Potion (or variant)
 
 Step 4: Calculate Quality
@@ -176,19 +148,19 @@ Step 5: Create Item
     └─ Add to player inventory
 ```
 
-### Tag Combination Logic
+### Family + Trait Combination Logic
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              TAG COMBINATION RULES                           │
+│              COMBINATION RULES                               │
 └─────────────────────────────────────────────────────────────┘
 
-BASE MATERIAL (Raw or Component)
-    Determines: Item category (weapon, armor, consumable, etc.)
+FAMILY (identity)
+    Determines: Broad item category
     Examples:
-    - Metal + Ore → Weapon
-    - Herb + Floral → Consumable
-    - Crystal + Arcane → Arcane Device
+    - Mineral + Ore trait → Weapon
+    - Plant + Medicinal trait → Consumable
+    - Gem + Arcane trait → Arcane Device
 
 ESSENCE/AFFINITY (Optional)
     Determines: Elemental properties, magical effects
@@ -206,13 +178,13 @@ STRUCTURAL COMPONENT (Optional)
 
 RESULT DETERMINATION:
     ┌─────────────────────────────────────┐
-    │ 1. Match tags to item patterns       │
-    │ 2. Determine item type               │
-    │ 3. Apply essence effects             │
-    │ 4. Calculate quality                 │
-    │ 5. Generate item stats               │
-    │ 6. If no match → Create "Sludge"     │
-    │    (never fails completely)          │
+    │ 1. Match family + traits to patterns  │
+    │ 2. Determine item type                │
+    │ 3. Apply essence effects              │
+    │ 4. Calculate quality                  │
+    │ 5. Generate item stats                │
+    │ 6. If no match → Create "Sludge"      │
+    │    (never fails completely)           │
     └─────────────────────────────────────┘
 ```
 
@@ -224,17 +196,17 @@ RESULT DETERMINATION:
 └─────────────────────────────────────────────────────────────┘
 
 Player Combines:
-    Ingredient 1: Lavender
-        Tags: [Herb] [Floral] [Medicinal]
+    Component 1: Lavender
+        Family: Plant | Traits: Floral, Medicinal
     
-    Ingredient 2: Life Essence
-        Tags: [Life] [Light] [Healing]
+    Component 2: Life Essence
+        Family: Essence | Traits: Life, Light, Healing
 
 System Analysis:
     ┌─────────────────────────────────────┐
-    │ Tag Match:                           │
-    │ - Herb + Medicinal → Consumable      │
-    │ - Life + Healing → Healing effect    │
+    │ Family + Trait Match:                │
+    │ - Plant + Medicinal → Consumable     │
+    │ - Life + Healing → Healing effect   │
     │ - Floral → Potion variant            │
     │                                      │
     │ Result: Healing Potion               │
@@ -245,7 +217,7 @@ Outcome:
     ✅ Created: "Floral Healing Potion"
     ✅ Restores 2d4+2 HP
     ✅ Player gains XP in Alchemy skill
-    ✅ Tag discovery progress on Lavender
+    ✅ Trait discovery progress on Lavender
 ```
 
 ---
@@ -417,15 +389,14 @@ SESSION 1: Discovery
     │                                      │
     │ Player experiments:                │
     │ └─ Combines: Lavender + ???         │
-    │ └─ Discovers: Primary tag "Herb"    │
+    │ └─ Discovers: Family Plant + traits │
     │ └─ Creates: Basic Herb Potion       │
     └─────────────────────────────────────┘
 
 SESSION 2: Learning
     ┌─────────────────────────────────────┐
     │ Player uses Lavender 3 more times   │
-    │ └─ Discovers: "Floral" tag          │
-    │ └─ Discovers: "Medicinal" tag       │
+    │ └─ Discovers: traits Floral, Medicinal │
     │                                      │
     │ Player finds recipe in book:        │
     │ └─ "Healing Potion" recipe          │
@@ -437,7 +408,7 @@ SESSION 2: Learning
 SESSION 3: Mastery
     ┌─────────────────────────────────────┐
     │ Player uses Lavender 5+ times       │
-    │ └─ Discovers: "Soothing" quirk      │
+    │ └─ Discovers: trait Soothing        │
     │                                      │
     │ Player finds blueprint:            │
     │ └─ "The Arcanic Wayfinder"          │
@@ -763,10 +734,10 @@ STEP 5: Blueprint Discovery
 
 ## 🔍 Key Concepts Summary
 
-### 1. **Tags Are Everything**
-   - Tags determine what you can craft
-   - Tags reveal gradually (encourages experimentation)
-   - Tags create predictable patterns (no spreadsheets needed)
+### 1. **Family + Traits Drive Crafting**
+   - Family and traits determine what you can craft
+   - Traits can reveal gradually (encourages experimentation)
+   - Family + traits create predictable patterns (no spreadsheets needed)
 
 ### 2. **Three Crafting Methods**
    - **Experimentation**: Free-form, discover new things
@@ -774,8 +745,8 @@ STEP 5: Blueprint Discovery
    - **Blueprints**: Multi-stage, narrative-driven, aspirational
 
 ### 3. **Progressive Discovery**
-   - Start with unknown ingredients
-   - Discover tags through use
+   - Start with unknown components
+   - Discover traits (and family) through use
    - Unlock recipes through exploration
    - Complete blueprints through dedication
 
@@ -802,14 +773,14 @@ NEW PLAYER:
     ┌─────────────────────────────────────┐
     │ 1. Finds unknown ingredient         │
     │ 2. Experiments blindly              │
-    │ 3. Discovers primary tag             │
-    │ 4. Creates first item               │
-    │ 5. Learns: "Tags matter!"           │
+    │ 3. Discovers family + traits          │
+    │ 4. Creates first item                 │
+    │ 5. Learns: "Family + traits matter!" │
     └─────────────────────────────────────┘
 
 EXPERIENCED PLAYER:
     ┌─────────────────────────────────────┐
-    │ 1. Knows ingredient tags             │
+    │ 1. Knows component family + traits   │
     │ 2. Plans combinations               │
     │ 3. Uses recipes for efficiency      │
     │ 4. Works on blueprints               │
@@ -833,13 +804,13 @@ MASTER CRAFTER:
 **Why This System Works:**
 
 1. **No Spreadsheets Needed**
-   - Tags are intuitive (Herb + Medicinal = Potion)
+   - Family + traits are intuitive (Plant + Medicinal = Potion)
    - Patterns emerge naturally
    - No need to look up tables
 
 2. **Encourages Exploration**
    - Unknown ingredients create mystery
-   - Tag discovery rewards experimentation
+   - Trait discovery rewards experimentation
    - Recipes found in world (books, NPCs, dungeons)
 
 3. **Scales with Player**
@@ -853,7 +824,7 @@ MASTER CRAFTER:
    - Gathering encourages travel
 
 5. **Community Friendly**
-   - Clear tag conventions
+   - Clear family + trait conventions
    - Easy to add content
    - Expandable system
 

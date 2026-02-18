@@ -9,13 +9,15 @@
 
 **The core loop:** Gather → Salvage → Experiment → (Recipes & Blueprints) → Crafted Items. Experimentation combines up to 3 ingredients; tag matching determines the result. Recipes give predictable outcomes; blueprints are multi-stage narrative projects.
 
-**Material hierarchy:**
-- **Raw Materials** (Ingredients): Herbs, Minerals, Gems, Creature Parts, Environmental — each with 2–5 tags
-- **Components**: Refined materials (Ingots, Extracts, Bone Shards, Mana Thread, etc.)
-- **Essences**: Magical affinities (Heat, Cold, Life, Shadow, etc.)
-- **Finished Items**: Weapons, armor, consumables, tools, arcane devices
+**Item data hierarchy (organizing principle):**
+- **TYPE** → **FAMILY** → **TRAITS**
+- **TYPE:** Component | Creation | Tool (the top-level bucket)
+- **FAMILY:** Identity within the type (e.g. Plant, Mineral, Potion, Apparatus); depends on TYPE
+- **TRAITS:** Modifiers that refine behavior/variant/quality (e.g. Floral, Medicinal, Arcane); do not repeat type or family
 
-**Tags:** Each ingredient has primary tag, 1–2 secondary tags, and optional quirk. Tags reveal progressively (1 use → primary; 3 uses → secondary; 5 uses → quirk). Tags determine item category, elemental effects, and quality.
+**Example:** `[COMPONENT] > [PLANT] > [FLORAL, MEDICINAL, ARCANE]`
+
+**Traits** determine crafting outcome (item category, elemental effects, behavior, variant). Traits may be revealed progressively (e.g. after N uses) for discovery.
 
 **Three crafting methods:**
 1. **Experimentation** — Free-form; tag combination rules; may produce sludge if no match
@@ -69,98 +71,77 @@ Blueprints represent multi-stage, aspirational crafting tied to narrative arcs.
 
 ---
 
-## 3. Ingredient Taxonomy
+## 3. Item Data Hierarchy: TYPE > FAMILY > TRAITS
 
-### 3.1 Raw Materials  
-Gathered directly from the world. They support exploration, ecology, and travel.
+All Artificer items are organized by a single, non-redundant hierarchy. **Family** is the identity; **traits** are modifiers. There is no separate "primary tag"—family fills that role.
 
-**Families**
-- Herbs & Plants  
-- Minerals & Ores  
-- Gems & Crystals  
-- Creature Parts  
-- Environmental Materials  
+### 3.1 TYPE (Top-Level)
 
-**Tag Examples**
-- Herb, Floral, Medicinal, Toxic  
-- Metal, Ore, Alloy-Friendly  
-- Crystal, Resonant, Arcane  
-- MonsterBits, Bone, Venom  
-- Water, Fire, Earth, Air, Corrupted  
-- Biome: Alpine, Swamp, Cavern, Desert  
+| TYPE       | Description |
+|-----------|-------------|
+| **Component** | Gathered, harvested, or refined inputs used in crafting |
+| **Creation**  | Results of recipes/blueprints (crafted items) |
+| **Tool**      | Used for crafting (apparatus, containers) |
 
-**Rules**
-- 1 primary tag  
-- 1–2 secondary tags  
-- Optional quirk (rare, volatile, soothing)
+### 3.2 FAMILY (Depends on TYPE)
 
----
+**Components:**
+- Creature Part, Environmental, Essence, Gem, Mineral, Plant
 
-### 3.2 Components (Refined Materials)  
-Predictable intermediate items used for structured crafting.
+**Creations:**
+- Food, Material, Poison, Potion
 
-**Types**
-- Metals: Ingots, Plates, Wires  
-- Alchemical Components: Extracts, Oils, Powders  
-- Monster Components: Hardened Bone Shard, Spirit Ash  
-- Arcane Components: Mana Thread, Runic Ink  
-- Structural Components: Haft Cores, Leather Straps  
+**Tools:**
+- Apparatus, Container
 
-**Tags**
-Refined, Alloy, Stabilized, Binding, Reactive, Haft, Plate
+*Terminology:* Use **Creature Part** (singular) or **Creature Parts** for components harvested from creatures.
 
----
+### 3.3 TRAITS
 
-### 3.3 Essences & Affinities  
-Magical or conceptual energies that determine item behavior.
+Traits are modifiers that describe behavior, variant, or quality. They **must not repeat** the type or family name.
 
-**Examples**
-- Essence of Heat  
-- Essence of Frost  
-- Storm Affinity  
-- Shadow Affinity  
-- Life Essence  
-- Decay Essence  
+**Examples (by context):**
+- Plant components: Floral, Medicinal, Toxic, Aromatic, Arcane
+- Mineral components: Ore, Alloy-Friendly, Dense, Malleable
+- Essence components: Heat, Cold, Electric, Light, Shadow, Life, Death
+- Creations: modifiers from combined component traits
 
-**Tags**
-Heat, Cold, Electric, Light, Shadow, Time, Mind, Life, Death
+**Rules:**
+- Zero or more traits per item
+- Traits are nouns/adjectives; they determine crafting outcome (category, behavior, variant)
+- Traits never determine power level (that comes from skillLevel, rarity, workstation)
+- Optional: some traits may be "discovery" traits (revealed after N uses)
+
+*Note:* The old "quirk" concept is folded into traits; a quirk is simply a trait that can be revealed later for discovery gameplay.
+
+### 3.4 Example
+
+`[COMPONENT] > [PLANT] > [FLORAL, MEDICINAL, ARCANE]` — A plant component with three traits.
+
+### 3.5 Finished Items (Creations)
+
+Crafted from components, essences, optional catalysts, player skill, and workstation modifiers. Categories include weapons, armor, consumables, tools, and arcane devices.
 
 ---
 
-### 3.4 Finished Items
-Crafted from:
-- Components  
-- Essences  
-- Optional catalysts  
-- Player skill  
-- Workstation modifiers  
+## 4. Family & Trait Logic (Crafting)
 
-Categories include weapons, armor, consumables, tools, gadgets, trinkets, and arcane devices.
-
----
-
-## 4. Tags & Tag Logic
-
-### 4.1 Tag Rules
-- Every ingredient has 2–5 tags.  
-- Tags define category, effect, or behavior.  
-- Tags are nouns/adjectives, not verbs.  
-- Tags create predictable item families.  
-- Tags never determine power level (that comes from tier, skill, station, etc.).  
-- Tags reveal gradually:
-  - first use: primary tag  
-  - 3 uses: secondary tag  
-  - 5 uses: quirk
+### 4.1 Organizing Principles
+- **Family** (per TYPE) identifies the item; it drives broad crafting category.
+- **Traits** are modifiers; they determine behavior, variant, and quality.
+- Traits are nouns/adjectives, not verbs.
+- Traits never determine power level (that comes from skillLevel, rarity, workstation).
+- Optionally, some traits may be revealed gradually (e.g. after 1 / 3 / 5 uses) for discovery gameplay.
 
 ### 4.2 Combination Rules
 Experimentation (see **§7.0**) requires: ingredients, quantities, solvent, and process (temp + time).  
 Within that framework, crafts use:
-- Base Material (raw or component)  
+- Base material (component by family + traits)  
 - Essence/Affinity (optional but influential)  
 - Structural component (optional but enhances quality)  
 - Solvent (water, oil, etc.) — distinct from ingredients  
 
-Tags determine:
+**Family + traits** determine:
 - item category  
 - essence/element  
 - behavior  
@@ -307,10 +288,8 @@ Blueprints may require specific workstations.
 ## 10. Expansion & Community Guidelines
 
 Creators must follow:
-- one primary tag per ingredient  
-- consistent family placement  
-- no complicated quirks  
-- 2–5 tags per ingredient  
+- one TYPE and one FAMILY per item (family defines identity)  
+- traits that do not repeat type or family  
 - consistent naming conventions  
 - refined components must remain standardized  
 - blueprints must contain a narrative hook  
@@ -725,37 +704,48 @@ Items (Ingredients, Components, Essences) use a hybrid JSON structure:
 - Matches Blacksmith/FoundryVTT format for compatibility
 - Item type depends on material (most ingredients = consumable, results match crafted type)
 
-**Artificer Flags Section:**
+**Artificer Flags Section (target model after migration):**
 ```json
 {
   "flags": {
     "artificer": {
-      "type": "ingredient|component|essence",
-      "primaryTag": "string",
-      "secondaryTags": ["string"],
-      "tier": 1,
+      "type": "Component|Creation|Tool",
+      "family": "string (depends on type: Plant|Mineral|CreaturePart|...|Potion|Apparatus|Container)",
+      "traits": ["string"],
+      "skillLevel": 1,
       "rarity": "Common|Uncommon|Rare|Very Rare|Legendary",
-      // Ingredient-specific:
-      "family": "Herbs|Minerals|Gems|CreatureParts|Environmental",
-      "quirk": "string|null",
       "biomes": ["string"],
-      // Component-specific:
       "componentType": "Metal|Alchemical|Monster|Arcane|Structural",
-      // Essence-specific:
-      "affinity": "Heat|Cold|Electric|Light|Shadow|Time|Mind|Life|Death"
+      "affinity": "Heat|Cold|Electric|..."
     }
   }
 }
 ```
+
+*Legacy (pre-migration):* Items may still use `primaryTag`, `secondaryTags`, `quirk`, and old `type` values (ingredient/component/essence/apparatus/container). The migration macro converts these to `type` + `family` + `traits`.
 
 **Full JSON Template:**
 - Combines D&D 5e item structure with `flags.artificer` section
 - Supports both single items and arrays (for bulk import)
 - Used by import utilities and can be generated by forms
 
-### 14.2 Future Schemas
+### 14.2 Migration: Legacy → TYPE > FAMILY > TRAITS
 
-Additional schemas to define:
+Existing items (hundreds) use the old model: `type` (ingredient/component/essence/apparatus/container/tool), `family`, `primaryTag`, `secondaryTags`, `quirk`. A **one-time migration macro** is required.
+
+**Mapping (macro logic):**
+- Old `type` → new **TYPE**: ingredient/component/essence → Component; apparatus/container/tool → Tool; creations (if any) → Creation.
+- **FAMILY**: Keep existing `family` where it fits the new family list; map legacy family names to new (e.g. Herbs → Plant, CreatureParts → Creature Part). For components without family, infer from `primaryTag` or `componentType`/`affinity`.
+- **TRAITS**: Merge `primaryTag` (if not redundant with family), `secondaryTags`, and `quirk` (if present) into a single `traits` array. Dedupe and drop any value that equals the chosen family name.
+- **Remove:** `primaryTag`, `secondaryTags`, `quirk` from flags after migration.
+- **Idempotency:** Macro should only migrate items that still have legacy fields (e.g. `primaryTag` or `secondaryTags` present).
+- **Backup:** Export or snapshot world items before running; recommend running on a copy first.
+
+See **plan-artificer.md** for the migration macro task breakdown.
+
+### 14.3 Future Schemas
+
+(Previously 14.2.) Additional schemas to define:
 - Recipes (Journal entries)  
 - Blueprints (Journal entries)  
 - Skills (Actor flags)  
@@ -790,6 +780,7 @@ This crafting system supports:
 | **D&D version** | Architecture says D&D 5e; user rules say 5.5+. | Explicitly target D&D 5e 5.5+ in §11 and schema docs. |
 | **Persisted cache storage** | ✅ World setting `game.settings.get(MODULE.ID, 'itemCache')` (Bibliosoph/Blacksmith pattern). |
 | **Experimentation §7.0** | Quantities, solvent, process (temp/time) are designed but not implemented. | Phase 2; tag-based matching works, full model is enhancement. |
+| **Data model migration** | New hierarchy TYPE > FAMILY > TRAITS; primary/secondary/quirk removed. | One-time migration macro; see §14.2 and plan-artificer.md. |
 
 ### 16.2 Old/Outdated Decisions
 
