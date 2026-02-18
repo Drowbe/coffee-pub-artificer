@@ -237,6 +237,17 @@ export const registerSettings = () => {
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
 
+    // -- Item Name Translation (alias mapping) --
+	game.settings.register(MODULE.ID, 'itemTranslation', {
+        name: MODULE.ID + '.itemTranslation-Label',
+        hint: MODULE.ID + '.itemTranslation-Hint',
+        scope: 'world',
+        config: true,
+        default: '{}',
+        type: String,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
     // -- Number of Ingredient Compendiums --
 	game.settings.register(MODULE.ID, 'numIngredientCompendiums', {
         name: MODULE.ID + '.numIngredientCompendiums-Label',

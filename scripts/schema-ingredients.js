@@ -8,7 +8,7 @@
  * @property {string} name - Display name
  * @property {string} family - Ingredient family (Herbs, Minerals, Gems, CreatureParts, Environmental)
  * @property {number} tier - Tier level (affects crafting outcomes)
- * @property {string} rarity - Rarity level (Common, Uncommon, Rare, Epic, Legendary)
+ * @property {string} rarity - Rarity level (Common, Uncommon, Rare, Very Rare, Legendary)
  * @property {string} primaryTag - Primary tag (always visible, determines category)
  * @property {string[]} secondaryTags - Secondary tags (1-2 tags, revealed after 3 uses)
  * @property {string|null} quirk - Optional quirk (rare, volatile, soothing, etc.) - revealed after 5 uses
@@ -34,11 +34,12 @@ export const INGREDIENT_FAMILIES = {
  * Ingredient Rarities
  * @enum {string}
  */
+/** D&D 5e standard rarities (source of truth) */
 export const INGREDIENT_RARITIES = {
     COMMON: 'Common',
     UNCOMMON: 'Uncommon',
     RARE: 'Rare',
-    EPIC: 'Epic',
+    VERY_RARE: 'Very Rare',
     LEGENDARY: 'Legendary'
 };
 

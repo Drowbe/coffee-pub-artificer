@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName } from './utility-artificer-item.js';
+import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { INGREDIENT_FAMILIES } from './schema-ingredients.js';
 
 /**
@@ -85,7 +86,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             addToContainer: CraftingWindow._actionAddToContainer,
             removeFromSlot: CraftingWindow._actionRemoveFromSlot,
             removeContainer: CraftingWindow._actionRemoveContainer,
-            selectRecipe: CraftingWindow._actionSelectRecipe
+            selectRecipe: CraftingWindow._actionSelectRecipe,
+            refreshCache: CraftingWindow._actionRefreshCache
         }
     });
 
@@ -304,10 +306,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             .flat();
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
+        const cacheStatus = getCacheStatus();
+
         return {
             appId: this.id,
             crafterName: actor?.name ?? null,
             crafterImg: actor?.img ?? null,
+            cacheStatus: { hasCache: cacheStatus.hasCache, building: cacheStatus.building, message: cacheStatus.message },
             slots,
             containerSlot,
             listItems,
@@ -368,6 +373,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const recipeId = row?.dataset?.recipeId;
         if (recipeId) this._selectRecipe(recipeId).catch(() => {});
     }
+    static async _actionRefreshCache(event, target) {
+        this._refreshCache();
+    }
 
     /** Attach document-level delegation (encounter pattern: ref + root.contains) */
     _attachDelegationOnce() {
@@ -380,6 +388,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
+            const refreshBtn = e.target?.closest?.('[data-action="refreshCache"]');
+            if (refreshBtn) {
+                w._refreshCache();
+                return;
+            }
             const recipeRow = e.target?.closest?.('.crafting-recipe-row');
             if (recipeRow?.dataset?.recipeId) {
                 w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});
@@ -530,6 +543,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     _removeContainer() {
         this.selectedContainer = null;
         this.render();
+    }
+
+    async _refreshCache() {
+        try {
+            await refreshCache((state) => {
+                this.render();
+            });
+            const api = getAPI();
+            if (api?.ingredients?.refresh) await api.ingredients.refresh();
+        } catch (err) {
+            console.error('[Artificer] Cache refresh failed:', err);
+            ui.notifications?.error?.('Failed to refresh item cache.');
+        }
+        await this.render();
     }
 
     /**

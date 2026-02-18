@@ -4,6 +4,7 @@
 
 import { MODULE } from '../../const.js';
 import { ArtificerIngredient } from '../models/model-ingredient.js';
+import { getCacheStatus, getAllItemsFromCache } from '../../cache/cache-items.js';
 
 /**
  * IngredientStorage - Manages loading ingredients from compendiums and journals
@@ -35,28 +36,36 @@ export class IngredientStorage {
     }
     
     /**
-     * Refresh cache - reload all ingredients
-     * Source(s) and order are controlled by ingredientStorageSource setting:
-     * - compendia-only: compendia only
-     * - world-only: world items only
-     * - compendia-then-world: compendia first, then world (names from world skipped if already in cache)
-     * - world-then-compendia: world first, then compendia (names from compendia skipped if already in cache)
-     * @returns {Promise<void>}
+     * Refresh cache - reload all ingredients.
+     * If the item cache exists (GM has clicked Refresh Cache), we populate from it and do not scan compendia.
+     * If no item cache, we do not scan compendia (to avoid slow load); we only load from world when applicable, and notify the GM to build the cache.
      */
     async refresh() {
         this._cache.clear();
+        const cacheStatus = getCacheStatus();
         const source = game.settings.get(MODULE.ID, 'ingredientStorageSource') ?? 'compendia-only';
+        const needsCompendia = source === 'compendia-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
 
-        if (source === 'compendia-only') {
-            await this._loadFromCompendiums();
-        } else if (source === 'world-only') {
+        if (cacheStatus.hasCache && !cacheStatus.building) {
+            const allItems = getAllItemsFromCache();
+            for (const item of allItems) {
+                const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
+                if (!artificerData || artificerData.type !== 'ingredient') continue;
+                const ingredient = ArtificerIngredient.fromItem(item);
+                if (ingredient) this._cache.set(ingredient.id, ingredient);
+            }
+            await this._loadFromJournals();
+            return;
+        }
+
+        if (needsCompendia) {
+            ui.notifications?.info?.(`Artificer: Item cache not built. Open Artificer Crafting Station and click "Refresh Cache" to populate ingredients from compendiums.`, { permanent: false });
+        }
+
+        if (source === 'world-only') {
             await this._loadFromWorld();
-        } else if (source === 'compendia-then-world') {
-            await this._loadFromCompendiums();
-            await this._loadFromWorld((name) => this._cache.has(this._getKeyByName(name)));
-        } else if (source === 'world-then-compendia') {
+        } else if (source === 'compendia-then-world' || source === 'world-then-compendia') {
             await this._loadFromWorld();
-            await this._loadFromCompendiums((name) => this._cache.has(this._getKeyByName(name)));
         }
 
         await this._loadFromJournals();

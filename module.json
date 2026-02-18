@@ -49,6 +49,7 @@
     "scripts/schema-blueprints.js",
     "scripts/schema-workstations.js",
     "scripts/schema-skills.js",
+    "scripts/cache/cache-items.js",
     "scripts/utils/helpers.js",
     "scripts/data/models/model-ingredient.js",
     "scripts/data/models/model-component.js",

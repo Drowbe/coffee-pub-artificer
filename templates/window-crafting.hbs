@@ -17,6 +17,20 @@
                 <div class="crafting-window-header-title">Artificer Crafting Station</div>
                 <div class="crafting-window-header-crafter">{{#if crafterName}}{{crafterName}}{{else}}Select a crafter{{/if}}</div>
             </div>
+            <div class="crafting-window-header-cache">
+                <span class="crafting-window-cache-status">
+                    {{#if cacheStatus.building}}
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{cacheStatus.message}}
+                    {{else if cacheStatus.hasCache}}
+                    Cache: {{cacheStatus.message}}
+                    {{else}}
+                    Cache: No cache — click Refresh to build
+                    {{/if}}
+                </span>
+                <button type="button" class="crafting-window-btn-refresh-cache" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
+                    <i class="fa-solid fa-database"></i> Refresh Cache
+                </button>
+            </div>
         </div>
     </header>
 

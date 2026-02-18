@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { getFromCache } from './cache/cache-items.js';
 
 /**
  * Get configured compendium IDs from settings (in priority order)
@@ -39,6 +40,11 @@ function getConfiguredCompendiumIds() {
 export async function resolveItemByName(name, type) {
     if (!name || typeof name !== 'string') return null;
     const targetName = name.trim();
+
+    // Use cache if available (purposeful refresh by GM)
+    const cached = getFromCache(targetName, type);
+    if (cached) return cached;
+
     const lookupOrder = game.settings.get(MODULE.ID, 'itemLookupOrder') ?? 'compendia-first';
 
     const searchCompendia = async () => {
