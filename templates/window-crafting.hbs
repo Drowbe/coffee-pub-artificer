@@ -46,12 +46,12 @@
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
                     <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
-                        {{#if this.canCraft}}<i class="crafting-recipe-craftable-icon fa-solid fa-hammer" title="All ingredients available"></i>{{/if}}
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
                             <span class="crafting-recipe-result">{{this.result}}</span>
                             <span class="crafting-recipe-tags">{{#each this.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
                         </div>
+                        {{#if this.canCraft}}<i class="crafting-recipe-craftable-icon fa-solid fa-hammer" title="All ingredients available"></i>{{/if}}
                     </div>
                     {{else}}
                     <div class="crafting-zone-empty">No recipes loaded. Configure the recipe journal in module settings.</div>
@@ -60,12 +60,12 @@
             </section>
         </aside>
 
-        {{!-- Zone 2: Ingredients --}}
+        {{!-- Zone 2: Components --}}
         <aside class="crafting-zone crafting-zone-ingredients">
             <section class="crafting-zone-section">
-                <h3 class="crafting-zone-section-title">Ingredients</h3>
+                <h3 class="crafting-zone-section-title">Components</h3>
                 <div class="crafting-zone-section-input-wrap">
-                    <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search ingredients..." value="{{filterSearch}}" dir="ltr" />
+                    <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search components..." value="{{filterSearch}}" dir="ltr" />
                 </div>
                 <div class="crafting-zone-filters-row">
                     <select id="{{appId}}-filter-family" class="crafting-zone-select" title="Filter by family">
@@ -89,7 +89,7 @@
                         </div>
                     </div>
                     {{else}}
-                    <div class="crafting-zone-empty">{{#if showContainersOnly}}No containers in inventory.{{else}}No ingredients or containers in inventory.{{/if}}</div>
+                    <div class="crafting-zone-empty">{{#if showContainersOnly}}No containers in inventory.{{else}}No components or containers in inventory.{{/if}}</div>
                     {{/each}}
                 </div>
             </section>
@@ -136,12 +136,12 @@
                         </div>
                         {{/if}}
                     </div>
-                    <div class="crafting-bench-slider-wrap crafting-bench-time-slider" title="Time: 5 sec to 2 min">
+                    <div class="crafting-bench-slider-wrap crafting-bench-time-slider" title="Time: 0 sec to 2 min">
                         <div class="crafting-bench-slider-top-label">120 sec</div>
                         <div class="crafting-bench-slider-track">
-                            <input type="range" id="{{appId}}-time" class="crafting-bench-vertical-slider" min="5" max="120" value="{{timeValue}}" step="5" data-craft-setting="time" data-craft-setting-min="5" data-craft-setting-max="120" style="--slider-fill: {{timeFillPercent}}%;" />
+                            <input type="range" id="{{appId}}-time" class="crafting-bench-vertical-slider" min="0" max="120" value="{{timeValue}}" step="5" data-craft-setting="time" data-craft-setting-min="0" data-craft-setting-max="120" style="--slider-fill: {{timeFillPercent}}%;" />
                         </div>
-                        <div class="crafting-bench-slider-bottom-label">5 sec</div>
+                        <div class="crafting-bench-slider-bottom-label">0 sec</div>
                     </div>
                 </div>
 

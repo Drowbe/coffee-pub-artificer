@@ -134,7 +134,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedSlots = Array(6).fill(null);
         this.selectedContainer = null;
         this.heatValue = options.heatValue ?? 0;
-        this.timeValue = options.timeValue ?? 30;
+        this.timeValue = options.timeValue ?? 0;
         this.lastResult = null;
         this.lastCraftTags = [];
         /** @type {ArtificerRecipe|null} */
@@ -356,7 +356,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             heatValue: this.heatValue,
             timeValue: this.timeValue,
             heatFillPercent: this.heatValue,
-            timeFillPercent: ((this.timeValue - 5) / 115) * 100,
+            timeFillPercent: (this.timeValue / 120) * 100,
             ingredients,
             canCraft,
             lastResult: this.lastResult,
@@ -671,8 +671,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             this.selectedContainer = null;
         }
 
-        if (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) this.heatValue = recipe.heat;
-        if (recipe.time != null && recipe.time >= 0) this.timeValue = recipe.time;
+        this.heatValue = (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) ? recipe.heat : 0;
+        this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;
 
         this.render();
     }
