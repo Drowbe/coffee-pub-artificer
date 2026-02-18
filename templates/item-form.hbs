@@ -20,6 +20,9 @@
                         <option value="ingredient" {{#if isIngredient}}selected{{/if}}>Ingredient</option>
                         <option value="component" {{#if isComponent}}selected{{/if}}>Component</option>
                         <option value="essence" {{#if isEssence}}selected{{/if}}>Essence</option>
+                        <option value="apparatus" {{#if isApparatus}}selected{{/if}}>Apparatus</option>
+                        <option value="container" {{#if isContainer}}selected{{/if}}>Container</option>
+                        <option value="tool" {{#if isTool}}selected{{/if}}>Tool</option>
                     </select>
                 </div>
             </div>
@@ -30,6 +33,9 @@
             <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
             {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
             {{> partials/form-field name="itemType5e" label="D&D 5e Type" type="select" isSelect=true options=itemType5eOptions}}
+            {{#if isConsumable}}
+            {{> partials/form-field name="consumableSubtype" label="Consumable Subtype" type="select" isSelect=true options=consumableSubtypeOptions}}
+            {{/if}}
             {{> partials/form-field name="itemWeight" label="Weight" type="number" isNumber=true value=itemWeight placeholder="0" min="0" step="any"}}
             {{> partials/form-field name="itemPrice" label="Price (GP)" type="text" value=itemPrice placeholder="0"}}
             {{> partials/form-field name="itemRarity" label="Rarity" type="select" isSelect=true options=rarityOptions}}
@@ -41,13 +47,29 @@
         {{!-- Artificer-Specific Fields --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
-            {{> partials/form-field name="primaryTag" label="Primary Tag" type="text" value=primaryTag placeholder="Primary tag (required)"}}
-            {{> partials/form-field name="secondaryTags" label="Secondary Tags" type="text" value=secondaryTags placeholder="Tag1, Tag2 (comma-separated)"}}
-            {{> partials/form-field name="tier" label="Tier (1–10)" type="number" isNumber=true value=tier placeholder="1" min="1" max="10" step="1" title="Power/quality level (1–10). Higher tiers affect crafting outcomes, quality, and stability. Tags define category; tier defines potency."}}
-            
+            {{#if isIngredient}}{{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}{{/if}}
+            {{#if isContainer}}{{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}{{/if}}
+            {{> partials/form-field name="primaryTag" label="Primary Tag" type="select" isSelect=true options=primaryTagOptions}}
+            <div class="artificer-form-group artificer-tag-picker-group">
+                <label for="artificer-tag-input">Secondary Tags</label>
+                <div class="artificer-tag-picker">
+                    <div class="artificer-tag-input-wrap">
+                        <input type="text" id="artificer-tag-input" class="artificer-tag-input" placeholder="e.g. Medicinal, Floral" autocomplete="off" />
+                        <button type="button" class="artificer-tag-input-clear" title="Clear" aria-label="Clear"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                    <div class="artificer-tag-suggestions" id="artificer-tag-suggestions" role="listbox"></div>
+                    <div class="artificer-tag-pills" id="artificer-tag-pills"></div>
+                    <input type="hidden" name="secondaryTags" id="artificer-secondary-tags-hidden" value="{{secondaryTagsValue}}" />
+                </div>
+            </div>
+            {{> partials/form-field name="skillLevel" label="Skill Level (min.)" type="number" isNumber=true value=skillLevel placeholder="1" min="1" step="1" title="Minimum crafting skill level required to create or use this item."}}
+            {{> partials/form-field name="tier" label="Tier (1–10)" type="number" isNumber=true value=tier placeholder="1" min="1" max="10" step="1" title="Optional. Power/quality level. May be deprecated in favor of rarity/skillLevel."}}
             {{#if isIngredient}}
-            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}
-            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="text" value=quirk placeholder="Quirk name"}}
+            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="select" isSelect=true options=quirkTagOptions}}
+            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
+            {{/if}}
+            {{#if isContainer}}
+            {{> partials/form-field name="quirk" label="Quirk (Optional)" type="select" isSelect=true options=quirkTagOptions}}
             {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
             {{/if}}
             {{#if isComponent}}

@@ -8,7 +8,8 @@
  * @property {string} name - Display name
  * @property {string} type - Component type (Metal, Alchemical, Monster, Arcane, Structural)
  * @property {string[]} tags - Component tags (Refined, Alloy, Stabilized, Binding, Reactive, Haft, Plate, etc.)
- * @property {number} tier - Tier level
+ * @property {number} skillLevel - Minimum crafting skill level required (1+)
+ * @property {number} [tier] - Tier level (optional)
  * @property {string} rarity - Rarity level
  * @property {string} description - Flavor text description
  * @property {string|null} image - Image path or UUID

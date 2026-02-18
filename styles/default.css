@@ -11,6 +11,7 @@
 
 /* --- Forms ---------------------- */
 @import "item-form.css";
+@import "tag-picker.css";
 
 /* --- Crafting Panel ------------- */
 @import "crafting-panel.css";

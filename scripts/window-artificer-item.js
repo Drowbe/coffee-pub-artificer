@@ -7,6 +7,7 @@ import { createArtificerItem, updateArtificerItem, validateArtificerData } from 
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { COMPONENT_TYPES } from './schema-components.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
+import { getTagManager, TAG_CATEGORIES } from './systems/tag-manager.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -62,11 +63,14 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     async getData(options = {}) {
         const context = {};
         
-        // Item type options
+        // Item type options (Artificer types)
         const itemTypeNames = {
             ingredient: 'Ingredient',
             component: 'Component',
-            essence: 'Essence'
+            essence: 'Essence',
+            apparatus: 'Apparatus',
+            container: 'Container',
+            tool: 'Tool'
         };
         
         // D&D 5e item type options (most ingredients are consumables)
@@ -85,10 +89,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             selected: false
         }));
         
-        // Family options (for ingredients)
+        // Family options (for ingredients/containers); display "Creature Parts" for CreatureParts
+        const familyDisplayLabels = { CreatureParts: 'Creature Parts' };
         const familyOptions = Object.values(INGREDIENT_FAMILIES).map(family => ({
             value: family,
-            label: family,
+            label: familyDisplayLabels[family] ?? family,
             selected: false
         }));
         
@@ -106,6 +111,18 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             selected: false
         }));
         
+        // Consumable subtype options (D&D 5e) - when item type is consumable
+        const consumableSubtypeOptions = [
+            { value: 'potion', label: 'Potion', selected: false },
+            { value: 'poison', label: 'Poison', selected: false },
+            { value: 'food', label: 'Food', selected: false },
+            { value: 'other', label: 'Other', selected: false }
+        ];
+        const consumableTypeValue = this.itemData?.system?.type?.value ?? this.itemData?.system?.consumableType ?? 'other';
+        consumableSubtypeOptions.forEach(opt => {
+            if (opt.value === consumableTypeValue) opt.selected = true;
+        });
+
         // Set selected options
         if (this.itemData?.flags?.[MODULE.ID]?.family) {
             const selectedFamily = this.itemData.flags[MODULE.ID].family;
@@ -139,7 +156,80 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 if (opt.value === this.itemData.type) opt.selected = true;
             });
         }
-        
+
+        // TagManager-driven tag options
+        const tagManager = getTagManager();
+        const selectedFamily = this._formState?.family ?? this.itemData?.flags?.[MODULE.ID]?.family ?? '';
+        const selectedPrimaryTag = this._formState?.primaryTag ?? this.itemData?.flags?.[MODULE.ID]?.primaryTag ?? '';
+        const existingSecondary = this.itemData?.flags?.[MODULE.ID]?.secondaryTags || [];
+
+        const emptyOption = { value: '', label: '—', selected: false };
+
+        const buildPrimaryTagOptions = () => {
+            const opts = [emptyOption];
+            if (this.itemType === 'ingredient' || this.itemType === 'container') {
+                const tags = selectedFamily
+                    ? tagManager.getTagsForFamily(selectedFamily)
+                    : Object.values(INGREDIENT_FAMILIES).flatMap(f => tagManager.getTagsForFamily(f));
+                const seen = new Set();
+                for (const tag of tags) {
+                    if (!seen.has(tag)) {
+                        seen.add(tag);
+                        opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag });
+                    }
+                }
+            } else if (this.itemType === 'component') {
+                const tags = tagManager.getTagsByCategory(TAG_CATEGORIES.STRUCTURAL);
+                tags.forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
+            } else if (this.itemType === 'essence') {
+                const tags = tagManager.getTagsByCategory(TAG_CATEGORIES.ELEMENT);
+                tags.forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
+            } else if (this.itemType === 'apparatus' || this.itemType === 'tool') {
+                tagManager.getAllTags().forEach(tag => opts.push({ value: tag, label: tag, selected: tag === selectedPrimaryTag }));
+            }
+            return opts;
+        };
+
+        const buildSecondaryTagOptions = () => {
+            const opts = [emptyOption];
+            let candidates = [];
+            if (this.itemType === 'ingredient' || this.itemType === 'container') {
+                candidates = selectedFamily && selectedPrimaryTag
+                    ? tagManager.suggestSecondaryTags(selectedFamily, selectedPrimaryTag)
+                    : selectedFamily
+                        ? tagManager.getTagsForFamily(selectedFamily).filter(t => t !== selectedPrimaryTag)
+                        : Object.values(INGREDIENT_FAMILIES).flatMap(f => tagManager.getTagsForFamily(f));
+            } else if (this.itemType === 'component') {
+                candidates = tagManager.getTagsByCategory(TAG_CATEGORIES.STRUCTURAL).filter(t => t !== selectedPrimaryTag);
+            } else if (this.itemType === 'essence') {
+                candidates = tagManager.getTagsByCategory(TAG_CATEGORIES.ELEMENT).filter(t => t !== selectedPrimaryTag);
+            } else {
+                candidates = tagManager.getAllTags().filter(t => t !== selectedPrimaryTag);
+            }
+            const seen = new Set();
+            for (const tag of candidates) {
+                if (!seen.has(tag)) {
+                    seen.add(tag);
+                    opts.push({ value: tag, label: tag, selected: false });
+                }
+            }
+            return opts;
+        };
+
+        const buildQuirkTagOptions = () => {
+            const opts = [emptyOption];
+            const selectedQuirk = this.itemData?.flags?.[MODULE.ID]?.quirk || '';
+            tagManager.getTagsByCategory(TAG_CATEGORIES.QUIRK).forEach(tag => {
+                opts.push({ value: tag, label: tag, selected: tag === selectedQuirk });
+            });
+            return opts;
+        };
+
+        const primaryTagOptions = buildPrimaryTagOptions();
+        const secondaryTagCandidates = buildSecondaryTagOptions().filter(o => o.value).map(o => o.value);
+        const quirkTagOptions = buildQuirkTagOptions();
+        const secondaryTagsValue = existingSecondary.join(',');
+
         // Merge with existing context
         const mergedContext = foundry.utils.mergeObject(context, {
             isEditMode: this.isEditMode,
@@ -148,9 +238,15 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             isIngredient: this.itemType === 'ingredient',
             isComponent: this.itemType === 'component',
             isEssence: this.itemType === 'essence',
+            isApparatus: this.itemType === 'apparatus',
+            isContainer: this.itemType === 'container',
+            isTool: this.itemType === 'tool',
             itemName: this.itemData?.name || '',
             itemType5e: this.itemData?.type || 'consumable',
             itemType5eOptions: itemType5eOptions,
+            isConsumable: (this.itemData?.type || 'consumable') === 'consumable',
+            consumableSubtype: consumableTypeValue,
+            consumableSubtypeOptions: consumableSubtypeOptions,
             itemWeight: this.itemData?.weight || 0,
             itemPrice: this.itemData?.price || '',
             itemRarity: this.itemData?.rarity || 'Common',
@@ -158,12 +254,16 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             itemDescription: this.itemData?.description || '',
             sourceCustom: this.itemData?.system?.source?.custom || 'Artificer',
             sourceLicense: this.itemData?.system?.source?.license || '',
-            primaryTag: this.itemData?.flags?.[MODULE.ID]?.primaryTag || '',
-            secondaryTags: (this.itemData?.flags?.[MODULE.ID]?.secondaryTags || []).join(', '),
-            tier: this.itemData?.flags?.[MODULE.ID]?.tier || 1,
+            primaryTag: selectedPrimaryTag,
+            primaryTagOptions: primaryTagOptions,
+            secondaryTagsValue: secondaryTagsValue,
+            secondaryTagCandidates: secondaryTagCandidates,
+            skillLevel: this.itemData?.flags?.[MODULE.ID]?.skillLevel ?? 1,
+            tier: this.itemData?.flags?.[MODULE.ID]?.tier ?? 1,
             family: this.itemData?.flags?.[MODULE.ID]?.family || '',
             familyOptions: familyOptions,
             quirk: this.itemData?.flags?.[MODULE.ID]?.quirk || '',
+            quirkTagOptions: quirkTagOptions,
             biomes: (this.itemData?.flags?.[MODULE.ID]?.biomes || []).join(', '),
             componentType: this.itemData?.flags?.[MODULE.ID]?.componentType || '',
             componentTypeOptions: componentTypeOptions,
@@ -171,6 +271,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             affinityOptions: affinityOptions
         });
         
+        this._lastContext = mergedContext;
         return mergedContext;
     }
 
@@ -213,9 +314,33 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         if (typeSelect) {
             typeSelect.addEventListener('change', (event) => {
                 this.itemType = event.target.value;
+                this._formState = this._formState ?? {};
+                this._formState.family = null;
+                this._formState.primaryTag = null;
                 this.render();
             });
         }
+
+        const familySelect = query('#family');
+        if (familySelect) {
+            familySelect.addEventListener('change', (event) => {
+                this._formState = this._formState ?? {};
+                this._formState.family = event.target.value || null;
+                this._formState.primaryTag = null;
+                this.render();
+            });
+        }
+
+        const primaryTagSelect = query('#primaryTag');
+        if (primaryTagSelect) {
+            primaryTagSelect.addEventListener('change', (event) => {
+                this._formState = this._formState ?? {};
+                this._formState.primaryTag = event.target.value || null;
+                this.render();
+            });
+        }
+
+        this._setupTagPicker(root);
         
         const cancelButton = query('[data-action="cancel"]');
         if (cancelButton) {
@@ -223,6 +348,113 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 event.preventDefault();
                 this.close();
             });
+        }
+    }
+
+    /**
+     * Set up the secondary-tags tag picker: input with suggestions dropdown, pills with remove
+     * @param {HTMLElement} root
+     */
+    _setupTagPicker(root) {
+        const input = root?.querySelector('#artificer-tag-input');
+        const suggestionsEl = root?.querySelector('#artificer-tag-suggestions');
+        const pillsEl = root?.querySelector('#artificer-tag-pills');
+        const hiddenInput = root?.querySelector('#artificer-secondary-tags-hidden');
+        const clearBtn = root?.querySelector('.artificer-tag-input-clear');
+        if (!input || !suggestionsEl || !pillsEl || !hiddenInput) return;
+
+        const candidates = (this._lastContext?.secondaryTagCandidates ?? []).slice();
+
+        const getSelectedTags = () => {
+            const val = hiddenInput?.value ?? '';
+            return val ? val.split(',').map(t => t.trim()).filter(Boolean) : [];
+        };
+
+        const setSelectedTags = (tags) => {
+            const unique = [...new Set(tags)];
+            hiddenInput.value = unique.join(',');
+            this._renderPills(pillsEl, hiddenInput, unique, removeTag);
+            this._renderSuggestions(suggestionsEl, input, unique, candidates);
+        };
+
+        const addTag = (tag) => {
+            const current = getSelectedTags();
+            if (tag && !current.includes(tag)) {
+                setSelectedTags([...current, tag]);
+                input.value = '';
+            }
+        };
+
+        const removeTag = (tag) => {
+            setSelectedTags(getSelectedTags().filter(t => t !== tag));
+        };
+
+        input.addEventListener('focus', () => {
+            this._renderSuggestions(suggestionsEl, input, getSelectedTags(), candidates);
+            suggestionsEl.classList.add('visible');
+        });
+        input.addEventListener('blur', () => {
+            setTimeout(() => suggestionsEl.classList.remove('visible'), 150);
+        });
+        input.addEventListener('input', () => {
+            this._renderSuggestions(suggestionsEl, input, getSelectedTags(), candidates);
+            suggestionsEl.classList.add('visible');
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = input.value.trim();
+                const match = candidates.find(c => c.toLowerCase() === val.toLowerCase());
+                if (match) addTag(match);
+            }
+        });
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                input.value = '';
+                input.focus();
+            });
+        }
+
+        suggestionsEl.addEventListener('mousedown', (e) => e.preventDefault());
+        suggestionsEl.addEventListener('click', (e) => {
+            e.preventDefault();
+            const tag = e.target?.closest('[data-tag]')?.getAttribute('data-tag');
+            if (tag) addTag(tag);
+        });
+
+        setSelectedTags(getSelectedTags());
+    }
+
+    _renderPills(pillsEl, hiddenInput, tags, onRemove) {
+        pillsEl.innerHTML = '';
+        for (const tag of tags) {
+            const pill = document.createElement('span');
+            pill.className = 'artificer-tag-pill';
+            pill.innerHTML = `${tag} <button type="button" class="artificer-tag-pill-remove" data-tag="${tag}" aria-label="Remove"><i class="fa-solid fa-times"></i></button>`;
+            pill.querySelector('.artificer-tag-pill-remove').addEventListener('click', (e) => {
+                e.preventDefault();
+                onRemove(tag);
+            });
+            pillsEl.appendChild(pill);
+        }
+    }
+
+    _renderSuggestions(suggestionsEl, input, selected, candidates) {
+        const filter = (input?.value ?? '').toLowerCase().trim();
+        const available = candidates.filter(c => !selected.includes(c) && (!filter || c.toLowerCase().includes(filter)));
+        suggestionsEl.innerHTML = '';
+        if (available.length === 0) {
+            suggestionsEl.classList.remove('visible');
+            return;
+        }
+        for (const tag of available) {
+            const opt = document.createElement('div');
+            opt.className = 'artificer-tag-suggestion';
+            opt.setAttribute('data-tag', tag);
+            opt.setAttribute('role', 'option');
+            opt.textContent = tag;
+            suggestionsEl.appendChild(opt);
         }
     }
 
@@ -288,18 +520,27 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             }
         };
         
-        // Parse artificer data
+        // Parse artificer data (secondary tags from tag picker hidden input)
+        const secondaryTags = (formObject.secondaryTags || '')
+            ? formObject.secondaryTags.split(',').map(t => t.trim()).filter(t => t)
+            : [];
+
         const artificerData = {
             primaryTag: formObject.primaryTag || '',
-            secondaryTags: formObject.secondaryTags 
-                ? formObject.secondaryTags.split(',').map(t => t.trim()).filter(t => t)
-                : [],
-            tier: parseInt(formObject.tier) || 1,
+            secondaryTags,
+            skillLevel: Math.max(1, parseInt(formObject.skillLevel, 10) || 1),
+            tier: parseInt(formObject.tier, 10) || 1,
             rarity: formObject.itemRarity || 'Common'
         };
         
+        // Consumable subtype (D&D 5e) when type is consumable
+        if (itemData.type === 'consumable' && formObject.consumableSubtype) {
+            itemData.system = itemData.system ?? {};
+            itemData.system.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
+        }
+        
         // Add type-specific fields
-        if (this.itemType === 'ingredient') {
+        if (this.itemType === 'ingredient' || this.itemType === 'container') {
             artificerData.family = formObject.family || '';
             artificerData.quirk = formObject.quirk || null;
             artificerData.biomes = formObject.biomes 
@@ -310,19 +551,24 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         } else if (this.itemType === 'essence') {
             artificerData.affinity = formObject.affinity || '';
         }
+        // apparatus and tool: no extra fields beyond tags, skillLevel, tier, rarity
         
         try {
             // Validate
             validateArtificerData(artificerData, this.itemType);
             
             if (this.isEditMode) {
-                itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, {
+                const systemMerge = {
                     source: {
                         value: formObject.sourceCustom || 'Artificer',
                         custom: formObject.sourceCustom || 'Artificer',
                         license: formObject.sourceLicense || ''
                     }
-                });
+                };
+                if (itemData.type === 'consumable' && formObject.consumableSubtype) {
+                    systemMerge.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
+                }
+                itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, systemMerge);
                 itemData.img = this.existingItem.img || itemData.img;
                 await updateArtificerItem(this.existingItem, itemData, artificerData);
                 await this.close();

@@ -309,7 +309,8 @@ function buildArtificerFlags(artificerData, type) {
         type: type,
         primaryTag: artificerData.primaryTag || '',
         secondaryTags: artificerData.secondaryTags || [],
-        tier: artificerData.tier || 1,
+        skillLevel: Math.max(1, parseInt(artificerData.skillLevel, 10) || 1),
+        tier: artificerData.tier ?? 1,
         rarity: artificerData.rarity || 'Common'
     };
     
@@ -338,8 +339,9 @@ export function validateArtificerData(artificerData, type) {
         throw new Error('Artificer data is required');
     }
     
-    // Validate required fields
-    if (!artificerData.primaryTag) {
+    // Validate required fields (primaryTag optional for apparatus/tool)
+    const tagOptional = ['apparatus', 'tool'].includes(type);
+    if (!tagOptional && !artificerData.primaryTag) {
         throw new Error('primaryTag is required');
     }
     
@@ -348,8 +350,8 @@ export function validateArtificerData(artificerData, type) {
         if (!artificerData.family) {
             throw new Error(`family is required for ${type}s`);
         }
-        if (artificerData.secondaryTags && artificerData.secondaryTags.length > 2) {
-            throw new Error(`${type}s can have at most 2 secondary tags`);
+        if (artificerData.secondaryTags && artificerData.secondaryTags.length > 10) {
+            throw new Error(`${type}s can have at most 10 secondary tags`);
         }
     } else if (type === 'component') {
         if (!artificerData.componentType) {
@@ -361,9 +363,14 @@ export function validateArtificerData(artificerData, type) {
         }
     }
     
-    // Validate tier
-    if (artificerData.tier && (artificerData.tier < 1 || artificerData.tier > 10)) {
+    // Validate tier (optional)
+    if (artificerData.tier != null && (artificerData.tier < 1 || artificerData.tier > 10)) {
         throw new Error('tier must be between 1 and 10');
+    }
+    // Validate skillLevel (required, 1+)
+    const sl = artificerData.skillLevel != null ? parseInt(artificerData.skillLevel, 10) : 1;
+    if (Number.isNaN(sl) || sl < 1) {
+        throw new Error('skillLevel must be at least 1');
     }
 }
 
@@ -378,7 +385,8 @@ export function extractArtificerData(item) {
         type: flags.type,
         primaryTag: flags.primaryTag,
         secondaryTags: flags.secondaryTags || [],
-        tier: flags.tier || 1,
+        skillLevel: flags.skillLevel ?? 1,
+        tier: flags.tier ?? 1,
         rarity: flags.rarity || 'Common',
         family: flags.family || null,
         quirk: flags.quirk || null,

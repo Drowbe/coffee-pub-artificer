@@ -77,3 +77,20 @@
     font-style: italic;
     color: rgba(0, 0, 0, 0.5);
 }
+
+.artificer-sheet-convert-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.85rem;
+    color: var(--color-text-light-6, #333);
+    background: rgba(124, 133, 0, 0.35);
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.artificer-sheet-convert-btn:hover {
+    background: rgba(124, 133, 0, 0.5);
+}

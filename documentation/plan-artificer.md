@@ -109,7 +109,7 @@ Items are organized into three main categories:
 - [ ] Rename "Creatures" → "Creature Parts" in schema (e.g. `schema-ingredients.js` INGREDIENT_FAMILIES).
 - [ ] Item form: add Apparatus, Container, Tool type options.
 - [ ] Item form: expose Consumable subtype when applicable.
-- [ ] Item form: tag dropdowns via TagManager.
+- [x] Item form: tag dropdowns via TagManager.
 - [ ] Align category → type → family hierarchy across schemas and UI.
 - [ ] Update documentation (architecture, schemas) to reflect the three-category system.
 

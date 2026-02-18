@@ -8,7 +8,8 @@
  * @property {string} name - Display name
  * @property {string} affinity - Essence affinity/element (Heat, Cold, Electric, Light, Shadow, Time, Mind, Life, Death, etc.)
  * @property {string[]} tags - Essence tags
- * @property {number} tier - Tier level
+ * @property {number} skillLevel - Minimum crafting skill level required (1+)
+ * @property {number} [tier] - Tier level (optional)
  * @property {string} rarity - Rarity level
  * @property {string} description - Flavor text description
  * @property {string|null} image - Image path or UUID

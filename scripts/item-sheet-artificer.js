@@ -4,9 +4,11 @@
 
 import { MODULE } from './const.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
+import { isArtificerItem } from './utility-artificer-item.js';
 
 /**
- * Inject Artificer tags section into item sheets when the item has artificer flags.
+ * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
+ * If not, show "Convert to Artificer item" so users can add Artificer data without duplicating the item editor.
  * - renderItemSheet: legacy AppV1 Item sheets
  * - renderDocumentSheetV2: v13 DocumentSheetV2 (Item, Actor, Image, Journal, etc.) - we must guard for Item only
  */
@@ -23,7 +25,7 @@ function onRenderDocumentSheetV2(app, html) {
 }
 
 function onDocumentClick(event) {
-    const target = event.target.closest('[data-action="edit-artificer"]');
+    const target = event.target.closest('[data-action="edit-artificer"], [data-action="convert-artificer"]');
     if (!target) return;
     const uuid = target.getAttribute('data-item-uuid');
     if (!uuid) return;
@@ -67,15 +69,16 @@ function onRenderItemSheet(app, html) {
     const element = html instanceof HTMLElement ? html : html[0];
     if (!element) return;
 
-    const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
-    const type = flags.type;
-    if (!type || !['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type)) return;
-
     // Avoid double-injection
     if (element.querySelector('.artificer-item-sheet-section')) return;
 
+    const flags = item.flags?.[MODULE.ID] ?? item.flags?.artificer ?? {};
+    const type = flags.type;
+    const hasArtificerData = type && ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'].includes(type);
     const canEdit = item.canUserModify?.(game.user, 'update') ?? app.options?.editable ?? game.user.isGM;
-    const section = buildArtificerSection(item, flags, type, !!canEdit);
+    const section = hasArtificerData
+        ? buildArtificerSection(item, flags, type, !!canEdit)
+        : buildConvertSection(item, !!canEdit);
     const descriptionTab = findDescriptionTab(element);
     if (descriptionTab) {
         descriptionTab.appendChild(section);
@@ -98,6 +101,27 @@ function findDescriptionTab(root) {
     if (descTab) return descTab;
 
     return null;
+}
+
+/**
+ * Build the "Convert to Artificer item" section for items without Artificer flags
+ * @param {Item} item
+ * @param {boolean} editable
+ * @returns {HTMLElement}
+ */
+function buildConvertSection(item, editable) {
+    const section = document.createElement('div');
+    section.className = 'artificer-item-sheet-section';
+    section.innerHTML = `
+        <div class="artificer-sheet-header">
+            <h4 class="artificer-sheet-title"><i class="fa-solid fa-hammer"></i> Artificer</h4>
+        </div>
+        <div class="artificer-sheet-body">
+            <p class="artificer-sheet-empty">This item is not an Artificer item. Add tags, family, and crafting data.</p>
+            ${editable ? `<a class="artificer-sheet-convert-btn" data-action="convert-artificer" data-item-uuid="${escapeHtml(item.uuid)}" href="#"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert to Artificer item</a>` : ''}
+        </div>
+    `;
+    return section;
 }
 
 /**
@@ -125,11 +149,13 @@ function buildArtificerSection(item, flags, type, editable) {
     const affinity = flags.affinity ?? '';
 
     const rows = [];
+    const skillLevel = flags.skillLevel ?? 1;
     if (primaryTag) rows.push({ label: 'Primary Tag', value: primaryTag });
     if (secondaryStr) rows.push({ label: 'Secondary Tags', value: secondaryStr });
     if ((type === 'ingredient' || type === 'container') && family) rows.push({ label: 'Family', value: family });
     if (type === 'component' && componentType) rows.push({ label: 'Component Type', value: componentType });
     if (type === 'essence' && affinity) rows.push({ label: 'Affinity', value: affinity });
+    rows.push({ label: 'Skill Level', value: String(skillLevel) });
     rows.push({ label: 'Tier', value: String(tier) });
     rows.push({ label: 'Rarity', value: rarity });
     if ((type === 'ingredient' || type === 'container') && quirk) rows.push({ label: 'Quirk', value: quirk });
@@ -189,6 +215,7 @@ export function itemToFormData(item) {
         rarity: item.system?.rarity ?? 'Common',
         description: item.system?.description?.value ?? item.description ?? '',
         img: item.img ?? '',
+        system: item.system ?? {},
         flags: {
             [MODULE.ID]: { ...flags }
         }
