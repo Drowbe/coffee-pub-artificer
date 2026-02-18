@@ -4,6 +4,8 @@
 
 This document merges phased task breakdown, current status, MVP path, and technical notes into a single implementation plan.
 
+> **⚠️ Top priority:** Section 2.5 (Organizing Principles & Item Form) must be completed before any other implementation work. It unblocks item editing, recipe crafting, and data consistency.
+
 ---
 
 ## 1. Decisions (All Resolved)
@@ -53,6 +55,63 @@ This document merges phased task breakdown, current status, MVP path, and techni
 **Phase 2:** Blocked on Phase 1 (tag logic, ExperimentationEngine)
 
 **Phase 3:** Crafting window exists; recipe/blueprint browser integration ongoing
+
+---
+
+## 2.5 Top Priority: Organizing Principles & Item Form
+
+**Blocking:** This work must be completed before any other implementation. It defines how items are classified, edited, and used across the module.
+
+### 2.5.1 Three-Category System
+
+Items are organized into three main categories:
+
+| Category   | Description                               | Sub-types                                                                 |
+|-----------|-------------------------------------------|----------------------------------------------------------------------------|
+| Components | Gathered, harvested, or created inputs    | Creature Parts, Environmental, Essences, Gems, Minerals, Plants            |
+| Creations  | Results of recipes/blueprints             | Food, Materials, Poisons, Potions                                          |
+| Tools      | Used for crafting                         | Apparatus (beaker, mortar), Containers (vial, herb bag)                    |
+
+**Terminology:** Use **Creature Parts** (not "Creatures") for components harvested from creatures.
+
+### 2.5.2 Skill Level (Required) vs Tier (Redundant)
+
+- **skillLevel (required):** Minimum crafting skill level required to create, use, or work with the item. This is a functional requirement, not quality.
+- **Tier:** If tier represents only rarity/difficulty, it is redundant—we already have rarity. We may not need tier; we **100% need skillLevel**. Tier can be dropped or repurposed in favor of skillLevel.
+
+### 2.5.3 Hierarchy: Category → Type → Family
+
+- **Category:** Components | Creations | Tools
+- **Type:** Sub-type within the category (e.g., Creature Parts, Potions, Apparatus)
+- **Family:** Tag-family grouping (e.g., INGREDIENT_FAMILIES: Herbs, Minerals, Gems, CreatureParts, Environmental)
+
+### 2.5.4 Item Editing Strategy: Artificer Bar + Partial Editor
+
+**Goal:** Add Artificer data and tags to items without reinventing the full item editor.
+
+- **Artificer bar on all items:** Every item sheet can show an "Artificer" section (tab, bar, or block). If the item is not yet an Artificer item, the section offers a **Convert to Artificer item** action.
+- **Convert to Artificer item:** Designating an item as an Artificer item attaches our flags and exposes the Artificer properties UI. The core item (name, description, weight, cost, rarity, etc.) remains edited via the standard D&D 5e item sheet.
+- **We only edit our stuff:** The module provides editors only for Artificer-specific fields (tags, family, skillLevel, type/category, biomes, etc.). We do not duplicate or replace support for every item field—the item sheet does the heavy lifting.
+- **Benefits:** Single source of truth for item basics, no incomplete or inconsistent support for system fields, simpler maintenance, and a clear "ARTIFICER PROPERTIES" block (as in the current Bloodroot-style sheet) so users know where our data lives.
+
+### 2.5.5 Item Form Updates (Artificer-Only Fields)
+
+1. **Artificer type options:** Add Apparatus, Container, Tool (alongside Ingredient, Component, Essence).
+2. **Consumable subtype:** Expose D&D 5e Consumable subtype when the item type is Consumable (read-only or link to system field).
+3. **Tags:** Replace free-text tag input with TagManager-driven dropdowns.
+4. **Family:** Use "Creature Parts" in schema and UI; align family values with the three-category system.
+
+### 2.5.6 Implementation Checklist
+
+- [ ] **Item editing strategy:** Artificer bar/section on all item sheets; "Convert to Artificer item" for non-Artificer items; edit only Artificer-specific fields (see §2.5.4).
+- [ ] Add `skillLevel` to item flags/schema (crafting requirement).
+- [ ] Decide fate of tier: drop or repurpose; do not conflate with rarity.
+- [ ] Rename "Creatures" → "Creature Parts" in schema (e.g. `schema-ingredients.js` INGREDIENT_FAMILIES).
+- [ ] Item form: add Apparatus, Container, Tool type options.
+- [ ] Item form: expose Consumable subtype when applicable.
+- [ ] Item form: tag dropdowns via TagManager.
+- [ ] Align category → type → family hierarchy across schemas and UI.
+- [ ] Update documentation (architecture, schemas) to reflect the three-category system.
 
 ---
 
@@ -203,7 +262,9 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 ## 5. Immediate Next Steps
 
-See `documentation/TODO.md` for current focus. As of consolidation:
+**First:** Complete **§2.5 Organizing Principles & Item Form** (blocking). See the checklist in §2.5.6.
+
+**Then** (see `documentation/TODO.md`):
 
 1. **Persisted Item Cache** — Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; D&D consumable → family mapping.
 2. **Initial Data Set** — Starter ingredients, components, essences, example recipes/blueprint.
