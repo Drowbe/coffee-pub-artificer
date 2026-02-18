@@ -89,6 +89,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed errors from loading malformed items in compendiums (midi-qol compatibility)
 - Improved error handling to prevent one bad item from breaking entire pack loading
 - Fixed settings registration order to ensure compendium choices are available
+- **Consumable detection:** Use `item.type` for consumable check (D&D 5e 5.5 stores subtype in `system.type.value`); Flask of Oil and similar items now appear in component list
+
+### Crafting Window UI (13.0.2 session)
+- **Broader component list:** Show D&D consumables (potions, oils, etc.) without artificer flags as valid components using `asCraftableConsumable()` and D&D subtype → family mapping
+- **Recipe row redesign:** Result item image, recipe title on top, tags below; async `getRecipesForDisplay()` resolves result item for image
+- **Components section:** Renamed "Ingredients" to "Components" (section title, search placeholder, empty state)
+- **Craftable indicator:** Hammer icon right-justified in recipe rows
+- **Time slider:** Range 0–120 seconds (was 5–120); default 0 when no recipe
+- **Recipe defaults:** When recipe does not set heat or time, sliders reset to 0 (none)
+- **Tags display:** "Tags for this combination" moved from Crafting Bench to Details section
 
 ### Technical Details
 - All data models use class-based structure with validation

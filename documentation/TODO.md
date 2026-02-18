@@ -24,6 +24,9 @@
 - [x] IngredientStorage: use item cache when available, else notify GM
 - [x] Crafting window: crafter portrait/name in header, "Results" → "Details"
 - [x] Ingredient settings: `itemLookupOrder`, `ingredientStorageSource`
+- [x] **Broader component list:** Show D&D consumables (potions, oils, etc.) without artificer flags; fixed consumable detection (use `item.type` not `system.type.value`)
+- [x] **Recipe row redesign:** Result item image, title on top, tags below; async recipe resolution for images
+- [x] **UI tweaks:** "Ingredients" → "Components"; hammer icon right-justified; time slider 0–120; recipe defaults heat/time to 0 when unset; "Tags for this combination" moved to Details
 
 ---
 
