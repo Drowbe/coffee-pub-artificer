@@ -5,6 +5,7 @@
 import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { getAPI } from './api-artificer.js';
+import { loadTranslationFromFile } from './cache/cache-items.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerImportWindow } from './window-artificer-import.js';
@@ -58,6 +59,9 @@ Hooks.once('ready', async () => {
         
         // Register settings FIRST during the ready phase
         registerSettings();
+
+        // Pre-load item translation (alias → canonical) for cache
+        await loadTranslationFromFile();
         
         // Register module with Blacksmith
         if (typeof BlacksmithModuleManager !== 'undefined') {

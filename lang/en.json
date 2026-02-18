@@ -33,9 +33,6 @@
 
 		"blueprintJournal-Label": "Blueprint Journal",
 		"blueprintJournal-Hint": "Select the journal containing blueprint entries. Each page is parsed as a blueprint.",
-
-		"itemTranslation-Label": "Item Name Translation",
-		"itemTranslation-Hint": "JSON map of canonical names to aliases. Example: {\"Flask of Oil\": [\"Oil Flask\", \"oil, flask\"]}. Used when building the item cache.",
 		"numIngredientCompendiums-Label": "Number of Compendiums",
 		"numIngredientCompendiums-Hint": "Number of compendiums to search for ingredients. Adjust the slider to add or remove priority slots."
 

@@ -237,17 +237,6 @@ export const registerSettings = () => {
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
 
-    // -- Item Name Translation (alias mapping) --
-	game.settings.register(MODULE.ID, 'itemTranslation', {
-        name: MODULE.ID + '.itemTranslation-Label',
-        hint: MODULE.ID + '.itemTranslation-Hint',
-        scope: 'world',
-        config: true,
-        default: '{}',
-        type: String,
-		group: WORKFLOW_GROUPS.COMMON_SETTINGS
-	});
-
     // -- Number of Ingredient Compendiums --
 	game.settings.register(MODULE.ID, 'numIngredientCompendiums', {
         name: MODULE.ID + '.numIngredientCompendiums-Label',
@@ -271,6 +260,16 @@ export const registerSettings = () => {
         numCompendiums = 1;
     }
     registerIngredientCompendiumSettings(numCompendiums);
+
+    // -- Item Cache (persisted, GM-built) - not shown in config UI --
+    game.settings.register(MODULE.ID, 'itemCache', {
+        name: 'Item Cache (persisted)',
+        hint: 'Stores built item cache for fast lookup. Managed by Refresh Cache in Crafting Station.',
+        scope: 'world',
+        config: false,
+        default: null,
+        type: Object
+    });
 
     // Add more settings here as needed
     

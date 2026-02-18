@@ -1,5 +1,132 @@
 {
-  "Flask of Oil": ["Oil Flask", "oil, flask", "oil"],
-  "Alchemist's Fire": ["Alchemists Fire", "AlchemistsFire"],
-  "Healing Potion": ["Potion of Healing", "Healing Potion"]
+  "flask of oil": "Oil Flask",
+  "oil flask": "Oil Flask",
+  "oil flask of": "Oil Flask",
+
+  "oil": "Oil",
+
+  "alchemists fire": "Alchemist's Fire",
+  "alchemistsfire": "Alchemist's Fire",
+
+  "healing potion": "Potion of Healing",
+  "potion of healing": "Potion of Healing",
+
+  "climbing potion": "Potion of Climbing",
+  "potion of climbing": "Potion of Climbing",
+
+  "potion of healing greater": "Potion of Greater Healing",
+  "potion of greater healing": "Potion of Greater Healing",
+  "greater healing potion": "Potion of Greater Healing",
+
+  "potion of healing superior": "Potion of Superior Healing",
+  "potion of superior healing": "Potion of Superior Healing",
+  "superior healing potion": "Potion of Superior Healing",
+
+  "potion of healing supreme": "Potion of Supreme Healing",
+  "potion of supreme healing": "Potion of Supreme Healing",
+  "supreme healing potion": "Potion of Supreme Healing",
+
+  "holy water": "Flask of Holy Water",
+  "flask of holy water": "Flask of Holy Water",
+
+  "basic poison": "Basic Poison",
+  "poison basic": "Basic Poison",
+
+  "acid": "Acid (vial)",
+  "acid vial": "Acid (vial)",
+
+  "antitoxin": "Antitoxin (vial)",
+  "antitoxin vial": "Antitoxin (vial)",
+
+  "spell scroll cantrip": "Spell Scroll, Cantrip",
+  "cantrip spell scroll": "Spell Scroll, Cantrip",
+  "spell scroll, cantrip": "Spell Scroll, Cantrip",
+
+  "spell scroll level 1": "Spell Scroll, Level 1",
+  "spell scroll 1st level": "Spell Scroll, Level 1",
+  "spell scroll 1st": "Spell Scroll, Level 1",
+
+  "slipperiness oil": "Oil of Slipperiness",
+  "etherealness oil": "Oil of Etherealness",
+  "sharpness oil": "Oil of Sharpness",
+
+  "potion of giant strength hill": "Potion of Hill Giant Strength",
+  "potion of hill giant strength": "Potion of Hill Giant Strength",
+
+  "potion of giant strength fire": "Potion of Fire Giant Strength",
+  "potion of fire giant strength": "Potion of Fire Giant Strength",
+
+  "potion of giant strength frost": "Potion of Frost Giant Strength",
+  "potion of frost giant strength": "Potion of Frost Giant Strength",
+
+  "potion of giant strength stone": "Potion of Stone Giant Strength",
+  "potion of stone giant strength": "Potion of Stone Giant Strength",
+
+  "potion of giant strength cloud": "Potion of Cloud Giant Strength",
+  "potion of cloud giant strength": "Potion of Cloud Giant Strength",
+
+  "potion of giant strength storm": "Potion of Storm Giant Strength",
+  "potion of storm giant strength": "Potion of Storm Giant Strength",
+
+  "fire resistance potion": "Potion of Fire Resistance",
+  "potion of fire resistance": "Potion of Fire Resistance",
+
+  "cold resistance potion": "Potion of Cold Resistance",
+  "potion of cold resistance": "Potion of Cold Resistance",
+
+  "lightning resistance potion": "Potion of Lightning Resistance",
+  "potion of lightning resistance": "Potion of Lightning Resistance",
+
+  "acid resistance potion": "Potion of Acid Resistance",
+  "potion of acid resistance": "Potion of Acid Resistance",
+
+  "poison resistance potion": "Potion of Poison Resistance",
+  "potion of poison resistance": "Potion of Poison Resistance",
+
+  "water breathing potion": "Potion of Water Breathing",
+  "potion of water breathing": "Potion of Water Breathing",
+
+  "invisibility potion": "Potion of Invisibility",
+  "potion of invisibility": "Potion of Invisibility",
+
+  "growth potion": "Potion of Growth",
+  "potion of growth": "Potion of Growth",
+
+  "animal friendship potion": "Potion of Animal Friendship",
+  "potion of animal friendship": "Potion of Animal Friendship",
+
+  "poison potion": "Potion of Poison",
+  "potion of poison": "Potion of Poison",
+
+  "keoghtom ointment": "Keoghtom's Ointment",
+  "keoghtoms ointment": "Keoghtom's Ointment",
+  "restorative ointment": "Keoghtom's Ointment",
+
+  "rope hempen 50 ft": "Rope, Hempen (50 ft.)",
+  "hempen rope 50 ft": "Rope, Hempen (50 ft.)",
+  "rope 50 feet": "Rope, Hempen (50 ft.)",
+
+  "rope silk 50 ft": "Rope, Silk (50 ft.)",
+  "silk rope 50 ft": "Rope, Silk (50 ft.)",
+
+  "water pint": "Water (Pint)",
+  "water fresh pint": "Water (Pint)",
+
+  "feather token anchor": "Quaal's Feather Token (Anchor)",
+  "quaals feather token anchor": "Quaal's Feather Token (Anchor)",
+
+  "feather token tree": "Quaal's Feather Token (Tree)",
+  "quaals feather token tree": "Quaal's Feather Token (Tree)",
+
+  "feather token swan boat": "Quaal's Feather Token (Swan Boat)",
+  "quaals feather token swan boat": "Quaal's Feather Token (Swan Boat)",
+
+  "elemental gem": "Elemental Gem",
+  "elemental gem blue sapphire": "Elemental Gem",
+  "elemental gem emerald": "Elemental Gem",
+  "elemental gem red corundum": "Elemental Gem",
+  "elemental gem yellow diamond": "Elemental Gem",
+
+  "luckstone": "Stone of Good Luck (Luckstone)",
+  "stone of good luck": "Stone of Good Luck (Luckstone)"
 }

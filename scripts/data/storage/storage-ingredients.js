@@ -47,7 +47,7 @@ export class IngredientStorage {
         const needsCompendia = source === 'compendia-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
 
         if (cacheStatus.hasCache && !cacheStatus.building) {
-            const allItems = getAllItemsFromCache();
+            const allItems = await getAllItemsFromCache();
             for (const item of allItems) {
                 const artificerData = item.flags?.artificer ?? item.flags?.[MODULE.ID];
                 if (!artificerData || artificerData.type !== 'ingredient') continue;

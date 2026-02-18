@@ -2,23 +2,24 @@
 
 ## IN PROGRESS / CURRENT FOCUS
 
-### Next Step: Persisted Lightweight Item Cache
+### Persisted Lightweight Item Cache ✅
 
 **Goal:** Replace in-memory item cache with a persisted cache for fast name-based lookup, fewer compendium calls, and alias support.
 
 **Tasks:**
-- [ ] Replace in-memory cache with persisted storage (journal or world flags)
-- [ ] Add cache schema: `name`, `uuid`, `img`, `type`, `dndType`, `family`, `tags`, `tier`, `rarity`, `source`
-- [ ] Include schema version and last-built timestamp
-- [ ] Integrate `resources/translation-item.json`: index canonical name + all aliases
-- [ ] Implement lookup: normalized name → index → record
-- [ ] Map D&D consumable type to family (potion, poison, food, oil, etc.)
-- [ ] Support overlay metadata for core items
-- [ ] Wire cache refresh to existing "Refresh Cache" button in crafting UI
+- [x] Replace in-memory cache with persisted storage (world setting `itemCache`)
+- [x] Add cache schema: `name`, `uuid`, `img`, `type`, `dndType`, `family`, `tags`, `tier`, `rarity`, `source`, `artificerType`
+- [x] Include schema version and last-built timestamp
+- [x] Integrate translation (setting + index): canonical name + all aliases → uuid
+- [x] Implement lookup: normalized name → index → uuid → `fromUuid()` when needed
+- [x] Map D&D consumable type to family (potion, poison, food, oil, etc.)
+- [x] Wire cache refresh to existing "Refresh Cache" button in crafting UI
+- [ ] (Optional) Support overlay metadata for core items
 
 **Related files:** `scripts/cache/cache-items.js`, `scripts/data/storage/storage-ingredients.js`, `scripts/utility-artificer-item.js`, `scripts/settings.js`, `resources/translation-item.json`
 
 ### Recently Completed
+- [x] Persisted item cache (world setting `itemCache`; save on Refresh, restore on getCacheStatus)
 - [x] Rarity: EPIC → VERY_RARE (Very Rare) per D&D 5e
 - [x] IngredientStorage: use item cache when available, else notify GM
 - [x] Crafting window: crafter portrait/name in header, "Results" → "Details"

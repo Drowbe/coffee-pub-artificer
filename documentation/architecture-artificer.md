@@ -531,7 +531,7 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 
 #### Current Behavior (In-Memory)
 - Cache built on Refresh from configured compendia + world items
-- Keyed by normalized name; supports alias mapping via `itemTranslation` setting
+- Keyed by normalized name; alias mapping from `resources/translation-item.json` (alias → canonical)
 - `getFromCache(name)` returns full Item; `getAllItemsFromCache()` returns Item[]
 - IngredientStorage uses cache when available; otherwise notifies GM to build it
 
@@ -562,11 +562,13 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 | `source` | `string` | Compendium pack ID or `"world"` |
 | `artificerType` | `string \| null` | `ingredient`, `component`, `essence`, `container`, or `null` |
 
-**Index (in-memory only):** Built at load from `records` + `resources/translation-item.json`. Normalized name and all aliases → `uuid`. Translation format: `{ "canonical": ["alias1", "alias2"], ... }`.
+**Index (in-memory only):** Built at load from `records` + `resources/translation-item.json`. Normalized name and all aliases → `uuid`. Translation format: `{ "alias (normalized)": "Canonical Name", ... }` (flat alias→canonical).
 
 **Flow:** Refresh Cache → scan compendia + world → build records → persist. World load → read persisted records → build name index → optionally pre-fetch Items to warm in-memory cache. Lookup: index → uuid → `fromUuid(uuid)` for full Item.
 
-**Related:** `scripts/cache/cache-items.js`, `resources/translation-item.json`, `itemTranslation` setting, `ingredientStorageSource`, `itemLookupOrder`.
+**Storage:** World setting `game.settings.get(MODULE.ID, 'itemCache')` (scope: world, config: false). Same pattern as Bibliosoph Quick Encounter cache.
+
+**Related:** `scripts/cache/cache-items.js`, `resources/translation-item.json`, `ingredientStorageSource`, `itemLookupOrder`.
 
 ---
 
@@ -694,9 +696,9 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
   - Refresh Cache button
 - Item cache (in-memory) ✅
   - GM-initiated refresh from compendia + world
-  - Name-based lookup, alias support via `itemTranslation` setting
+  - Name-based lookup, alias support from `resources/translation-item.json`
   - IngredientStorage uses cache when available; otherwise notifies GM
-- Settings: `itemLookupOrder`, `ingredientStorageSource`, `itemTranslation`
+- Settings: `itemLookupOrder`, `ingredientStorageSource`
 - Rarity: Very Rare (D&D 5e standard; no "Epic")
 
 ### 🔄 In Progress
@@ -786,7 +788,7 @@ This crafting system supports:
 |------|-------------|--------|
 | **Custom ingredients in journals** | overview.md and storage-ingredients `_loadFromJournals` imply journal-based custom ingredients. Not implemented (TODO stub). | Decide: implement journal ingredient parsing, or remove from docs. |
 | **D&D version** | Architecture says D&D 5e; user rules say 5.5+. | Explicitly target D&D 5e 5.5+ in §11 and schema docs. |
-| **Persisted cache storage** | §11.7 defines schema but not where to persist (journal vs world flags). | Decide during implementation; document in §11.7 once chosen. |
+| **Persisted cache storage** | ✅ World setting `game.settings.get(MODULE.ID, 'itemCache')` (Bibliosoph/Blacksmith pattern). |
 | **Experimentation §7.0** | Quantities, solvent, process (temp/time) are designed but not implemented. | Phase 2; tag-based matching works, full model is enhancement. |
 
 ### 16.2 Old/Outdated Decisions

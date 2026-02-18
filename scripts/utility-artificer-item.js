@@ -42,7 +42,7 @@ export async function resolveItemByName(name, type) {
     const targetName = name.trim();
 
     // Use cache if available (purposeful refresh by GM)
-    const cached = getFromCache(targetName, type);
+    const cached = await getFromCache(targetName, type);
     if (cached) return cached;
 
     const lookupOrder = game.settings.get(MODULE.ID, 'itemLookupOrder') ?? 'compendia-first';
