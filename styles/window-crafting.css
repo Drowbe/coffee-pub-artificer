@@ -749,31 +749,66 @@
     transition: border-color 0.15s, box-shadow 0.2s;
 }
 
-/* Apparatus slot: border color shifts to red as heat increases (--heat-pct 0–100) */
+/* Apparatus slot: state-driven energy (--heat 0–1 from slider + crafting progress) */
 .crafting-bench-apparatus-slot {
+    --heat: 0;
+    position: relative;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
     border-color: color-mix(
         in srgb,
-        var(--craft-border-color) calc(100% - var(--heat-pct, 0) * 1%),
-        rgba(200, 60, 40, 0.95) calc(var(--heat-pct, 0) * 1%)
+        var(--craft-border-color) calc(100% - var(--heat, 0) * 100%),
+        rgba(255, 140, 60, 0.9) calc(var(--heat, 0) * 100%)
     );
+    box-shadow: 0 0 calc(6px + 18px * var(--heat, 0)) rgba(255, 140, 60, calc(0.2 + 0.6 * var(--heat, 0)));
 }
 
 .crafting-bench-apparatus-slot:has(.crafting-bench-container-item) {
+    border-style: solid;
     border-color: color-mix(
         in srgb,
-        rgba(59, 132, 66, 0.9) calc(100% - var(--heat-pct, 0) * 1%),
-        rgba(200, 60, 40, 0.95) calc(var(--heat-pct, 0) * 1%)
+        rgba(59, 132, 66, 0.9) calc(100% - var(--heat, 0) * 100%),
+        rgba(255, 140, 60, 0.9) calc(var(--heat, 0) * 100%)
     );
 }
 
-/* Heating animation when crafting (pulsing glow) */
-.crafting-bench-apparatus-heating {
-    animation: crafting-bench-heat-pulse 1.2s ease-in-out infinite;
+/* Inner radiant bloom - heat rising from base */
+.crafting-bench-apparatus-slot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: radial-gradient(
+        circle at 50% 70%,
+        rgba(255, 180, 90, calc(0.15 + 0.35 * var(--heat, 0))),
+        transparent 65%
+    );
+    mix-blend-mode: screen;
+    opacity: calc(0.4 + 0.6 * var(--heat, 0));
 }
 
-@keyframes crafting-bench-heat-pulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(200, 80, 40, 0.4); }
-    50%     { box-shadow: 0 0 16px rgba(220, 90, 50, 0.8), 0 0 24px rgba(200, 60, 40, 0.5); }
+/* Subtle breathing motion - only when crafting (timer running), intensity scales with heat */
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting .crafting-container-img,
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting .crafting-bench-container-empty i {
+    transform-origin: 50% 60%;
+    animation: crafting-bench-heat-breathe 2s ease-in-out infinite;
+}
+
+@keyframes crafting-bench-heat-breathe {
+    0%   { transform: scale(calc(1 + 0.005 * var(--heat, 0))); }
+    50%  { transform: scale(calc(1 + 0.015 * var(--heat, 0))); }
+    100% { transform: scale(calc(1 + 0.005 * var(--heat, 0))); }
+}
+
+/* Unstable flicker at high heat (>= 0.85) - only when crafting */
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting[data-unstable="true"] {
+    animation: crafting-bench-heat-flicker 0.3s ease-in-out infinite;
+}
+
+@keyframes crafting-bench-heat-flicker {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.05); }
+    100% { filter: brightness(1); }
 }
 
 .crafting-bench-center-slot:hover {
@@ -786,10 +821,9 @@
     border-radius: 50%;
 }
 
-/* Filled slots: solid green border instead of dashed */
+/* Filled slots: solid green border instead of dashed (apparatus uses heat mix above) */
 .crafting-bench-slot:has(.crafting-bench-slot-item),
 .crafting-bench-tool-slot:has(.crafting-bench-container-item),
-.crafting-bench-apparatus-slot:has(.crafting-bench-container-item),
 .crafting-bench-container-slot:has(.crafting-bench-container-item) {
     border-style: solid;
     border-color: rgba(59, 132, 66, 0.9);

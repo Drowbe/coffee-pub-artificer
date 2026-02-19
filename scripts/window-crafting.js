@@ -416,6 +416,23 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             showContainerOnly,
             showToolOnly,
             heatValue: this.heatValue,
+            heat: (() => {
+                const base = this.heatValue / 100;
+                if (this._craftingCountdownRemaining == null) return base;
+                const total = Math.max(1, this.timeValue);
+                const remaining = this._craftingCountdownRemaining;
+                const progress = 1 - remaining / total;
+                return base + (1 - base) * progress;
+            })(),
+            heatUnstable: (() => {
+                const base = this.heatValue / 100;
+                if (this._craftingCountdownRemaining == null) return base >= 0.85;
+                const total = Math.max(1, this.timeValue);
+                const remaining = this._craftingCountdownRemaining;
+                const progress = 1 - remaining / total;
+                const h = base + (1 - base) * progress;
+                return h >= 0.85;
+            })(),
             timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
             heatFillPercent: this.heatValue,
             timeFillPercent: this._craftingCountdownRemaining != null

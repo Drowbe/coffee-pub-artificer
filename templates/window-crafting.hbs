@@ -116,7 +116,7 @@
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if isCrafting}}crafting-bench-apparatus-heating{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus (beaker, mortar)" style="--heat-pct: {{heatValue}}%;">
+                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if isCrafting}}crafting-bench-apparatus-crafting{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus (beaker, mortar)" style="--heat: {{heat}};" {{#if heatUnstable}}data-unstable="true"{{/if}}>
                             {{#if apparatusSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{apparatusSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}
