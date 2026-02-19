@@ -274,12 +274,7 @@ Workstations influence:
 - recipe unlock chance  
 - essence synergy  
 
-Examples:
-- Smithy Forge  
-- Alchemist Table  
-- Arcane Workbench  
-- Cookfire Kit  
-- Monster Research Bench  
+Examples (see `schema-workstations.js`): Smithy, Alchemist Table, Arcane Workbench, Cookfire, Tinker.
 
 Blueprints may require specific workstations.
 
@@ -369,7 +364,7 @@ Based on analysis of Codex and Quest system patterns, we'll use a hybrid storage
 - **Recipes** - Structured HTML journal pages (instructions for crafting)
 - **Blueprints** - Multi-stage journal pages with state markup (instructions for multi-stage crafting)
 
-**Note:** Recipe and Blueprint results (the crafted items) are FoundryVTT Items, not journals. Recipes/Blueprints reference these items via `resultItemUuid`.
+**Note:** Recipe and Blueprint results (the crafted items) are FoundryVTT Items, not journals. Recipes reference them by **name** (`resultItemName`); resolution to an item is done at runtime from the item cache (compendia + world). Ingredient names in recipes are also resolved by name at runtime.
 
 **Rationale:** Recipes and Blueprints are knowledge/instructions that GMs can edit and share. Storing them as journal entries provides human-editable format, rich formatting, built-in permissions/ownership, and easy sharing via journal compendiums. Uses parser-based architecture (like Codex/Quest systems). The actual crafted results (swords, potions, etc.) are Items that can be held and used.
 
@@ -402,21 +397,35 @@ Following Codex/Quest patterns:
 - Flexible schema - can add fields without migration
 - Version-tolerant parsing
 
+**Recipe journal fields (same as JSON import):** Name, Type, Category, Skill, Skill Level, Workstation, Process Type, Process Level, Heat, Time, Apparatus, Container, Tool, Gold Cost, Work Hours, Result, Tags, Description, Source, License, Ingredients. The journal parser and recipe import HTML use the same labels; names (result, ingredients) are resolved at runtime from the item cache.
+
 **Example Recipe Structure:**
 ```html
-<p><strong>Recipe Name:</strong> Healing Potion</p>
+<p><strong>Name:</strong> Healing Potion</p>
 <p><strong>Type:</strong> Consumable</p>
 <p><strong>Category:</strong> Potion</p>
 <p><strong>Skill:</strong> Alchemy</p>
 <p><strong>Skill Level:</strong> 25</p>
 <p><strong>Workstation:</strong> Alchemist Table</p>
+<p><strong>Process Type:</strong> brew</p>
+<p><strong>Process Level:</strong> medium</p>
+<p><strong>Heat:</strong> medium</p>
+<p><strong>Time:</strong> 300</p>
+<p><strong>Apparatus:</strong> Mixing Bowl</p>
+<p><strong>Container:</strong> Vial</p>
+<p><strong>Tool:</strong> </p>
+<p><strong>Gold Cost:</strong> 0</p>
+<p><strong>Work Hours:</strong> </p>
+<p><strong>Result:</strong> Healing Potion</p>
+<p><strong>Tags:</strong> healing, consumable, potion</p>
+<p><strong>Description:</strong> A simple healing potion.</p>
+<p><strong>Source:</strong> Core Rules</p>
+<p><strong>License:</strong> </p>
 <p><strong>Ingredients:</strong></p>
 <ul>
-    <li>Herb: Lavender (2)</li>
+    <li>Ingredient: Lavender (2)</li>
     <li>Essence: Life (1)</li>
 </ul>
-<p><strong>Result:</strong> @UUID[Item.abc123]{Healing Potion}</p>
-<p><strong>Tags:</strong> healing, consumable, potion</p>
 ```
 
 **Blueprint Stage State Markup:**
@@ -615,7 +624,7 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 
 **Q8: Recipe Result Item Creation**
 - **Decision:** Link to existing item in compendium (Option A)
-- **Rationale:** Recipe stores `resultItemUuid` pointing to existing item. Crafting creates a copy of that item. Provides consistent item definitions, easy to update all instances, requires pre-creating recipe result items.
+- **Rationale:** Recipe stores `resultItemName` (and ingredient names). At runtime the item cache resolves names to items (compendia + world). Crafting creates a copy of the resolved result item. Portable across worlds; requires item cache refresh when compendia change.
 - **Status:** ✅ Decided
 
 **Q9: Blueprint Stage Progression**

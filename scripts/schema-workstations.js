@@ -15,7 +15,7 @@
  * @typedef {Object} ArtificerWorkstation
  * @property {string} id - Unique identifier (UUID)
  * @property {string} name - Workstation name
- * @property {string} type - Workstation type (Smithy, AlchemistTable, ArcaneWorkbench, Cookfire, MonsterResearch)
+ * @property {string} type - Workstation type (Smithy, AlchemistTable, ArcaneWorkbench, Cookfire, Tinker)
  * @property {WorkstationModifiers} modifiers - Quality and effect modifiers
  * @property {string[]} requiredSkills - Required skills to use (if any)
  * @property {number|null} requiredSkillLevel - Minimum skill level (if any)
@@ -33,6 +33,6 @@ export const WORKSTATION_TYPES = {
     ALCHEMIST_TABLE: 'AlchemistTable',
     ARCANE_WORKBENCH: 'ArcaneWorkbench',
     COOKFIRE: 'Cookfire',
-    MONSTER_RESEARCH: 'MonsterResearch'
+    TINKER: 'Tinker'
 };
 

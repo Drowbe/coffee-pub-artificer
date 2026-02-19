@@ -87,7 +87,13 @@ The source document uses additional metadata. **Add `containerName`, `heat`, and
 
 ## Recipe Blocks
 
-Each block uses the schema fields. `resultItemName` is provided for matching; `resultItemUuid` must be set when the target item exists in the world.
+Each block lists every Artificer recipe variable in a fixed order so you can use these as inputs to build JSON elsewhere. Empty values are included. `resultItemName` is used for matching; resolution to items is by name at runtime from the item cache.
+
+**Canonical block order (all variables, even if empty):**
+
+`name` → `resultItemName` → `type` → `category` → `skill` → `skillLevel` → `workstation` → `toolName` → `apparatusName` → `containerName` → `processType` → `processLevel` → `heat` → `time` → `goldCost` → `workHours` → `ingredients` → `tags` → `description` → `source` → `license`
+
+Source metadata (`dc`, `productValue`, `rarity`, `isHomebrew`) may follow for reference.
 
 ### Alchemist's Supplies
 
@@ -100,16 +106,26 @@ type: Consumable
 category: Alchemical
 skill: Alchemy
 skillLevel: 0
-tool: Alchemist's Supplies
-dc: 8
-workHours: 8
+workstation:
+toolName: Alchemist's Supplies
+apparatusName:
+containerName:
+processType:
+processLevel:
+heat:
+time: 28800
 goldCost: 25
-productValue: 50
-rarity: Common
+workHours: 8
 ingredients:
   - { type: ingredient, name: Fire Peas, quantity: 1 }
   - { type: item, name: Flask of Oil, quantity: 1 }
+tags:
 description: Sticky adhesive fluid that ignites when exposed to air. 1d4 fire damage per turn until extinguished (DC 10 DEX).
+source:
+license:
+dc: 8
+productValue: 50
+rarity: Common
 ```
 
 ```
@@ -119,15 +135,25 @@ type: Consumable
 category: Alchemical
 skill: Alchemy
 skillLevel: 0
-tool: Alchemist's Supplies
-dc: 8
-workHours: 8
+workstation:
+toolName: Alchemist's Supplies
+apparatusName:
+containerName:
+processType:
+processLevel:
+heat:
+time: 28800
 goldCost: 25
-productValue: 50
-rarity: Common
+workHours: 8
 ingredients:
   - { type: ingredient, name: Air Elemental Wisp, quantity: 1 }
+tags:
 description: Breath of elemental air. Exhale for gust of wind; hold to not breathe for 1 hour.
+source:
+license:
+dc: 8
+productValue: 50
+rarity: Common
 ```
 
 ```
@@ -232,7 +258,7 @@ category: Potion
 skill: Alchemy
 skillLevel: 0
 tool: Alchemist's Supplies
-dc: 8
+dc: 8  
 workHours: 8
 goldCost: 25
 productValue: 50

@@ -85,7 +85,8 @@ export async function validateRecipePayload(payload) {
         containerName: containerName?.trim() || null,
         toolName: toolName?.trim() || null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
-        workHours: payload.workHours != null ? Number(payload.workHours) : null
+        workHours: payload.workHours != null ? Number(payload.workHours) : null,
+        source: payload.source != null ? String(payload.source).trim() : ''
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
@@ -95,38 +96,47 @@ export async function validateRecipePayload(payload) {
 }
 
 /**
- * Build HTML content for a recipe journal page (matches RecipeParser format)
+ * Build HTML content for a recipe journal page (matches RecipeParser format).
+ * Always outputs every recipe field so authors can see what is possible, even when empty.
  * @param {Object} data - Validated recipe data
  * @returns {string} HTML
  */
 function buildRecipePageHtml(data) {
-    const parts = [];
-    if (data.type) parts.push(`<p><strong>Type:</strong> ${escapeHtml(data.type)}</p>`);
-    if (data.category) parts.push(`<p><strong>Category:</strong> ${escapeHtml(data.category)}</p>`);
-    if (data.skill) parts.push(`<p><strong>Skill:</strong> ${escapeHtml(data.skill)}</p>`);
-    if (data.skillLevel != null) parts.push(`<p><strong>Skill Level:</strong> ${data.skillLevel}</p>`);
-    if (data.workstation) parts.push(`<p><strong>Workstation:</strong> ${escapeHtml(data.workstation)}</p>`);
-    if (data.processType) parts.push(`<p><strong>Process Type:</strong> ${escapeHtml(data.processType)}</p>`);
-    if (data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX) {
-        const label = data.processType === 'grind' ? (GRIND_LEVELS[data.processLevel] ?? data.processLevel) : (HEAT_LEVELS[data.processLevel] ?? data.processLevel);
-        parts.push(`<p><strong>Process Level:</strong> ${escapeHtml(String(label))}</p>`);
-    }
-    if (data.heat != null && data.heat >= 0 && data.heat <= HEAT_MAX) parts.push(`<p><strong>Heat:</strong> ${HEAT_LEVELS[data.heat] ?? data.heat}</p>`);
-    if (data.time != null && data.time >= 0) parts.push(`<p><strong>Time:</strong> ${data.time}</p>`);
-    if (data.apparatusName) parts.push(`<p><strong>Apparatus:</strong> ${escapeHtml(data.apparatusName)}</p>`);
-    if (data.containerName) parts.push(`<p><strong>Container:</strong> ${escapeHtml(data.containerName)}</p>`);
-    if (data.toolName) parts.push(`<p><strong>Tool:</strong> ${escapeHtml(data.toolName)}</p>`);
-    parts.push(`<p><strong>Result:</strong> ${escapeHtml(data.resultItemName ?? data.name)}</p>`);
-    if (data.tags?.length) parts.push(`<p><strong>Tags:</strong> ${data.tags.map((t) => escapeHtml(String(t))).join(', ')}</p>`);
-    if (data.description) parts.push(`<p><strong>Description:</strong> ${escapeHtml(data.description)}</p>`);
+    const v = (x) => (x != null && x !== '' ? escapeHtml(String(x)) : '');
+    const processLevelLabel =
+        data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX
+            ? (data.processType === 'grind' ? (GRIND_LEVELS[data.processLevel] ?? data.processLevel) : (HEAT_LEVELS[data.processLevel] ?? data.processLevel))
+            : '';
+    const parts = [
+        `<p><strong>Name:</strong> ${v(data.name)}</p>`,
+        `<p><strong>Type:</strong> ${v(data.type)}</p>`,
+        `<p><strong>Category:</strong> ${v(data.category)}</p>`,
+        `<p><strong>Skill:</strong> ${v(data.skill)}</p>`,
+        `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
+        `<p><strong>Workstation:</strong> ${v(data.workstation)}</p>`,
+        `<p><strong>Process Type:</strong> ${v(data.processType)}</p>`,
+        `<p><strong>Process Level:</strong> ${v(processLevelLabel)}</p>`,
+        `<p><strong>Heat:</strong> ${data.heat != null && data.heat >= 0 && data.heat <= HEAT_MAX ? (HEAT_LEVELS[data.heat] ?? data.heat) : ''}</p>`,
+        `<p><strong>Time:</strong> ${data.time != null && data.time >= 0 ? data.time : ''}</p>`,
+        `<p><strong>Apparatus:</strong> ${v(data.apparatusName)}</p>`,
+        `<p><strong>Container:</strong> ${v(data.containerName)}</p>`,
+        `<p><strong>Tool:</strong> ${v(data.toolName)}</p>`,
+        `<p><strong>Gold Cost:</strong> ${data.goldCost != null ? data.goldCost : ''}</p>`,
+        `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`,
+        `<p><strong>Result:</strong> ${v(data.resultItemName ?? data.name)}</p>`,
+        `<p><strong>Tags:</strong> ${data.tags?.length ? data.tags.map((t) => escapeHtml(String(t))).join(', ') : ''}</p>`,
+        `<p><strong>Description:</strong> ${v(data.description)}</p>`,
+        `<p><strong>Source:</strong> ${v(data.source)}</p>`,
+        `<p><strong>License:</strong> ${v(data.license)}</p>`
+    ];
+    parts.push(`<p><strong>Ingredients:</strong></p><ul>`);
     if (data.ingredients?.length) {
-        parts.push(`<p><strong>Ingredients:</strong></p><ul>`);
         for (const ing of data.ingredients) {
-            const type = (ing.type || 'ingredient').charAt(0).toUpperCase() + (ing.type || 'ingredient').slice(1);
-            parts.push(`<li>${escapeHtml(type)}: ${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`);
+            const typeLabel = (ing.type || 'ingredient').charAt(0).toUpperCase() + (ing.type || 'ingredient').slice(1);
+            parts.push(`<li>${escapeHtml(typeLabel)}: ${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`);
         }
-        parts.push(`</ul>`);
     }
+    parts.push(`</ul>`);
     return parts.join('');
 }
 

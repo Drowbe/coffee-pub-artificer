@@ -52,7 +52,9 @@ export class RecipeParser {
                 // Parse based on label (case-insensitive)
                 const labelLower = label.toLowerCase();
                 
-                if (labelLower === 'type') {
+                if (labelLower === 'name') {
+                    if (value.trim()) data.name = value.trim();
+                } else if (labelLower === 'type') {
                     data.type = value;
                 } else if (labelLower === 'category') {
                     data.category = value;
@@ -97,6 +99,12 @@ export class RecipeParser {
                     }
                 } else if (labelLower === 'tool') {
                     if (value.trim()) data.toolName = value.trim();
+                } else if (labelLower === 'gold cost') {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0) data.goldCost = num;
+                } else if (labelLower === 'work hours') {
+                    const num = parseFloat(value);
+                    if (!isNaN(num) && num >= 0) data.workHours = num;
                 } else if (labelLower === 'result') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
@@ -109,6 +117,10 @@ export class RecipeParser {
                     data.tags = value.split(',').map(t => t.trim()).filter(t => t);
                 } else if (labelLower === 'description') {
                     data.description = value;
+                } else if (labelLower === 'source') {
+                    if (value.trim()) data.source = value.trim();
+                } else if (labelLower === 'license') {
+                    if (value.trim()) data.license = value.trim();
                 } else if (labelLower === 'ingredients') {
                     // Ingredients are in a following <ul> element
                     const ul = p.nextElementSibling;

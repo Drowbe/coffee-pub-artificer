@@ -38,6 +38,7 @@ export class ArtificerRecipe {
         this.tags = data.tags ?? [];
         this.description = data.description ?? '';
         this.source = data.source ?? '';
+        this.license = data.license ?? '';
         this.journalPageId = data.journalPageId ?? '';
         
         // Validate
@@ -239,6 +240,7 @@ export class ArtificerRecipe {
             tags: [...this.tags],
             description: this.description,
             source: this.source,
+            license: this.license,
             journalPageId: this.journalPageId
         };
     }
