@@ -38,13 +38,13 @@
                 </div>
             </div>
             <div class="artificer-form-group artificer-skill-slider-group">
-                <label for="skillLevel" title="Minimum crafting skill level required to create or use this item.">Skill Level (min.)</label>
+                <label for="skillLevel" title="Minimum crafting skill level required to create or use this item.">Required Skill Level: <span class="artificer-skill-current-value">{{skillLevel}}</span></label>
                 <div class="artificer-skill-slider-row">
-                    <span class="artificer-skill-slider-label">1</span>
-                    <input type="range" name="skillLevel" id="skillLevel" class="artificer-skill-slider" min="1" max="20" value="{{skillLevel}}" step="1" aria-label="Skill level 1–20" style="--skill-fill: {{skillLevelFillPercent}}%;" />
+                    <span class="artificer-skill-slider-label">0</span>
+                    <input type="range" name="skillLevel" id="skillLevel" class="artificer-skill-slider" min="0" max="20" value="{{skillLevel}}" step="1" aria-label="Skill level 0-20" style="--skill-fill: {{skillLevelFillPercent}}%;" />
                     <span class="artificer-skill-slider-label">20</span>
                 </div>
-                <span class="artificer-skill-current-value">{{skillLevel}}</span>
+                
             </div>
             {{#if isComponent}}
             <div class="artificer-form-group artificer-biomes-group">

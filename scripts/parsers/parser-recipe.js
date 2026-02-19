@@ -5,7 +5,7 @@
 import { MODULE } from '../const.js';
 import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS } from '../schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX } from '../schema-recipes.js';
 
 /**
  * Parser for Recipe journal entries
@@ -63,8 +63,11 @@ export class RecipeParser {
                 } else if (labelLower === 'workstation') {
                     data.workstation = value || null;
                 } else if (labelLower === 'heat') {
-                    const n = parseInt(value);
-                    if (!isNaN(n) && n >= 0 && n <= 100) data.heat = n;
+                    const str = (value || '').toString().trim().toLowerCase();
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0 && num <= HEAT_MAX) data.heat = num;
+                    else if (['off', 'low', 'medium', 'high'].includes(str)) data.heat = { off: 0, low: 1, medium: 2, high: 3 }[str];
+                    else if (!isNaN(num) && num <= 100) data.heat = Math.min(HEAT_MAX, Math.round((num / 100) * HEAT_MAX));
                 } else if (labelLower === 'time') {
                     const sec = this._parseTimeToSeconds(value);
                     if (sec != null) data.time = sec;

@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 import { getOrCreateJournal, postDebug, postError } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS } from './schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_LEVELS, HEAT_MAX } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
 
 /** Default journal name when none configured */
@@ -77,7 +77,7 @@ export async function validateRecipePayload(payload) {
         resultItemName: resultItemName.trim(),
         tags: Array.isArray(payload.tags) ? payload.tags : [],
         description: payload.description ?? '',
-        heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= 100 ? Number(payload.heat) : null) : null,
+        heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= HEAT_MAX ? Math.round(Number(payload.heat)) : null) : null,
         time: payload.time != null ? (Number(payload.time) >= 0 ? Number(payload.time) : null) : null,
         apparatusName: apparatusName?.trim() || null,
         containerName: containerName?.trim() || null,
@@ -104,7 +104,7 @@ function buildRecipePageHtml(data) {
     if (data.skill) parts.push(`<p><strong>Skill:</strong> ${escapeHtml(data.skill)}</p>`);
     if (data.skillLevel != null) parts.push(`<p><strong>Skill Level:</strong> ${data.skillLevel}</p>`);
     if (data.workstation) parts.push(`<p><strong>Workstation:</strong> ${escapeHtml(data.workstation)}</p>`);
-    if (data.heat != null && data.heat >= 0 && data.heat <= 100) parts.push(`<p><strong>Heat:</strong> ${data.heat}</p>`);
+    if (data.heat != null && data.heat >= 0 && data.heat <= HEAT_MAX) parts.push(`<p><strong>Heat:</strong> ${HEAT_LEVELS[data.heat] ?? data.heat}</p>`);
     if (data.time != null && data.time >= 0) parts.push(`<p><strong>Time:</strong> ${data.time}</p>`);
     if (data.apparatusName) parts.push(`<p><strong>Apparatus:</strong> ${escapeHtml(data.apparatusName)}</p>`);
     if (data.containerName) parts.push(`<p><strong>Container:</strong> ${escapeHtml(data.containerName)}</p>`);

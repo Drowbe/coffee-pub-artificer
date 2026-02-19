@@ -92,11 +92,11 @@ export class ArtificerRecipe {
             this.tags = [];
         }
 
-        // Validate heat (0-100) and time (seconds)
+        // Validate heat (0–3: Off/Low/Medium/High) and time (seconds)
         if (this.heat != null) {
             const h = Number(this.heat);
-            if (isNaN(h) || h < 0 || h > 100) this.heat = null;
-            else this.heat = h;
+            if (isNaN(h) || h < 0 || h > 3) this.heat = null;
+            else this.heat = Math.round(h);
         }
         if (this.time != null) {
             const t = Number(this.time);

@@ -246,37 +246,65 @@
     color: #fff;
 }
 
+
+
 /* Skill Level slider (1–20) */
 .item-form-crafting-style .artificer-skill-slider-group {
-    margin-bottom: 8px;
+    margin: 12px 0px 16px 0px;
 }
 .item-form-crafting-style .artificer-skill-slider-row {
     display: flex;
     align-items: center;
     gap: 8px;
+    margin: 8px 0px 0px 0px;
 }
 .item-form-crafting-style .artificer-skill-slider-label {
-    font-size: 0.8em;
+    font-size: 1.0em;
+    font-weight: 900;
     color: rgba(201, 201, 201, 0.7);
 }
+
 .item-form-crafting-style .artificer-skill-slider {
-    flex: 1;
-    -webkit-appearance: none;
-    height: 6px;
-    background: linear-gradient(to right, rgba(172, 159, 129, 0.5) 0%, rgba(172, 159, 129, 0.5) var(--skill-fill, 0%), rgba(100, 100, 100, 0.4) var(--skill-fill, 0%), rgba(100, 100, 100, 0.4) 100%);
-    border-radius: 3px;
+  flex: 1;
+  width: 100%;
+  height: 18px;              /* gives room for the thumb */
+  background: transparent;   /* don't style the input itself */
+  -webkit-appearance: none;
+  appearance: none;
 }
+
+/* Track */
+.item-form-crafting-style .artificer-skill-slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 4px;
+  background: rgba(100, 100, 100, 0.4);
+  border: 1px solid rgba(0, 0, 0, 0.9);
+}
+
+/* Thumb */
 .item-form-crafting-style .artificer-skill-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: var(--craft-accent-color);
-    cursor: pointer;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(172, 138, 84, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.9);
+  cursor: pointer;
+
+  /* center 18px thumb on 12px track */
+  margin-top: -3px;
 }
+
+.item-form-crafting-style .artificer-skill-slider::-webkit-slider-thumb:hover {
+  background: rgba(171, 98, 19, 0.95);
+}
+
+
+
 .item-form-crafting-style .artificer-skill-current-value {
-    display: block;
-    margin-top: 4px;
-    font-size: 0.9em;
-    color: var(--craft-accent-color);
+    display: inline;
+    margin-left: 4px;
+    font-size: 1.25em;
+    font-weight: 900;
+    color: rgba(98, 195, 97, 0.9);
 }

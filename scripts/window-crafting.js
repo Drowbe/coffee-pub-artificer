@@ -9,6 +9,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
+import { HEAT_LEVELS, HEAT_MAX } from './schema-recipes.js';
 
 /** D&D consumable subtype → family when item has no artificer flags */
 const DND_CONSUMABLE_FAMILY = {
@@ -417,7 +418,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             showToolOnly,
             heatValue: this.heatValue,
             heat: (() => {
-                const base = this.heatValue / 100;
+                const base = this.heatValue / HEAT_MAX;
                 if (this._craftingCountdownRemaining == null) return base;
                 const total = Math.max(1, this.timeValue);
                 const remaining = this._craftingCountdownRemaining;
@@ -425,16 +426,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 return base + (1 - base) * progress;
             })(),
             heatUnstable: (() => {
-                const base = this.heatValue / 100;
-                if (this._craftingCountdownRemaining == null) return base >= 0.85;
+                const base = this.heatValue / HEAT_MAX;
+                if (this._craftingCountdownRemaining == null) return this.heatValue >= HEAT_MAX;
                 const total = Math.max(1, this.timeValue);
                 const remaining = this._craftingCountdownRemaining;
                 const progress = 1 - remaining / total;
                 const h = base + (1 - base) * progress;
-                return h >= 0.85;
+                return h >= 1;
             })(),
             timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
-            heatFillPercent: this.heatValue,
+            heatFillPercent: HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0,
+            heatLabel: HEAT_LEVELS[this.heatValue] ?? 'Off',
             timeFillPercent: this._craftingCountdownRemaining != null
                 ? (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
                 : (this.timeValue / 120) * 100,
@@ -443,6 +445,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 return String(sec);
             })(),
             isCrafting: this._craftingCountdownRemaining != null,
+            /** 0–100: fill from bottom as countdown runs (elapsed / total). Used for container slot overlay when filled + crafting. */
+            containerCraftFillPercent: this._craftingCountdownRemaining != null
+                ? 100 - (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
+                : 0,
             ingredients,
             canCraft,
             lastResult: this.lastResult,
@@ -846,7 +852,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = matchByName(actor?.items, recipe.containerName, isContainer);
         this.selectedTool = matchByName(actor?.items, recipe.toolName);
 
-        this.heatValue = (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) ? recipe.heat : 0;
+        const rawHeat = recipe.heat != null ? Number(recipe.heat) : null;
+        if (rawHeat != null && rawHeat >= 0 && rawHeat <= HEAT_MAX) this.heatValue = Math.round(rawHeat);
+        else if (rawHeat != null && rawHeat <= 100) this.heatValue = Math.min(HEAT_MAX, Math.round((rawHeat / 100) * HEAT_MAX));
+        else this.heatValue = 0;
         this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;
 
         this.render();

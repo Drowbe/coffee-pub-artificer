@@ -115,14 +115,13 @@
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if isCrafting}}crafting-bench-apparatus-crafting{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus (beaker, mortar)" style="--heat: {{heat}};" {{#if heatUnstable}}data-unstable="true"{{/if}}>
+                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if isCrafting}}crafting-bench-apparatus-crafting{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus" style="--heat: {{heat}};" {{#if heatUnstable}}data-unstable="true"{{/if}}>
                             {{#if apparatusSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{apparatusSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}
                             <div class="crafting-bench-container-empty">
                                 <i class="fa-solid fa-flask"></i>
                                 <span>Apparatus</span>
-                                <span class="crafting-bench-container-hint">beaker, mortar</span>
                             </div>
                             {{/if}}
                         </div>
@@ -140,13 +139,13 @@
                 </div>
                 {{!-- Row 3: Process slider (heat now; grind later) with arrow placeholders --}}
                 <div class="crafting-bench-process-row">
-                    <div class="crafting-bench-process-slider-wrap" title="Heat: None to High">
+                    <div class="crafting-bench-process-slider-wrap" title="Heat: Off, Low, Medium, High">
                         <div class="crafting-bench-process-arrow-placeholder" data-process-arrow="prev" aria-hidden="true"></div>
-                        <div class="crafting-bench-process-slider-left">None</div>
+                        <div class="crafting-bench-process-slider-left">Off</div>
                         <div class="crafting-bench-process-slider-track">
-                            <input type="range" id="{{appId}}-heat" class="crafting-bench-horizontal-slider crafting-bench-heat-slider-input" min="0" max="100" value="{{heatValue}}" step="1" data-craft-setting="heat" data-craft-setting-min="0" data-craft-setting-max="100" style="--heat-fill: {{heatFillPercent}}%;" />
+                            <input type="range" id="{{appId}}-heat" class="crafting-bench-horizontal-slider crafting-bench-heat-slider-input" min="0" max="3" value="{{heatValue}}" step="1" data-craft-setting="heat" data-craft-setting-min="0" data-craft-setting-max="3" style="--heat-fill: {{heatFillPercent}}%;" />
                         </div>
-                        <div class="crafting-bench-process-slider-right">{{heatValue}}</div>
+                        <div class="crafting-bench-process-slider-right">{{heatLabel}}</div>
                         <div class="crafting-bench-process-arrow-placeholder" data-process-arrow="next" aria-hidden="true"></div>
                     </div>
                 </div>
@@ -154,14 +153,13 @@
                 <div class="crafting-bench-grid-row crafting-bench-container-row">
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-empty"></div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-container-slot crafting-bench-center-slot" data-action="removeContainer" data-tooltip="{{containerSlot.tooltip}}" title="Container (vial, herb bag)">
+                        <div class="crafting-bench-container-slot crafting-bench-center-slot{{#if containerSlot.item}}{{#if isCrafting}} crafting-bench-container-slot-fill{{/if}}{{/if}}" data-action="removeContainer" data-tooltip="{{containerSlot.tooltip}}" title="Container"{{#if containerSlot.item}}{{#if isCrafting}} style="--craft-fill-percent: {{containerCraftFillPercent}}"{{/if}}{{/if}}>
                             {{#if containerSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{containerSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}
                             <div class="crafting-bench-container-empty">
                                 <i class="fa-solid fa-vial"></i>
                                 <span>Container</span>
-                                <span class="crafting-bench-container-hint">vial, herb bag</span>
                             </div>
                             {{/if}}
                         </div>
