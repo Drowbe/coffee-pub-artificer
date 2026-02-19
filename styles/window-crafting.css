@@ -15,6 +15,7 @@
     --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-06.webp'); 
     --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-05.webp'); 
     --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-04.webp');   
+    --craft-widget-image-heat: url('../images/backgrounds/background-widget-fire.webp');  
     background: var(--craft-background) !important;
     border: 0 solid var(--craft-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -501,9 +502,38 @@
 
 .crafting-bench-process-slider-wrap {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 250px;
+    border: 1px solid rgba(68, 68, 68, 0.9);
+    border-radius: 12px;
+    padding: 4px 2px 4px 2px;
+    background: rgba(0, 0, 0, 0.5);
+    background-image: var(--craft-widget-image-heat);
+    background-blend-mode: multiply;
+    background-position: bottom center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.crafting-bench-process-slider-wrap.widget-heat {
+    background-image: var(--craft-widget-image-heat);
+}
+
+
+
+.crafting-bench-process-slider-label {
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--craft-text-color, #e0e0e0);
+}
+
+.crafting-bench-process-slider-row {
+    display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 280px;
+    width: 100%;
 }
 
 .crafting-bench-process-slider-left {
