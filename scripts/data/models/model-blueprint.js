@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postDebug, postError } from '../../utils/helpers.js';
 import { CRAFTING_SKILLS } from '../../schema-recipes.js';
 import { BLUEPRINT_STAGE_STATES } from '../../schema-blueprints.js';
 import { hashString } from '../../utils/helpers.js';
@@ -40,13 +41,13 @@ export class ArtificerBlueprint {
     _validateAndNormalize() {
         // Validate skill
         if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            console.warn(`Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ARTIFICE}`);
+            postDebug(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ARTIFICE}`);
             this.skill = CRAFTING_SKILLS.ARTIFICE;
         }
         
         // Validate skillLevel (0-100)
         if (typeof this.skillLevel !== 'number' || this.skillLevel < 0 || this.skillLevel > 100) {
-            console.warn(`Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 0`);
+            postDebug(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 0`);
             this.skillLevel = 0;
         }
         
@@ -275,19 +276,19 @@ export class ArtificerBlueprint {
      */
     validate() {
         if (!this.id) {
-            console.error('ArtificerBlueprint: Missing id');
+            postError(MODULE.NAME, 'ArtificerBlueprint: Missing id');
             return false;
         }
         if (!this.name) {
-            console.error('ArtificerBlueprint: Missing name');
+            postError(MODULE.NAME, 'ArtificerBlueprint: Missing name');
             return false;
         }
         if (!this.resultItemUuid) {
-            console.error('ArtificerBlueprint: Missing resultItemUuid');
+            postError(MODULE.NAME, 'ArtificerBlueprint: Missing resultItemUuid');
             return false;
         }
         if (this.stages.length === 0) {
-            console.error('ArtificerBlueprint: No stages specified');
+            postError(MODULE.NAME, 'ArtificerBlueprint: No stages specified');
             return false;
         }
         return true;

@@ -38,7 +38,7 @@ function toNewType(legacyType) {
 }
 
 /**
- * Compute new family from legacy family/type/primaryTag/componentType/affinity.
+ * Compute new family from legacy family/type/primaryTag/affinity.
  * @param {Object} flags
  * @param {string} newType
  * @returns {string}
@@ -53,7 +53,6 @@ function toNewFamily(flags, newType) {
     if (family && families.includes(family)) return family;
 
     if (newType === ARTIFICER_TYPES.COMPONENT) {
-        if (flags.componentType) return families.includes('Mineral') ? 'Mineral' : family || families[0];
         if (flags.affinity) return 'Essence';
         if (flags.primaryTag) {
             const p = (flags.primaryTag || '').toLowerCase();

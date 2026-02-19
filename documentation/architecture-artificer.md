@@ -715,7 +715,6 @@ Items (Ingredients, Components, Essences) use a hybrid JSON structure:
       "skillLevel": 1,
       "rarity": "Common|Uncommon|Rare|Very Rare|Legendary",
       "biomes": ["string"],
-      "componentType": "Metal|Alchemical|Monster|Arcane|Structural",
       "affinity": "Heat|Cold|Electric|..."
     }
   }
@@ -735,7 +734,7 @@ Existing items (hundreds) use the old model: `type` (ingredient/component/essenc
 
 **Mapping (macro logic):**
 - Old `type` → new **TYPE**: ingredient/component/essence → Component; apparatus/container/tool → Tool; creations (if any) → Creation.
-- **FAMILY**: Keep existing `family` where it fits the new family list; map legacy family names to new (e.g. Herbs → Plant, CreatureParts → Creature Part). For components without family, infer from `primaryTag` or `componentType`/`affinity`.
+- **FAMILY**: Keep existing `family` where it fits the new family list; map legacy family names to new (e.g. Herbs → Plant, CreatureParts → Creature Part). For components without family, infer from `primaryTag` or `affinity`.
 - **TRAITS**: Merge `primaryTag` (if not redundant with family), `secondaryTags`, and `quirk` (if present) into a single `traits` array. Dedupe and drop any value that equals the chosen family name.
 - **Remove:** `primaryTag`, `secondaryTags`, `quirk` from flags after migration.
 - **Idempotency:** Macro should only migrate items that still have legacy fields (e.g. `primaryTag` or `secondaryTags` present).

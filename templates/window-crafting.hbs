@@ -194,7 +194,7 @@
     <section class="crafting-window-buttons">
         <div class="crafting-window-action-bar">
             <div class="crafting-window-action-left">
-                <button type="button" class="crafting-window-btn-refresh-cache" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
+                <button type="button" class="crafting-window-btn-secondary" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
                     <i class="fa-solid fa-database"></i> Refresh
                 </button>
                 <span class="crafting-window-cache-status">
@@ -203,7 +203,7 @@
                     {{else if cacheStatus.hasCache}}
                     {{cacheStatus.message}}
                     {{else}}
-                    No cache — click Refresh to build
+                    No Cache: Refresh to Build
                     {{/if}}
                 </span>
             </div>

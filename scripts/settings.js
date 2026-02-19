@@ -4,6 +4,7 @@
 
 // -- Import MODULE variables --
 import { MODULE } from './const.js';
+import { postDebug } from './utils/helpers.js';
 
 
 // ================================================================== 
@@ -281,7 +282,7 @@ export const registerSettings = () => {
     if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
         BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Settings registered.`, null, false, false);
     } else {
-        console.log(`${MODULE.NAME}: Settings registered.`);
+        postDebug(MODULE.NAME, `${MODULE.NAME}: Settings registered.`);
     }
 };
 

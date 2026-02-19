@@ -120,12 +120,10 @@ function buildConvertSection(item, editable) {
     const section = document.createElement('div');
     section.className = 'artificer-item-sheet-section';
     section.innerHTML = `
-        <div class="artificer-sheet-header">
+
+        <div class="artificer-sheet-header artificer-convert">
             <h4 class="artificer-sheet-title"><i class="fa-solid fa-hammer"></i> Artificer</h4>
-        </div>
-        <div class="artificer-sheet-body">
-            <p class="artificer-sheet-empty">This item is not an Artificer item. Add tags, family, and crafting data.</p>
-            ${editable ? `<a class="artificer-sheet-convert-btn" data-action="convert-artificer" data-item-uuid="${escapeHtml(item.uuid)}" href="#"><i class="fa-solid fa-wand-magic-sparkles"></i> Convert to Artificer item</a>` : ''}
+            ${editable ? `<a class="artificer-sheet-convert-btn" data-action="convert-artificer" data-item-uuid="${escapeHtml(item.uuid)}" data-tooltip="Convert this item to an official artificer item." href="#"><i class="fa-solid fa-wand-magic-sparkles"></i></a>` : ''}
         </div>
     `;
     return section;
@@ -150,7 +148,6 @@ function buildArtificerSection(item, flags, editable) {
     const rarity = flags.rarity ?? 'Common';
     const biomes = Array.isArray(flags.biomes) ? flags.biomes : [];
     const biomesStr = biomes.join(', ');
-    const componentType = flags.componentType ?? '';
     const affinity = flags.affinity ?? '';
     const skillLevel = flags.skillLevel ?? 1;
 
@@ -160,8 +157,7 @@ function buildArtificerSection(item, flags, editable) {
     if (traitsStr) rows.push({ label: 'Traits', value: traitsStr });
     rows.push({ label: 'Skill Level', value: String(skillLevel) });
     rows.push({ label: 'Rarity', value: rarity });
-    if (componentType) rows.push({ label: 'Component Type', value: componentType });
-    if (affinity) rows.push({ label: 'Affinity', value: affinity });
+    if (affinity && family === 'Essence') rows.push({ label: 'Essence Affinity', value: affinity });
     if (artificerType === ARTIFICER_TYPES.COMPONENT && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
 
     const rowsHtml = rows

@@ -3,7 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { getOrCreateJournal } from './utils/helpers.js';
+import { getOrCreateJournal, postDebug, postError } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
@@ -225,7 +225,7 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
         } else if (ui?.notifications) {
             isError ? ui.notifications.error(msg) : ui.notifications.info(msg);
         } else {
-            console.log(`[${moduleName}] ${msg}`);
+            postDebug(moduleName, msg);
         }
     };
     if (errorCount === 0) {
@@ -236,13 +236,9 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
         notify(`Imported ${successCount} of ${total} recipe${total !== 1 ? 's' : ''} (${errorCount} error${errorCount !== 1 ? 's' : ''})`);
     }
     if (errors?.length) {
-        console.group(`[${moduleName}] Recipe Import Errors:`);
-        errors.forEach(({ name, error, index }) => console.error(`Recipe ${index + 1} (${name}): ${error}`));
-        console.groupEnd();
+        errors.forEach(({ name, error, index }) => postError(moduleName, `Recipe Import Error: ${index + 1} (${name})`, error?.message ?? String(error)));
     }
     if (created?.length) {
-        console.group(`[${moduleName}] Imported Recipes:`);
-        created.forEach(({ name, index }) => console.log(`${index + 1}. ${name}`));
-        console.groupEnd();
+        created.forEach(({ name, index }) => postDebug(moduleName, `Imported: ${index + 1}. ${name}`));
     }
 }

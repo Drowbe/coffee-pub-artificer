@@ -3,6 +3,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { postError } from '../utils/helpers.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
 import { resolveItemByName, getTraitsFromFlags } from '../utility-artificer-item.js';
 import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
@@ -116,7 +117,7 @@ export class ExperimentationEngine {
                 };
             }
         } catch (err) {
-            console.error('[Artificer] ExperimentationEngine.craft error:', err);
+            postError(MODULE.NAME, 'ExperimentationEngine.craft error', err?.message ?? String(err));
             return { success: false, item: null, name: err.message, quality: 'Failed' };
         }
 

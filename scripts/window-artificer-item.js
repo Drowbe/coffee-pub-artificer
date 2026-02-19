@@ -3,10 +3,10 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { postError } from './utils/helpers.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
-import { COMPONENT_TYPES } from './schema-components.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
 
@@ -101,11 +101,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const consumableTypeValue = this.itemData?.system?.type?.value ?? this.itemData?.system?.consumableType ?? 'other';
         consumableSubtypeOptions.forEach(opt => { if (opt.value === consumableTypeValue) opt.selected = true; });
 
-        const componentTypeOptions = Object.values(COMPONENT_TYPES).map(t => ({
-            value: t,
-            label: t,
-            selected: (flags.componentType || '') === t
-        }));
         const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(a => ({
             value: a,
             label: a,
@@ -121,6 +116,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             itemType: artificerType,
             itemTypeName: artificerType,
             isComponent: artificerType === ARTIFICER_TYPES.COMPONENT,
+            isEssenceFamily: selectedFamily === 'Essence',
             artificerTypeOptions,
             familyOptions,
             itemName: this.itemData?.name || '',
@@ -136,8 +132,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
             family: selectedFamily,
             biomes: (flags.biomes || []).join(', '),
-            componentType: flags.componentType || '',
-            componentTypeOptions,
             affinity: flags.affinity || '',
             affinityOptions
         };
@@ -170,7 +164,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 if (form && typeof this.submit === 'function') {
                     this.submit().catch((err) => {
                         ui.notifications?.error?.(err?.message ?? 'Submit failed');
-                        console.error('Artificer Item Form submit error:', err);
+                        postError(MODULE.NAME, 'Artificer Item Form submit error', err?.message ?? String(err));
                     });
                 } else if (form) {
                     // Fallback: call handler directly if submit() no-ops (e.g. form getter returns null)
@@ -405,7 +399,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             artificerData.biomes = formObject.biomes
                 ? formObject.biomes.split(',').map(b => b.trim()).filter(Boolean)
                 : [];
-            if (formObject.componentType) artificerData.componentType = formObject.componentType;
             if (formObject.affinity) artificerData.affinity = formObject.affinity;
         }
         
@@ -435,8 +428,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         } catch (error) {
             const errorMessage = error.message || String(error);
             ui.notifications.error(`Error creating item: ${errorMessage}`);
-            console.error('Artificer Item Form Error:', error);
-            console.error('Error stack:', error.stack);
+            postError(MODULE.NAME, 'Artificer Item Form Error', error?.message ?? String(error), true);
             // Don't re-throw - we want to show the error but not crash
         }
     }

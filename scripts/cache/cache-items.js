@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { postDebug } from '../utils/helpers.js';
 import { LEGACY_FAMILY_TO_FAMILY } from '../schema-artificer-item.js';
 
 /** Schema version for cache invalidation */
@@ -285,7 +286,7 @@ export async function refreshCache(onProgress) {
                 }
             }
         } catch (err) {
-            console.warn(`[Artificer] Cache: error loading compendium "${cid}":`, err?.message);
+            postDebug(MODULE.NAME, `Cache: error loading compendium "${cid}"`, err?.message ?? null);
         }
     }
 
@@ -304,7 +305,7 @@ export async function refreshCache(onProgress) {
             entries
         });
     } catch (e) {
-        console.warn('[Artificer] Cache: failed to persist:', e?.message);
+        postDebug(MODULE.NAME, 'Cache: failed to persist', e?.message ?? null);
     }
 
     _status.building = false;

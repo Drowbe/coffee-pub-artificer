@@ -85,6 +85,5 @@ export const LEGACY_FAMILY_TO_FAMILY = {
  * @property {number} skillLevel - Minimum crafting skill level (1+)
  * @property {string} [rarity] - Rarity
  * @property {string[]} [biomes] - Biomes (components)
- * @property {string} [componentType] - Metal|Alchemical|Monster|Arcane|Structural (optional, for Component)
- * @property {string} [affinity] - Essence affinity (optional, for Essence family)
+ * @property {string} [affinity] - Essence Affinity (Heat|Cold|Electric|...). Only when family is Essence.
  */

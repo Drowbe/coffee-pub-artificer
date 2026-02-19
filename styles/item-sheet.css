@@ -20,6 +20,10 @@
     margin-bottom: 0.9rem;
 }
 
+.artificer-sheet-header.artificer-convert {
+    margin-bottom: 0;
+}
+
 .artificer-sheet-title {
     margin: 0;
     font-size: 1.0rem;
@@ -30,7 +34,7 @@
     font-size: 0.85rem;
 }
 
-
+.artificer-sheet-convert-btn,
 .artificer-sheet-edit-btn {
     flex-shrink: 0;
     padding: 0rem;
@@ -39,11 +43,12 @@
     opacity: 0.7;
 }
 
+.artificer-sheet-convert-btn:hover,
 .artificer-sheet-edit-btn:hover {
     color: var(--color-text-light-6, rgba(0, 0, 0, 0.8));
     opacity: 1;
 }
-
+.artificer-sheet-convert-btn i,
 .artificer-sheet-edit-btn i {
     font-size: 0.9rem;
 }
@@ -78,19 +83,4 @@
     color: rgba(0, 0, 0, 0.5);
 }
 
-.artificer-sheet-convert-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
-    padding: 0.4rem 0.7rem;
-    font-size: 0.85rem;
-    color: var(--color-text-light-6, #333);
-    background: rgba(124, 133, 0, 0.35);
-    border-radius: 4px;
-    text-decoration: none;
-}
 
-.artificer-sheet-convert-btn:hover {
-    background: rgba(124, 133, 0, 0.5);
-}

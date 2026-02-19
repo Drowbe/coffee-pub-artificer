@@ -17,7 +17,16 @@
  */
 
 /**
- * Component Types
+ * Component Types - Refinement/processing categories for Component-type items.
+ * Describes how the material was processed or its role in crafting. Use when family is Mineral,
+ * CreaturePart, Environmental, etc. (Essence family uses affinity instead.)
+ *
+ * - Metal: Metallic refined materials (iron bar, copper wire, steel plate)
+ * - Alchemical: Chemically processed (extracts, powders, tinctures)
+ * - Monster: Creature-derived (bones, scales, venom sacs)
+ * - Arcane: Magically infused (enchanted crystals, resonant gems)
+ * - Structural: Structural/binding materials (hafts, plates, bindings)
+ *
  * @enum {string}
  */
 export const COMPONENT_TYPES = {

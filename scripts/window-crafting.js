@@ -3,6 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { postError } from './utils/helpers.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags } from './utility-artificer-item.js';
@@ -671,7 +672,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const api = getAPI();
             if (api?.ingredients?.refresh) await api.ingredients.refresh();
         } catch (err) {
-            console.error('[Artificer] Cache refresh failed:', err);
+            postError(MODULE.NAME, 'Cache refresh failed', err?.message ?? String(err));
             ui.notifications?.error?.('Failed to refresh item cache.');
         }
         await this.render();
@@ -771,10 +772,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const valid = items.every(i => {
             const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-            return f?.type && ['ingredient', 'component', 'essence'].includes(f.type);
+            if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
+            const cc = asCraftableConsumable(i);
+            return cc.ok; // Allow core D&D consumables (flask of oil, potions, etc.) without artificer flags
         });
         if (!valid) {
-            ui.notifications.warn('Only Artificer ingredients, components, and essences can be used in crafting.');
+            ui.notifications.warn('Only Artificer ingredients/components/essences or core consumables (potion, oil, poison, etc.) can be used in crafting.');
             return;
         }
 
@@ -846,7 +849,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 quality: 'Basic'
             };
         } catch (err) {
-            console.error('[Artificer] Recipe craft error:', err);
+            postError(MODULE.NAME, 'Recipe craft error', err?.message ?? String(err));
             return { success: false, item: null, name: err?.message ?? 'Craft failed', quality: 'Failed' };
         }
     }

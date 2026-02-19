@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postDebug, postError } from '../../utils/helpers.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from '../../schema-recipes.js';
 import { hashString } from '../../utils/helpers.js';
 
@@ -48,19 +49,19 @@ export class ArtificerRecipe {
     _validateAndNormalize() {
         // Validate type
         if (!Object.values(ITEM_TYPES).includes(this.type)) {
-            console.warn(`Invalid recipe type: ${this.type}. Defaulting to ${ITEM_TYPES.CONSUMABLE}`);
+            postDebug(MODULE.NAME, `Invalid recipe type: ${this.type}. Defaulting to ${ITEM_TYPES.CONSUMABLE}`);
             this.type = ITEM_TYPES.CONSUMABLE;
         }
         
         // Validate skill
         if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            console.warn(`Invalid recipe skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ALCHEMY}`);
+            postDebug(MODULE.NAME, `Invalid recipe skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ALCHEMY}`);
             this.skill = CRAFTING_SKILLS.ALCHEMY;
         }
         
         // Validate skillLevel (0-100)
         if (typeof this.skillLevel !== 'number' || this.skillLevel < 0 || this.skillLevel > 100) {
-            console.warn(`Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 0`);
+            postDebug(MODULE.NAME, `Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 0`);
             this.skillLevel = 0;
         }
         
@@ -238,19 +239,19 @@ export class ArtificerRecipe {
      */
     validate() {
         if (!this.id) {
-            console.error('ArtificerRecipe: Missing id');
+            postError(MODULE.NAME, 'ArtificerRecipe: Missing id');
             return false;
         }
         if (!this.name) {
-            console.error('ArtificerRecipe: Missing name');
+            postError(MODULE.NAME, 'ArtificerRecipe: Missing name');
             return false;
         }
         if (!this.resultItemName) {
-            console.error('ArtificerRecipe: Missing resultItemName');
+            postError(MODULE.NAME, 'ArtificerRecipe: Missing resultItemName');
             return false;
         }
         if (this.ingredients.length === 0) {
-            console.error('ArtificerRecipe: No ingredients specified');
+            postError(MODULE.NAME, 'ArtificerRecipe: No ingredients specified');
             return false;
         }
         return true;

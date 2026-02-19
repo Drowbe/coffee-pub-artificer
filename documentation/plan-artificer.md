@@ -119,7 +119,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 2. **Detect legacy:** Presence of `primaryTag` or `secondaryTags` or `quirk` (or old `type` values: ingredient, component, essence, apparatus, container, tool).
 3. **Compute new values:**
    - **TYPE:** ingredient | component | essence → Component; apparatus | container | tool → Tool; (Creation if we have a creation type).
-   - **FAMILY:** Map existing `family` to new family list (e.g. Herbs → Plant, Minerals → Mineral, CreatureParts → Creature Part, Environmental → Environmental, Gems → Gem). For components with componentType/affinity, map to Essence or appropriate family. Default if missing.
+   - **FAMILY:** Map existing `family` to new family list (e.g. Herbs → Plant, Minerals → Mineral, CreatureParts → Creature Part, Environmental → Environmental, Gems → Gem). For components with affinity, map to Essence. Default if missing.
    - **TRAITS:** Merge into one array: [primaryTag (if not same as family), ...secondaryTags, quirk]. Dedupe; remove any entry that equals the chosen family name; trim.
 4. **Write:** Set `type`, `family`, `traits`; remove `primaryTag`, `secondaryTags`, `quirk`.
 5. **Idempotency:** Skip items that already have `traits` and no `primaryTag`/`secondaryTags` (already migrated).

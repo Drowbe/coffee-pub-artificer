@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { postDebug, postError } from './utils/helpers.js';
 import { createArtificerItem, validateArtificerData } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, LEGACY_FAMILY_TO_FAMILY, FAMILIES_BY_TYPE } from './schema-artificer-item.js';
 
@@ -91,7 +92,6 @@ export function validateImportPayload(payload) {
     };
     if (type === ARTIFICER_TYPES.COMPONENT) {
         artificerData.biomes = Array.isArray(artificerFlags.biomes) ? artificerFlags.biomes : [];
-        if (artificerFlags.componentType) artificerData.componentType = artificerFlags.componentType;
         if (artificerFlags.affinity) artificerData.affinity = artificerFlags.affinity;
     }
 
@@ -209,7 +209,7 @@ export function showImportResult(result, moduleName = MODULE.NAME) {
                 ui.notifications.info(message);
             }
         } else {
-            console.log(`[${moduleName}] ${message}`);
+            postDebug(moduleName, message);
         }
     };
     
@@ -224,19 +224,15 @@ export function showImportResult(result, moduleName = MODULE.NAME) {
     
     // Log errors if any
     if (errors.length > 0) {
-        console.group(`[${moduleName}] Import Errors:`);
         errors.forEach(({ name, error, index }) => {
-            console.error(`Item ${index + 1} (${name}): ${error}`);
+            postError(moduleName, `Import Error: Item ${index + 1} (${name})`, error?.message ?? String(error));
         });
-        console.groupEnd();
     }
     
-    // Log created items
+    // Log created items (debug only)
     if (created.length > 0) {
-        console.group(`[${moduleName}] Imported Items:`);
         created.forEach(({ name, index }) => {
-            console.log(`${index + 1}. ${name}`);
+            postDebug(moduleName, `Imported: ${index + 1}. ${name}`);
         });
-        console.groupEnd();
     }
 }

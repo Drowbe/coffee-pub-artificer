@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postDebug, postError } from '../../utils/helpers.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 import { getArtificerTypeFromFlags, getFamilyFromFlags, getTraitsFromFlags } from '../../utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../../schema-artificer-item.js';
@@ -105,19 +106,19 @@ export class ArtificerIngredient {
         const legacyFamilies = Object.values(INGREDIENT_FAMILIES);
         const validFamily = componentFamilies.includes(this.family) || legacyFamilies.includes(this.family);
         if (!validFamily) {
-            console.warn(`Invalid ingredient family: ${this.family}. Defaulting to ${INGREDIENT_FAMILIES.HERBS}`);
+            postDebug(MODULE.NAME, `Invalid ingredient family: ${this.family}. Defaulting to ${INGREDIENT_FAMILIES.HERBS}`);
             this.family = INGREDIENT_FAMILIES.HERBS;
         }
         
         // Validate rarity
         if (!Object.values(INGREDIENT_RARITIES).includes(this.rarity)) {
-            console.warn(`Invalid ingredient rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`);
+            postDebug(MODULE.NAME, `Invalid ingredient rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`);
             this.rarity = INGREDIENT_RARITIES.COMMON;
         }
         
         // Validate tier (1-10)
         if (typeof this.tier !== 'number' || this.tier < 1 || this.tier > 10) {
-            console.warn(`Invalid ingredient tier: ${this.tier}. Defaulting to 1`);
+            postDebug(MODULE.NAME, `Invalid ingredient tier: ${this.tier}. Defaulting to 1`);
             this.tier = 1;
         }
         
@@ -134,7 +135,7 @@ export class ArtificerIngredient {
         // Validate tags (2-5 tags total: 1 primary + 1-2 secondary + optional quirk)
         const totalTags = 1 + this.secondaryTags.length + (this.quirk ? 1 : 0);
         if (totalTags < 2 || totalTags > 5) {
-            console.warn(`Ingredient ${this.name} has ${totalTags} tags. Should have 2-5 tags.`);
+            postDebug(MODULE.NAME, `Ingredient ${this.name} has ${totalTags} tags. Should have 2-5 tags.`);
         }
     }
     
@@ -177,15 +178,15 @@ export class ArtificerIngredient {
      */
     validate() {
         if (!this.id) {
-            console.error('ArtificerIngredient: Missing id');
+            postError(MODULE.NAME, 'ArtificerIngredient: Missing id');
             return false;
         }
         if (!this.name) {
-            console.error('ArtificerIngredient: Missing name');
+            postError(MODULE.NAME, 'ArtificerIngredient: Missing name');
             return false;
         }
         if (!this.primaryTag) {
-            console.error('ArtificerIngredient: Missing primaryTag');
+            postError(MODULE.NAME, 'ArtificerIngredient: Missing primaryTag');
             return false;
         }
         return true;

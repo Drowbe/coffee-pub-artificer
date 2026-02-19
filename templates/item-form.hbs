@@ -27,6 +27,9 @@
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
             {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions}}
             {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}
+            {{#if isEssenceFamily}}
+            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions}}
+            {{/if}}
             <div class="artificer-form-group artificer-tag-picker-group">
                 <label for="artificer-tag-input">Traits</label>
                 <div class="artificer-tag-picker">
@@ -50,8 +53,6 @@
             </div>
             {{#if isComponent}}
             {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
-            {{> partials/form-field name="componentType" label="Component Type (optional)" type="select" isSelect=true options=componentTypeOptions}}
-            {{> partials/form-field name="affinity" label="Affinity (optional, for Essence family)" type="select" isSelect=true options=affinityOptions}}
             {{/if}}
         </section>
     </div>

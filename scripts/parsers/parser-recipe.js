@@ -2,6 +2,8 @@
 // ===== RECIPE PARSER ==============================================
 // ================================================================== 
 
+import { MODULE } from '../const.js';
+import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS } from '../schema-recipes.js';
 
@@ -111,14 +113,14 @@ export class RecipeParser {
             // Create recipe object
             const recipe = new ArtificerRecipe(data);
             if (!recipe.validate()) {
-                console.warn(`Recipe "${data.name}" failed validation`);
+                postDebug(MODULE.NAME, `Recipe "${data.name}" failed validation`);
                 return null;
             }
             
             return recipe;
             
         } catch (error) {
-            console.error(`Error parsing recipe from page "${page.name}":`, error);
+            postError(MODULE.NAME, `Error parsing recipe from page "${page.name}"`, error?.message ?? String(error));
             return null;
         }
     }

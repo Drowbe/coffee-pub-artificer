@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { importRecipesFromText, showRecipeImportResult } from './utility-artificer-recipe-import.js';
-import { copyToClipboard } from './utils/helpers.js';
+import { copyToClipboard, postError } from './utils/helpers.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -89,7 +89,7 @@ export class ArtificerRecipeImportWindow extends HandlebarsApplicationMixin(Appl
         } catch (error) {
             const msg = error.message || String(error);
             ui.notifications?.error(`Import failed: ${msg}`);
-            console.error(`[${MODULE.NAME}] Recipe import error:`, error);
+            postError(MODULE.NAME, 'Recipe import error', error?.message ?? String(error));
         }
     }
 
@@ -101,7 +101,7 @@ export class ArtificerRecipeImportWindow extends HandlebarsApplicationMixin(Appl
             await copyToClipboard(text, { fallbackTitle: 'Artificer Recipe Prompt' });
         } catch (error) {
             ui.notifications?.error(`Could not load prompt: ${error.message}`);
-            console.error(`[${MODULE.NAME}] Copy prompt error:`, error);
+            postError(MODULE.NAME, 'Copy prompt error', error?.message ?? String(error));
         }
     }
 

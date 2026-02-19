@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postDebug, postError } from '../../utils/helpers.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
 
@@ -59,7 +60,7 @@ export class RecipeStorage {
 
         const journal = await fromUuid(journalUuid);
         if (!journal || journal.documentName !== 'JournalEntry') {
-            console.warn(`Recipe journal "${journalUuid}" not found. Recipes will not be loaded.`);
+            postDebug(MODULE.NAME, `Recipe journal "${journalUuid}" not found. Recipes will not be loaded.`);
             return;
         }
         
@@ -76,7 +77,7 @@ export class RecipeStorage {
                     this._cache.set(recipe.id, recipe);
                 }
             } catch (error) {
-                console.error(`Error loading recipe from page "${page.name}":`, error);
+                postError(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error));
             }
         }
     }

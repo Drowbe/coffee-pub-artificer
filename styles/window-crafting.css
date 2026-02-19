@@ -738,20 +738,20 @@
 
 .crafting-window-btn-primary {
     background: rgba(41, 94, 47, 0.9);
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .crafting-window-btn-secondary {
     background: rgba(33, 40, 46, 0.9);
     border-color: rgba(255, 255, 255, 0.1);
-    color: #e0e0e0;
+    color: rgba(224, 224, 224, 0.9);
 }
 
 .crafting-window-btn-primary:hover:not(:disabled),
 .crafting-window-btn-secondary:hover:not(:disabled) {
     background: rgba(255, 100, 0, 0.6);
     border-color: rgba(255, 100, 0, 0.6);
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .crafting-window-btn-primary:disabled {

@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { postDebug, postError } from './utils/helpers.js';
 import { getFromCache } from './cache/cache-items.js';
 import {
     ARTIFICER_TYPES,
@@ -73,7 +74,7 @@ export async function resolveItemByName(name, type) {
                 }
                 return item;
             } catch (err) {
-                console.warn(`[Artificer] Error searching compendium "${compendiumId}" for "${targetName}":`, err?.message);
+                postDebug(MODULE.NAME, `Error searching compendium "${compendiumId}" for "${targetName}"`, err?.message ?? null);
                 continue;
             }
         }
@@ -109,7 +110,7 @@ export async function resolveItemByName(name, type) {
 /**
  * Create a FoundryVTT Item with Artificer flags (TYPE > FAMILY > TRAITS).
  * @param {Object} itemData - D&D 5e item data structure
- * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, componentType?, affinity? }
+ * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, affinity? }
  * @param {Object} options - { createInWorld, actor }
  * @returns {Promise<Item>} Created item
  */
@@ -136,8 +137,7 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
             const createdItems = await Item.createDocuments([itemStructure], {});
             item = createdItems[0];
         } catch (error) {
-            console.error('Error creating item:', error);
-            console.error('Item structure:', itemStructure);
+            postError(MODULE.NAME, 'Error creating item', error?.message ?? String(error));
             throw new Error(`Failed to create item: ${error.message}`);
         }
     } else {
@@ -293,7 +293,7 @@ function deepMergeSystem(defaults, incoming) {
 
 /**
  * Build Artificer flags (TYPE > FAMILY > TRAITS).
- * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, componentType?, affinity? }
+ * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, affinity? }
  * @returns {Object} Flags structure
  */
 function buildArtificerFlags(artificerData) {
@@ -308,7 +308,6 @@ function buildArtificerFlags(artificerData) {
     if (type === ARTIFICER_TYPES.COMPONENT && Array.isArray(artificerData.biomes)) {
         flags.biomes = artificerData.biomes;
     }
-    if (artificerData.componentType) flags.componentType = artificerData.componentType;
     if (artificerData.affinity) flags.affinity = artificerData.affinity;
     return flags;
 }
@@ -381,7 +380,7 @@ export function getTraitsFromFlags(flags) {
 /**
  * Extract artificer data from an item (normalized; supports legacy flags).
  * @param {Item} item - Item to extract data from
- * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, componentType, affinity)
+ * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, affinity)
  */
 export function extractArtificerData(item) {
     const flags = item.flags[MODULE.ID] || {};
@@ -392,7 +391,6 @@ export function extractArtificerData(item) {
         skillLevel: flags.skillLevel ?? 1,
         rarity: flags.rarity || 'Common',
         biomes: flags.biomes || [],
-        componentType: flags.componentType || null,
         affinity: flags.affinity || null
     };
 }

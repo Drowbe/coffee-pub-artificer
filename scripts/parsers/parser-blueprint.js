@@ -2,6 +2,8 @@
 // ===== BLUEPRINT PARSER ===========================================
 // ================================================================== 
 
+import { MODULE } from '../const.js';
+import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerBlueprint } from '../data/models/model-blueprint.js';
 import { BLUEPRINT_STAGE_STATES } from '../schema-blueprints.js';
 
@@ -63,7 +65,7 @@ export class BlueprintParser {
                     if (uuidMatch) {
                         data.resultItemUuid = uuidMatch[1].trim();
                     } else {
-                        console.warn(`Blueprint "${data.name}" result does not use @UUID format: ${value}`);
+                        postDebug(MODULE.NAME, `Blueprint "${data.name}" result does not use @UUID format`, value);
                     }
                 } else if (labelLower === 'tags') {
                     // Parse comma-separated tags
@@ -81,26 +83,26 @@ export class BlueprintParser {
             
             // Validate required fields
             if (!data.resultItemUuid) {
-                console.warn(`Blueprint "${data.name}" is missing resultItemUuid`);
+                postDebug(MODULE.NAME, `Blueprint "${data.name}" is missing resultItemUuid`);
                 return null;
             }
             
             if (data.stages.length === 0) {
-                console.warn(`Blueprint "${data.name}" has no stages`);
+                postDebug(MODULE.NAME, `Blueprint "${data.name}" has no stages`);
                 return null;
             }
             
             // Create blueprint object
             const blueprint = new ArtificerBlueprint(data);
             if (!blueprint.validate()) {
-                console.warn(`Blueprint "${data.name}" failed validation`);
+                postDebug(MODULE.NAME, `Blueprint "${data.name}" failed validation`);
                 return null;
             }
             
             return blueprint;
             
         } catch (error) {
-            console.error(`Error parsing blueprint from page "${page.name}":`, error);
+            postError(MODULE.NAME, `Error parsing blueprint from page "${page.name}"`, error?.message ?? String(error));
             return null;
         }
     }

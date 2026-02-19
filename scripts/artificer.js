@@ -69,9 +69,13 @@ Hooks.once('ready', async () => {
                 name: MODULE.NAME,
                 version: MODULE.VERSION
             });
-            console.log(`✅ ${MODULE.NAME}: Registered with Blacksmith successfully`);
+            if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Registered with Blacksmith successfully`, null, false, false);
+            }
         } else {
-            console.warn(`⚠️ ${MODULE.NAME}: Blacksmith not available`);
+            if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Blacksmith not available`, null, true, false);
+            }
         }
         
         // Initialize module API
@@ -85,7 +89,9 @@ Hooks.once('ready', async () => {
         initializeModule();
         
     } catch (error) {
-        console.error(`❌ ${MODULE.NAME}: Error during initialization:`, error);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Error during initialization`, error?.message ?? String(error), true, true);
+        }
     }
 });
 
@@ -102,7 +108,7 @@ function initializeModule() {
     // Inject Artificer section into item sheets + Edit button
     registerItemSheetIntegration();
 
-    console.log(`${MODULE.NAME}: Module initialized`);
+    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Module initialized`, null, false, false);
 }
 
 /**
@@ -112,7 +118,9 @@ function registerMenubarIntegration() {
     const blacksmith = game.modules.get('coffee-pub-blacksmith')?.api;
     
     if (!blacksmith) {
-        console.warn(`⚠️ ${MODULE.NAME}: Blacksmith API not available for menubar integration`);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Blacksmith API not available for menubar integration`, null, true, false);
+        }
         return;
     }
     
@@ -128,7 +136,9 @@ function registerMenubarIntegration() {
     });
     
     if (!barRegistered) {
-        console.warn(`⚠️ ${MODULE.NAME}: Failed to register secondary bar type`);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register secondary bar type`, null, true, false);
+        }
         return;
     }
     
@@ -159,7 +169,9 @@ function registerMenubarIntegration() {
     });
     
     if (!toolRegistered) {
-        console.warn(`⚠️ ${MODULE.NAME}: Failed to register menubar tool`);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register menubar tool`, null, true, false);
+        }
         return;
     }
     
@@ -229,9 +241,13 @@ function registerMenubarIntegration() {
     });
     
     if (craftingRegistered && createItemRegistered && importItemRegistered && importRecipeRegistered) {
-        console.log(`✅ ${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
+        }
     } else {
-        console.warn(`⚠️ ${MODULE.NAME}: Failed to register some buttons (create: ${createItemRegistered}, import: ${importItemRegistered}, import-recipes: ${importRecipeRegistered})`);
+        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import: ${importItemRegistered}, import-recipes: ${importRecipeRegistered}`, true, false);
+        }
     }
 }
 

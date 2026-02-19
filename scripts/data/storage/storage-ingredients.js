@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postDebug } from '../../utils/helpers.js';
 import { ArtificerIngredient } from '../models/model-ingredient.js';
 import { getCacheStatus, getAllRecordsFromCache } from '../../cache/cache-items.js';
 
@@ -118,7 +119,7 @@ export class IngredientStorage {
                     }
                 }
             } catch (error) {
-                console.warn(`Error processing compendium "${compendiumId}":`, error.message);
+                postDebug(MODULE.NAME, `Error processing compendium "${compendiumId}"`, error?.message ?? null);
             }
         }
     }

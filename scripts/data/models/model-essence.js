@@ -2,6 +2,8 @@
 // ===== ARTIFICER ESSENCE MODEL ====================================
 // ================================================================== 
 
+import { MODULE } from '../../const.js';
+import { postDebug, postError } from '../../utils/helpers.js';
 import { ESSENCE_AFFINITIES } from '../../schema-essences.js';
 import { INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 
@@ -62,19 +64,19 @@ export class ArtificerEssence {
     _validateAndNormalize() {
         // Validate affinity
         if (!Object.values(ESSENCE_AFFINITIES).includes(this.affinity)) {
-            console.warn(`Invalid essence affinity: ${this.affinity}. Defaulting to ${ESSENCE_AFFINITIES.HEAT}`);
+            postDebug(MODULE.NAME, `Invalid essence affinity: ${this.affinity}. Defaulting to ${ESSENCE_AFFINITIES.HEAT}`);
             this.affinity = ESSENCE_AFFINITIES.HEAT;
         }
         
         // Validate rarity
         if (!Object.values(INGREDIENT_RARITIES).includes(this.rarity)) {
-            console.warn(`Invalid essence rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`);
+            postDebug(MODULE.NAME, `Invalid essence rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`);
             this.rarity = INGREDIENT_RARITIES.COMMON;
         }
         
         // Validate tier (1-10)
         if (typeof this.tier !== 'number' || this.tier < 1 || this.tier > 10) {
-            console.warn(`Invalid essence tier: ${this.tier}. Defaulting to 1`);
+            postDebug(MODULE.NAME, `Invalid essence tier: ${this.tier}. Defaulting to 1`);
             this.tier = 1;
         }
         
@@ -108,11 +110,11 @@ export class ArtificerEssence {
      */
     validate() {
         if (!this.id) {
-            console.error('ArtificerEssence: Missing id');
+            postError(MODULE.NAME, 'ArtificerEssence: Missing id');
             return false;
         }
         if (!this.name) {
-            console.error('ArtificerEssence: Missing name');
+            postError(MODULE.NAME, 'ArtificerEssence: Missing name');
             return false;
         }
         return true;
