@@ -6,7 +6,7 @@ import { MODULE } from './const.js';
 import { postError } from './utils/helpers.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
-import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags } from './utility-artificer-item.js';
+import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
@@ -1015,11 +1015,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         try {
             const obj = resultItem.toObject();
-            delete obj._id;
-            if (obj.id !== undefined) delete obj.id;
-
-            const created = await actor.createEmbeddedDocuments('Item', [obj]);
-            const createdItem = created?.[0];
+            const createdItem = await addCraftedItemToActor(actor, obj);
             if (!createdItem) {
                 return { success: false, item: null, name: 'Creation failed', quality: 'Failed' };
             }

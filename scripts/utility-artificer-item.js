@@ -155,6 +155,32 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
 }
 
 /**
+ * Add a crafted item to an actor. If the actor already has an item with the same name and type
+ * that has a quantity (stackable), increment its quantity by 1. Otherwise create a new item.
+ * @param {Actor} actor
+ * @param {Object} itemData - Item data (e.g. from item.toObject()), with _id removed
+ * @returns {Promise<Item|null>} The existing (updated) or newly created item
+ */
+export async function addCraftedItemToActor(actor, itemData) {
+    if (!actor || !itemData) return null;
+    const name = (itemData.name || '').trim();
+    const type = itemData.type || 'consumable';
+    const existing = actor.items.find((i) => (i.name || '').trim() === name && (i.type || '') === type);
+    if (existing) {
+        const q = existing.system?.quantity;
+        if (typeof q === 'number' && q >= 0) {
+            await existing.update({ 'system.quantity': q + 1 });
+            return existing;
+        }
+    }
+    const obj = foundry.utils.duplicate(itemData);
+    delete obj._id;
+    if (obj.id !== undefined) delete obj.id;
+    const created = await actor.createEmbeddedDocuments('Item', [obj]);
+    return created?.[0] ?? null;
+}
+
+/**
  * Update an existing item with new data
  * @param {Item} item - Item to update
  * @param {Object} itemData - D&D 5e item data structure

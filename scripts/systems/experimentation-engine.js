@@ -5,7 +5,7 @@
 import { MODULE } from '../const.js';
 import { postError } from '../utils/helpers.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
-import { resolveItemByName, getTraitsFromFlags } from '../utility-artificer-item.js';
+import { resolveItemByName, getTraitsFromFlags, addCraftedItemToActor } from '../utility-artificer-item.js';
 import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
 
 /**
@@ -100,12 +100,9 @@ export class ExperimentationEngine {
         }
 
         const obj = worldItem.toObject();
-        delete obj._id;
-        if (obj.id !== undefined) delete obj.id;
 
         try {
-            const createdItems = await actor.createEmbeddedDocuments('Item', [obj]);
-            const createdItem = createdItems?.[0];
+            const createdItem = await addCraftedItemToActor(actor, obj);
 
             if (createdItem) {
                 await this._consumeIngredients(actor, items);
