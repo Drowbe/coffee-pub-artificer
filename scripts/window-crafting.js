@@ -443,6 +443,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = null;
         this.selectedTool = null;
         this.selectedRecipe = null;
+        this.heatValue = 0;
+        this.timeValue = 0;
         this.render();
     }
     static _actionAddToSlot(event, target) {

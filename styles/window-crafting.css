@@ -427,21 +427,141 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Apparatus + sliders row */
+/* 3-column grid rows (apparatus, container) - matches component slot grid alignment */
+.crafting-bench-grid-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid var(--craft-border-color);
+    align-items: center;
+}
+
+.crafting-bench-grid-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+.crafting-bench-grid-cell-center {
+    min-height: 0;
+}
+
+.crafting-bench-grid-cell-empty {
+    /* Empty left/right cells in container row - no border */
+    min-height: 0;
+}
+
+/* Process slider row (heat, grind, etc.) - horizontal with arrow placeholders */
 .crafting-bench-process-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
     padding: 12px 0;
     border-top: 1px solid var(--craft-border-color);
 }
 
-/* Container row (third step: put it in a container) */
-.crafting-bench-container-row {
+.crafting-bench-process-slider-wrap {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
+    min-width: 280px;
+}
+
+.crafting-bench-process-slider-left {
+    font-size: 0.8em;
+    font-weight: 600;
+    color: #b0b0b0;
+    min-width: 36px;
+    text-align: center;
+}
+
+.crafting-bench-process-slider-right {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: #c0c0c0;
+    min-width: 36px;
+    text-align: center;
+}
+
+.crafting-bench-process-slider-track {
+    flex: 1;
+    min-width: 120px;
+}
+
+.crafting-bench-process-arrow-placeholder {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    /* Reserved for future arrows to cycle process (heat, grind, etc.) */
+}
+
+.crafting-bench-horizontal-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 12px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+}
+
+.crafting-bench-horizontal-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--craft-border-color);
+    background: linear-gradient(
+        to right,
+        rgba(200, 80, 40, 0.8) 0%,
+        rgba(200, 80, 40, 0.8) var(--heat-fill, 0%),
+        rgba(60, 80, 120, 0.6) var(--heat-fill, 0%),
+        rgba(60, 80, 120, 0.6) 100%
+    );
+}
+
+.crafting-bench-horizontal-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -4px;
+    background: rgba(172, 159, 129, 0.9);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 50%;
+    cursor: grab;
+}
+
+.crafting-bench-horizontal-slider::-webkit-slider-thumb:hover {
+    background: rgba(255, 100, 0, 0.6);
+}
+
+/* Firefox horizontal slider */
+.crafting-bench-horizontal-slider::-moz-range-track {
+    height: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--craft-border-color);
+    background: linear-gradient(
+        to right,
+        rgba(200, 80, 40, 0.8) 0%,
+        rgba(200, 80, 40, 0.8) var(--heat-fill, 0%),
+        rgba(60, 80, 120, 0.6) var(--heat-fill, 0%),
+        rgba(60, 80, 120, 0.6) 100%
+    );
+}
+
+.crafting-bench-horizontal-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: rgba(172, 159, 129, 0.9);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 50%;
+    cursor: grab;
+}
+
+/* Container row uses grid above */
+.crafting-bench-container-row {
     padding: 12px 0;
     border-top: 1px solid var(--craft-border-color);
 }
@@ -616,6 +736,35 @@
 .crafting-bench-tool-slot:hover {
     border-color: rgba(255, 100, 0, 0.6);
     background: rgba(255, 100, 0, 0.1);
+}
+
+/* Center slots (apparatus, container) - look like component slots above */
+.crafting-bench-center-slot {
+    width: 100%;
+    max-width: 120px;
+    aspect-ratio: 1;
+    border-radius: 6px;
+    border: 2px dashed var(--craft-border-color);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.crafting-bench-center-slot:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.1);
+}
+
+/* Tool slot round to match timer */
+.crafting-bench-tool-slot {
+    border-radius: 50%;
+}
+
+/* Filled slots: solid green border instead of dashed */
+.crafting-bench-slot:has(.crafting-bench-slot-item),
+.crafting-bench-tool-slot:has(.crafting-bench-container-item),
+.crafting-bench-apparatus-slot:has(.crafting-bench-container-item),
+.crafting-bench-container-slot:has(.crafting-bench-container-item) {
+    border-style: solid;
+    border-color: rgba(59, 132, 66, 0.9);
 }
 
 .crafting-bench-container-empty {
