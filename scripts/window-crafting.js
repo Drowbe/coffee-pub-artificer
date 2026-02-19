@@ -450,6 +450,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             processLeftLabel: this.processType === 'heat' ? 'OFF' : 'off',
             processRightLabel: this.processType === 'heat' ? 'HIGH' : 'fine',
             isHeatProcess: this.processType === 'heat',
+            isGrinding: this.processType === 'grind' && this._craftingCountdownRemaining != null,
             timeFillPercent: this._craftingCountdownRemaining != null
                 ? (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
                 : (this.timeValue / 120) * 100,

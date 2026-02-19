@@ -887,9 +887,9 @@
     opacity: calc(0.4 + 0.6 * var(--heat, 0));
 }
 
-/* Subtle breathing motion - only when crafting (timer running), intensity scales with heat */
-.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting .crafting-container-img,
-.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting .crafting-bench-container-empty i {
+/* Subtle breathing motion - only when crafting with heat (not grind) */
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting:not(.crafting-bench-apparatus-grinding) .crafting-container-img,
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-crafting:not(.crafting-bench-apparatus-grinding) .crafting-bench-container-empty i {
     transform-origin: 50% 60%;
     animation: crafting-bench-heat-breathe 2s ease-in-out infinite;
 }
@@ -909,6 +909,82 @@
     0%   { filter: brightness(1); }
     50%  { filter: brightness(1.05); }
     100% { filter: brightness(1); }
+}
+
+/* ----- Grind effect (apparatus slot when process is grind and crafting) ----- */
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-grinding {
+    filter: contrast(1.06) brightness(0.98);
+}
+
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-grinding .crafting-container-img,
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-grinding .crafting-bench-container-empty i {
+    transform-origin: 50% 62%;
+    animation: crafting-bench-grind-rotate 0.55s ease-in-out infinite,
+               crafting-bench-grind-press 0.12s ease-in-out infinite;
+    will-change: transform;
+}
+
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-grinding::after {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 42% 62%, rgba(235, 225, 205, 0.18) 1.2px, transparent 2.4px),
+        radial-gradient(circle at 58% 58%, rgba(235, 225, 205, 0.14) 1px, transparent 2px),
+        radial-gradient(circle at 52% 66%, rgba(235, 225, 205, 0.10) 0.9px, transparent 1.8px),
+        radial-gradient(circle at 48% 55%, rgba(235, 225, 205, 0.08) 0.8px, transparent 1.6px);
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: crafting-bench-grind-dust 0.38s linear infinite;
+    will-change: transform, opacity;
+}
+
+.crafting-bench-apparatus-slot.crafting-bench-apparatus-grinding::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    pointer-events: none;
+    border-radius: 12px;
+    background: conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.00),
+        rgba(255, 255, 255, 0.04),
+        rgba(255, 255, 255, 0.00),
+        rgba(0, 0, 0, 0.05),
+        rgba(255, 255, 255, 0.00)
+    );
+    opacity: 0;
+    mix-blend-mode: overlay;
+    animation: crafting-bench-grind-scuff 0.9s linear infinite;
+    will-change: transform, opacity;
+}
+
+@keyframes crafting-bench-grind-rotate {
+    0%   { transform: rotate(-1.8deg); }
+    50%  { transform: rotate(2.2deg); }
+    100% { transform: rotate(-1.8deg); }
+}
+
+@keyframes crafting-bench-grind-press {
+    0%   { transform: translateY(0px) rotate(-1.8deg); }
+    25%  { transform: translateY(0.6px) rotate(-1.2deg); }
+    50%  { transform: translateY(0px) rotate(2.2deg); }
+    75%  { transform: translateY(0.6px) rotate(1.4deg); }
+    100% { transform: translateY(0px) rotate(-1.8deg); }
+}
+
+@keyframes crafting-bench-grind-dust {
+    0%   { transform: translateY(0px); opacity: 0.05; }
+    40%  { transform: translateY(-2px); opacity: 0.22; }
+    100% { transform: translateY(0px); opacity: 0.05; }
+}
+
+@keyframes crafting-bench-grind-scuff {
+    0%   { transform: rotate(0deg); opacity: 0; }
+    15%  { opacity: 0.12; }
+    70%  { opacity: 0.08; }
+    100% { transform: rotate(360deg); opacity: 0; }
 }
 
 .crafting-bench-center-slot:hover {
