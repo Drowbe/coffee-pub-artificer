@@ -108,7 +108,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: CRAFTING_APP_ID,
         classes: ['window-artificer-crafting', 'artificer-crafting-window'],
-        position: { width: 1200, height: 700 },
+        position: { width: 1100, height: 750 },
         window: { title: 'Artificer Crafting Station', resizable: true, minimizable: true },
         actions: {
             craft: CraftingWindow._actionCraft,
@@ -440,7 +440,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 : (this.timeValue / 120) * 100,
             timeDisplayText: (() => {
                 const sec = this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue;
-                return sec >= 60 ? `${Math.floor(sec / 60)} min${sec % 60 ? ` ${sec % 60} sec` : ''}` : `${sec} sec`;
+                return String(sec);
             })(),
             isCrafting: this._craftingCountdownRemaining != null,
             ingredients,
@@ -652,6 +652,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onFirstRender(_context, options) {
         await super._onFirstRender?.(_context, options);
         this._attachDelegationOnce();
+    }
+
+    _updatePosition(position) {
+        const resolved = super._updatePosition(position);
+        const minWidth = 1100;
+        const minHeight = 750;
+        if (typeof resolved.width === 'number' && resolved.width < minWidth) resolved.width = minWidth;
+        if (typeof resolved.height === 'number' && resolved.height < minHeight) resolved.height = minHeight;
+        return resolved;
     }
 
     _attachListeners(_root) {
