@@ -137,20 +137,24 @@
                         </div>
                     </div>
                 </div>
-                {{!-- Row 3: Process slider (heat) with label above --}}
+                {{!-- Row 3: Process widget (heat / grind) with cycle arrows --}}
                 <div class="crafting-bench-process-row">
-                    <div class="crafting-bench-process-slider-wrap widget-heat" title="Heat: Off, Low, Medium, High">
-                        <div class="crafting-bench-process-slider-label">Heat: {{heatLabel}}</div>
+                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessPrev" title="Previous process (heat / grind)" aria-label="Previous process">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="crafting-bench-process-slider-wrap widget-{{processType}}" title="{{#if isHeatProcess}}Heat: Off, Low, Medium, High{{else}}Grind: Off, Coarse, Medium, Fine{{/if}}">
+                        <div class="crafting-bench-process-slider-label">{{#if isHeatProcess}}Heat: {{processLabel}}{{else}}Grind: {{processLabel}}{{/if}}</div>
                         <div class="crafting-bench-process-slider-row">
-                            <div class="crafting-bench-process-arrow-placeholder" data-process-arrow="prev" aria-hidden="true"></div>
-                            <div class="crafting-bench-process-slider-left">OFF</div>
+                            <div class="crafting-bench-process-slider-left">{{processLeftLabel}}</div>
                             <div class="crafting-bench-process-slider-track">
-                                <input type="range" id="{{appId}}-heat" class="crafting-bench-horizontal-slider crafting-bench-heat-slider-input" min="0" max="3" value="{{heatValue}}" step="1" data-craft-setting="heat" data-craft-setting-min="0" data-craft-setting-max="3" style="--heat-fill: {{heatFillPercent}}%;" />
+                                <input type="range" id="{{appId}}-process-{{processType}}" class="crafting-bench-horizontal-slider crafting-bench-heat-slider-input" min="0" max="3" value="{{processValue}}" step="1" data-craft-setting="{{processType}}" data-craft-setting-min="0" data-craft-setting-max="3" style="--heat-fill: {{processFillPercent}}%;" />
                             </div>
-                            <div class="crafting-bench-process-slider-right">HIGH</div>
-                            <div class="crafting-bench-process-arrow-placeholder" data-process-arrow="next" aria-hidden="true"></div>
+                            <div class="crafting-bench-process-slider-right">{{processRightLabel}}</div>
                         </div>
                     </div>
+                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessNext" title="Next process (heat / grind)" aria-label="Next process">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
                 </div>
                 {{!-- Row 4: 3-column grid - empty (left, no border) | Container (center, like slots) | empty (right, no border) --}}
                 <div class="crafting-bench-grid-row crafting-bench-container-row">

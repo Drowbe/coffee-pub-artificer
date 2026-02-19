@@ -20,7 +20,9 @@
  * @property {string} skill - Required skill (Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling)
  * @property {number} skillLevel - Minimum skill level required
  * @property {string|null} workstation - Required workstation (if any)
- * @property {number|null} heat - Required heat level 0–3: 0=Off, 1=Low, 2=Medium, 3=High (null = any)
+ * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
+ * @property {string|null} processType - Process type: 'heat' | 'grind' (null = any / legacy heat)
+ * @property {number|null} processLevel - Process level 0–3: heat 0=Off,1=Low,2=Medium,3=High; grind 0=Off,1=Coarse,2=Medium,3=Fine (null = any)
  * @property {number|null} time - Required crafting time in seconds (null = any)
  * @property {string|null} apparatusName - Apparatus item name: vessel to craft in (beaker, mortar, crucible). Resolved at runtime.
  * @property {string|null} containerName - Container item name: vessel to put result in (vial, flask, herb bag). Resolved at runtime.
@@ -63,6 +65,11 @@ export const CRAFTING_SKILLS = {
 
 /** Heat levels for temperature slider: 0=Off, 1=Low, 2=Medium, 3=High */
 export const HEAT_LEVELS = { 0: 'Off', 1: 'Low', 2: 'Medium', 3: 'High' };
+/** Grind levels: 0=Off, 1=Coarse, 2=Medium, 3=Fine */
+export const GRIND_LEVELS = { 0: 'Off', 1: 'Coarse', 2: 'Medium', 3: 'Fine' };
 export const HEAT_MIN = 0;
 export const HEAT_MAX = 3;
+
+/** Process types for crafting (heat vs grind); used with processLevel 0–3 */
+export const PROCESS_TYPES = ['heat', 'grind'];
 

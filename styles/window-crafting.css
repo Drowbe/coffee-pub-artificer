@@ -492,13 +492,34 @@
     min-height: 0;
 }
 
-/* Process slider row (heat, grind, etc.) - horizontal with arrow placeholders */
+/* Process slider row (heat, grind, etc.) - cycle arrows + widget */
 .crafting-bench-process-row {
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 12px;
     padding: 12px 0;
     border-top: 1px solid var(--craft-border-color);
+}
+
+.crafting-bench-process-cycle-arrow {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(68, 68, 68, 0.9);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    color: #b0b0b0;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.crafting-bench-process-cycle-arrow:hover {
+    color: #e0e0e0;
+    background: rgba(255, 100, 0, 0.2);
+    border-color: rgba(255, 100, 0, 0.5);
 }
 
 .crafting-bench-process-slider-wrap {
@@ -527,9 +548,10 @@
 
 
 .crafting-bench-process-slider-label {
-    font-size: 0.9em;
-    font-weight: 600;
+    font-size: 0.85em;
+    font-weight: 900;
     color: var(--craft-text-color, #e0e0e0);
+    text-transform: uppercase;
 }
 
 .crafting-bench-process-slider-row {
@@ -539,21 +561,27 @@
     width: 100%;
 }
 
+
+
+
 .crafting-bench-process-slider-left {
     font-size: 0.8em;
-    font-weight: 600;
+    font-weight: 700;
     color: #b0b0b0;
-    min-width: 36px;
-    text-align: center;
+    margin: 0px 2px 0px 2px;
+    text-transform: uppercase;
 }
 
 .crafting-bench-process-slider-right {
-    font-size: 0.9em;
+    font-size: 0.8em;
     font-weight: 700;
     color: #c0c0c0;
-    min-width: 36px;
-    text-align: center;
+    margin: 0px 2px 0px 2px;
+    text-transform: uppercase;
 }
+
+
+
 
 .crafting-bench-process-slider-track {
     flex: 1;
@@ -749,10 +777,10 @@
     background: conic-gradient(
         rgba(43, 101, 49, 0.95) 0%,
         rgba(43, 101, 49, 0.95) var(--time-fill, 0%),
-        rgba(80, 80, 90, 0.5) var(--time-fill, 0%),
-        rgba(80, 80, 90, 0.5) 100%
+        rgba(0, 0, 0, 0.2) var(--time-fill, 0%),
+        rgba(0, 0, 0, 0.2) 100%
     );
-    border: 3px solid rgba(40, 40, 45, 0.95);
+    border: 1px solid rgba(68, 68, 68, 0.95);
     box-sizing: border-box;
 }
 
@@ -760,7 +788,8 @@
     position: absolute;
     inset: 14px;
     border-radius: 50%;
-    background: rgba(35, 35, 40, 0.95);
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(68, 68, 68, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -768,9 +797,9 @@
 }
 
 .crafting-bench-round-timer-value {
-    font-size: 0.7em;
-    font-weight: 700;
-    color: #fff;
+    font-size: 1.2em;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.8);
     text-align: center;
     line-height: 1.1;
     white-space: nowrap;

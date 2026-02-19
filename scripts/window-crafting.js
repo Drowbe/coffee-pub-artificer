@@ -9,7 +9,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags } from './utility-artificer-item.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
-import { HEAT_LEVELS, HEAT_MAX } from './schema-recipes.js';
+import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
 /** D&D consumable subtype → family when item has no artificer flags */
 const DND_CONSUMABLE_FAMILY = {
@@ -144,6 +144,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = null;
         this.selectedTool = null;
         this.heatValue = options.heatValue ?? 0;
+        this.grindValue = options.grindValue ?? 0;
+        /** @type {'heat'|'grind'} */
+        this.processType = options.processType ?? 'heat';
         this.timeValue = options.timeValue ?? 0;
         this.lastResult = null;
         this.lastCraftTags = [];
@@ -417,6 +420,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             showContainerOnly,
             showToolOnly,
             heatValue: this.heatValue,
+            grindValue: this.grindValue,
+            processType: this.processType,
             heat: (() => {
                 const base = this.heatValue / HEAT_MAX;
                 if (this._craftingCountdownRemaining == null) return base;
@@ -437,6 +442,14 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
             heatFillPercent: HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0,
             heatLabel: HEAT_LEVELS[this.heatValue] ?? 'Off',
+            grindFillPercent: HEAT_MAX > 0 ? (this.grindValue / HEAT_MAX) * 100 : 0,
+            grindLabel: GRIND_LEVELS[this.grindValue] ?? 'Off',
+            processValue: this.processType === 'heat' ? this.heatValue : this.grindValue,
+            processLabel: this.processType === 'heat' ? (HEAT_LEVELS[this.heatValue] ?? 'Off') : (GRIND_LEVELS[this.grindValue] ?? 'Off'),
+            processFillPercent: this.processType === 'heat' ? (HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0) : (HEAT_MAX > 0 ? (this.grindValue / HEAT_MAX) * 100 : 0),
+            processLeftLabel: this.processType === 'heat' ? 'OFF' : 'off',
+            processRightLabel: this.processType === 'heat' ? 'HIGH' : 'powder',
+            isHeatProcess: this.processType === 'heat',
             timeFillPercent: this._craftingCountdownRemaining != null
                 ? (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
                 : (this.timeValue / 120) * 100,
@@ -485,6 +498,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedTool = null;
         this.selectedRecipe = null;
         this.heatValue = 0;
+        this.grindValue = 0;
+        this.processType = 'heat';
         this.timeValue = 0;
         this.render();
     }
@@ -585,6 +600,22 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 CraftingWindow._actionSetTimeFromRoundTimer.call(w, e, roundTimer);
                 return;
             }
+            const cyclePrev = e.target?.closest?.('[data-action="cycleProcessPrev"]');
+            if (cyclePrev) {
+                e.preventDefault();
+                const idx = PROCESS_TYPES.indexOf(w.processType);
+                w.processType = PROCESS_TYPES[(idx - 1 + PROCESS_TYPES.length) % PROCESS_TYPES.length];
+                w.render();
+                return;
+            }
+            const cycleNext = e.target?.closest?.('[data-action="cycleProcessNext"]');
+            if (cycleNext) {
+                e.preventDefault();
+                const idx = PROCESS_TYPES.indexOf(w.processType);
+                w.processType = PROCESS_TYPES[(idx + 1) % PROCESS_TYPES.length];
+                w.render();
+                return;
+            }
         });
 
         document.addEventListener('change', (e) => {
@@ -614,6 +645,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const max = parseFloat(slider.getAttribute('data-craft-setting-max')) || 100;
                 const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
                 if (key === 'heat') w.heatValue = val;
+                else if (key === 'grind') w.grindValue = val;
                 else if (key === 'time') w.timeValue = val;
                 w.render();
             }
@@ -644,6 +676,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
                 if (key === 'heat') {
                     w.heatValue = val;
+                    const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+                    slider.style?.setProperty?.('--heat-fill', `${pct}%`);
+                } else if (key === 'grind') {
+                    w.grindValue = val;
                     const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
                     slider.style?.setProperty?.('--heat-fill', `${pct}%`);
                 } else if (key === 'time') {
@@ -852,10 +888,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = matchByName(actor?.items, recipe.containerName, isContainer);
         this.selectedTool = matchByName(actor?.items, recipe.toolName);
 
-        const rawHeat = recipe.heat != null ? Number(recipe.heat) : null;
-        if (rawHeat != null && rawHeat >= 0 && rawHeat <= HEAT_MAX) this.heatValue = Math.round(rawHeat);
-        else if (rawHeat != null && rawHeat <= 100) this.heatValue = Math.min(HEAT_MAX, Math.round((rawHeat / 100) * HEAT_MAX));
-        else this.heatValue = 0;
+        this.processType = recipe.processType === 'grind' ? 'grind' : 'heat';
+        const rawLevel = recipe.processLevel != null ? Number(recipe.processLevel) : (recipe.heat != null ? Number(recipe.heat) : null);
+        const level = (rawLevel != null && rawLevel >= 0 && rawLevel <= HEAT_MAX) ? Math.round(rawLevel) : (rawLevel != null && rawLevel <= 100 ? Math.min(HEAT_MAX, Math.round((rawLevel / 100) * HEAT_MAX)) : 0);
+        if (this.processType === 'heat') this.heatValue = level;
+        else this.grindValue = level;
+        if (recipe.heat != null && recipe.processLevel == null) {
+            const rawHeat = Number(recipe.heat);
+            if (rawHeat >= 0 && rawHeat <= HEAT_MAX) this.heatValue = Math.round(rawHeat);
+            else if (rawHeat <= 100) this.heatValue = Math.min(HEAT_MAX, Math.round((rawHeat / 100) * HEAT_MAX));
+        }
         this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;
 
         this.render();
@@ -943,6 +985,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedTool = null;
         this.selectedRecipe = null;
         this.heatValue = 0;
+        this.grindValue = 0;
+        this.processType = 'heat';
         this.timeValue = 0;
         this.render();
     }

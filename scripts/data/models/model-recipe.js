@@ -4,7 +4,7 @@
 
 import { MODULE } from '../../const.js';
 import { postDebug, postError } from '../../utils/helpers.js';
-import { ITEM_TYPES, CRAFTING_SKILLS } from '../../schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES } from '../../schema-recipes.js';
 import { hashString } from '../../utils/helpers.js';
 
 /**
@@ -25,6 +25,8 @@ export class ArtificerRecipe {
         this.skillLevel = data.skillLevel ?? 0;
         this.workstation = data.workstation ?? null;
         this.heat = data.heat ?? null;
+        this.processType = data.processType ?? null;
+        this.processLevel = data.processLevel ?? null;
         this.time = data.time ?? null;
         this.apparatusName = data.apparatusName ?? data.containerName ?? null;
         this.containerName = data.containerName ?? null;
@@ -92,11 +94,17 @@ export class ArtificerRecipe {
             this.tags = [];
         }
 
-        // Validate heat (0–3: Off/Low/Medium/High) and time (seconds)
+        // Validate heat (0–3, legacy) and time (seconds)
         if (this.heat != null) {
             const h = Number(this.heat);
             if (isNaN(h) || h < 0 || h > 3) this.heat = null;
             else this.heat = Math.round(h);
+        }
+        if (this.processType != null && !PROCESS_TYPES.includes(this.processType)) this.processType = null;
+        if (this.processLevel != null) {
+            const l = Number(this.processLevel);
+            if (isNaN(l) || l < 0 || l > 3) this.processLevel = null;
+            else this.processLevel = Math.round(l);
         }
         if (this.time != null) {
             const t = Number(this.time);
@@ -218,6 +226,8 @@ export class ArtificerRecipe {
             skillLevel: this.skillLevel,
             workstation: this.workstation,
             heat: this.heat,
+            processType: this.processType,
+            processLevel: this.processLevel,
             time: this.time,
             apparatusName: this.apparatusName,
             containerName: this.containerName,

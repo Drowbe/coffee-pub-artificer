@@ -5,7 +5,7 @@
 import { MODULE } from '../const.js';
 import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX } from '../schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from '../schema-recipes.js';
 
 /**
  * Parser for Recipe journal entries
@@ -62,6 +62,16 @@ export class RecipeParser {
                     data.skillLevel = parseInt(value) || 0;
                 } else if (labelLower === 'workstation') {
                     data.workstation = value || null;
+                } else if (labelLower === 'process type') {
+                    const v = (value || '').toString().trim().toLowerCase();
+                    if (PROCESS_TYPES.includes(v)) data.processType = v;
+                } else if (labelLower === 'process level') {
+                    const str = (value || '').toString().trim().toLowerCase();
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 0 && num <= HEAT_MAX) data.processLevel = num;
+                    else if (['off', 'low', 'medium', 'high'].includes(str)) data.processLevel = { off: 0, low: 1, medium: 2, high: 3 }[str];
+                    else if (['coarse', 'fine'].includes(str)) data.processLevel = { coarse: 1, fine: 3 }[str];
+                    else if (!isNaN(num) && num <= 100) data.processLevel = Math.min(HEAT_MAX, Math.round((num / 100) * HEAT_MAX));
                 } else if (labelLower === 'heat') {
                     const str = (value || '').toString().trim().toLowerCase();
                     const num = parseInt(value, 10);
