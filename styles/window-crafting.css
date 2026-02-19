@@ -427,12 +427,21 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Container + sliders row (per sketch) */
+/* Apparatus + sliders row */
 .crafting-bench-process-row {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--craft-border-color);
+}
+
+/* Container row (third step: put it in a container) */
+.crafting-bench-container-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 12px 0;
     border-top: 1px solid var(--craft-border-color);
 }
@@ -721,7 +730,7 @@
     margin-right: 4px;
 }
 
-/* Button styles (match Quick Encounter) */
+/* Button styles */
 .crafting-window-btn-primary,
 .crafting-window-btn-secondary {
     display: inline-flex;
@@ -732,13 +741,14 @@
     border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
-    font-size: 0.95em;
+    font-size: 1.0em;
     text-transform: uppercase;
 }
 
 .crafting-window-btn-primary {
     background: rgba(41, 94, 47, 0.9);
     color: rgba(255, 255, 255, 0.9);
+    width: 300px;
 }
 
 .crafting-window-btn-secondary {
