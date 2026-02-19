@@ -6,12 +6,16 @@ import { MODULE } from './const.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { postError } from './utils/helpers.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer } from './schema-artificer-item.js';
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+/** Module-level ref for document delegation (activateListeners may not run with PARTS) */
+let _currentItemFormRef = null;
+let _itemFormDelegationAttached = false;
 
 /**
  * Item Creation Form - ApplicationV2 implementation
@@ -82,26 +86,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             selected: f === selectedFamily
         }));
 
-        const itemType5eOptions = [
-            { value: 'consumable', label: 'Consumable', selected: (this.itemData?.type || 'consumable') === 'consumable' },
-            { value: 'weapon', label: 'Weapon', selected: false },
-            { value: 'equipment', label: 'Equipment', selected: false },
-            { value: 'tool', label: 'Tool', selected: false },
-            { value: 'loot', label: 'Loot', selected: false }
-        ];
-        if (this.itemData?.type) {
-            itemType5eOptions.forEach(opt => { if (opt.value === this.itemData.type) opt.selected = true; });
-        }
-
-        const consumableSubtypeOptions = [
-            { value: 'potion', label: 'Potion', selected: false },
-            { value: 'poison', label: 'Poison', selected: false },
-            { value: 'food', label: 'Food', selected: false },
-            { value: 'other', label: 'Other', selected: false }
-        ];
-        const consumableTypeValue = this.itemData?.system?.type?.value ?? this.itemData?.system?.consumableType ?? 'other';
-        consumableSubtypeOptions.forEach(opt => { if (opt.value === consumableTypeValue) opt.selected = true; });
-
         const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(a => ({
             value: a,
             label: a,
@@ -121,11 +105,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             artificerTypeOptions,
             familyOptions,
             itemName: this.itemData?.name || '',
-            itemType5e: this.itemData?.type || 'consumable',
-            itemType5eOptions,
-            isConsumable: (this.itemData?.type || 'consumable') === 'consumable',
-            consumableSubtype: consumableTypeValue,
-            consumableSubtypeOptions,
             traitsValue: existingTraits.join(','),
             traitCandidates,
             skillLevel,
@@ -149,98 +128,105 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         return foundry.utils.mergeObject(base, await this.getData(options));
     }
 
-    /**
-     * Activate event listeners (AppV2: normalize html, resolve root)
-     */
-    activateListeners(html) {
-        super.activateListeners(html);
-        if (html?.jquery ?? typeof html?.find === 'function') {
-            html = html[0] ?? html.get?.(0) ?? html;
-        }
-        const root = this.element ?? html?.closest?.('form') ?? html?.querySelector?.('.artificer-window') ?? html;
-        const query = (sel) => root?.querySelector?.(sel);
+    _getItemFormRoot() {
+        return document.getElementById(this.id) ?? this.element ?? null;
+    }
 
-        // Event delegation: submit button may not be found by direct query when app is embedded (Blacksmith bar)
-        root?.addEventListener?.('click', (e) => {
+    /**
+     * Document-level delegation (activateListeners may not run with ApplicationV2 PARTS).
+     */
+    _attachItemFormDelegationOnce() {
+        _currentItemFormRef = this;
+        if (_itemFormDelegationAttached) return;
+        _itemFormDelegationAttached = true;
+
+        document.addEventListener('click', (e) => {
+            const w = _currentItemFormRef;
+            if (!w) return;
+            const root = w._getItemFormRoot();
+            if (!root?.contains?.(e.target)) return;
+
             const biomeBtn = e.target?.closest?.('[data-action="toggleBiome"]');
             if (biomeBtn?.dataset?.biome) {
                 e.preventDefault();
                 e.stopPropagation();
-                this._toggleBiome(biomeBtn.dataset.biome);
+                w._toggleBiome(biomeBtn.dataset.biome);
                 return;
             }
             if (e.target?.closest?.('[data-action="deleteArtificer"]')) {
                 e.preventDefault();
                 e.stopPropagation();
-                this._handleDeleteArtificer();
+                w._handleDeleteArtificer();
+                return;
+            }
+            if (e.target?.closest?.('[data-action="cancel"]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                w.close();
                 return;
             }
             if (e.target?.closest?.('[data-action="submit"]')) {
                 e.preventDefault();
                 e.stopPropagation();
-                const form = this.form ?? this.element;
-                if (form && typeof this.submit === 'function') {
-                    this.submit().catch((err) => {
+                const form = w.form ?? w.element;
+                if (form && typeof w.submit === 'function') {
+                    w.submit().catch((err) => {
                         ui.notifications?.error?.(err?.message ?? 'Submit failed');
                         postError(MODULE.NAME, 'Artificer Item Form submit error', err?.message ?? String(err));
                     });
                 } else if (form) {
-                    // Fallback: call handler directly if submit() no-ops (e.g. form getter returns null)
-                    const fd = new FormData(form);
-                    this._handleSubmit(fd);
+                    w._handleSubmit(new FormData(form));
                 }
             }
         });
 
-        const artificerTypeSelect = query('#artificerType');
-        if (artificerTypeSelect) {
-            artificerTypeSelect.addEventListener('change', (event) => {
-                const newType = event.target.value;
-                this.itemType = newType;
-                this._formState = this._formState ?? {};
-                this._formState.artificerType = newType;
+        document.addEventListener('change', (e) => {
+            const w = _currentItemFormRef;
+            if (!w) return;
+            const root = w._getItemFormRoot();
+            if (!root?.contains?.(e.target)) return;
+            const el = e.target;
+            if (el.id === 'artificerType') {
+                const newType = el.value;
+                w.itemType = newType;
+                w._formState = w._formState ?? {};
+                w._formState.artificerType = newType;
                 const families = FAMILIES_BY_TYPE[newType] ?? [];
-                if (this._formState.family && !families.includes(this._formState.family)) {
-                    this._formState.family = null;
-                }
-                this.render();
-            });
-        }
+                if (w._formState.family && !families.includes(w._formState.family)) w._formState.family = null;
+                w.render();
+            } else if (el.id === 'family') {
+                w._formState = w._formState ?? {};
+                w._formState.family = el.value || null;
+                w.render();
+            }
+        });
 
-        const familySelect = query('#family');
-        if (familySelect) {
-            familySelect.addEventListener('change', (event) => {
-                this._formState = this._formState ?? {};
-                this._formState.family = event.target.value || null;
-                this.render();
-            });
-        }
+        document.addEventListener('input', (e) => {
+            const w = _currentItemFormRef;
+            if (!w) return;
+            const root = w._getItemFormRoot();
+            if (!root?.contains?.(e.target)) return;
+            const el = e.target;
+            if (el.id === 'skillLevel') {
+                const valEl = root?.querySelector?.('.artificer-skill-current-value');
+                if (valEl) valEl.textContent = el.value;
+                return;
+            }
+            if (el.id === 'artificer-quirk') {
+                w._formState = w._formState ?? {};
+                w._formState.quirk = (el.value ?? '').trim();
+            }
+        });
+    }
 
-        const skillSlider = query('#skillLevel');
-        const skillValueEl = root?.querySelector('.artificer-skill-current-value');
-        if (skillSlider && skillValueEl) {
-            skillSlider.addEventListener('input', () => {
-                skillValueEl.textContent = skillSlider.value;
-            });
-        }
-
-        this._setupTagPicker(root);
-        
-        const quirkInput = query('#artificer-quirk');
-        if (quirkInput) {
-            quirkInput.addEventListener('input', () => {
-                this._formState = this._formState ?? {};
-                this._formState.quirk = quirkInput.value?.trim() ?? '';
-            });
-        }
-
-        const cancelButton = query('[data-action="cancel"]');
-        if (cancelButton) {
-            cancelButton.addEventListener('click', (event) => {
-                event.preventDefault();
-                this.close();
-            });
-        }
+    /**
+     * Activate listeners (document delegation + tag picker).
+     */
+    activateListeners(html) {
+        super.activateListeners(html);
+        this._attachItemFormDelegationOnce();
+        const root = this._getItemFormRoot();
+        if (root) this._setupTagPicker(root);
     }
 
     /**
@@ -428,21 +414,29 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         })();
 
         this.itemType = formObject.artificerType || this.itemType || ARTIFICER_TYPES.COMPONENT;
+        const family = formObject.family || '';
+
+        // Derive D&D 5e type/subtype from Artificer type + family
+        const derived = deriveItemTypeFromArtificer(this.itemType, family);
 
         // Core item fields only; source and license hard-coded. Price, rarity, weight not set (user can set in item sheet).
         const SOURCE_LABEL = 'Artificer';
         const SOURCE_LICENSE = 'Use CC BY-NC 4.0';
         const itemData = {
             name: (formObject.itemName || '').trim() || 'Unnamed Item',
-            type: formObject.itemType5e || 'consumable',
+            type: derived.type,
             img: '',
             system: {
                 description: { value: '', chat: '', unidentified: '' },
                 source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
             }
         };
-        if (itemData.type === 'consumable' && formObject.consumableSubtype) {
-            itemData.system.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
+        if (derived.type === 'consumable' && derived.subtype) {
+            itemData.system.type = { value: derived.subtype, subtype: '', baseItem: '' };
+        } else if (derived.type === 'tool' && derived.toolType !== undefined) {
+            itemData.system.toolType = derived.toolType;
+        } else if (derived.type === 'loot' && derived.subtype) {
+            itemData.system.type = { value: derived.subtype, subtype: '', baseItem: '' };
         }
 
         const traits = (formObject.traits || '')
@@ -451,7 +445,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
         const artificerData = {
             type: this.itemType,
-            family: formObject.family || '',
+            family,
             traits,
             skillLevel: Math.max(1, Math.min(20, parseInt(formObject.skillLevel, 10) || 1)),
             rarity: 'Common'
@@ -474,8 +468,12 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 const systemMerge = {
                     source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
                 };
-                if (itemData.type === 'consumable' && formObject.consumableSubtype) {
-                    systemMerge.type = { value: formObject.consumableSubtype, subtype: '', baseItem: '' };
+                if (derived.type === 'consumable' && derived.subtype) {
+                    systemMerge.type = { value: derived.subtype, subtype: '', baseItem: '' };
+                } else if (derived.type === 'tool' && derived.toolType !== undefined) {
+                    systemMerge.toolType = derived.toolType;
+                } else if (derived.type === 'loot' && derived.subtype) {
+                    systemMerge.type = { value: derived.subtype, subtype: '', baseItem: '' };
                 }
                 itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, systemMerge);
                 itemData.img = this.existingItem.img || itemData.img;

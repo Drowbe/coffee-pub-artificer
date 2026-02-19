@@ -67,6 +67,39 @@ export const LEGACY_TYPE_TO_ARTIFICER_TYPE = {
 };
 
 /**
+ * Derive D&D 5e item type and subtype from Artificer type + family.
+ * Used by the create/edit form to automate item type (no manual selection).
+ * @param {string} artificerType - ARTIFICER_TYPES value (Component | Creation | Tool)
+ * @param {string} family - Family within type (e.g. Plant, Potion, Apparatus)
+ * @returns {{ type: string, subtype?: string, toolType?: string }}
+ */
+export function deriveItemTypeFromArtificer(artificerType, family) {
+    const map = {
+        [ARTIFICER_TYPES.COMPONENT]: {
+            Plant: { type: 'consumable', subtype: 'food' },
+            CreaturePart: { type: 'consumable', subtype: 'trinket' },
+            Gem: { type: 'consumable', subtype: 'trinket' },
+            Mineral: { type: 'consumable', subtype: 'trinket' },
+            Environmental: { type: 'consumable', subtype: 'trinket' },
+            Essence: { type: 'consumable', subtype: 'trinket' }
+        },
+        [ARTIFICER_TYPES.CREATION]: {
+            Potion: { type: 'consumable', subtype: 'potion' },
+            Poison: { type: 'consumable', subtype: 'poison' },
+            Food: { type: 'consumable', subtype: 'food' },
+            Material: { type: 'loot', subtype: 'material' }
+        },
+        [ARTIFICER_TYPES.TOOL]: {
+            Apparatus: { type: 'tool', toolType: '' },
+            Container: { type: 'container' }
+        }
+    };
+    const byType = map[artificerType];
+    const entry = byType?.[family] ?? { type: 'consumable', subtype: 'trinket' };
+    return entry;
+}
+
+/**
  * Legacy family values (e.g. from INGREDIENT_FAMILIES) to new family value.
  */
 export const LEGACY_FAMILY_TO_FAMILY = {

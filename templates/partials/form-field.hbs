@@ -1,6 +1,6 @@
 {{!-- Form Field Partial --}}
 {{!-- Usage: {{> partials/form-field name="fieldName" label="Field Label" type="text" value=fieldValue placeholder="Enter value"}} --}}
-{{!-- For select: {{> partials/form-field name="fieldName" label="Label" type="select" options=optionArray}} --}}
+{{!-- For select: {{> partials/form-field name="fieldName" label="Label" type="select" options=optionArray selectClass="crafting-zone-select"}} --}}
 {{!-- For textarea: {{> partials/form-field name="fieldName" label="Label" type="textarea" value=fieldValue}} --}}
 {{!-- For number: {{> partials/form-field name="fieldName" label="Label" type="number" value=fieldValue min="0" max="10"}} --}}
 <div class="artificer-form-group">
@@ -11,7 +11,7 @@
         {{#if isTextarea}}
         <textarea name="{{name}}" id="{{name}}" placeholder="{{placeholder}}">{{value}}</textarea>
         {{else if isSelect}}
-        <select name="{{name}}" id="{{name}}">
+        <select name="{{name}}" id="{{name}}"{{#if selectClass}} class="{{selectClass}}"{{/if}}>
             {{#each options}}
             <option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>
             {{/each}}

@@ -235,25 +235,35 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 };
             });
 
-        /** Apparatus: vessel to craft in (beaker, mortar). Accepts 'apparatus' or legacy 'container'. */
+        /** Apparatus: vessel to craft in (beaker, mortar). Family Apparatus → apparatus slot. */
         const apparatusItems = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type === 'apparatus' || f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Apparatus');
+                const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+                return family === 'apparatus' || f?.type === 'apparatus';
             })
             .map(i => ({ ...toListRow(i, 'addToApparatus', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Apparatus' }));
 
-        /** Container: vessel to put result in (vial, herb bag). */
+        /** Container: vessel to put result in (vial, herb bag). Family Container → container slot. */
         const containerItems = artificerItems
             .filter(i => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                return f?.type === 'resultContainer' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
+                const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+                return family === 'container' || f?.type === 'resultContainer' || f?.type === 'container';
             })
             .map(i => ({ ...toListRow(i, 'addToContainer', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Container' }));
 
-        /** Tools: kits (Alchemist's Supplies, etc.). Match actor items by name. */
-        const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Poisoner\'s Kit'];
-        const toolItems = actor?.items.filter(i => KNOWN_TOOLS.includes((i.name || '').trim()))?.map(i => ({
+        /** Tools: kits (Alchemist's Supplies, Healer's Kit, etc.). Match by name or D&D 5e tool type. */
+        const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Healer\'s Kit', 'Poisoner\'s Kit', 'Thieves\' Tools', 'Disguise Kit'];
+        const isKit = (item) => {
+            const name = (item?.name || '').trim();
+            if (KNOWN_TOOLS.includes(name)) return true;
+            if (/kit$/i.test(name)) return true;
+            const docType = (item?.type ?? '').toLowerCase();
+            const toolType = (item?.system?.toolType ?? '').toLowerCase();
+            return docType === 'tool' && /kit|herbalism|poisoner|healer|art|disguise/i.test(toolType || name);
+        };
+        const toolItems = actor?.items.filter(isKit)?.map(i => ({
             id: i.id,
             uuid: i.uuid,
             name: i.name,
@@ -635,7 +645,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const item = actor.items.get(itemId);
         if (!item) return;
         const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-        if (f?.type !== 'apparatus' && f?.type !== 'container') return;
+        const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+        if (family !== 'apparatus' && f?.type !== 'apparatus') return;
         this.selectedApparatus = item;
         this.render();
     }
@@ -646,7 +657,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const item = actor.items.get(itemId);
         if (!item) return;
         const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-        if (f?.type !== 'resultContainer') return;
+        const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+        if (family !== 'container' && f?.type !== 'resultContainer' && f?.type !== 'container') return;
         this.selectedContainer = item;
         this.render();
     }
@@ -742,19 +754,27 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this.selectedSlots = newSlots;
 
-        const matchByName = (items, name, typeFilter) => {
+        const matchByName = (items, name, flagsFilter) => {
             const target = (name || '').trim();
             if (!target) return null;
             return items?.find((i) => {
-                if (typeFilter) {
+                if (flagsFilter) {
                     const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
-                    if (!typeFilter(f?.type)) return false;
+                    if (!flagsFilter(f)) return false;
                 }
                 return (i.name || '').trim() === target;
             }) ?? null;
         };
-        this.selectedApparatus = matchByName(actor?.items, recipe.apparatusName, (t) => t === 'apparatus' || t === 'container');
-        this.selectedContainer = matchByName(actor?.items, recipe.containerName, (t) => t === 'resultContainer');
+        const isApparatus = (f) => {
+            const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+            return family === 'apparatus' || f?.type === 'apparatus';
+        };
+        const isContainer = (f) => {
+            const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
+            return family === 'container' || f?.type === 'resultContainer' || f?.type === 'container';
+        };
+        this.selectedApparatus = matchByName(actor?.items, recipe.apparatusName, isApparatus);
+        this.selectedContainer = matchByName(actor?.items, recipe.containerName, isContainer);
         this.selectedTool = matchByName(actor?.items, recipe.toolName);
 
         this.heatValue = (recipe.heat != null && recipe.heat >= 0 && recipe.heat <= 100) ? recipe.heat : 0;

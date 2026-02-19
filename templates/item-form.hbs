@@ -15,19 +15,15 @@
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
             {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
-            {{> partials/form-field name="itemType5e" label="Consumable type" type="select" isSelect=true options=itemType5eOptions}}
-            {{#if isConsumable}}
-            {{> partials/form-field name="consumableSubtype" label="Consumable subtype" type="select" isSelect=true options=consumableSubtypeOptions}}
-            {{/if}}
         </section>
 
         {{!-- Artificer Properties: Type > Family > Traits + Skill Level --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
-            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions}}
-            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions}}
+            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions selectClass="crafting-zone-select"}}
+            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions selectClass="crafting-zone-select"}}
             {{#if isEssenceFamily}}
-            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions}}
+            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="crafting-zone-select"}}
             {{/if}}
             <div class="artificer-form-group artificer-tag-picker-group">
                 <label for="artificer-tag-input">Traits</label>
