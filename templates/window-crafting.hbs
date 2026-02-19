@@ -131,12 +131,13 @@
                         </div>
                         {{/if}}
                     </div>
-                    <div class="crafting-bench-slider-wrap crafting-bench-time-slider" title="Time: 0 sec to 2 min">
-                        <div class="crafting-bench-slider-top-label">120 sec</div>
-                        <div class="crafting-bench-slider-track">
-                            <input type="range" id="{{appId}}-time" class="crafting-bench-vertical-slider" min="0" max="120" value="{{timeValue}}" step="5" data-craft-setting="time" data-craft-setting-min="0" data-craft-setting-max="120" style="--slider-fill: {{timeFillPercent}}%;" />
+                    <div class="crafting-bench-round-timer-wrap" title="Time: 0 sec to 2 min (click ring to set)">
+                        <div class="crafting-bench-round-timer" data-action="setTimeFromRoundTimer">
+                            <div class="crafting-bench-round-timer-ring" style="--time-fill: {{timeFillPercent}}%;"></div>
+                            <div class="crafting-bench-round-timer-center">
+                                <span class="crafting-bench-round-timer-value">{{timeDisplayText}}</span>
+                            </div>
                         </div>
-                        <div class="crafting-bench-slider-bottom-label">0 sec</div>
                     </div>
                 </div>
                 {{!-- Row 3: Container --}}

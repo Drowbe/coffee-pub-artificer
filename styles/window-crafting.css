@@ -535,7 +535,60 @@
     background: rgba(255, 100, 0, 0.6);
 }
 
+/* Round timer (circular progress, click ring to set time) */
+.crafting-bench-round-timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+}
 
+.crafting-bench-round-timer {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    cursor: pointer;
+    border-radius: 50%;
+}
+
+.crafting-bench-round-timer-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+        rgba(43, 101, 49, 0.95) 0%,
+        rgba(43, 101, 49, 0.95) var(--time-fill, 0%),
+        rgba(80, 80, 90, 0.5) var(--time-fill, 0%),
+        rgba(80, 80, 90, 0.5) 100%
+    );
+    border: 3px solid rgba(40, 40, 45, 0.95);
+    box-sizing: border-box;
+}
+
+.crafting-bench-round-timer-center {
+    position: absolute;
+    inset: 14px;
+    border-radius: 50%;
+    background: rgba(35, 35, 40, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.crafting-bench-round-timer-value {
+    font-size: 0.7em;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.crafting-bench-round-timer:hover .crafting-bench-round-timer-ring {
+    border-color: rgba(255, 100, 0, 0.6);
+}
 
 /* Apparatus, Container, Tool slots (vessel row - smaller to fit 3 + sliders) */
 .crafting-bench-vessel-slot,

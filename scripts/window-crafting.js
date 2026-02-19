@@ -122,7 +122,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             removeContainer: CraftingWindow._actionRemoveContainer,
             removeTool: CraftingWindow._actionRemoveTool,
             selectRecipe: CraftingWindow._actionSelectRecipe,
-            refreshCache: CraftingWindow._actionRefreshCache
+            refreshCache: CraftingWindow._actionRefreshCache,
+            setTimeFromRoundTimer: CraftingWindow._actionSetTimeFromRoundTimer
         }
     });
 
@@ -412,6 +413,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             timeValue: this.timeValue,
             heatFillPercent: this.heatValue,
             timeFillPercent: (this.timeValue / 120) * 100,
+            timeDisplayText: this.timeValue >= 60 ? `${Math.floor(this.timeValue / 60)} min${this.timeValue % 60 ? ` ${this.timeValue % 60} sec` : ''}` : `${this.timeValue} sec`,
             ingredients,
             canCraft,
             lastResult: this.lastResult,
@@ -476,6 +478,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static async _actionRefreshCache(event, target) {
         this._refreshCache();
     }
+    static _actionSetTimeFromRoundTimer(event, target) {
+        const wrap = target?.closest?.('.crafting-bench-round-timer');
+        if (!wrap) return;
+        const rect = wrap.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const x = event.clientX - cx;
+        const y = event.clientY - cy;
+        let angle = Math.atan2(x, -y);
+        if (angle < 0) angle += 2 * Math.PI;
+        const pct = angle / (2 * Math.PI);
+        const time = Math.round((pct * 120) / 5) * 5;
+        this.timeValue = Math.max(0, Math.min(120, time));
+        this.render();
+    }
 
     /** Attach document-level delegation (encounter pattern: ref + root.contains) */
     _attachDelegationOnce() {
@@ -519,6 +536,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (containerEl && w.selectedContainer) { w._removeContainer(); return; }
             const toolEl = e.target?.closest?.('.crafting-bench-tool-slot');
             if (toolEl && w.selectedTool) { w._removeTool(); return; }
+            const roundTimer = e.target?.closest?.('.crafting-bench-round-timer');
+            if (roundTimer) {
+                CraftingWindow._actionSetTimeFromRoundTimer.call(w, e, roundTimer);
+                return;
+            }
         });
 
         document.addEventListener('change', (e) => {
