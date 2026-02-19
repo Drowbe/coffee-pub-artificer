@@ -69,7 +69,9 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
     async getData(options = {}) {
         const flags = this.itemData?.flags?.[MODULE.ID] ?? {};
         const artificerType = this._formState?.artificerType ?? getArtificerTypeFromFlags(flags) ?? this.itemType ?? ARTIFICER_TYPES.COMPONENT;
-        const selectedFamily = this._formState?.family ?? getFamilyFromFlags(flags) ?? '';
+        const selectedFamily = Object.prototype.hasOwnProperty.call(this._formState ?? {}, 'family')
+            ? (this._formState?.family ?? '')
+            : (getFamilyFromFlags(flags) ?? '');
         const existingTraits = getTraitsFromFlags(flags);
 
         const artificerTypeOptions = Object.values(ARTIFICER_TYPES).map(t => ({
@@ -192,11 +194,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 w._formState = w._formState ?? {};
                 w._formState.artificerType = newType;
                 const families = FAMILIES_BY_TYPE[newType] ?? [];
-                if (w._formState.family && !families.includes(w._formState.family)) w._formState.family = null;
+                if (w._formState.family && !families.includes(w._formState.family)) w._formState.family = '';
                 w.render();
             } else if (el.id === 'family') {
                 w._formState = w._formState ?? {};
-                w._formState.family = el.value || null;
+                w._formState.family = el.value || '';
                 w.render();
             }
         });
@@ -217,6 +219,11 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 w._formState.quirk = (el.value ?? '').trim();
             }
         });
+    }
+
+    async _onFirstRender(context, options) {
+        await super._onFirstRender?.(context, options);
+        this._attachItemFormDelegationOnce();
     }
 
     /**
