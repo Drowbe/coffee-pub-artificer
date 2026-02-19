@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { postDebug, postError } from './utils/helpers.js';
 import { createArtificerItem, validateArtificerData } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, LEGACY_FAMILY_TO_FAMILY, FAMILIES_BY_TYPE } from './schema-artificer-item.js';
+import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 
 /**
  * Parse import input (File, string, or object/array) into array of payloads
@@ -91,7 +92,10 @@ export function validateImportPayload(payload) {
         rarity: artificerFlags.rarity || payload.rarity || payload.system?.rarity || 'Common'
     };
     if (type === ARTIFICER_TYPES.COMPONENT) {
-        artificerData.biomes = Array.isArray(artificerFlags.biomes) ? artificerFlags.biomes : [];
+        artificerData.biomes = Array.isArray(artificerFlags.biomes)
+            ? artificerFlags.biomes.filter(b => OFFICIAL_BIOMES.includes(b))
+            : [];
+        if (artificerFlags.quirk) artificerData.quirk = String(artificerFlags.quirk).trim();
         if (artificerFlags.affinity) artificerData.affinity = artificerFlags.affinity;
     }
 

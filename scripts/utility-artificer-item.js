@@ -11,6 +11,7 @@ import {
     LEGACY_FAMILY_TO_FAMILY,
     FAMILIES_BY_TYPE
 } from './schema-artificer-item.js';
+import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 
 /**
  * Get configured compendium IDs from settings (in priority order)
@@ -305,8 +306,11 @@ function buildArtificerFlags(artificerData) {
         skillLevel: Math.max(1, parseInt(artificerData.skillLevel, 10) || 1),
         rarity: artificerData.rarity || 'Common'
     };
-    if (type === ARTIFICER_TYPES.COMPONENT && Array.isArray(artificerData.biomes)) {
-        flags.biomes = artificerData.biomes;
+    if (type === ARTIFICER_TYPES.COMPONENT) {
+        if (Array.isArray(artificerData.biomes)) {
+            flags.biomes = artificerData.biomes.filter(b => OFFICIAL_BIOMES.includes(b));
+        }
+        if (artificerData.quirk) flags.quirk = String(artificerData.quirk).trim();
     }
     if (artificerData.affinity) flags.affinity = artificerData.affinity;
     return flags;
@@ -380,17 +384,19 @@ export function getTraitsFromFlags(flags) {
 /**
  * Extract artificer data from an item (normalized; supports legacy flags).
  * @param {Item} item - Item to extract data from
- * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, affinity)
+ * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, quirk, affinity)
  */
 export function extractArtificerData(item) {
     const flags = item.flags[MODULE.ID] || {};
+    const rawBiomes = flags.biomes || [];
     return {
         type: getArtificerTypeFromFlags(flags) || ARTIFICER_TYPES.COMPONENT,
         family: getFamilyFromFlags(flags) || '',
         traits: getTraitsFromFlags(flags),
         skillLevel: flags.skillLevel ?? 1,
         rarity: flags.rarity || 'Common',
-        biomes: flags.biomes || [],
+        biomes: Array.isArray(rawBiomes) ? rawBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : [],
+        quirk: flags.quirk || null,
         affinity: flags.affinity || null
     };
 }

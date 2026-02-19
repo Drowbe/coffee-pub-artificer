@@ -30,6 +30,15 @@ export const INGREDIENT_FAMILIES = {
 };
 
 /**
+ * Official D&D 5e biomes/habitats (source of truth).
+ * Use only these values for flags.biomes.
+ */
+export const OFFICIAL_BIOMES = [
+    'MOUNTAIN', 'ARCTIC', 'PLANAR', 'COASTAL', 'SWAMP', 'DESERT',
+    'UNDERDARK', 'FOREST', 'UNDERWATER', 'GRASSLAND', 'URBAN', 'HILL'
+];
+
+/**
  * Ingredient Rarities
  * @enum {string}
  */

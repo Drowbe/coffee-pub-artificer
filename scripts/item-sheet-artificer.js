@@ -145,9 +145,9 @@ function buildArtificerSection(item, flags, editable) {
     const traits = getTraitsFromFlags(flags);
     const familyLabel = family ? (FAMILY_LABELS[family] ?? family) : '';
     const traitsStr = traits.length ? traits.join(', ') : '';
-    const rarity = flags.rarity ?? 'Common';
     const biomes = Array.isArray(flags.biomes) ? flags.biomes : [];
     const biomesStr = biomes.join(', ');
+    const quirk = flags.quirk ?? '';
     const affinity = flags.affinity ?? '';
     const skillLevel = flags.skillLevel ?? 1;
 
@@ -156,8 +156,8 @@ function buildArtificerSection(item, flags, editable) {
     if (familyLabel) rows.push({ label: 'Family', value: familyLabel });
     if (traitsStr) rows.push({ label: 'Traits', value: traitsStr });
     rows.push({ label: 'Skill Level', value: String(skillLevel) });
-    rows.push({ label: 'Rarity', value: rarity });
     if (affinity && family === 'Essence') rows.push({ label: 'Essence Affinity', value: affinity });
+    if (quirk) rows.push({ label: 'Quirk', value: quirk });
     if (artificerType === ARTIFICER_TYPES.COMPONENT && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });
 
     const rowsHtml = rows

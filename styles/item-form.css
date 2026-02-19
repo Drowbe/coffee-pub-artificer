@@ -129,14 +129,52 @@
     outline: none;
 }
 
-/* ----- Action bar (matches crafting-window-buttons) ----- */
+/* ----- Action bar (matches crafting window: left/right layout) ----- */
 .item-form-crafting-style .item-form-actions {
     flex-shrink: 0;
     border-top: 1px solid var(--craft-border-color);
     background: var(--craft-header-bg);
     padding: 10px 12px;
+}
+
+.item-form-crafting-style .item-form-action-bar {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.item-form-crafting-style .item-form-action-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.item-form-crafting-style .item-form-action-right {
+    display: flex;
+    align-items: center;
     gap: 8px;
+}
+
+.item-form-crafting-style .item-form-btn-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid rgba(180, 60, 60, 0.8);
+    border-radius: 4px;
+    background: rgba(100, 40, 40, 0.8);
+    color: rgba(255, 200, 200, 0.95);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.95em;
+    text-transform: uppercase;
+}
+
+.item-form-crafting-style .item-form-btn-delete:hover {
+    background: rgba(160, 50, 50, 0.9);
+    border-color: rgba(220, 80, 80, 0.9);
+    color: #fff;
 }
 
 .item-form-crafting-style .item-form-btn-primary,
@@ -168,6 +206,43 @@
 .item-form-crafting-style .item-form-btn-secondary:hover {
     background: rgba(255, 100, 0, 0.6);
     border-color: rgba(255, 100, 0, 0.6);
+    color: #fff;
+}
+
+/* Habitat (biome) multiselect buttons - matches Quick Encounter */
+.item-form-crafting-style .artificer-biomes-group label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.item-form-crafting-style .artificer-biomes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.item-form-crafting-style .artificer-biome-btn {
+    padding: 4px 10px;
+    min-width: 90px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+    text-transform: uppercase;
+}
+
+.item-form-crafting-style .artificer-biome-btn:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.2);
+    color: #fff;
+}
+
+.item-form-crafting-style .artificer-biome-btn.active {
+    background: rgba(57, 88, 104, 0.9);
+    border-color: rgba(0, 0, 0, 0.6);
     color: #fff;
 }
 

@@ -86,4 +86,5 @@ export const LEGACY_FAMILY_TO_FAMILY = {
  * @property {string} [rarity] - Rarity
  * @property {string[]} [biomes] - Biomes (components)
  * @property {string} [affinity] - Essence Affinity (Heat|Cold|Electric|...). Only when family is Essence.
+ * @property {string} [quirk] - Optional quirk (e.g. Found in Battlefields). Components only.
  */

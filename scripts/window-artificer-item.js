@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { postError } from './utils/helpers.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
@@ -125,13 +126,17 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             isConsumable: (this.itemData?.type || 'consumable') === 'consumable',
             consumableSubtype: consumableTypeValue,
             consumableSubtypeOptions,
-            itemDescription: (this.itemData?.system?.description?.value ?? this.itemData?.description ?? '') || '',
             traitsValue: existingTraits.join(','),
             traitCandidates,
             skillLevel,
             skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
             family: selectedFamily,
-            biomes: (flags.biomes || []).join(', '),
+            biomeOptions: OFFICIAL_BIOMES.map(b => {
+                const selected = (this._formState?.selectedBiomes ?? (Array.isArray(flags.biomes) ? flags.biomes : [])).includes(b);
+                return { name: b, selected };
+            }),
+            biomesValue: (this._formState?.selectedBiomes ?? (Array.isArray(flags.biomes) ? flags.biomes.filter(b => OFFICIAL_BIOMES.includes(b)) : [])).join(','),
+            quirk: this._formState?.quirk ?? flags.quirk ?? '',
             affinity: flags.affinity || '',
             affinityOptions
         };
@@ -157,6 +162,19 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
         // Event delegation: submit button may not be found by direct query when app is embedded (Blacksmith bar)
         root?.addEventListener?.('click', (e) => {
+            const biomeBtn = e.target?.closest?.('[data-action="toggleBiome"]');
+            if (biomeBtn?.dataset?.biome) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._toggleBiome(biomeBtn.dataset.biome);
+                return;
+            }
+            if (e.target?.closest?.('[data-action="deleteArtificer"]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._handleDeleteArtificer();
+                return;
+            }
             if (e.target?.closest?.('[data-action="submit"]')) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -208,12 +226,56 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
         this._setupTagPicker(root);
         
+        const quirkInput = query('#artificer-quirk');
+        if (quirkInput) {
+            quirkInput.addEventListener('input', () => {
+                this._formState = this._formState ?? {};
+                this._formState.quirk = quirkInput.value?.trim() ?? '';
+            });
+        }
+
         const cancelButton = query('[data-action="cancel"]');
         if (cancelButton) {
             cancelButton.addEventListener('click', (event) => {
                 event.preventDefault();
                 this.close();
             });
+        }
+    }
+
+    /**
+     * Toggle a biome in the multiselect.
+     * @param {string} biome - Official biome name (e.g. FOREST)
+     */
+    _toggleBiome(biome) {
+        if (!OFFICIAL_BIOMES.includes(biome)) return;
+        const flagBiomes = this.itemData?.flags?.[MODULE.ID]?.biomes ?? this.existingItem?.flags?.[MODULE.ID]?.biomes ?? [];
+        const current = this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : []);
+        const next = current.includes(biome) ? current.filter(b => b !== biome) : [...current, biome];
+        this._formState = this._formState ?? {};
+        this._formState.selectedBiomes = next;
+        this.render();
+    }
+
+    /**
+     * Remove Artificer flags from the item (keeps the item itself).
+     */
+    async _handleDeleteArtificer() {
+        const item = this.existingItem;
+        if (!item) return;
+        try {
+            const updateData = {};
+            if (item.flags?.[MODULE.ID]) updateData[`flags.-=${MODULE.ID}`] = null;
+            if (item.flags?.artificer) updateData['flags.-=artificer'] = null;
+            if (Object.keys(updateData).length > 0) {
+                await item.update(updateData);
+                ui.notifications.info(`Artificer data removed from ${item.name}`);
+            }
+            await this.close();
+            item.sheet?.render(true);
+        } catch (err) {
+            ui.notifications?.error?.(err?.message ?? 'Failed to remove Artificer data');
+            postError(MODULE.NAME, 'Delete Artificer error', err?.message ?? String(err));
         }
     }
 
@@ -375,7 +437,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             type: formObject.itemType5e || 'consumable',
             img: '',
             system: {
-                description: { value: formObject.itemDescription ?? '', chat: '', unidentified: '' },
+                description: { value: '', chat: '', unidentified: '' },
                 source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
             }
         };
@@ -396,10 +458,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         };
 
         if (this.itemType === ARTIFICER_TYPES.COMPONENT) {
-            artificerData.biomes = formObject.biomes
+            const rawBiomes = formObject.biomes
                 ? formObject.biomes.split(',').map(b => b.trim()).filter(Boolean)
                 : [];
+            artificerData.biomes = rawBiomes.filter(b => OFFICIAL_BIOMES.includes(b));
             if (formObject.affinity) artificerData.affinity = formObject.affinity;
+            const quirkVal = (formObject.quirk || '').trim();
+            if (quirkVal) artificerData.quirk = quirkVal;
         }
         
         try {
@@ -407,7 +472,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
 
             if (this.isEditMode) {
                 const systemMerge = {
-                    description: itemData.system?.description ?? {},
                     source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
                 };
                 if (itemData.type === 'consumable' && formObject.consumableSubtype) {

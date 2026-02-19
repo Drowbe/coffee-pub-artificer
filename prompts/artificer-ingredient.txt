@@ -98,7 +98,7 @@ ARTIFICER FLAGS (flags["coffee-pub-artificer"]):
 - tier: (number) 1–10. Default 1. Affects crafting quality.
 - rarity: (string) One of: "Common", "Uncommon", "Rare", "Epic", "Legendary".
 - quirk: (string or null) Optional. A rare property: Soothing, Volatile, Unstable, Resonant, etc. Use null if none.
-- biomes: (array of strings) Optional. Use only official D&D 5e habitats: Arctic, Coastal, Desert, Forest, Grassland, Hill, Mountain, Swamp, Underdark, Underwater, Urban. Avoid non-leverageable descriptors (e.g. "Sites of frequent death")—put those in descriptions only. Can be empty [].
+- biomes: (array of strings) Optional. Use ONLY official D&D 5e habitats (uppercase): ARCTIC, COASTAL, DESERT, FOREST, GRASSLAND, HILL, MOUNTAIN, PLANAR, SWAMP, UNDERDARK, UNDERWATER, URBAN. Can be empty [].
 
 TAG RULES (critical for crafting):
 - Total tags: 2–5 (1 primary + 1–2 secondary + optional quirk).

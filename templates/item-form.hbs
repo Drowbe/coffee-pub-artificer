@@ -15,7 +15,6 @@
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
             {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
-            {{> partials/form-field name="itemDescription" label="Description" type="textarea" isTextarea=true value=itemDescription placeholder="Item description..."}}
             {{> partials/form-field name="itemType5e" label="Consumable type" type="select" isSelect=true options=itemType5eOptions}}
             {{#if isConsumable}}
             {{> partials/form-field name="consumableSubtype" label="Consumable subtype" type="select" isSelect=true options=consumableSubtypeOptions}}
@@ -52,18 +51,41 @@
                 <span class="artificer-skill-current-value">{{skillLevel}}</span>
             </div>
             {{#if isComponent}}
-            {{> partials/form-field name="biomes" label="Biomes" type="text" value=biomes placeholder="Forest, Meadow (comma-separated)"}}
+            <div class="artificer-form-group artificer-biomes-group">
+                <label>Habitat</label>
+                <div class="artificer-biomes-grid">
+                    {{#each biomeOptions}}
+                    <button type="button" class="artificer-biome-btn {{#if selected}}active{{/if}}" data-biome="{{name}}" data-action="toggleBiome">{{name}}</button>
+                    {{/each}}
+                </div>
+                <input type="hidden" name="biomes" id="artificer-biomes-hidden" value="{{biomesValue}}" />
+            </div>
+            <div class="artificer-form-group">
+                <label for="artificer-quirk">Quirk</label>
+                <input type="text" name="quirk" id="artificer-quirk" value="{{quirk}}" placeholder="e.g. Found in Battlefields" />
+            </div>
             {{/if}}
         </section>
     </div>
 
-    {{!-- Form Actions (matches crafting window action bar) --}}
+    {{!-- Form Actions (matches crafting window: Delete left, Cancel+Save right) --}}
     <section class="item-form-actions">
-        <button type="button" data-action="submit" class="item-form-btn-primary">
-            <i class="fa-solid fa-check"></i> {{#if isEditMode}}Save Changes{{else}}Create Item{{/if}}
-        </button>
-        <button type="button" class="item-form-btn-secondary" data-action="cancel">
-            <i class="fa-solid fa-times"></i> Cancel
-        </button>
+        <div class="item-form-action-bar">
+            <div class="item-form-action-left">
+                {{#if isEditMode}}
+                <button type="button" data-action="deleteArtificer" class="item-form-btn-delete" title="Remove Artificer tags and properties from this item">
+                    <i class="fa-solid fa-trash"></i> Delete Artificer
+                </button>
+                {{/if}}
+            </div>
+            <div class="item-form-action-right">
+                <button type="button" class="item-form-btn-secondary" data-action="cancel">
+                    <i class="fa-solid fa-times"></i> Cancel
+                </button>
+                <button type="button" data-action="submit" class="item-form-btn-primary">
+                    <i class="fa-solid fa-check"></i> {{#if isEditMode}}Save Changes{{else}}Create Item{{/if}}
+                </button>
+            </div>
+        </div>
     </section>
 </div>
