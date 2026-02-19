@@ -746,6 +746,34 @@
     border-radius: 6px;
     border: 2px dashed var(--craft-border-color);
     background: rgba(0, 0, 0, 0.3);
+    transition: border-color 0.15s, box-shadow 0.2s;
+}
+
+/* Apparatus slot: border color shifts to red as heat increases (--heat-pct 0–100) */
+.crafting-bench-apparatus-slot {
+    border-color: color-mix(
+        in srgb,
+        var(--craft-border-color) calc(100% - var(--heat-pct, 0) * 1%),
+        rgba(200, 60, 40, 0.95) calc(var(--heat-pct, 0) * 1%)
+    );
+}
+
+.crafting-bench-apparatus-slot:has(.crafting-bench-container-item) {
+    border-color: color-mix(
+        in srgb,
+        rgba(59, 132, 66, 0.9) calc(100% - var(--heat-pct, 0) * 1%),
+        rgba(200, 60, 40, 0.95) calc(var(--heat-pct, 0) * 1%)
+    );
+}
+
+/* Heating animation when crafting (pulsing glow) */
+.crafting-bench-apparatus-heating {
+    animation: crafting-bench-heat-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes crafting-bench-heat-pulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(200, 80, 40, 0.4); }
+    50%     { box-shadow: 0 0 16px rgba(220, 90, 50, 0.8), 0 0 24px rgba(200, 60, 40, 0.5); }
 }
 
 .crafting-bench-center-slot:hover {

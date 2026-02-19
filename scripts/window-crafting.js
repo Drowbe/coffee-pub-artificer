@@ -155,6 +155,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.filterRecipeSearch = options.filterRecipeSearch ?? '';
         /** @type {ReturnType<typeof setTimeout>|null} */
         this._searchDebounceTimer = null;
+        /** @type {number|null} - seconds remaining during craft countdown */
+        this._craftingCountdownRemaining = null;
+        /** @type {ReturnType<typeof setInterval>|null} */
+        this._craftCountdownInterval = null;
+        /** @type {{actor: Actor, items: Item[], anyMissing: boolean}|null} - stored during countdown */
+        this._craftPending = null;
     }
 
     /**
@@ -410,10 +416,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             showContainerOnly,
             showToolOnly,
             heatValue: this.heatValue,
-            timeValue: this.timeValue,
+            timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
             heatFillPercent: this.heatValue,
-            timeFillPercent: (this.timeValue / 120) * 100,
-            timeDisplayText: this.timeValue >= 60 ? `${Math.floor(this.timeValue / 60)} min${this.timeValue % 60 ? ` ${this.timeValue % 60} sec` : ''}` : `${this.timeValue} sec`,
+            timeFillPercent: this._craftingCountdownRemaining != null
+                ? (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
+                : (this.timeValue / 120) * 100,
+            timeDisplayText: (() => {
+                const sec = this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue;
+                return sec >= 60 ? `${Math.floor(sec / 60)} min${sec % 60 ? ` ${sec % 60} sec` : ''}` : `${sec} sec`;
+            })(),
+            isCrafting: this._craftingCountdownRemaining != null,
             ingredients,
             canCraft,
             lastResult: this.lastResult,
@@ -438,6 +450,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     static _actionCraft(event, target) { this._craft(); }
     static _actionClear(event, target) {
+        if (this._craftCountdownInterval) {
+            clearInterval(this._craftCountdownInterval);
+            this._craftCountdownInterval = null;
+        }
+        this._craftingCountdownRemaining = null;
+        this._craftPending = null;
         this.selectedSlots = Array(6).fill(null);
         this.selectedApparatus = null;
         this.selectedContainer = null;
@@ -481,6 +499,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._refreshCache();
     }
     static _actionSetTimeFromRoundTimer(event, target) {
+        if (this._craftingCountdownRemaining != null) return;
         const wrap = target?.closest?.('.crafting-bench-round-timer');
         if (!wrap) return;
         const rect = wrap.getBoundingClientRect();
@@ -808,6 +827,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _craft() {
+        if (this._craftingCountdownRemaining != null) return;
+
         const actor = this._getActor();
         const entries = this.selectedSlots.filter(s => s && s.item && !s.isMissing);
         if (!actor || entries.length === 0) return;
@@ -826,12 +847,39 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
+        const countdownTotal = Math.max(0, Math.min(120, this.timeValue));
+        const countdownSec = countdownTotal <= 0 ? 0 : Math.ceil(countdownTotal);
 
-        // Recipe takes precedence: if recipe selected and all ingredients present, use recipe result
+        if (countdownSec <= 0) {
+            await this._runCraftLogic(actor, items, anyMissing);
+            this._resetAfterCraft();
+            return;
+        }
+
+        this._craftingCountdownRemaining = countdownSec;
+        this._craftPending = { actor, items, anyMissing };
+        this._craftCountdownInterval = setInterval(() => {
+            this._craftingCountdownRemaining = Math.max(0, (this._craftingCountdownRemaining ?? 0) - 1);
+            this.render();
+            if (this._craftingCountdownRemaining <= 0) {
+                clearInterval(this._craftCountdownInterval ?? 0);
+                this._craftCountdownInterval = null;
+                const pending = this._craftPending;
+                this._craftPending = null;
+                if (pending) {
+                    this._runCraftLogic(pending.actor, pending.items, pending.anyMissing).then(() => {
+                        this._resetAfterCraft();
+                    });
+                }
+            }
+        }, 1000);
+        this.render();
+    }
+
+    async _runCraftLogic(actor, items, anyMissing) {
         if (this.selectedRecipe && !anyMissing) {
             this.lastResult = await this._craftFromRecipe(actor, items);
         } else {
-            // Fall back to tag-based experimentation
             const allTags = [];
             for (const item of items) {
                 allTags.push(...getTagsFromItem(item));
@@ -840,15 +888,27 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const engine = getExperimentationEngine();
             this.lastResult = await engine.craft(actor, items);
         }
-
-        /** @type {Array<{item: Item, count: number}|null>} */
-        this.selectedSlots = Array(6).fill(null);
-
-        if (this.lastResult.success) {
+        if (this.lastResult?.success) {
             ui.notifications.info(`Created: ${this.lastResult.name}`);
-        } else {
+        } else if (this.lastResult) {
             ui.notifications.warn(this.lastResult.name);
         }
+    }
+
+    _resetAfterCraft() {
+        this._craftingCountdownRemaining = null;
+        this._craftPending = null;
+        if (this._craftCountdownInterval) {
+            clearInterval(this._craftCountdownInterval);
+            this._craftCountdownInterval = null;
+        }
+        this.selectedSlots = Array(6).fill(null);
+        this.selectedApparatus = null;
+        this.selectedContainer = null;
+        this.selectedTool = null;
+        this.selectedRecipe = null;
+        this.heatValue = 0;
+        this.timeValue = 0;
         this.render();
     }
 

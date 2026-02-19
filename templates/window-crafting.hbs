@@ -116,7 +116,7 @@
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus (beaker, mortar)">
+                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if isCrafting}}crafting-bench-apparatus-heating{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="Apparatus (beaker, mortar)" style="--heat-pct: {{heatValue}}%;">
                             {{#if apparatusSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{apparatusSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}
@@ -129,7 +129,7 @@
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-center">
-                        <div class="crafting-bench-round-timer-wrap" title="Time: 0 sec to 2 min (click ring to set)">
+                        <div class="crafting-bench-round-timer-wrap" title="{{#if isCrafting}}Crafting in progress...{{else}}Time: 0 sec to 2 min (click ring to set){{/if}}">
                             <div class="crafting-bench-round-timer" data-action="setTimeFromRoundTimer">
                                 <div class="crafting-bench-round-timer-ring" style="--time-fill: {{timeFillPercent}}%;"></div>
                                 <div class="crafting-bench-round-timer-center">
@@ -230,7 +230,7 @@
                 <button type="button" class="crafting-window-btn-secondary" data-action="clear" title="Clear all slots">
                     <i class="fa-solid fa-eraser"></i> Clear
                 </button>
-                <button type="button" class="crafting-window-btn-primary" data-action="craft" {{#unless canCraft}}disabled{{/unless}} title="Craft with selected ingredients">
+                <button type="button" class="crafting-window-btn-primary" data-action="craft" {{#unless canCraft}}{{#unless isCrafting}}disabled{{/unless}}{{/unless}} {{#if isCrafting}}disabled{{/if}} title="{{#if isCrafting}}Crafting in progress...{{else}}Craft with selected ingredients{{/if}}">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Craft
                 </button>
             </div>
