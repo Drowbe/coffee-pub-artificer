@@ -11,10 +11,10 @@
     --craft-background: #232323;
     --craft-header-bg: rgba(0, 0, 0, 0.7);
     --craft-banner-image-title: url('../images/backgrounds/background-skull-red.webp');       
-    --craft-banner-image-panel-01: url('../images/backgrounds/panel-background-01.webp');
-    --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-01.webp'); 
-    --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-07.webp'); 
-    --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-01.webp');   
+    --craft-banner-image-panel-01: url('../images/backgrounds/panel-background-06.webp');
+    --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-06.webp'); 
+    --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-05.webp'); 
+    --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-04.webp');   
     background: var(--craft-background) !important;
     border: 0 solid var(--craft-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -127,6 +127,38 @@
     min-height: 0;
     overflow: hidden;
     border-right: 1px solid var(--craft-border-color);
+    background-color: rgba(0, 0, 0, 0.2);
+    background-blend-mode: multiply;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.crafting-window-body .crafting-zone-recipes {
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+        var(--craft-banner-image-panel-01);
+}
+
+.crafting-window-body .crafting-zone-ingredients {
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
+        var(--craft-banner-image-panel-02);
+}
+
+.crafting-window-body .crafting-zone-bench {
+    width: 350px;
+    min-width: 350px;
+    max-width: 350px;
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        var(--craft-banner-image-panel-03);
+}
+
+.crafting-window-body .crafting-zone-result {
+    background-image:
+        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+        var(--craft-banner-image-panel-04);
 }
 
 .crafting-zone:last-child {
@@ -140,21 +172,6 @@
     min-height: 0;
     padding: 10px 12px;
     overflow: hidden;
-}
-
-/* Crafting Bench zone: fixed 350px width */
-.crafting-zone-bench {
-    width: 350px;
-    min-width: 350px;
-    max-width: 350px;
-    background-image:
-        linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
-        var(--craft-banner-image-panel-03);
-    background-color: rgba(0, 0, 0, 0.2);
-    background-blend-mode: multiply;
-    background-position: top center;
-    background-repeat: no-repeat;
-    background-size: cover;
 }
 
 .crafting-zone-section-title {
@@ -884,9 +901,9 @@
 
 /* ----- Zone 4: Result ----- */
 .crafting-result-box {
-    padding: 12px;
+    padding: 3px;
     border-radius: 6px;
-    border: 1px solid var(--craft-border-color);
+    border: 0px solid var(--craft-border-color);
 }
 
 .crafting-result-row {
