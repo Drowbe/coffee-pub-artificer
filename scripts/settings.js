@@ -110,12 +110,13 @@ function getJournalCompendiumChoices() {
 }
 
 /**
- * Register recipe compendium slots (JournalEntry packs). Registers slots 1–10; storage reads 1..numRecipeCompendiums.
+ * Register recipe compendium slots (JournalEntry packs). Only registers slots 1..numRecipeCompendiums.
+ * numRecipeCompendiums must be registered before calling this.
  */
 function registerRecipeCompendiumSettings() {
+    const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
     const choices = getJournalCompendiumChoices();
-    const maxSlots = 10;
-    for (let i = 1; i <= maxSlots; i++) {
+    for (let i = 1; i <= num; i++) {
         const settingKey = `recipeCompendium${i}`;
         if (game.settings.settings.has(`${MODULE.ID}.${settingKey}`)) continue;
         game.settings.register(MODULE.ID, settingKey, {
@@ -228,19 +229,7 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('JournalSettings', 'headingH3JournalSettings-Label', 'headingH3JournalSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-    // -- Recipe Journal (default import target) --
-	game.settings.register(MODULE.ID, 'recipeJournal', {
-        name: MODULE.ID + '.recipeJournal-Label',
-        hint: MODULE.ID + '.recipeJournal-Hint',
-        scope: 'world',
-        config: true,
-        default: '',
-        type: String,
-        choices: getJournalChoices(),
-		group: WORKFLOW_GROUPS.COMMON_SETTINGS
-	});
-
-    // -- Recipe journal folder (all journals in this folder are recipe sources) --
+    // -- Recipe journal folder (world: all journals in this folder are recipe sources) --
 	game.settings.register(MODULE.ID, 'recipeJournalFolder', {
         name: MODULE.ID + '.recipeJournalFolder-Label',
         hint: MODULE.ID + '.recipeJournalFolder-Hint',
@@ -267,6 +256,40 @@ export const registerSettings = () => {
 
     // -- Recipe compendium slots (JournalEntry packs) --
     registerRecipeCompendiumSettings();
+
+    // -- Recipe Lookup Order (when resolving recipes; affects dedupe priority) --
+    game.settings.register(MODULE.ID, 'recipeLookupOrder', {
+        name: MODULE.ID + '.recipeLookupOrder-Label',
+        hint: MODULE.ID + '.recipeLookupOrder-Hint',
+        scope: 'world',
+        config: true,
+        default: 'compendia-first',
+        type: String,
+        choices: {
+            'compendia-first': 'Compendia first, world fallback',
+            'world-first': 'World first, compendia fallback',
+            'compendia-only': 'Compendia only (no world)'
+        },
+        group: WORKFLOW_GROUPS.COMMON_SETTINGS
+    });
+
+    // -- Recipe Storage Source (where recipes load from; same options as ingredients) --
+    game.settings.register(MODULE.ID, 'recipeStorageSource', {
+        name: MODULE.ID + '.recipeStorageSource-Label',
+        hint: MODULE.ID + '.recipeStorageSource-Hint',
+        scope: 'world',
+        config: true,
+        default: 'compendia-then-world',
+        type: String,
+        choices: {
+            'compendia-only': 'Compendia only',
+            'world-only': 'World folder only',
+            'compendia-then-world': 'Compendia first, then world',
+            'world-then-compendia': 'World first, then compendia'
+        },
+        requiresReload: true,
+        group: WORKFLOW_GROUPS.COMMON_SETTINGS
+    });
 
     // -- Blueprint Journal Setting --
 	game.settings.register(MODULE.ID, 'blueprintJournal', {

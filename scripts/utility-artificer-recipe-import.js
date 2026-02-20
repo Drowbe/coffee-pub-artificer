@@ -199,11 +199,15 @@ export async function importRecipes(payloads, options = {}) {
         errorCount: 0
     };
 
-    let journalUuid = options.journalUuid ?? game.settings.get(MODULE.ID, 'recipeJournal') ?? '';
+    let journalUuid = options.journalUuid ?? '';
     if (!journalUuid) {
-        const journal = await getOrCreateJournal(DEFAULT_RECIPE_JOURNAL_NAME);
+        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
+        const folder = folderId && game.folders ? game.folders.get(folderId) : null;
+        const journalsInFolder = folder && game.journal ? game.journal.filter(j => j.folder?.id === folderId) : [];
+        const existing = journalsInFolder[0];
+        const createOpts = folder ? { folder: folder.id } : {};
+        const journal = existing ?? await getOrCreateJournal(DEFAULT_RECIPE_JOURNAL_NAME, createOpts);
         journalUuid = journal.uuid;
-        await game.settings.set(MODULE.ID, 'recipeJournal', journalUuid);
     }
 
     const journal = await fromUuid(journalUuid);

@@ -45,69 +45,66 @@ export class RecipeStorage {
     }
     
     /**
-     * Load recipes from all configured sources: tagged world journals, folder, and compendiums.
+     * Load recipes from configured sources: world folder and compendiums.
+     * Deduplicates by core document ID (journal.id + page.id) so Compendium.X.Item.abc and Item.abc
+     * are treated as the same. Load order and source filter respect recipeStorageSource.
      * @private
      * @returns {Promise<void>}
      */
     async _loadFromJournals() {
-        const journalUuids = new Set();
+        const source = game.settings.get(MODULE.ID, 'recipeStorageSource') ?? 'compendia-then-world';
+        const loadCompendia = source === 'compendia-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
+        const loadWorld = source === 'world-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
 
-        // 1. Tagged world journals (flag: flags[MODULE.ID].recipeJournal === true)
-        if (game.journal) {
-            for (const journal of game.journal) {
-                if (journal.flags?.[MODULE.ID]?.recipeJournal === true) {
-                    journalUuids.add(journal.uuid);
-                }
-            }
-        }
-
-        // 2. Folder: all world journals in the configured folder
-        try {
+        const journalBatches = []; // [{ uuid, isWorld }]
+        if (loadWorld) {
             const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
             if (folderId && game.journal) {
                 for (const journal of game.journal) {
-                    if (journal.folder?.id === folderId) {
-                        journalUuids.add(journal.uuid);
+                    if (journal.folder?.id === folderId && journal.uuid) {
+                        journalBatches.push({ uuid: journal.uuid, isWorld: true });
                     }
                 }
             }
-        } catch (e) {
-            // ignore
         }
-
-        // 3. Legacy single journal (if set and not already covered)
-        try {
-            const singleUuid = game.settings.get(MODULE.ID, 'recipeJournal') ?? '';
-            if (singleUuid) journalUuids.add(singleUuid);
-        } catch (e) {
-            // ignore
-        }
-
-        // 4. Compendiums: JournalEntry packs, each journal in the pack
-        try {
-            const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
-            for (let i = 1; i <= num; i++) {
-                const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
-                if (!cid || cid === 'none') continue;
-                const pack = game.packs.get(cid);
-                if (!pack || pack.documentName !== 'JournalEntry') continue;
-                const docs = await pack.getDocuments();
-                for (const doc of docs) {
-                    if (doc?.uuid) journalUuids.add(doc.uuid);
-                }
-            }
-        } catch (e) {
-            postDebug(MODULE.NAME, 'Recipe compendiums load error', e?.message ?? String(e));
-        }
-
-        for (const journalUuid of journalUuids) {
+        if (loadCompendia) {
             try {
-                const journal = await fromUuid(journalUuid);
+                const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
+                for (let i = 1; i <= num; i++) {
+                    const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
+                    if (!cid || cid === 'none') continue;
+                    const pack = game.packs.get(cid);
+                    if (!pack || pack.documentName !== 'JournalEntry') continue;
+                    const docs = await pack.getDocuments();
+                    for (const doc of docs) {
+                        if (doc?.uuid) journalBatches.push({ uuid: doc.uuid, isWorld: false });
+                    }
+                }
+            } catch (e) {
+                postDebug(MODULE.NAME, 'Recipe compendiums load error', e?.message ?? String(e));
+            }
+        }
+
+        const order = source === 'world-then-compendia' ? 'world-first' : 'compendia-first';
+        const worldJournals = journalBatches.filter(b => b.isWorld);
+        const compendiumJournals = journalBatches.filter(b => !b.isWorld);
+        const ordered = order === 'world-first'
+            ? [...worldJournals, ...compendiumJournals]
+            : [...compendiumJournals, ...worldJournals];
+
+        const coreIdSeen = new Set();
+        for (const { uuid } of ordered) {
+            try {
+                const journal = await fromUuid(uuid);
                 if (!journal || journal.documentName !== 'JournalEntry') continue;
+                const journalId = journal.id ?? '';
                 const pages = journal.pages?.contents ?? [];
                 for (const page of pages) {
                     try {
                         if (page.type !== 'text') continue;
+                        const coreId = `${journalId}_${page.id ?? ''}`;
+                        if (coreIdSeen.has(coreId)) continue;
+                        coreIdSeen.add(coreId);
                         const rawContent = page.text?.content ?? page.text?.markdown ?? '';
                         const recipe = await RecipeParser.parseSinglePage(page, rawContent);
                         if (recipe) this._cache.set(recipe.id, recipe);
@@ -116,7 +113,7 @@ export class RecipeStorage {
                     }
                 }
             } catch (error) {
-                postDebug(MODULE.NAME, `Recipe journal "${journalUuid}" not found or error`, error?.message ?? String(error));
+                postDebug(MODULE.NAME, `Recipe journal "${uuid}" not found or error`, error?.message ?? String(error));
             }
         }
     }
