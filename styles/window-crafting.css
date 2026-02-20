@@ -342,12 +342,13 @@
 /* ----- Zone 2: Ingredients ----- */
 .crafting-zone-section-input-wrap {
     margin-bottom: 8px;
+    position: relative;
 }
 
 .crafting-zone-section-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 6px 10px;
+    padding: 6px 28px 6px 10px;
     direction: ltr;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--craft-border-color);
@@ -355,7 +356,6 @@
     color: #e0e0e0;
     font-family: inherit;
     font-size: 0.9em;
-
 }
 
 .crafting-zone-section-input::placeholder {
@@ -365,6 +365,35 @@
 .crafting-zone-section-input:focus {
     outline: none;
     border-color: var(--craft-accent-color);
+}
+
+.crafting-zone-section-input-clear {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: #888;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: color 0.15s, background 0.15s;
+}
+
+.crafting-zone-section-input-clear:hover {
+    color: #e0e0e0;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.crafting-zone-section-input-clear:focus {
+    outline: none;
 }
 
 .crafting-zone-filters-row {

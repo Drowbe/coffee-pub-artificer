@@ -616,6 +616,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 w._refreshCache();
                 return;
             }
+            const clearRecipeBtn = e.target?.closest?.('[data-action="clearRecipeSearch"]');
+            if (clearRecipeBtn) {
+                e.preventDefault();
+                w.filterRecipeSearch = '';
+                w.render();
+                return;
+            }
+            const clearComponentBtn = e.target?.closest?.('[data-action="clearComponentSearch"]');
+            if (clearComponentBtn) {
+                e.preventDefault();
+                w.filterSearch = '';
+                w.render();
+                return;
+            }
             const recipeRow = e.target?.closest?.('.crafting-recipe-row');
             if (recipeRow?.dataset?.recipeId) {
                 w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});

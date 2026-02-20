@@ -28,6 +28,7 @@
                 <h3 class="crafting-zone-section-title">Recipes</h3>
                 <div class="crafting-zone-section-input-wrap">
                     <input type="text" id="{{appId}}-filter-recipes" class="crafting-zone-section-input" placeholder="Search recipes..." value="{{filterRecipeSearch}}" dir="ltr" />
+                    <button type="button" class="crafting-zone-section-input-clear" data-action="clearRecipeSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
@@ -52,6 +53,7 @@
                 <h3 class="crafting-zone-section-title">Components</h3>
                 <div class="crafting-zone-section-input-wrap">
                     <input type="text" id="{{appId}}-filter-search" class="crafting-zone-section-input" placeholder="Search components..." value="{{filterSearch}}" dir="ltr" />
+                    <button type="button" class="crafting-zone-section-input-clear" data-action="clearComponentSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="crafting-zone-filters-row">
                     <select id="{{appId}}-filter-type" class="crafting-zone-select" title="Filter by type (Component, Creation, Tool)">
