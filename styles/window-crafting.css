@@ -933,6 +933,12 @@
     position: relative;
 }
 
+.crafting-bench-tool-slot {
+    width: 80px;
+    min-width: 80px;
+
+}
+
 .crafting-bench-vessel-slot:hover,
 .crafting-bench-container-slot:hover,
 .crafting-bench-apparatus-slot:hover,

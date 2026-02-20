@@ -28,9 +28,16 @@
 
 
 		
-		"recipeJournal-Label": "Recipe Journal",
-		"recipeJournal-Hint": "Select the journal containing recipe entries. Each page is parsed as a recipe.",
-
+		"recipeJournal-Label": "Default recipe journal (import target)",
+		"recipeJournal-Hint": "Journal where new recipes are imported. Recipe sources: right-click a journal → Use as Artificer recipe source; or set folder and compendiums below.",
+		"recipeJournalFolder-Label": "Recipe journal folder",
+		"recipeJournalFolder-Hint": "All world journals in this folder are loaded as recipe sources.",
+		"numRecipeCompendiums-Label": "Number of recipe compendiums",
+		"numRecipeCompendiums-Hint": "How many Journal compendium slots to use (0–10).",
+		"recipeJournalContext-Add": "Use as Artificer recipe source",
+		"recipeJournalContext-Remove": "Remove from Artificer recipe sources",
+		"recipeJournalContext-Added": "Journal added as recipe source. Open Crafting Station to see recipes.",
+		"recipeJournalContext-Removed": "Journal removed from recipe sources.",
 		"blueprintJournal-Label": "Blueprint Journal",
 		"blueprintJournal-Hint": "Select the journal containing blueprint entries. Each page is parsed as a blueprint.",
 		"numIngredientCompendiums-Label": "Number of Compendiums",

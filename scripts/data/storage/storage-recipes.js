@@ -45,39 +45,78 @@ export class RecipeStorage {
     }
     
     /**
-     * Load recipes from journal entries
+     * Load recipes from all configured sources: tagged world journals, folder, and compendiums.
      * @private
      * @returns {Promise<void>}
      */
     async _loadFromJournals() {
-        let journalUuid;
-        try {
-            journalUuid = game.settings.get(MODULE.ID, 'recipeJournal');
-        } catch (error) {
-            journalUuid = '';
-        }
-        if (!journalUuid) return;
+        const journalUuids = new Set();
 
-        const journal = await fromUuid(journalUuid);
-        if (!journal || journal.documentName !== 'JournalEntry') {
-            postDebug(MODULE.NAME, `Recipe journal "${journalUuid}" not found. Recipes will not be loaded.`);
-            return;
+        // 1. Tagged world journals (flag: flags[MODULE.ID].recipeJournal === true)
+        if (game.journal) {
+            for (const journal of game.journal) {
+                if (journal.flags?.[MODULE.ID]?.recipeJournal === true) {
+                    journalUuids.add(journal.uuid);
+                }
+            }
         }
-        
-        // Get all pages from journal
-        const pages = journal.pages.contents;
-        
-        for (const page of pages) {
+
+        // 2. Folder: all world journals in the configured folder
+        try {
+            const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
+            if (folderId && game.journal) {
+                for (const journal of game.journal) {
+                    if (journal.folder?.id === folderId) {
+                        journalUuids.add(journal.uuid);
+                    }
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        // 3. Legacy single journal (if set and not already covered)
+        try {
+            const singleUuid = game.settings.get(MODULE.ID, 'recipeJournal') ?? '';
+            if (singleUuid) journalUuids.add(singleUuid);
+        } catch (e) {
+            // ignore
+        }
+
+        // 4. Compendiums: JournalEntry packs, each journal in the pack
+        try {
+            const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
+            for (let i = 1; i <= num; i++) {
+                const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
+                if (!cid || cid === 'none') continue;
+                const pack = game.packs.get(cid);
+                if (!pack || pack.documentName !== 'JournalEntry') continue;
+                const docs = await pack.getDocuments();
+                for (const doc of docs) {
+                    if (doc?.uuid) journalUuids.add(doc.uuid);
+                }
+            }
+        } catch (e) {
+            postDebug(MODULE.NAME, 'Recipe compendiums load error', e?.message ?? String(e));
+        }
+
+        for (const journalUuid of journalUuids) {
             try {
-                if (page.type !== 'text') continue;
-                // Use RAW content for parsing—enriched HTML turns @UUID into links, breaking regex
-                const rawContent = page.text?.content ?? page.text?.markdown ?? '';
-                const recipe = await RecipeParser.parseSinglePage(page, rawContent);
-                if (recipe) {
-                    this._cache.set(recipe.id, recipe);
+                const journal = await fromUuid(journalUuid);
+                if (!journal || journal.documentName !== 'JournalEntry') continue;
+                const pages = journal.pages?.contents ?? [];
+                for (const page of pages) {
+                    try {
+                        if (page.type !== 'text') continue;
+                        const rawContent = page.text?.content ?? page.text?.markdown ?? '';
+                        const recipe = await RecipeParser.parseSinglePage(page, rawContent);
+                        if (recipe) this._cache.set(recipe.id, recipe);
+                    } catch (error) {
+                        postError(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error));
+                    }
                 }
             } catch (error) {
-                postError(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error));
+                postDebug(MODULE.NAME, `Recipe journal "${journalUuid}" not found or error`, error?.message ?? String(error));
             }
         }
     }

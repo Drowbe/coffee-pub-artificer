@@ -109,8 +109,74 @@ function initializeModule() {
     registerMenubarIntegration();
     // Inject Artificer section into item sheets + Edit button
     registerItemSheetIntegration();
+    // Journal context menu: tag/untag as recipe source
+    registerJournalRecipeContextMenu();
 
     BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Module initialized`, null, false, false);
+}
+
+/**
+ * Add context menu options to world journals: add or remove as Artificer recipe source
+ */
+function registerJournalRecipeContextMenu() {
+    Hooks.on('getJournalEntryContextOptions', (application, menuItems) => {
+        const getDoc = (target) => getJournalFromContext(application, target);
+        menuItems.push({
+            name: game.i18n.localize('coffee-pub-artificer.recipeJournalContext-Add'),
+            icon: '<i class="fa-solid fa-book-open"></i>',
+            condition: (target) => {
+                const doc = getDoc(target);
+                return !!doc && doc.flags?.[MODULE.ID]?.recipeJournal !== true;
+            },
+            callback: async (target) => {
+                const doc = getDoc(target);
+                if (!doc) return;
+                await doc.update({ [`flags.${MODULE.ID}.recipeJournal`]: true });
+                const api = getAPI();
+                if (api?.recipes?.refresh) await api.recipes.refresh();
+                ui.notifications?.info(game.i18n.localize('coffee-pub-artificer.recipeJournalContext-Added'));
+            }
+        });
+        menuItems.push({
+            name: game.i18n.localize('coffee-pub-artificer.recipeJournalContext-Remove'),
+            icon: '<i class="fa-solid fa-book"></i>',
+            condition: (target) => {
+                const doc = getDoc(target);
+                return !!doc && doc.flags?.[MODULE.ID]?.recipeJournal === true;
+            },
+            callback: async (target) => {
+                const doc = getDoc(target);
+                if (!doc) return;
+                await doc.update({ [`flags.${MODULE.ID}.recipeJournal`]: false });
+                const api = getAPI();
+                if (api?.recipes?.refresh) await api.recipes.refresh();
+                ui.notifications?.info(game.i18n.localize('coffee-pub-artificer.recipeJournalContext-Removed'));
+            }
+        });
+    });
+}
+
+/**
+ * Resolve the JournalEntry for the context menu. Uses target element (directory list item) first, then application.
+ * @param {ApplicationV2} application - The application that opened the context menu (e.g. Journal directory)
+ * @param {HTMLElement} [target] - The element right-clicked (e.g. list item with data-document-id)
+ * @returns {JournalEntry|null}
+ */
+function getJournalFromContext(application, target) {
+    if (!game.journal) return null;
+    const fromTarget = (el) => {
+        const node = el?.closest?.('[data-document-id]') ?? el?.closest?.('[data-id]') ?? el;
+        const id = node?.getAttribute?.('data-document-id') ?? node?.getAttribute?.('data-id');
+        return id ? game.journal.get(id) ?? null : null;
+    };
+    const fromApp = (app) => {
+        if (!app) return null;
+        const doc = app.document ?? app.object ?? app.view?.target ?? null;
+        if (doc && doc.documentName === 'JournalEntry') return doc;
+        const id = app.documentId ?? app.object?.id ?? app.view?.target?.id;
+        return id ? game.journal.get(id) ?? null : null;
+    };
+    return fromTarget(target) ?? fromApp(application) ?? null;
 }
 
 /**

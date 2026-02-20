@@ -60,7 +60,7 @@ function getJournalChoices() {
 }
 
 /**
- * Get compendium choices for dropdowns
+ * Get compendium choices for dropdowns (Item packs)
  * @returns {Object} Object mapping compendium IDs to display labels
  */
 function getCompendiumChoices() {
@@ -77,6 +77,59 @@ function getCompendiumChoices() {
     }
     
     return choices;
+}
+
+/**
+ * Get folder choices for JournalEntry (world journals in a folder)
+ * @returns {Object} Object mapping folder id to display label
+ */
+function getJournalFolderChoices() {
+    const choices = { "": "-- None --" };
+    if (!game.folders) return choices;
+    const journalFolders = game.folders.filter(f => f.type === 'JournalEntry');
+    for (const folder of journalFolders) {
+        choices[folder.id] = folder.name;
+    }
+    return choices;
+}
+
+/**
+ * Get JournalEntry compendium choices (packs containing journals)
+ * @returns {Object} Object mapping compendium id to display label
+ */
+function getJournalCompendiumChoices() {
+    const choices = { "none": "-- None --" };
+    if (!game.packs) return choices;
+    const journalPacks = game.packs.filter(pack => pack.documentName === 'JournalEntry');
+    for (const pack of journalPacks) {
+        const packageLabel = pack.metadata.packageLabel || pack.metadata.package || pack.metadata.packageName || "Unknown";
+        const label = `${packageLabel}: ${pack.metadata.label}`;
+        choices[pack.metadata.id] = label;
+    }
+    return choices;
+}
+
+/**
+ * Register recipe compendium slots (JournalEntry packs). Registers slots 1–10; storage reads 1..numRecipeCompendiums.
+ */
+function registerRecipeCompendiumSettings() {
+    const choices = getJournalCompendiumChoices();
+    const maxSlots = 10;
+    for (let i = 1; i <= maxSlots; i++) {
+        const settingKey = `recipeCompendium${i}`;
+        if (game.settings.settings.has(`${MODULE.ID}.${settingKey}`)) continue;
+        game.settings.register(MODULE.ID, settingKey, {
+            name: `${MODULE.NAME}: Recipe compendium ${i}`,
+            hint: `Journal compendium ${i} (journals in this pack are loaded as recipe sources).`,
+            scope: 'world',
+            config: true,
+            default: 'none',
+            type: String,
+            choices,
+            requiresReload: true,
+            group: WORKFLOW_GROUPS.COMMON_SETTINGS
+        });
+    }
 }
 
 /**
@@ -175,7 +228,7 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('JournalSettings', 'headingH3JournalSettings-Label', 'headingH3JournalSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-    // -- Recipe Journal Setting --
+    // -- Recipe Journal (default import target) --
 	game.settings.register(MODULE.ID, 'recipeJournal', {
         name: MODULE.ID + '.recipeJournal-Label',
         hint: MODULE.ID + '.recipeJournal-Hint',
@@ -186,6 +239,34 @@ export const registerSettings = () => {
         choices: getJournalChoices(),
 		group: WORKFLOW_GROUPS.COMMON_SETTINGS
 	});
+
+    // -- Recipe journal folder (all journals in this folder are recipe sources) --
+	game.settings.register(MODULE.ID, 'recipeJournalFolder', {
+        name: MODULE.ID + '.recipeJournalFolder-Label',
+        hint: MODULE.ID + '.recipeJournalFolder-Hint',
+        scope: 'world',
+        config: true,
+        default: '',
+        type: String,
+        choices: getJournalFolderChoices(),
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // -- Number of recipe compendiums --
+	game.settings.register(MODULE.ID, 'numRecipeCompendiums', {
+        name: MODULE.ID + '.numRecipeCompendiums-Label',
+        hint: MODULE.ID + '.numRecipeCompendiums-Hint',
+        scope: 'world',
+        config: true,
+        default: 0,
+        type: Number,
+        range: { min: 0, max: 10, step: 1 },
+        requiresReload: true,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // -- Recipe compendium slots (JournalEntry packs) --
+    registerRecipeCompendiumSettings();
 
     // -- Blueprint Journal Setting --
 	game.settings.register(MODULE.ID, 'blueprintJournal', {
