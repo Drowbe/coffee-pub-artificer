@@ -37,7 +37,7 @@ IMPORTANT:
 - name, resultItemName, and ingredients are required. Each ingredient has type ("Component" | "Creation" | "Tool"), optional family (e.g. Plant, Essence, Potion, Apparatus), name, and quantity. Match the item's TYPE and optional FAMILY (see architecture: TYPE > FAMILY > TRAITS).
 - toolName (Tool) should be an official D&D 5e SRD kit: Herbalism Kit, Poisoner's Kit, Alchemist's Supplies, etc. Use key "tool" or "toolName".
 - apparatusName = vessel to craft in (not consumed). Omit or null → default "Mixing Bowl". containerName = vessel result goes in (one consumed per craft). Omit or null → default "Vial".
-- processType: "heat" or "grind". Omit or null → default "heat". processLevel: number 0–3. Omit or null → 0. Use numbers only—no words. All processes share the same 0–3 scale. time in seconds.
+- processType: "heat" or "grind". Omit or null → default "heat". Use "grind" for mortar-and-pestle or dry-grinding (powders, dried herbs); use "heat" for cooking, distillation, or heating. processLevel: number 0–3. Omit or null → 0. Use numbers only—no words. All processes share the same 0–3 scale. time in seconds.
 
 You will generate two outputs based on the same RECIPES concept:
 
@@ -72,7 +72,7 @@ CRAFTING PROCESS:
 - toolName: (string) Required kit name. E.g. "Alchemist's Supplies", "Herbalism Kit", "Poisoner's Kit". Importer also accepts key "tool".
 - apparatusName: (string) Vessel to craft in (beaker, mortar, mixing bowl). Not consumed. Omit or null → "Mixing Bowl".
 - containerName: (string) Vessel result goes in (vial, flask, herb bag). One consumed per craft. Omit or null → "Vial".
-- processType: (string) "heat" | "grind". Omit or null → "heat".
+- processType: (string) "heat" | "grind". Omit or null → "heat". Use "grind" for mortar-and-pestle or dry-grinding recipes (powders, dried herbs, crushing); use "heat" for cooking, boiling, distillation, or heating.
 - processLevel: (number) 0–3. Omit or null → 0. Use numbers only. Same scale for heat and grind.
 - time: (number) Process time in seconds—how long the actual process runs. Not the same as workHours. Omit or null → 20.
 
@@ -154,6 +154,7 @@ When asked to generate an Artificer recipe, use the variables at the top (or the
 - Potions: Consumable, category Potion, Alchemist's Supplies, Vial, heat process.
 - Poisons: Consumable, category Poison, Poisoner's Kit, Vial.
 - Herbal preparations: Herbalism Kit, apparatus Mixing Bowl or Mortar and Pestle, container Vial or Herb Bag.
+- Powders, crushed herbs, dry mixes: processType "grind", apparatusName "Mortar and Pestle".
 
 Use the exact item name as it appears in the source. The module resolves resultItemName and ingredient names by name at runtime from the item cache (configured compendia + world). Use type "Component" | "Creation" | "Tool" and optional family (e.g. Plant, Essence, Potion) for Artificer items; mundane D&D items (Flask of Oil, Charcoal) match by name only.
 
