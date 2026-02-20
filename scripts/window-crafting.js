@@ -88,10 +88,19 @@ function recipeCanCraft(actor, recipe) {
 
 /** Extract journal UUID from recipe (source or from recipe.id page UUID) */
 function getRecipeJournalUuid(recipe) {
-    if (recipe?.source) return recipe.source;
-    const id = recipe?.id ?? '';
-    const idx = id.indexOf('._JournalEntryPage.');
-    if (idx !== -1) return id.slice(0, idx);
+    const source = String(recipe?.source ?? '').trim();
+    // `source` in recipe data may be either a journal UUID or a human-readable source label.
+    // Only trust it when it looks like a JournalEntry UUID.
+    if (source && (source.startsWith('JournalEntry.') || source.includes('.JournalEntry.'))) {
+        return source;
+    }
+    const id = String(recipe?.id ?? '');
+    // Foundry formats: JournalEntry.{id}.JournalEntryPage.{pageId} or ._JournalEntryPage. (v11+)
+    const patterns = ['.JournalEntryPage.', '._JournalEntryPage.'];
+    for (const p of patterns) {
+        const idx = id.indexOf(p);
+        if (idx !== -1) return id.slice(0, idx);
+    }
     return '';
 }
 
@@ -158,6 +167,7 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             result: r.name,
             resultImg,
             journalName,
+            journalUuid,
             selected: selectedRecipeId === r.id,
             canCraft: recipeCanCraft(actor, r)
         };
@@ -471,7 +481,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 .map((j) => ({ value: j.name, label: j.name, selected: this.filterRecipeJournal === j.name }))
         ];
         if (this.filterRecipeJournal) {
-            knownCombinations = knownCombinations.filter((r) => (r.journalName ?? '') === this.filterRecipeJournal);
+            const selectedName = String(this.filterRecipeJournal).trim();
+            const matchingUuids = new Set(sourceJournals.filter((j) => (j.name ?? '').trim() === selectedName).map((j) => j.uuid));
+            knownCombinations = knownCombinations.filter((r) => matchingUuids.has(r.journalUuid ?? ''));
         }
         if (this.filterRecipeSearch?.trim()) {
             const q = this.filterRecipeSearch.trim().toLowerCase();

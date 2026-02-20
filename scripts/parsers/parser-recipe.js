@@ -17,9 +17,10 @@ export class RecipeParser {
      * Parse a single journal page into an ArtificerRecipe
      * @param {JournalEntryPage} page - Journal page
      * @param {string} enrichedHtml - Enriched HTML content
+     * @param {JournalEntry} [journal] - Parent journal (ensures source is set)
      * @returns {Promise<ArtificerRecipe|null>} Parsed recipe or null if invalid
      */
-    static async parseSinglePage(page, enrichedHtml) {
+    static async parseSinglePage(page, enrichedHtml, journal = null) {
         if (!page || !enrichedHtml) return null;
         
         try {
@@ -27,11 +28,11 @@ export class RecipeParser {
             const parser = new DOMParser();
             const doc = parser.parseFromString(enrichedHtml, 'text/html');
             
-            // Extract data from structured HTML
+            const journalUuid = journal?.uuid ?? page.parent?.uuid ?? '';
             const data = {
                 id: page.uuid,
                 name: page.name,
-                source: page.parent?.uuid ?? '',
+                source: journalUuid,
                 journalPageId: page.id
             };
             

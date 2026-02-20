@@ -106,7 +106,7 @@ export class RecipeStorage {
                         if (coreIdSeen.has(coreId)) continue;
                         coreIdSeen.add(coreId);
                         const rawContent = page.text?.content ?? page.text?.markdown ?? '';
-                        const recipe = await RecipeParser.parseSinglePage(page, rawContent);
+                        const recipe = await RecipeParser.parseSinglePage(page, rawContent, journal);
                         if (recipe) this._cache.set(recipe.id, recipe);
                     } catch (error) {
                         postError(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error));
