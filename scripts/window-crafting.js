@@ -36,13 +36,28 @@ function asCraftableConsumable(item) {
 }
 
 /**
- * Check if actor has all ingredients for a recipe (name + type + quantity)
+ * Check if actor has item matching name (for tool, apparatus, container)
  * @param {Actor|null} actor
- * @param {Object} recipe - ArtificerRecipe with ingredients array
+ * @param {string} name - Item name to match
+ * @returns {boolean}
+ */
+function actorHasItemNamed(actor, name) {
+    if (!actor || !name?.trim()) return true;
+    const target = name.trim();
+    return actor.items.some((i) => (i.name || '').trim() === target);
+}
+
+/**
+ * Check if actor can craft a recipe: ingredients, tool, apparatus, container
+ * @param {Actor|null} actor
+ * @param {Object} recipe - ArtificerRecipe with ingredients, toolName, apparatusName, containerName
  * @returns {boolean}
  */
 function recipeCanCraft(actor, recipe) {
     if (!actor || !recipe?.ingredients?.length) return false;
+    if (recipe.toolName?.trim() && !actorHasItemNamed(actor, recipe.toolName)) return false;
+    if (recipe.apparatusName?.trim() && !actorHasItemNamed(actor, recipe.apparatusName)) return false;
+    if (recipe.containerName?.trim() && !actorHasItemNamed(actor, recipe.containerName)) return false;
     const ingredients = recipe.ingredients ?? [];
     for (const ing of ingredients) {
         const need = ing.quantity ?? 1;
@@ -411,6 +426,29 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
         const cacheStatus = getCacheStatus();
+        const r = this.selectedRecipe;
+        const selectedRecipeData = r
+            ? {
+                name: r.name ?? '',
+                resultName: r.resultItemName ?? r.name ?? '',
+                traits: r.traits ?? [],
+                description: r.description ?? ''
+            }
+            : null;
+        const selectedRecipeMetadata = r
+            ? [
+                r.toolName ? `Tool: ${r.toolName}` : null,
+                r.apparatusName ? `Apparatus: ${r.apparatusName}` : null,
+                r.containerName ? `Container: ${r.containerName}` : null,
+                r.processType ? `Process: ${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() : null,
+                r.time != null ? `Time: ${r.time}s` : null,
+                r.skill ? `Skill: ${r.skill}` : null,
+                r.skillLevel != null ? `Skill Level: ${r.skillLevel}` : null,
+                r.workstation ? `Workstation: ${r.workstation}` : null,
+                r.goldCost != null ? `Gold Cost: ${r.goldCost}` : null,
+                r.workHours != null ? `Work Hours: ${r.workHours}` : null
+            ].filter(Boolean)
+            : [];
 
         return {
             appId: this.id,
@@ -476,6 +514,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             lastCraftTagsStr: this.lastCraftTags.join(', '),
             knownCombinations,
             combinedTags,
+            selectedRecipeData,
+            selectedRecipeMetadata,
             familyOptions,
             typeOptions,
             filterSearch: this.filterSearch,

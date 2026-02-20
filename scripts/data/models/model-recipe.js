@@ -153,6 +153,30 @@ export class ArtificerRecipe {
             // TODO: Check if actor is at required workstation
             // For now, assume workstation check is handled elsewhere
         }
+
+        // Check tool (e.g. Alchemist's Supplies)
+        if (this.toolName?.trim()) {
+            const hasTool = actor.items.some((i) => (i.name || '').trim() === this.toolName.trim());
+            if (!hasTool) {
+                reasons.push(`Missing tool: ${this.toolName}`);
+            }
+        }
+
+        // Check apparatus
+        if (this.apparatusName?.trim()) {
+            const hasApparatus = actor.items.some((i) => (i.name || '').trim() === this.apparatusName.trim());
+            if (!hasApparatus) {
+                reasons.push(`Missing apparatus: ${this.apparatusName}`);
+            }
+        }
+
+        // Check container
+        if (this.containerName?.trim()) {
+            const hasContainer = actor.items.some((i) => (i.name || '').trim() === this.containerName.trim());
+            if (!hasContainer) {
+                reasons.push(`Missing container: ${this.containerName}`);
+            }
+        }
         
         // Check materials
         const missing = this.getMissingMaterials(actor);

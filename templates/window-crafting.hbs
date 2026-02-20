@@ -176,39 +176,69 @@
             </section>
         </main>
 
-        {{!-- Zone 4: Details (result in craft mode; recipe design in create mode) --}}
+        {{!-- Zone 4: Details (scrollable when recipe selected) --}}
         <aside class="crafting-zone crafting-zone-result">
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Details</h3>
-                {{#if combinedTags.length}}
-                <p class="crafting-zone-desc">Traits for this combination:</p>
-                <div class="crafting-bench-tags">
-                    {{#each combinedTags}}
-                    <span class="crafting-tag-badge">{{this}}</span>
-                    {{/each}}
-                </div>
-                {{/if}}
-                {{#if lastResult}}
-                <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
-                    <div class="crafting-result-row crafting-ingredient-row">
-                        {{#if lastResult.item}}
-                        <img src="{{lastResult.item.img}}" alt="" class="crafting-ingredient-row-img" />
-                        {{else}}
-                        <i class="fa-solid {{#if lastResult.success}}fa-check{{else}}fa-times{{/if}} crafting-result-fallback-icon"></i>
+                <div class="crafting-details-content">
+                    {{#if combinedTags.length}}
+                    <p class="crafting-zone-desc">Traits for this combination:</p>
+                    <div class="crafting-bench-tags">
+                        {{#each combinedTags}}
+                        <span class="crafting-tag-badge">{{this}}</span>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                    {{#if selectedRecipeData}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-recipe-details">
+                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
+                        <div class="crafting-recipe-result-name">Result: {{selectedRecipeData.resultName}}</div>
+                        {{#if selectedRecipeData.traits.length}}
+                        <div class="crafting-recipe-traits">
+                            {{#each selectedRecipeData.traits}}
+                            <span class="crafting-tag-badge">{{this}}</span>
+                            {{/each}}
+                        </div>
                         {{/if}}
-                        <div class="crafting-ingredient-row-info">
-                            <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
+                        {{#if selectedRecipeData.description}}
+                        <div class="crafting-recipe-description">{{{selectedRecipeData.description}}}</div>
+                        {{/if}}
+                    </div>
+                    {{#if selectedRecipeMetadata.length}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-recipe-metadata">
+                        {{#each selectedRecipeMetadata}}
+                        <div class="crafting-metadata-line">{{this}}</div>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                    {{/if}}
+                    {{#if lastResult}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
+                        <div class="crafting-result-row crafting-ingredient-row">
                             {{#if lastResult.item}}
-                            <span class="crafting-ingredient-row-qty">×1</span>
+                            <img src="{{lastResult.item.img}}" alt="" class="crafting-ingredient-row-img" />
                             {{else}}
-                            <span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>
+                            <i class="fa-solid {{#if lastResult.success}}fa-check{{else}}fa-times{{/if}} crafting-result-fallback-icon"></i>
                             {{/if}}
+                            <div class="crafting-ingredient-row-info">
+                                <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
+                                {{#if lastResult.item}}
+                                <span class="crafting-ingredient-row-qty">×1</span>
+                                {{else}}
+                                <span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>
+                                {{/if}}
+                            </div>
                         </div>
                     </div>
+                    {{else}}
+                    {{#unless selectedRecipeData}}
+                    <div class="crafting-zone-empty">Select a recipe or craft to see result.</div>
+                    {{/unless}}
+                    {{/if}}
                 </div>
-                {{else}}
-                <div class="crafting-zone-empty">Result will appear here after crafting.</div>
-                {{/if}}
             </section>
         </aside>
     </div>
