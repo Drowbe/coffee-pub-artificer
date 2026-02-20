@@ -11,6 +11,13 @@ import { resolveItemByName } from './utility-artificer-item.js';
 /** Default journal name when none configured */
 const DEFAULT_RECIPE_JOURNAL_NAME = 'Artificer Recipes';
 
+/** Trim string for import; treat null, undefined, and the literal "null" as empty. */
+function _str(val) {
+    if (val == null) return '';
+    const s = String(val).trim();
+    return s === 'null' || s === 'undefined' ? '' : s;
+}
+
 /** Skill → default workstation when not provided (architecture: import auto-mapping). */
 const SKILL_TO_WORKSTATION = {
     [CRAFTING_SKILLS.ALCHEMY]: 'Alchemist Table',
@@ -102,8 +109,8 @@ export async function validateRecipePayload(payload) {
         toolName: toolName?.trim() || null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
-        source: payload.source != null && String(payload.source).trim() ? String(payload.source).trim() : 'Artificer',
-        license: payload.license != null ? String(payload.license).trim() : ''
+        source: _str(payload.source ?? payload.Source) || 'Artificer',
+        license: _str(payload.license ?? payload.License)
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
