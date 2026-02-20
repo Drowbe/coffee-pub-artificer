@@ -3,7 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { getOrCreateJournal, postDebug, postError } from './utils/helpers.js';
+import { getOrCreateJournal, postDebug, postError, extractNameFromUuidLink } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
@@ -83,10 +83,11 @@ export async function validateRecipePayload(payload) {
         workstation,
         ingredients: ingredients.map((i) => {
             const obj = typeof i === 'object' ? i : { name: String(i), quantity: 1 };
+            const rawName = obj.name ? String(obj.name) : '';
             return {
                 type: obj.type,
                 family: obj.family,
-                name: obj.name ? String(obj.name) : '',
+                name: extractNameFromUuidLink(rawName),
                 quantity: (obj.quantity ?? 1) >= 0 ? Number(obj.quantity) : 1
             };
         }),
@@ -120,37 +121,51 @@ export async function validateRecipePayload(payload) {
 function buildRecipePageHtml(data) {
     const v = (x) => (x != null && x !== '' ? escapeHtml(String(x)) : '');
     const processLevel = data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX ? data.processLevel : 0;
-    const parts = [
+    const section = (title, content) => `<h4>${title}</h4><p></p>${content}<p></p><hr><p></p>`;
+    const parts = [];
+
+    parts.push(section('CORE DATA', [
         `<p><strong>Name:</strong> ${v(data.name)}</p>`,
-        `<p><strong>Type:</strong> ${v(data.type)}</p>`,
-        `<p><strong>Category:</strong> ${v(data.category)}</p>`,
-        `<p><strong>Skill:</strong> ${v(data.skill)}</p>`,
-        `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
-        `<p><strong>Workstation:</strong> ${v(data.workstation)}</p>`,
+        `<p><strong>Result:</strong> ${v(data.resultItemName ?? data.name)}</p>`,
+        `<p><strong>Traits:</strong> ${(data.traits ?? []).length ? (data.traits ?? []).map((t) => escapeHtml(String(t))).join(', ') : ''}</p>`
+    ].join('')));
+
+    parts.push(section('ABOUT THE RECIPE', [
+        `<p><strong>Description:</strong></p>`,
+        `<div class="recipe-description">${data.description ? String(data.description) : ''}</div>`
+    ].join('')));
+
+    const ingredientItems = data.ingredients?.length
+        ? data.ingredients.map((ing) => {
+            const label = (ing.family || ing.type || 'Component').trim() || 'Component';
+            const typeLabel = label.charAt(0).toUpperCase() + label.slice(1);
+            return `<li>${escapeHtml(typeLabel)}: ${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`;
+        }).join('')
+        : '';
+    parts.push(section('PREPARATION', [
+        `<p><strong>Ingredients:</strong></p>`,
+        `<ul>${ingredientItems}</ul>`,
         `<p><strong>Process Type:</strong> ${v(data.processType)}</p>`,
         `<p><strong>Process Level:</strong> ${processLevel}</p>`,
         `<p><strong>Time:</strong> ${data.time != null && data.time >= 0 ? data.time : ''}</p>`,
         `<p><strong>Apparatus:</strong> ${v(data.apparatusName)}</p>`,
         `<p><strong>Container:</strong> ${v(data.containerName)}</p>`,
-        `<p><strong>Tool:</strong> ${v(data.toolName)}</p>`,
         `<p><strong>Gold Cost:</strong> ${data.goldCost != null ? data.goldCost : ''}</p>`,
-        `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`,
-        `<p><strong>Result:</strong> ${v(data.resultItemName ?? data.name)}</p>`,
-        `<p><strong>Traits:</strong> ${(data.traits ?? []).length ? (data.traits ?? []).map((t) => escapeHtml(String(t))).join(', ') : ''}</p>`,
-        `<p><strong>Description:</strong></p><div class="recipe-description">${data.description ? String(data.description) : ''}</div>`,
+        `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`
+    ].join('')));
+
+    parts.push(section('METADATA', [
+        `<p><strong>Type:</strong> ${v(data.type)}</p>`,
+        `<p><strong>Category:</strong> ${v(data.category)}</p>`,
+        `<p><strong>Skill:</strong> ${v(data.skill)}</p>`,
+        `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
+        `<p><strong>Workstation:</strong> ${v(data.workstation)}</p>`,
+        `<p><strong>Tool:</strong> ${v(data.toolName)}</p>`,
         `<p><strong>Source:</strong> ${v(data.source)}</p>`,
         `<p><strong>License:</strong> ${v(data.license)}</p>`
-    ];
-    parts.push(`<p><strong>Ingredients:</strong></p><ul>`);
-    if (data.ingredients?.length) {
-        for (const ing of data.ingredients) {
-            const label = (ing.family || ing.type || 'Component').trim() || 'Component';
-            const typeLabel = label.charAt(0).toUpperCase() + label.slice(1);
-            parts.push(`<li>${escapeHtml(typeLabel)}: ${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`);
-        }
-    }
-    parts.push(`</ul>`);
-    return parts.join('');
+    ].join('')));
+
+    return parts.join('') + '<p></p><p></p><p></p>';
 }
 
 function escapeHtml(str) {

@@ -113,7 +113,7 @@
 /* ----- Body: 4-zone grid ----- */
 .crafting-window-body {
     display: grid;
-    grid-template-columns: minmax(180px, 1fr) minmax(200px, 1.2fr) 350px minmax(180px, 1fr);
+    grid-template-columns: 250px 250px 350px 1fr;
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -137,12 +137,18 @@
 }
 
 .crafting-window-body .crafting-zone-recipes {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
     background-image:
         linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
         var(--craft-banner-image-panel-01);
 }
 
 .crafting-window-body .crafting-zone-ingredients {
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
     background-image:
         linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)),
         var(--craft-banner-image-panel-02);

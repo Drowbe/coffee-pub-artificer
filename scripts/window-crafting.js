@@ -896,7 +896,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             }
 
             const isMissing = have < need;
-            const img = matchedItem?.img ?? (game.items?.find((i) => (i.name || '').trim() === (ing.name || '').trim())?.img ?? placeholderImg);
+            let img = matchedItem?.img;
+            if (!img && ing.name) {
+                const lookedUp = await resolveItemByName(ing.name);
+                img = lookedUp?.img ?? placeholderImg;
+            } else if (!img) {
+                img = placeholderImg;
+            }
 
             if (matchedItem) {
                 newSlots[i] = {

@@ -52,7 +52,7 @@ IMPORTANT: CREATE THE JSON FIRST. WHEN THE JSON HAS BEEN GENERATED, ASK IF YOU S
 
 For the ITEM JSON you will generate well-structured JSON for each single Artificer RECIPE using the template and rules below. This will be imported into FoundryVTT via Coffee Pub Artificer and must conform to the D&D 5e system plus Artificer flags. You must:
 - Output valid JSON
-- Escape double quotes (") in description strings. Description may contain HTML; it will be rendered.
+- Escape double quotes (") in description strings. Description may contain HTML; it will be rendered. Use structured HTML: <p> for paragraphs, <ul>/<ol>/<li> for lists, <strong> for emphasis. Break long text into multiple paragraphs—do not output one giant paragraph.
 - Avoid trailing commas or duplicate keys
 - Omit optional fields when not relevant; use null when including but empty
 - Set all mandatory fields. Do not output "tags"; use "traits" only.
@@ -63,7 +63,7 @@ JSON FIELD RULES & EXPECTATIONS
 
 REQUIRED:
 - name: (string) Recipe name.
-- description: (string) Recipe notes and instructions. Weave the other data into this field.  If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed. The description should help the user understand the recipie, what it can do and how to make it.  It would heb helpful to include the recipie description, the general instrauctions step by step based on the data you are provided, and any thing interesting about the recipie.
+- description: (string) Recipe notes and instructions. Use HTML structure: <p> for each paragraph, <ul>/<ol>/<li> for lists (e.g., steps or ingredients), <strong> for emphasis. Weave the other data into this field. Break into paragraphs—not one giant block. If a description is provided, use it only as guidance; rewrite and expand. Help the user understand the recipe, what it does, and how to make it.
 - resultItemName: (string) Name of resulting item. Resolved by name at runtime from the item cache (compendia + world). May equal name.
 - ingredients: (array) Each element: { type, name, quantity } or { type, family, name, quantity }. type = "Component" | "Creation" | "Tool". family (optional) = identity within type (e.g. Plant, Essence, Potion, Apparatus). Mundane D&D items (no Artificer flags) match by name only; use type "Creation" or "Component" as appropriate.
 

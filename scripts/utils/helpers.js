@@ -133,6 +133,17 @@ export async function copyToClipboard(text, options = {}) {
 }
 
 /**
+ * Extract display name from @UUID[Id]{Label} link. Returns Label for name-based matching.
+ * @param {string} value - Raw value (e.g. "Red Amanita" or "@UUID[Item.xyz]{Red Amanita}")
+ * @returns {string} The label (name) for matching; original string if not a UUID link
+ */
+export function extractNameFromUuidLink(value) {
+    if (!value || typeof value !== 'string') return value ?? '';
+    const m = value.trim().match(/@UUID\[(.*?)\]{(.*?)}/);
+    return m ? m[2].trim() : value.trim();
+}
+
+/**
  * Generate hash-based number from UUID (for recipe/blueprint numbering)
  * @param {string} uuid - UUID string
  * @param {string} prefix - Prefix (e.g., "R" for recipes, "B" for blueprints)

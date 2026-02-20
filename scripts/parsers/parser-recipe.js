@@ -3,7 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../const.js';
-import { postDebug, postError } from '../utils/helpers.js';
+import { postDebug, postError, extractNameFromUuidLink } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from '../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
@@ -188,13 +188,13 @@ export class RecipeParser {
             if (match) {
                 const [, label, name, quantity] = match;
                 const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
-                ingredients.push({ type, family, name: name.trim(), quantity: parseInt(quantity) || 1 });
+                ingredients.push({ type, family, name: extractNameFromUuidLink(name), quantity: parseInt(quantity) || 1 });
             } else {
                 const simpleMatch = text.match(/^([^:]+):\s*(.+)$/);
                 if (simpleMatch) {
                     const [, label, name] = simpleMatch;
                     const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
-                    ingredients.push({ type, family, name: name.trim(), quantity: 1 });
+                    ingredients.push({ type, family, name: extractNameFromUuidLink(name), quantity: 1 });
                 }
             }
         }
