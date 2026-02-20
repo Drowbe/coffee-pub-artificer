@@ -86,13 +86,54 @@ function recipeCanCraft(actor, recipe) {
     return true;
 }
 
+/** Extract journal UUID from recipe (source or from recipe.id page UUID) */
+function getRecipeJournalUuid(recipe) {
+    if (recipe?.source) return recipe.source;
+    const id = recipe?.id ?? '';
+    const idx = id.indexOf('._JournalEntryPage.');
+    if (idx !== -1) return id.slice(0, idx);
+    return '';
+}
+
 /**
- * Map journal-loaded recipes to display format for the recipe list
- * @param {string|null} selectedRecipeId
- * @param {Actor|null} actor - Crafter actor for canCraft check
- * @returns {Promise<Array<{recipeId: string, tags: string[], result: string, resultImg: string, selected?: boolean, canCraft?: boolean}>>}
+ * Get list of recipe source journals (folder + compendiums) with uuid and name
  */
-async function getRecipesForDisplay(selectedRecipeId, actor) {
+async function getRecipeSourceJournals() {
+    const source = game.settings.get(MODULE.ID, 'recipeStorageSource') ?? 'compendia-then-world';
+    const loadCompendia = ['compendia-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
+    const loadWorld = ['world-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
+    const list = [];
+    if (loadWorld) {
+        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
+        if (folderId && game.journal) {
+            for (const j of game.journal) {
+                if (j.folder?.id === folderId && j.uuid) {
+                    list.push({ uuid: j.uuid, name: j.name ?? '' });
+                }
+            }
+        }
+    }
+    if (loadCompendia) {
+        try {
+            const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
+            for (let i = 1; i <= num; i++) {
+                const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
+                if (!cid || cid === 'none') continue;
+                const pack = game.packs.get(cid);
+                if (!pack || pack.documentName !== 'JournalEntry') continue;
+                const docs = await pack.getDocuments();
+                for (const doc of docs) {
+                    if (doc?.uuid) list.push({ uuid: doc.uuid, name: doc.name ?? '' });
+                }
+            }
+        } catch (_e) {
+            /* ignore */
+        }
+    }
+    return list;
+}
+
+async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new Map()) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
     const results = await Promise.all(recipes.map(async (r) => {
@@ -101,11 +142,22 @@ async function getRecipesForDisplay(selectedRecipeId, actor) {
         const resultName = (r.resultItemName || r.name || '').trim();
         const resultItem = resultName ? await resolveItemByName(resultName) : null;
         const resultImg = resultItem?.img ?? 'icons/svg/item-bag.svg';
+        const journalUuid = getRecipeJournalUuid(r);
+        let journalName = journalByUuid.get(journalUuid) ?? '';
+        if (!journalName && journalUuid) {
+            try {
+                const journal = await fromUuid(journalUuid);
+                journalName = journal?.name ?? '';
+            } catch (_e) {
+                /* ignore */
+            }
+        }
         return {
             recipeId: r.id,
             tags: tags.length ? tags : [r.name],
             result: r.name,
             resultImg,
+            journalName,
             selected: selectedRecipeId === r.id,
             canCraft: recipeCanCraft(actor, r)
         };
@@ -178,6 +230,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.filterArtificerType = options.filterArtificerType ?? '';
         this.filterSearch = options.filterSearch ?? '';
         this.filterRecipeSearch = options.filterRecipeSearch ?? '';
+        this.filterRecipeJournal = options.filterRecipeJournal ?? '';
         /** @type {ReturnType<typeof setTimeout>|null} */
         this._searchDebounceTimer = null;
         /** @type {number|null} - seconds remaining during craft countdown */
@@ -407,7 +460,19 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const hasSlots = this.selectedSlots.some(s => s !== null);
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
         const canCraft = hasSlots && !anyMissing;
-        let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor);
+        const sourceJournals = await getRecipeSourceJournals();
+        const journalByUuid = new Map(sourceJournals.map((j) => [j.uuid, j.name]));
+        let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
+        const seenNames = new Set();
+        const recipeJournalOptions = [
+            { value: '', label: 'All journals', selected: !this.filterRecipeJournal },
+            ...sourceJournals
+                .filter((j) => j.name && !seenNames.has(j.name) && seenNames.add(j.name))
+                .map((j) => ({ value: j.name, label: j.name, selected: this.filterRecipeJournal === j.name }))
+        ];
+        if (this.filterRecipeJournal) {
+            knownCombinations = knownCombinations.filter((r) => (r.journalName ?? '') === this.filterRecipeJournal);
+        }
         if (this.filterRecipeSearch?.trim()) {
             const q = this.filterRecipeSearch.trim().toLowerCase();
             knownCombinations = knownCombinations.filter(
@@ -513,6 +578,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             lastCraftTags: this.lastCraftTags,
             lastCraftTagsStr: this.lastCraftTags.join(', '),
             knownCombinations,
+            recipeJournalOptions,
             combinedTags,
             selectedRecipeData,
             selectedRecipeMetadata,
@@ -687,7 +753,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const appId = w.id;
             const el = e.target;
             const id = el.id ?? '';
-            if (id === `${appId}-filter-type`) {
+            if (id === `${appId}-filter-recipe-journal`) {
+                w.filterRecipeJournal = el.value ?? '';
+                w.render();
+            } else if (id === `${appId}-filter-type`) {
                 w.filterArtificerType = el.value ?? '';
                 // Clear family if it's not in the new type's families
                 if (w.filterFamily && w.filterArtificerType) {

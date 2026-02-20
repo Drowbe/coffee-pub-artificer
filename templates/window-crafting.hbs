@@ -30,6 +30,13 @@
                     <input type="text" id="{{appId}}-filter-recipes" class="crafting-zone-section-input" placeholder="Search recipes..." value="{{filterRecipeSearch}}" dir="ltr" />
                     <button type="button" class="crafting-zone-section-input-clear" data-action="clearRecipeSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
                 </div>
+                <div class="crafting-zone-filters-row">
+                    <select id="{{appId}}-filter-recipe-journal" class="crafting-zone-select" title="Filter by journal">
+                        {{#each recipeJournalOptions}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
                     <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
