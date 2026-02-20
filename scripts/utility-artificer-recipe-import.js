@@ -5,11 +5,20 @@
 import { MODULE } from './const.js';
 import { getOrCreateJournal, postDebug, postError } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
 
 /** Default journal name when none configured */
 const DEFAULT_RECIPE_JOURNAL_NAME = 'Artificer Recipes';
+
+/** Skill → default workstation when not provided (architecture: import auto-mapping). */
+const SKILL_TO_WORKSTATION = {
+    [CRAFTING_SKILLS.ALCHEMY]: 'Alchemist Table',
+    [CRAFTING_SKILLS.HERBALISM]: 'Cookfire',
+    [CRAFTING_SKILLS.METALLURGY]: 'Smithy',
+    [CRAFTING_SKILLS.ARTIFICE]: 'Arcane Workbench',
+    [CRAFTING_SKILLS.MONSTER_HANDLING]: 'Tinker'
+};
 
 /**
  * Parse recipe import input (File, string, or object/array) into array of payloads
@@ -57,36 +66,43 @@ export async function validateRecipePayload(payload) {
     if (!resultItemName?.trim()) {
         return { valid: false, error: `Recipe "${payload.name}" requires resultItemName` };
     }
+    const skill = payload.skill ?? CRAFTING_SKILLS.ALCHEMY;
     const apparatusName = payload.apparatusName ?? payload.containerName ?? payload.container ?? null;
     const containerName = payload.containerName ?? null;
     const toolName = payload.toolName ?? payload.tool ?? null;
+    const workstation = payload.workstation?.trim() || SKILL_TO_WORKSTATION[skill] || null;
 
     // Store names only—no world UUIDs. Recipes resolve items by name at runtime (compendia + world).
+    // Apply defaults when omitted: apparatus→Mixing Bowl, container→Vial, source→Artificer; processType→heat, processLevel→0.
     const data = {
         name: payload.name,
         type: payload.type ?? ITEM_TYPES.CONSUMABLE,
         category: payload.category ?? '',
-        skill: payload.skill ?? CRAFTING_SKILLS.ALCHEMY,
+        skill,
         skillLevel: payload.skillLevel ?? 0,
-        workstation: payload.workstation ?? null,
-        ingredients: ingredients.map((i) => ({
-            type: (typeof i === 'object' ? i.type : 'ingredient') ?? 'ingredient',
-            name: typeof i === 'object' ? i.name : String(i),
-            quantity: (typeof i === 'object' ? i.quantity : 1) ?? 1
-        })),
+        workstation,
+        ingredients: ingredients.map((i) => {
+            const obj = typeof i === 'object' ? i : { name: String(i), quantity: 1 };
+            return {
+                type: obj.type,
+                family: obj.family,
+                name: obj.name ? String(obj.name) : '',
+                quantity: (obj.quantity ?? 1) >= 0 ? Number(obj.quantity) : 1
+            };
+        }),
         resultItemName: resultItemName.trim(),
-        tags: Array.isArray(payload.tags) ? payload.tags : [],
+        traits: Array.isArray(payload.traits) ? payload.traits : (Array.isArray(payload.tags) ? payload.tags : []),
         description: payload.description ?? '',
-        heat: payload.heat != null ? (Number(payload.heat) >= 0 && Number(payload.heat) <= HEAT_MAX ? Math.round(Number(payload.heat)) : null) : null,
-        processType: payload.processType != null && PROCESS_TYPES.includes(String(payload.processType).toLowerCase()) ? String(payload.processType).toLowerCase() : null,
-        processLevel: payload.processLevel != null ? (Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= HEAT_MAX ? Math.round(Number(payload.processLevel)) : null) : null,
-        time: payload.time != null ? (Number(payload.time) >= 0 ? Number(payload.time) : null) : null,
-        apparatusName: apparatusName?.trim() || null,
-        containerName: containerName?.trim() || null,
+        processType: payload.processType != null && PROCESS_TYPES.includes(String(payload.processType).toLowerCase()) ? String(payload.processType).toLowerCase() : 'heat',
+        processLevel: payload.processLevel != null && Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= HEAT_MAX ? Math.round(Number(payload.processLevel)) : 0,
+        time: Math.min(120, payload.time != null && Number(payload.time) >= 0 ? Number(payload.time) : 20),
+        apparatusName: apparatusName?.trim() || 'Mixing Bowl',
+        containerName: containerName?.trim() || 'Vial',
         toolName: toolName?.trim() || null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
-        source: payload.source != null ? String(payload.source).trim() : ''
+        source: payload.source != null && String(payload.source).trim() ? String(payload.source).trim() : 'Artificer',
+        license: payload.license != null ? String(payload.license).trim() : ''
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
@@ -103,10 +119,7 @@ export async function validateRecipePayload(payload) {
  */
 function buildRecipePageHtml(data) {
     const v = (x) => (x != null && x !== '' ? escapeHtml(String(x)) : '');
-    const processLevelLabel =
-        data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX
-            ? (data.processType === 'grind' ? (GRIND_LEVELS[data.processLevel] ?? data.processLevel) : (HEAT_LEVELS[data.processLevel] ?? data.processLevel))
-            : '';
+    const processLevel = data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX ? data.processLevel : 0;
     const parts = [
         `<p><strong>Name:</strong> ${v(data.name)}</p>`,
         `<p><strong>Type:</strong> ${v(data.type)}</p>`,
@@ -115,8 +128,7 @@ function buildRecipePageHtml(data) {
         `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
         `<p><strong>Workstation:</strong> ${v(data.workstation)}</p>`,
         `<p><strong>Process Type:</strong> ${v(data.processType)}</p>`,
-        `<p><strong>Process Level:</strong> ${v(processLevelLabel)}</p>`,
-        `<p><strong>Heat:</strong> ${data.heat != null && data.heat >= 0 && data.heat <= HEAT_MAX ? (HEAT_LEVELS[data.heat] ?? data.heat) : ''}</p>`,
+        `<p><strong>Process Level:</strong> ${processLevel}</p>`,
         `<p><strong>Time:</strong> ${data.time != null && data.time >= 0 ? data.time : ''}</p>`,
         `<p><strong>Apparatus:</strong> ${v(data.apparatusName)}</p>`,
         `<p><strong>Container:</strong> ${v(data.containerName)}</p>`,
@@ -124,15 +136,16 @@ function buildRecipePageHtml(data) {
         `<p><strong>Gold Cost:</strong> ${data.goldCost != null ? data.goldCost : ''}</p>`,
         `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`,
         `<p><strong>Result:</strong> ${v(data.resultItemName ?? data.name)}</p>`,
-        `<p><strong>Tags:</strong> ${data.tags?.length ? data.tags.map((t) => escapeHtml(String(t))).join(', ') : ''}</p>`,
-        `<p><strong>Description:</strong> ${v(data.description)}</p>`,
+        `<p><strong>Traits:</strong> ${(data.traits ?? []).length ? (data.traits ?? []).map((t) => escapeHtml(String(t))).join(', ') : ''}</p>`,
+        `<p><strong>Description:</strong></p><div class="recipe-description">${data.description ? String(data.description) : ''}</div>`,
         `<p><strong>Source:</strong> ${v(data.source)}</p>`,
         `<p><strong>License:</strong> ${v(data.license)}</p>`
     ];
     parts.push(`<p><strong>Ingredients:</strong></p><ul>`);
     if (data.ingredients?.length) {
         for (const ing of data.ingredients) {
-            const typeLabel = (ing.type || 'ingredient').charAt(0).toUpperCase() + (ing.type || 'ingredient').slice(1);
+            const label = (ing.family || ing.type || 'Component').trim() || 'Component';
+            const typeLabel = label.charAt(0).toUpperCase() + label.slice(1);
             parts.push(`<li>${escapeHtml(typeLabel)}: ${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`);
         }
     }

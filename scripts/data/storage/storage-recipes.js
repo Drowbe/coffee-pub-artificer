@@ -164,7 +164,7 @@ export class RecipeStorage {
         }
         
         if (criteria.tag) {
-            results = results.filter(recipe => recipe.tags.includes(criteria.tag));
+            results = results.filter(recipe => (recipe.traits || recipe.tags || []).includes(criteria.tag));
         }
         
         if (criteria.actor) {

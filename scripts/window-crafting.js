@@ -46,14 +46,20 @@ function recipeCanCraft(actor, recipe) {
     const ingredients = recipe.ingredients ?? [];
     for (const ing of ingredients) {
         const need = ing.quantity ?? 1;
+        const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
+        const wantFamily = (ing.family || '').trim();
         const candidates = actor.items.filter((item) => {
             const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
             const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
-            const effectiveType = f?.type === ARTIFICER_TYPES.COMPONENT ? 'component' : f?.type;
-            if (effectiveType && ['ingredient', 'component', 'essence'].includes(effectiveType)) {
-                return (effectiveType === (ing.type || 'ingredient')) && nameMatches;
+            if (!nameMatches) return false;
+            if (!f) return true;
+            const itemType = getArtificerTypeFromFlags(f);
+            if ((itemType || ARTIFICER_TYPES.COMPONENT) !== wantType) return false;
+            if (wantFamily) {
+                const itemFamily = (f.family || '').trim();
+                if (itemFamily && itemFamily !== wantFamily) return false;
             }
-            return nameMatches;
+            return true;
         });
         const getQty = (item) => {
             const q = item.system?.quantity;
@@ -75,7 +81,7 @@ async function getRecipesForDisplay(selectedRecipeId, actor) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
     const results = await Promise.all(recipes.map(async (r) => {
-        const tags = (r.tags?.length ? r.tags : r.ingredients?.map((i) => i.name) ?? [])
+        const tags = (r.traits?.length ? r.traits : r.ingredients?.map((i) => i.name) ?? [])
             .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
         const resultName = (r.resultItemName || r.name || '').trim();
         const resultItem = resultName ? await resolveItemByName(resultName) : null;
@@ -826,13 +832,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             let matchedItem = null;
 
             if (actor) {
+                const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
+                const wantFamily = (ing.family || '').trim();
                 const candidates = actor.items.filter((item) => {
                     const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
                     const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
-                    if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) {
-                        return (f.type === (ing.type || 'ingredient')) && nameMatches;
+                    if (!nameMatches) return false;
+                    if (!f) return true;
+                    const itemType = getArtificerTypeFromFlags(f);
+                    if ((itemType || ARTIFICER_TYPES.COMPONENT) !== wantType) return false;
+                    if (wantFamily) {
+                        const itemFamily = (f.family || '').trim();
+                        if (itemFamily && itemFamily !== wantFamily) return false;
                     }
-                    return nameMatches;
+                    return true;
                 });
                 const getQty = (item) => {
                     const q = item.system?.quantity;

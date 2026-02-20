@@ -5,7 +5,18 @@
 import { MODULE } from '../../const.js';
 import { postDebug, postError } from '../../utils/helpers.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES } from '../../schema-recipes.js';
+import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
+import { getArtificerTypeFromFlags } from '../../utility-artificer-item.js';
 import { hashString } from '../../utils/helpers.js';
+
+/** Normalize ingredient type to TYPE (Component | Creation | Tool). Legacy ingredient/component/essence → Component. */
+function normalizeIngredientType(t) {
+    if (!t || typeof t !== 'string') return ARTIFICER_TYPES.COMPONENT;
+    const normalized = LEGACY_TYPE_TO_ARTIFICER_TYPE[t.toLowerCase()];
+    if (normalized) return normalized;
+    if (Object.values(ARTIFICER_TYPES).includes(t)) return t;
+    return ARTIFICER_TYPES.COMPONENT;
+}
 
 /**
  * ArtificerRecipe - Recipe data model
@@ -35,7 +46,7 @@ export class ArtificerRecipe {
         this.workHours = data.workHours != null ? Number(data.workHours) : null;
         this.ingredients = data.ingredients ?? [];
         this.resultItemName = data.resultItemName ?? data.name ?? '';
-        this.tags = data.tags ?? [];
+        this.traits = Array.isArray(data.traits) ? data.traits : (Array.isArray(data.tags) ? data.tags : []);
         this.description = data.description ?? '';
         this.source = data.source ?? '';
         this.license = data.license ?? '';
@@ -73,26 +84,27 @@ export class ArtificerRecipe {
             this.ingredients = [];
         }
         
-        // Validate ingredients
+        // Validate ingredients (TYPE + optional family; legacy types normalized to Component|Creation|Tool)
         this.ingredients = this.ingredients.map(ing => {
             if (typeof ing === 'string') {
-                // Legacy format: just a name string
                 return {
-                    type: 'ingredient',
+                    type: ARTIFICER_TYPES.COMPONENT,
+                    family: '',
                     name: ing,
                     quantity: 1
                 };
             }
             return {
-                type: ing.type ?? 'ingredient',
+                type: normalizeIngredientType(ing.type),
+                family: (ing.family != null && ing.family !== '') ? String(ing.family).trim() : '',
                 name: ing.name ?? '',
                 quantity: ing.quantity ?? 1
             };
         });
-        
-        // Ensure tags is array
-        if (!Array.isArray(this.tags)) {
-            this.tags = [];
+
+        // Ensure traits is array
+        if (!Array.isArray(this.traits)) {
+            this.traits = [];
         }
 
         // Validate heat (0–3, legacy) and time (seconds)
@@ -181,16 +193,23 @@ export class ArtificerRecipe {
         
         const missing = [];
         for (const ing of this.ingredients) {
+            const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
+            const wantFamily = (ing.family || '').trim();
             const items = actor.items.filter(item => {
-                const artificerData = item.flags?.[MODULE.ID] || item.flags?.artificer;
+                const flags = item.flags?.[MODULE.ID] || item.flags?.artificer;
                 const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
-
-                if (artificerData) {
-                    // Artificer item: match type and name
-                    return artificerData.type === ing.type && nameMatches;
+                if (!nameMatches) return false;
+                if (!flags) {
+                    // Normal D&D item (no Artificer flags): match by name only
+                    return true;
                 }
-                // Normal D&D item (no Artificer flags): match by name only
-                return nameMatches;
+                const itemType = getArtificerTypeFromFlags(flags);
+                if ((itemType || ARTIFICER_TYPES.COMPONENT) !== wantType) return false;
+                if (wantFamily) {
+                    const itemFamily = (flags.family || '').trim();
+                    if (itemFamily && itemFamily !== wantFamily) return false;
+                }
+                return true;
             });
 
             const getQuantity = (item) => {
@@ -203,6 +222,7 @@ export class ArtificerRecipe {
             if (have < need) {
                 missing.push({
                     type: ing.type,
+                    family: ing.family,
                     name: ing.name,
                     quantity: need - have,
                     have: have
@@ -237,7 +257,7 @@ export class ArtificerRecipe {
             workHours: this.workHours,
             ingredients: [...this.ingredients],
             resultItemName: this.resultItemName,
-            tags: [...this.tags],
+            traits: [...this.traits],
             description: this.description,
             source: this.source,
             license: this.license,

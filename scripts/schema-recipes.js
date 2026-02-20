@@ -3,12 +3,13 @@
 // ================================================================== 
 
 /**
- * Recipe ingredient requirement
+ * Recipe ingredient requirement. Uses TYPE > FAMILY (architecture-artificer.md).
  * @typedef {Object} RecipeIngredient
- * @property {string} type - Type: 'ingredient', 'component', 'essence', or 'item' (item = any D&D item by name)
- * @property {string} name - Ingredient/component/essence name (reference)
+ * @property {string} type - TYPE: 'Component' | 'Creation' | 'Tool' (top-level Artificer bucket). Legacy ingredient/component/essence normalize to Component.
+ * @property {string} [family] - Optional FAMILY within type (e.g. Plant, Essence, Potion, Apparatus). Identity within type.
+ * @property {string} name - Item name (resolved at runtime from item cache).
  * @property {number} quantity - Required quantity
- * @description Artificer items match by type+name. Normal D&D items (no Artificer flags) match by name only.
+ * @description Artificer items match by TYPE (+ optional family) and name. Normal D&D items (no Artificer flags) match by name only.
  */
 
 /**
@@ -23,15 +24,15 @@
  * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
  * @property {string|null} processType - Process type: 'heat' | 'grind' (null = any / legacy heat)
  * @property {number|null} processLevel - Process level 0–3: heat 0=Off,1=Low,2=Medium,3=High; grind 0=Off,1=Coarse,2=Medium,3=Fine (null = any)
- * @property {number|null} time - Required crafting time in seconds (null = any)
+ * @property {number|null} time - Process time in seconds. Duration of the crafting process. Not derived from workHours.
  * @property {string|null} apparatusName - Apparatus item name: vessel to craft in (beaker, mortar, crucible). Resolved at runtime.
  * @property {string|null} containerName - Container item name: vessel to put result in (vial, flask, herb bag). Resolved at runtime.
  * @property {string|null} toolName - Required kit (Alchemist's Supplies, Herbalism Kit, Poisoner's Kit). Actor must have in inventory.
  * @property {number|null} goldCost - Cost to make in gp after ingredient deduction (Phase 2)
- * @property {number|null} workHours - Hours to craft (Phase 2)
- * @property {RecipeIngredient[]} ingredients - Required ingredients/components/essences
+ * @property {number|null} workHours - In-game duration (hours to craft). Separate from time; not a translation.
+ * @property {RecipeIngredient[]} ingredients - Required ingredients (TYPE + optional family + name + quantity)
  * @property {string} resultItemName - Name of resulting item. Resolved at runtime via compendia + world.
- * @property {string[]} tags - Recipe tags
+ * @property {string[]} traits - Recipe traits (modifiers; do not repeat type/family). Legacy "tags" map to traits.
  * @property {string} description - Recipe description/notes
  * @property {string} source - Source journal UUID
  * @property {string} journalPageId - Journal page ID within source journal

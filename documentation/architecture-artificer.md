@@ -397,7 +397,7 @@ Following Codex/Quest patterns:
 - Flexible schema - can add fields without migration
 - Version-tolerant parsing
 
-**Recipe journal fields (same as JSON import):** Name, Type, Category, Skill, Skill Level, Workstation, Process Type, Process Level, Heat, Time, Apparatus, Container, Tool, Gold Cost, Work Hours, Result, Tags, Description, Source, License, Ingredients. The journal parser and recipe import HTML use the same labels; names (result, ingredients) are resolved at runtime from the item cache.
+**Recipe journal fields (same as JSON import):** Name, Type, Category, Skill, Skill Level, Workstation, Process Type, Process Level, Time (process time, seconds), Apparatus, Container, Tool, Gold Cost, Work Hours (in-game duration), Result, Traits, Description, Source, License, Ingredients. Time and Work Hours are distinct—do not derive one from the other. The journal parser and recipe import HTML use the same labels; names (result, ingredients) are resolved at runtime from the item cache. Recipe-level modifiers are **traits** (not tags). Ingredients use **type** (Component | Creation | Tool) and optional **family**.
 
 **Example Recipe Structure:**
 ```html
@@ -417,7 +417,7 @@ Following Codex/Quest patterns:
 <p><strong>Gold Cost:</strong> 0</p>
 <p><strong>Work Hours:</strong> </p>
 <p><strong>Result:</strong> Healing Potion</p>
-<p><strong>Tags:</strong> healing, consumable, potion</p>
+<p><strong>Traits:</strong> healing, consumable, potion</p>
 <p><strong>Description:</strong> A simple healing potion.</p>
 <p><strong>Source:</strong> Core Rules</p>
 <p><strong>License:</strong> </p>

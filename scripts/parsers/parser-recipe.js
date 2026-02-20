@@ -6,6 +6,7 @@ import { MODULE } from '../const.js';
 import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from '../schema-recipes.js';
+import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 
 /**
  * Parser for Recipe journal entries
@@ -112,11 +113,14 @@ export class RecipeParser {
                     } else if (value.trim()) {
                         data.resultItemName = value.trim();
                     }
-                } else if (labelLower === 'tags') {
-                    // Parse comma-separated tags
-                    data.tags = value.split(',').map(t => t.trim()).filter(t => t);
+                } else if (labelLower === 'tags' || labelLower === 'traits') {
+                    // Parse comma-separated traits (journal may still say "Tags:" for display)
+                    const list = value.split(',').map(t => t.trim()).filter(t => t);
+                    data.traits = data.traits ?? [];
+                    data.traits.push(...list);
                 } else if (labelLower === 'description') {
-                    data.description = value;
+                    const descDiv = p.nextElementSibling;
+                    data.description = (descDiv?.classList?.contains('recipe-description') ? descDiv.innerHTML : value) || value;
                 } else if (labelLower === 'source') {
                     if (value.trim()) data.source = value.trim();
                 } else if (labelLower === 'license') {
@@ -168,41 +172,46 @@ export class RecipeParser {
     }
 
     /**
-     * Parse ingredients from a <ul> element
+     * Parse ingredients from a <ul> element. Label maps to TYPE (Component|Creation|Tool) + optional FAMILY.
      * @param {HTMLUListElement} ul - Unordered list element
-     * @returns {Array<{type: string, name: string, quantity: number}>} Parsed ingredients
+     * @returns {Array<{type: string, family: string, name: string, quantity: number}>} Parsed ingredients
      */
     static _parseIngredients(ul) {
+        const allFamilies = (FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] || [])
+            .concat(FAMILIES_BY_TYPE[ARTIFICER_TYPES.CREATION] || [])
+            .concat(FAMILIES_BY_TYPE[ARTIFICER_TYPES.TOOL] || []);
         const ingredients = [];
         const items = ul.querySelectorAll('li');
-        
         for (const item of items) {
             const text = item.textContent.trim();
-            
-            // Parse format: "Type: Name (quantity)"
-            // Example: "Herb: Lavender (2)" or "Essence: Life (1)"
             const match = text.match(/^([^:]+):\s*([^(]+)\s*\((\d+)\)/);
             if (match) {
-                const [, type, name, quantity] = match;
-                ingredients.push({
-                    type: type.trim().toLowerCase(),
-                    name: name.trim(),
-                    quantity: parseInt(quantity) || 1
-                });
+                const [, label, name, quantity] = match;
+                const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
+                ingredients.push({ type, family, name: name.trim(), quantity: parseInt(quantity) || 1 });
             } else {
-                // Fallback: try to parse without parentheses
                 const simpleMatch = text.match(/^([^:]+):\s*(.+)$/);
                 if (simpleMatch) {
-                    const [, type, name] = simpleMatch;
-                    ingredients.push({
-                        type: type.trim().toLowerCase(),
-                        name: name.trim(),
-                        quantity: 1
-                    });
+                    const [, label, name] = simpleMatch;
+                    const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
+                    ingredients.push({ type, family, name: name.trim(), quantity: 1 });
                 }
             }
         }
-        
         return ingredients;
+    }
+
+    /**
+     * Map journal label to TYPE + optional FAMILY (architecture: TYPE > FAMILY > TRAITS).
+     * @param {string} label - Raw label (e.g. "Herb", "Essence", "Component")
+     * @param {string[]} allFamilies - Valid family names
+     * @returns {{ type: string, family: string }}
+     */
+    static _labelToTypeAndFamily(label, allFamilies) {
+        const lower = label.toLowerCase();
+        const normalizedType = LEGACY_TYPE_TO_ARTIFICER_TYPE[lower] || (Object.values(ARTIFICER_TYPES).includes(label) ? label : null);
+        const type = normalizedType || ARTIFICER_TYPES.COMPONENT;
+        const family = allFamilies.find((f) => f.toLowerCase() === lower) ?? '';
+        return { type, family };
     }
 }

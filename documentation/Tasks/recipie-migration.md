@@ -21,11 +21,14 @@ These fields come from `scripts/schema-recipes.js` and `scripts/data/models/mode
 
 ### RecipeIngredient (per ingredient)
 
+Uses TYPE > FAMILY (see architecture-artificer.md). Artificer items match by TYPE (+ optional family) and name; mundane D&D items (no Artificer flags) match by name only.
+
 | Field | Type | Description |
 |-------|------|-------------|
-| `type` | string | `'ingredient'` (Artificer), `'component'`, `'essence'`, or `'item'` (any D&D item by name) |
-| `name` | string | Ingredient/component/essence/item name |
-| `quantity` | number | Required quantity |
+| `type` | string | **TYPE:** `'Component'` \| `'Creation'` \| `'Tool'` (top-level Artificer bucket). Legacy ingredient/component/essence normalize to Component. |
+| `family` | string | Optional **FAMILY** within type (e.g. Plant, Essence, Potion, Apparatus). Identity within type. |
+| `name` | string | Item name (resolved at runtime from item cache). |
+| `quantity` | number | Required quantity. |
 
 ### Optional Fields
 
@@ -36,13 +39,13 @@ These fields come from `scripts/schema-recipes.js` and `scripts/data/models/mode
 | `skill` | string | `Alchemy` | Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling |
 | `skillLevel` | number | 0 | Minimum skill level (0–100) |
 | `workstation` | string\|null | null | Required workstation UUID or name |
-| `tags` | string[] | [] | Recipe tags |
+| `traits` | string[] | [] | Recipe traits (modifiers; do not repeat type/family). Legacy "tags" map to traits. |
 | `description` | string | `''` | Recipe description/notes |
 | `source` | string | `''` | Source journal UUID |
 | `journalPageId` | string | `''` | Journal page ID within source |
 | `containerName` | string\|null | null | Required container (e.g., Beaker, Mortar, Crucible). Resolved by name at runtime. |
 | `heat` | number\|null | null | Process heat (0–100). Slider value; null = any. |
-| `time` | number\|null | null | Process time in seconds (0–120). Slider value; null = any. Maps from source `workHours` if needed. |
+| `time` | number\|null | null | Process time in seconds. Duration of the crafting process. Not the same as workHours. |
 
 ---
 
@@ -57,8 +60,8 @@ The source document uses additional metadata. **Add `containerName`, `heat`, and
 | `apparatusName` | string | Apparatus: vessel to craft in (Beaker, Mortar, Crucible) |
 | `containerName` | string | Container: vessel to put result in (Vial, Flask, Herb Bag) |
 | `toolName` | string | Required kit (Alchemist's Supplies, Herbalism Kit, Poisoner's Kit) |
-| `heat` | number | Process heat 0–100. Map from DC/rarity if desired |
-| `time` | number | Process time in seconds. Map `workHours` to slider range or store `workHours` for Phase 2 |
+| `heat` | number | (Legacy) Process heat 0–100. Prefer processType + processLevel. |
+| `time` | number | Process time in seconds. Duration of the crafting process. Not derived from workHours. |
 
 ### Source Metadata (for reference / flags)
 
@@ -66,7 +69,7 @@ The source document uses additional metadata. **Add `containerName`, `heat`, and
 |-------|------|-------------|
 | `tool` | string | Required kit: Alchemist's Supplies, Herbalism Kit, Poisoner's Kit |
 | `dc` | number | Crafting check DC (8=Common, 12=Uncommon, 15=Rare, 18=Very Rare) |
-| `workHours` | number | Hours to craft (8, 24, 80, 240). In-game duration. |
+| `workHours` | number | In-game duration (hours to craft, e.g. 8, 24, 80, 240). Separate from time—not a translation. |
 | `goldCost` | number | **Cost to make** (gp) after ingredient deduction (25, 100, 500, 1000) |
 | `productValue` | number | Product market value in gp (50, 200, 1000, 2000) |
 | `rarity` | string | Common, Uncommon, Rare, Very Rare |
@@ -112,8 +115,7 @@ apparatusName:
 containerName:
 processType:
 processLevel:
-heat:
-time: 28800
+time: 
 goldCost: 25
 workHours: 8
 ingredients:
@@ -141,8 +143,7 @@ apparatusName:
 containerName:
 processType:
 processLevel:
-heat:
-time: 28800
+time: 
 goldCost: 25
 workHours: 8
 ingredients:
