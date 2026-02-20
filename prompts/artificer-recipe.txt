@@ -23,7 +23,7 @@ License:
 
 OPTIONAL FIELDS: Omit when not relevant, or use null. Import auto-maps: apparatus→Mixing Bowl, container→Vial, source→Artificer; workstation from skill (Alchemy→Alchemist Table, Herbalism→Herbalism Station, etc.); processType→heat, processLevel→0; time→20 seconds. Output valid JSON only—no trailing commas, no duplicate keys. Escape double quotes (") in strings. Do not output "tags"; use "traits" only.
 
-If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed.
+If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed. Focus most of the description on the resipie and the prep with only a light touch on the items being crafted.
 
 For the image, put the ingredient in it natural environment with a focus on the item. Do not embed the JSON in the image!
 
