@@ -1,0 +1,90 @@
+{{!-- Artificer Skills - Stacked horizontal skill panels left, details right. Same header/button bar as crafting. --}}
+
+<div class="skills-window-root">
+
+    {{!-- HEADER (same style as window-crafting) --}}
+    <header class="skills-window-header">
+        <div class="skills-window-header-content">
+            <div class="skills-window-header-icon">
+                {{#if actorImg}}
+                <img src="{{actorImg}}" alt="" class="skills-window-header-portrait" />
+                {{else}}
+                <i class="fa-solid fa-star"></i>
+                {{/if}}
+            </div>
+            <div class="skills-window-header-title-block">
+                <div class="skills-window-header-title">Artificer Skills</div>
+                <div class="skills-window-header-actor">{{#if actorName}}{{actorName}}{{else}}Select a character{{/if}}</div>
+            </div>
+            <div class="skills-window-header-points">
+                <span class="skills-window-points-label">Points</span>
+                <span class="skills-window-points-value">{{availablePoints}}</span>
+            </div>
+        </div>
+    </header>
+
+    {{!-- BODY: left = stacked skill panels, right = details --}}
+    <div class="skills-window-body">
+        {{!-- Left: stacked horizontal panels (one per skill path) --}}
+        <div class="skills-window-panels">
+            {{#each skillPaths}}
+            <section class="skills-panel" data-skill="{{this.id}}">
+                <div class="skills-panel-badge" title="{{this.name}}">
+                    <i class="{{this.icon}}"></i>
+                    <span class="skills-panel-badge-label">{{this.name}}</span>
+                </div>
+                <div class="skills-panel-slots">
+                    {{#each this.slots}}
+                    <div class="skills-slot {{#if this.unlocked}}skills-slot-unlocked{{/if}}{{#if this.locked}}skills-slot-locked{{/if}}{{#if this.selected}}skills-slot-selected{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{@index}}" data-action="selectSkillSlot" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}">
+                        {{#if this.locked}}
+                        <i class="fa-solid fa-lock skills-slot-lock-icon"></i>
+                        {{else}}
+                        {{#if this.unlocked}}<i class="fa-solid fa-check skills-slot-check-icon"></i>{{/if}}
+                        <i class="fa-solid {{this.icon}} skills-slot-icon"></i>
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                </div>
+            </section>
+            {{/each}}
+        </div>
+
+        {{!-- Right: details pane (same concept as crafting Details) --}}
+        <aside class="skills-window-details">
+            <section class="skills-zone-section">
+                <h3 class="skills-zone-section-title">Details</h3>
+                <div class="skills-details-content">
+                    {{#if selectedSkill}}
+                    <div class="skills-detail-name">{{selectedSkill.name}}</div>
+                    {{#if selectedSkill.requirement}}
+                    <div class="skills-detail-requirement">{{selectedSkill.requirement}}</div>
+                    {{/if}}
+                    {{#if selectedSkill.description}}
+                    <div class="skills-detail-description">{{{selectedSkill.description}}}</div>
+                    {{/if}}
+                    {{#if selectedSkill.cost}}
+                    <div class="skills-detail-cost">Cost: {{selectedSkill.cost}} point(s)</div>
+                    {{/if}}
+                    {{else}}
+                    <div class="skills-zone-empty">Select a skill to see details.</div>
+                    {{/if}}
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    {{!-- BUTTON BAR (same as crafting: Reset | Apply) --}}
+    <section class="skills-window-buttons">
+        <div class="skills-window-action-bar">
+            <div class="skills-window-action-left"></div>
+            <div class="skills-window-action-right">
+                <button type="button" class="skills-window-btn-secondary" data-action="reset" title="Reset unapplied changes">
+                    <i class="fa-solid fa-undo"></i> Reset
+                </button>
+                <button type="button" class="skills-window-btn-primary" data-action="apply" title="Apply skill point investments">
+                    <i class="fa-solid fa-check"></i> Apply
+                </button>
+            </div>
+        </div>
+    </section>
+</div>

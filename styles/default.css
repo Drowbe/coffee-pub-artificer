@@ -19,6 +19,9 @@
 /* --- Crafting Window ------------- */
 @import "window-crafting.css";
 
+/* --- Skills Window ---------------- */
+@import "window-skills.css";
+
 /* --- Import Window --------------- */
 @import "import-items.css";
 

@@ -1,0 +1,388 @@
+/* ================================================================== */
+/* Artificer Skills Window - Stacked horizontal panels + details      */
+/* Same header and button bar design as window-crafting               */
+/* ================================================================== */
+
+.window-artificer-skills,
+.window-artificer-skills .window-content {
+    --craft-border-color: #444;
+    --craft-accent-color: #ac9f81;
+    --craft-background: #232323;
+    --craft-header-bg: rgba(0, 0, 0, 0.7);
+    --craft-banner-image-title: url('../images/backgrounds/background-herbs-green.webp');
+    background: var(--craft-background) !important;
+    border: 0 solid var(--craft-border-color) !important;
+    color: rgba(224, 224, 224, 0.9);
+    font-family: "Signika", sans-serif;
+}
+
+.window-artificer-skills .window-content {
+    min-height: 420px !important;
+    overflow: auto !important;
+    padding: 0 !important;
+}
+
+.window-artificer-skills .window-header {
+    background: var(--craft-header-bg) !important;
+    border-bottom: 1px solid var(--craft-border-color) !important;
+    color: var(--craft-accent-color) !important;
+}
+
+/* ----- Root ----- */
+.skills-window-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ----- Header (match crafting) ----- */
+.skills-window-header {
+    flex-shrink: 0;
+    background: var(--craft-header-bg);
+    background-image: var(--craft-banner-image-title);
+    background-blend-mode: multiply;
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-bottom: 1px solid var(--craft-border-color);
+    padding: 8px 12px;
+    min-height: 50px;
+}
+
+.skills-window-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.skills-window-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(172, 159, 129, 0.9);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skills-window-header-icon i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.4em;
+}
+
+.skills-window-header-icon .skills-window-header-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.skills-window-header-title-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.skills-window-header-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--craft-accent-color);
+    letter-spacing: 0.02em;
+}
+
+.skills-window-header-actor {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.skills-window-header-points {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 6px;
+}
+
+.skills-window-points-label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.skills-window-points-value {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--craft-accent-color);
+}
+
+/* ----- Body: left panels | right details ----- */
+.skills-window-body {
+    display: grid;
+    grid-template-columns: 1fr minmax(220px, 320px);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    gap: 0;
+    border-bottom: 1px solid var(--craft-border-color);
+}
+
+/* ----- Left: stacked horizontal skill panels ----- */
+.skills-window-panels {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 10px 12px;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.skills-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 6px;
+    min-height: 72px;
+}
+
+.skills-panel-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--craft-border-color);
+    border-radius: 8px;
+    color: var(--craft-accent-color);
+}
+
+.skills-panel-badge i {
+    font-size: 1.4em;
+    margin-bottom: 2px;
+}
+
+.skills-panel-badge-label {
+    font-size: 0.65em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: center;
+    line-height: 1.1;
+}
+
+.skills-panel-slots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ----- Skill slots (Far Cry style: unlocked = gold/check, locked = grey/lock) ----- */
+.skills-slot {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--craft-border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.skills-slot:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.1);
+}
+
+.skills-slot-unlocked {
+    border-color: rgba(172, 159, 129, 0.8);
+    background: rgba(60, 80, 50, 0.4);
+    color: rgba(200, 180, 120, 0.95);
+}
+
+.skills-slot-unlocked:hover {
+    border-color: var(--craft-accent-color);
+    box-shadow: 0 0 8px rgba(172, 159, 129, 0.4);
+}
+
+.skills-slot-locked {
+    opacity: 0.65;
+    color: #666;
+    border-style: dashed;
+}
+
+.skills-slot-locked:hover {
+    opacity: 0.9;
+}
+
+.skills-slot-selected {
+    border-color: var(--craft-accent-color);
+    box-shadow: 0 0 10px rgba(172, 159, 129, 0.5);
+}
+
+.skills-slot-icon {
+    font-size: 1.2em;
+}
+
+.skills-slot-check-icon {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.7em;
+    color: rgba(105, 213, 104, 0.95);
+}
+
+.skills-slot-lock-icon {
+    font-size: 1em;
+    color: #888;
+}
+
+/* ----- Right: details pane (match crafting details zone) ----- */
+.skills-window-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    border-left: 1px solid var(--craft-border-color);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.skills-window-details .skills-zone-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 10px 12px;
+    overflow: hidden;
+}
+
+.skills-zone-section-title {
+    margin: 0 0 10px 0;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--craft-accent-color);
+}
+
+.skills-details-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skills-detail-name {
+    font-weight: 600;
+    font-size: 1em;
+    color: var(--craft-accent-color);
+}
+
+.skills-detail-requirement {
+    font-size: 0.85em;
+    color: rgba(201, 201, 201, 0.9);
+}
+
+.skills-detail-description {
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: rgba(201, 201, 201, 0.9);
+}
+
+.skills-detail-cost {
+    font-size: 0.9em;
+    color: rgba(172, 159, 129, 0.95);
+}
+
+.skills-zone-empty {
+    font-size: 0.9em;
+    color: #999;
+    padding: 8px 0;
+}
+
+/* ----- Button bar (match crafting) ----- */
+.skills-window-buttons {
+    flex-shrink: 0;
+    border-top: 1px solid var(--craft-border-color);
+    background: var(--craft-header-bg);
+    padding: 10px 12px;
+}
+
+.skills-window-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.skills-window-action-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.skills-window-action-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skills-window-btn-primary,
+.skills-window-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    text-transform: uppercase;
+}
+
+.skills-window-btn-primary {
+    background: rgba(41, 94, 47, 0.9);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.skills-window-btn-secondary {
+    background: rgba(33, 40, 46, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(224, 224, 224, 0.9);
+}
+
+.skills-window-btn-primary:hover:not(:disabled),
+.skills-window-btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 100, 0, 0.6);
+    border-color: rgba(255, 100, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.skills-window-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
