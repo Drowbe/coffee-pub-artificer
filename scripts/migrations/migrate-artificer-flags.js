@@ -10,22 +10,25 @@ import {
     ARTIFICER_TYPES,
     LEGACY_TYPE_TO_ARTIFICER_TYPE,
     LEGACY_FAMILY_TO_FAMILY,
-    FAMILIES_BY_TYPE
+    FAMILIES_BY_TYPE,
+    ARTIFICER_FLAG_KEYS
 } from '../schema-artificer-item.js';
 
 /**
- * Check if item flags look like legacy (have primaryTag or secondaryTags or quirk).
+ * Check if item flags need migration: legacy (primaryTag/secondaryTags) or non-namespaced (type but no artificerType).
  * @param {Object} flags
  * @returns {boolean}
  */
 function isLegacyFlags(flags) {
     if (!flags || typeof flags !== 'object') return false;
-    return (
+    const hasLegacyTags = (
         flags.primaryTag !== undefined ||
         (Array.isArray(flags.secondaryTags) && flags.secondaryTags.length > 0) ||
         (flags.secondaryTags !== undefined && flags.secondaryTags !== null) ||
         (flags.quirk !== undefined && flags.quirk !== null && flags.quirk !== '')
     );
+    const hasOldKeys = flags.type && !flags[ARTIFICER_FLAG_KEYS.TYPE];
+    return hasLegacyTags || hasOldKeys;
 }
 
 /**
@@ -74,12 +77,25 @@ function toNewFamily(flags, newType) {
 }
 
 /**
- * Build traits array from primaryTag, secondaryTags, quirk; dedupe and remove family.
+ * Build traits array from traits, or primaryTag/secondaryTags/quirk; dedupe and remove family.
  * @param {Object} flags
  * @param {string} newFamily
  * @returns {string[]}
  */
 function toTraits(flags, newFamily) {
+    if (Array.isArray(flags.traits) && flags.traits.length > 0) {
+        const familyNorm = (newFamily || '').toLowerCase();
+        const seen = new Set();
+        return flags.traits.filter(t => {
+            const n = (t || '').trim();
+            if (!n) return false;
+            const lower = n.toLowerCase();
+            if (lower === familyNorm) return false;
+            if (seen.has(lower)) return false;
+            seen.add(lower);
+            return true;
+        });
+    }
     const primary = flags.primaryTag ? [flags.primaryTag] : [];
     const secondary = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
     const quirk = flags.quirk ? [flags.quirk] : [];
@@ -113,13 +129,28 @@ function migrateItem(item, updatePayload) {
 
     const newFlags = {
         ...flags,
-        type: newType,
-        family: newFamily,
-        traits
+        [ARTIFICER_FLAG_KEYS.TYPE]: newType,
+        [ARTIFICER_FLAG_KEYS.FAMILY]: newFamily,
+        [ARTIFICER_FLAG_KEYS.TRAITS]: traits,
+        [ARTIFICER_FLAG_KEYS.SKILL_LEVEL]: flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1
     };
+    if (newType === ARTIFICER_TYPES.COMPONENT) {
+        const biomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes;
+        if (Array.isArray(biomes)) newFlags[ARTIFICER_FLAG_KEYS.BIOMES] = biomes;
+        const quirk = flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk;
+        if (quirk) newFlags[ARTIFICER_FLAG_KEYS.QUIRK] = quirk;
+        const affinity = flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity;
+        if (affinity) newFlags[ARTIFICER_FLAG_KEYS.AFFINITY] = affinity;
+    }
     delete newFlags.primaryTag;
     delete newFlags.secondaryTags;
+    delete newFlags.type;
+    delete newFlags.family;
+    delete newFlags.traits;
+    delete newFlags.skillLevel;
+    delete newFlags.biomes;
     delete newFlags.quirk;
+    delete newFlags.affinity;
 
     updatePayload[`flags.${MODULE.ID}`] = newFlags;
     return true;

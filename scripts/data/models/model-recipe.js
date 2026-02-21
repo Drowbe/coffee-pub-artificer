@@ -230,7 +230,7 @@ export class ArtificerRecipe {
                 const itemType = getArtificerTypeFromFlags(flags);
                 if ((itemType || ARTIFICER_TYPES.COMPONENT) !== wantType) return false;
                 if (wantFamily) {
-                    const itemFamily = (flags.family || '').trim();
+                    const itemFamily = (getFamilyFromFlags(flags) || '').trim();
                     if (itemFamily && itemFamily !== wantFamily) return false;
                 }
                 return true;

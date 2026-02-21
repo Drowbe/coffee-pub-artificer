@@ -1,18 +1,26 @@
 VARIABLES FOR THE ARTIFICAER ITEM
 
 
-Name: 
-Type: 
-Source: 
-License:
+ITEMNAME: 
+ITEMTYPE: consumable
+ITEMSOURCE: 
+ITEMLICENSE: 
+ITEMRARITY: 
+
+
+
+
 Artificer type: 
 Family: 
-Primary tag: 
-Secondary tags: 
-Tier: 
-Rarity: 
+Traits: 
+Skill level: 
+
 Quirk: 
 Biomes: 
+
+
+
+
 Weight: 
 Price: 
 Description: 
@@ -71,7 +79,7 @@ D&D 5e ITEM FIELDS (top level):
 - description: (string) HTML-flavored narrative describing the ITEM's appearance, origin, and feel. Use <p>, <ul>, <strong> as needed.
 - weight: (number) Between 0 and 10 (decimals OK). Raw materials can be light (0.1) to heavy (5+).
 - price: (number) GP value as number. Use 0 if not sold, or estimate (e.g., 2 for common ore, 25 for rare essence).
-- rarity: (string) One of "common", "uncommon", "rare", "very rare", or "legendary".
+- rarity: (string) D&D 5e item rarity: "common", "uncommon", "rare", "very rare", or "legendary".
 
 OPTIONAL system (full D&D 5e consumable structure) — USE when the ITEM has usable properties (healing, poison, magic):
 Include "system": { ... } when the ITEM can be used directly (e.g., chewed herb for healing, poison for damage). Omit for inert raw materials (ore, stone).
@@ -89,27 +97,65 @@ The importer accepts legacy field names and maps them to D&D 5e 5.5 schema: cons
 - system.source: { value: "Sourcebook or Homebrew", custom: "Custom Label", license: "License" } — For non-official content (homebrew, third-party), set custom to the source name (e.g. "Potion Brewing and ITEM Gathering") so Configure Source → Custom Label is populated. Set license for the item's license (e.g. "OGL", "CC-BY-4.0"). Use "Artificer" for custom if not specified. Never use "[ADD-ITEM-SOURCE-HERE]".
 If system is omitted, the importer builds minimal consumable data. If included, the full structure is preserved for FoundryVTT and cross-module use.
 
-ARTIFICER FLAGS (flags["coffee-pub-artificer"]):
-- type: (string) Always "ITEM".
-- primaryTag: (string) REQUIRED. The main category tag. Examples: Herb, Metal, Ore, Crystal, Arcane, MonsterBits, Bone, Venom, Water, Fire, Earth, Air, Life, Shadow, etc.
-- secondaryTags: (array of strings) REQUIRED. 1–2 tags that refine the ITEM. Examples: Floral, Medicinal, Toxic, Resonant, Alloy-Friendly, Ore, etc.
-- family: (string) REQUIRED. One of: "Herbs", "Minerals", "Gems", "CreatureParts", "Environmental".
-- tier: (number) 1–10. Default 1. Affects crafting quality.
-- rarity: (string) One of: "Common", "Uncommon", "Rare", "Epic", "Legendary".
-- quirk: (string or null) Optional. A rare property: Soothing, Volatile, Unstable, Resonant, etc. Use null if none.
-- biomes: (array of strings) Optional. Use ONLY official D&D 5e habitats (uppercase): ARCTIC, COASTAL, DESERT, FOREST, GRASSLAND, HILL, MOUNTAIN, PLANAR, SWAMP, UNDERDARK, UNDERWATER, URBAN. Can be empty [].
 
-TAG RULES (critical for crafting):
-- Total tags: 2–5 (1 primary + 1–2 secondary + optional quirk).
-- Tags determine what can be crafted. Herb+Medicinal+Life → Healing Potion. Metal+Ore → Metal Shard. Crystal+Arcane+Essence → Arcane Dust.
-- Use noun/adjective tags, not verbs. Tags are lowercase in matching but stored as given (Common casing).
+----------------------------
+JSON ARTIFICER FIELD RULES & EXPECTATIONS
+----------------------------
 
-FAMILY GUIDANCE:
-- Herbs: Plants, fungi, flowers. primaryTag often Herb. secondaryTags: Floral, Medicinal, Toxic, etc.
-- Minerals: Ores, metals, stones. primaryTag Metal, Ore. secondaryTags: Alloy-Friendly, etc.
-- Gems: Crystals, gems. primaryTag Crystal. secondaryTags: Resonant, Arcane, etc.
-- CreatureParts: Bone, venom, scales, etc. primaryTag Bone, Venom, MonsterBits. secondaryTags as appropriate.
-- Environmental: Water, ash, ice, etc. primaryTag Water, Fire, Earth, Air. secondaryTags: Corrupted, Pure, etc.
+
+Rarity: Use the D&D 5e item field (top-level "rarity" or system.rarity). Do NOT put rarity in flags.
+
+ARTIFICER FLAGS (flags["coffee-pub-artificer"]) — namespaced keys (artificerX):
+- artificerType: (string) REQUIRED. One of: "Component", "Creation", "Tool". Raw materials (herbs, ores, crystals, creature parts) use "Component". Crafted results (potions, poisons, food) use "Creation". Kits, apparatus, containers use "Tool".
+- artificerFamily: (string) REQUIRED. Must match artificerType. For Component: "Plant", "Mineral", "Gem", "CreaturePart", "Environmental", "Essence". For Creation: "Food", "Material", "Poison", "Potion". For Tool: "Apparatus", "Container".
+- artificerTraits: (array of strings) REQUIRED. Non-empty. 2–5 modifier tags for crafting. See TRAITS BY TYPE below. Tags drive what can be crafted (e.g. Herb+Medicinal+Life → Healing Potion).
+- artificerSkillLevel: (number) 1–10. Default 1. Affects crafting quality.
+- artificerQuirk: (string or null) Optional. Components only. Rare property: Soothing, Volatile, Unstable, Resonant. Use null if none.
+- artificerBiomes: (array of strings) Optional. Components only. Use ONLY: ARCTIC, COASTAL, DESERT, FOREST, GRASSLAND, HILL, MOUNTAIN, PLANAR, SWAMP, UNDERDARK, UNDERWATER, URBAN. Can be [].
+- artificerAffinity: (string) Optional. Essence family only. e.g. "Heat", "Cold", "Electric".
+
+
+TYPE GUIDANCE:
+- Component: Raw materials. Herbs, ores, crystals, creature parts, environmental substances, essences. Use for ingredients found in the world.
+- Creation: Crafted results. Potions, poisons, food, refined materials. Use for items produced by crafting.
+- Tool: Apparatus and containers. Mortar and pestle, vials, crucibles. Use for equipment that holds or processes ingredients.
+
+
+FAMILY GUIDANCE (by artificerType):
+- Component families: Plant, Mineral, Gem, CreaturePart, Environmental, Essence
+- Creation families: Food, Material, Poison, Potion
+- Tool families: Apparatus, Container
+
+Component family details:
+- Plant: Herbs, fungi, flowers. traits: Herb, Floral, Medicinal, Toxic, etc.
+- Mineral: Ores, metals, stones. traits: Metal, Ore, Alloy-Friendly, etc.
+- Gem: Crystals, gems. traits: Crystal, Resonant, Arcane, etc.
+- CreaturePart: Bone, venom, scales. traits: Bone, Venom, MonsterBits, etc.
+- Environmental: Water, ash, ice. traits: Water, Fire, Earth, Air, Corrupted, Pure, etc.
+- Essence: Life, Fire, Shadow essence. traits + artificerAffinity.
+
+
+TRAITS BY ARTIFICER TYPE:
+- Component: Herb, Floral, Medicinal, Toxic, Metal, Ore, Alloy-Friendly, Crystal, Resonant, Arcane, Bone, Venom, MonsterBits, Water, Fire, Earth, Air, Corrupted, Pure. Choose 2–5 that describe the material.
+- Creation: Healing, Restorative, Consumable, Alchemical, Magical, Toxic, Nutritive. Choose 2–5 that describe the crafted result.
+- Tool: Liquid, Heat-Safe, Glass, Grinding, Dry, Ceramic, Metal, High-Heat, General, Mixing, Herbal, Infusion, Cloth, Small, Portable. Choose 2–5 for recipe matching (e.g. potion recipes require Liquid container).
+
+
+SKILL LEVEL GUIDANCE:
+- 1: Common materials, basic crafting.
+- 3–5: Uncommon materials, intermediate recipes.
+- 6–8: Rare materials, advanced recipes.
+- 9–10: Very rare/legendary materials, masterwork recipes.
+
+
+QUIRK GUIDANCE (Components only):
+- Soothing: Calming, restorative. Volatile: Unstable, reactive. Unstable: Degrades or changes. Resonant: Magical resonance. Use null if none.
+
+
+BIOMES GUIDANCE (Components only):
+Use ARCTIC, COASTAL, DESERT, FOREST, GRASSLAND, HILL, MOUNTAIN, PLANAR, SWAMP, UNDERDARK, UNDERWATER, URBAN. Match where the ingredient would naturally be found.
+
+
 
 ----------------------------
 JSON TEMPLATE: MINIMAL
@@ -118,7 +164,7 @@ JSON TEMPLATE: MINIMAL
 
 {
   "name": "ITEMNAME",
-  "type": "consumable",
+  "type": "ITEMTYPE",
   "img": "",
   "description": "ITEMDESCRIPTION",
   "weight": ITEMWEIGHT,
@@ -126,14 +172,13 @@ JSON TEMPLATE: MINIMAL
   "rarity": "ITEMRARITY",
   "flags": {
     "coffee-pub-artificer": {
-      "type": "ITEM",
-      "primaryTag": "PRIMARYTAG",
-      "secondaryTags": ["TAG1", "TAG2"],
-      "family": "FAMILY",
-      "tier": TIER,
-      "rarity": "RARITY",
-      "quirk": "QUIRK_OR_NULL",
-      "biomes": ["BIOME1", "BIOME2"]
+      "artificerType": "Component",
+      "artificerFamily": "FAMILY",
+      "artificerTraits": ["TRAIT1", "TRAIT2"],
+      "artificerSkillLevel": 1,
+      "artificerQuirk": null,
+      "artificerBiomes": ["BIOME1", "BIOME2"],
+      "artificerAffinity": null
     }
   }
 }
@@ -155,7 +200,7 @@ Add optional "system" when the ITEM has usable properties. The importer preserve
   "rarity": "ITEMRARITY",
   "system": {
     "description": { "value": "ITEMDESCRIPTION", "chat": "", "unidentified": "" },
-    "source": { "value": "Artificer", "custom": "Artificer", "license": "" },
+    "source": { "value": "ITEMSOURCE", "custom": "ITEMSOURCE", "ITEMLICENSE": "" },
     "quantity": 1,
     "weight": ITEMWEIGHT,
     "price": { "value": ITEMPRICE, "denomination": "gp" },
@@ -181,11 +226,19 @@ Add optional "system" when the ITEM has usable properties. The importer preserve
     ]
   },
   "flags": {
-    "coffee-pub-artificer": { ... }
+    "coffee-pub-artificer": {
+      "artificerType": "Component",
+      "artificerFamily": "FAMILY",
+      "artificerTraits": ["TRAIT1", "TRAIT2"],
+      "artificerSkillLevel": 1,
+      "artificerQuirk": null,
+      "artificerBiomes": [],
+      "artificerAffinity": null
+    }
   }
 }
 
-Note: For essences (Life Essence, Fire Essence, etc.), use type "essence" and add "affinity" instead of "family". This template is for ITEMS only.
+Note: For essences (Life Essence, Fire Essence, etc.), use artificerType "Component", artificerFamily "Essence", and set artificerAffinity (e.g. "Heat", "Cold"). This template is for components/creations/tools only.
 
 ----------------------------
 USAGE INSTRUCTIONS
@@ -251,7 +304,7 @@ CUSTOM INSTRUCTIONS
 ========================================
 
 - Use minimal template for inert raw materials (ore, stone, dust); use full template with system when the ITEM has usable properties (healing herb, poison, magical component).
-- Ensure primaryTag, secondaryTags, and family are always set and match the schema.
-- Tags drive crafting outcomes—choose tags that make sense for the ITEM's properties.
-- Keep biomes relevant to where the ITEM would naturally be found.
+- Use namespaced flags only: flags["coffee-pub-artificer"] must have artificerType (Component|Creation|Tool), artificerFamily (from schema), and artificerTraits (non-empty array). Use D&D 5e rarity (Very Rare, not Epic). No primaryTag, secondaryTags, or type "ITEM".
+- Traits drive crafting outcomes—choose 2–5 tags that make sense for the ITEM.
+- Keep biomes relevant to where the ITEM would naturally be found (Components only).
 - Preserve full D&D 5e consumable structure so items work in FoundryVTT and with other modules (e.g., Blacksmith).

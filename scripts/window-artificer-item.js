@@ -6,7 +6,7 @@ import { MODULE } from './const.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { postError } from './utils/helpers.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
@@ -88,15 +88,16 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             selected: f === selectedFamily
         }));
 
+        const affinityVal = flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity ?? '';
         const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(a => ({
             value: a,
             label: a,
-            selected: (flags.affinity || '') === a
+            selected: (affinityVal || '') === a
         }));
 
         const tagManager = getTagManager();
         const traitCandidates = tagManager.getAllTags();
-        const skillLevel = Math.max(1, Math.min(20, Math.floor(flags.skillLevel ?? 1)));
+        const skillLevel = Math.max(1, Math.min(20, Math.floor(flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1)));
 
         const mergedContext = {
             isEditMode: this.isEditMode,
@@ -113,12 +114,17 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
             family: selectedFamily,
             biomeOptions: OFFICIAL_BIOMES.map(b => {
-                const selected = (this._formState?.selectedBiomes ?? (Array.isArray(flags.biomes) ? flags.biomes : [])).includes(b);
+                const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
+                const selected = (this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes : [])).includes(b);
                 return { name: b, selected };
             }),
-            biomesValue: (this._formState?.selectedBiomes ?? (Array.isArray(flags.biomes) ? flags.biomes.filter(b => OFFICIAL_BIOMES.includes(b)) : [])).join(','),
-            quirk: this._formState?.quirk ?? flags.quirk ?? '',
-            affinity: flags.affinity || '',
+            biomesValue: (() => {
+                const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
+                const arr = this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : []);
+                return arr.join(',');
+            })(),
+            quirk: this._formState?.quirk ?? (flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk ?? ''),
+            affinity: affinityVal || '',
             affinityOptions
         };
         this._lastContext = mergedContext;
@@ -242,7 +248,8 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
      */
     _toggleBiome(biome) {
         if (!OFFICIAL_BIOMES.includes(biome)) return;
-        const flagBiomes = this.itemData?.flags?.[MODULE.ID]?.biomes ?? this.existingItem?.flags?.[MODULE.ID]?.biomes ?? [];
+        const f = this.itemData?.flags?.[MODULE.ID] ?? this.existingItem?.flags?.[MODULE.ID] ?? {};
+        const flagBiomes = f[ARTIFICER_FLAG_KEYS.BIOMES] ?? f.biomes ?? [];
         const current = this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : []);
         const next = current.includes(biome) ? current.filter(b => b !== biome) : [...current, biome];
         this._formState = this._formState ?? {};

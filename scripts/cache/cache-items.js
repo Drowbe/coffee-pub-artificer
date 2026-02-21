@@ -7,7 +7,7 @@
 
 import { MODULE } from '../const.js';
 import { postDebug } from '../utils/helpers.js';
-import { LEGACY_FAMILY_TO_FAMILY } from '../schema-artificer-item.js';
+import { LEGACY_FAMILY_TO_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 
 /** Schema version for cache invalidation */
 const ITEM_CACHE_VERSION = 1;
@@ -93,7 +93,7 @@ function itemToRecord(item, source) {
     const sys = item.system ?? {};
     const typeVal = sys?.type?.value ?? item.type ?? '';
     const subtype = (sys?.type?.subtype ?? sys?.consumableType ?? '').toLowerCase?.() ?? '';
-    let family = flags.family ?? '';
+    let family = flags[ARTIFICER_FLAG_KEYS.FAMILY] ?? flags.family ?? '';
     family = LEGACY_FAMILY_TO_FAMILY[family] ?? family;
     if (!family && typeVal === 'consumable' && subtype) {
         const legacyFamily = DND_CONSUMABLE_FAMILY[subtype] ?? 'Environmental';
@@ -101,10 +101,11 @@ function itemToRecord(item, source) {
     }
     if (!family) family = 'Environmental';
 
-    const tags = Array.isArray(flags.traits)
-        ? flags.traits
+    const tags = Array.isArray(flags[ARTIFICER_FLAG_KEYS.TRAITS] ?? flags.traits)
+        ? (flags[ARTIFICER_FLAG_KEYS.TRAITS] ?? flags.traits)
         : [flags.primaryTag, ...(Array.isArray(flags.secondaryTags) ? flags.secondaryTags : []), flags.quirk].filter(Boolean);
 
+    const tierVal = flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? flags.tier;
     return {
         name: item.name ?? '',
         uuid: item.uuid ?? '',
@@ -113,10 +114,10 @@ function itemToRecord(item, source) {
         dndType: subtype || typeVal,
         family,
         tags,
-        tier: typeof flags.tier === 'number' ? flags.tier : 1,
-        rarity: flags.rarity ?? 'Common',
+        tier: typeof tierVal === 'number' ? tierVal : 1,
+        rarity: (item.system?.rarity ?? 'Common').trim() || 'Common',
         source,
-        artificerType: flags.type ?? null
+        artificerType: flags[ARTIFICER_FLAG_KEYS.TYPE] ?? flags.type ?? null
     };
 }
 
@@ -357,7 +358,10 @@ export async function getFromCache(name, typeFilter) {
     if (cached) {
         if (typeFilter === 'container') {
             const f = cached.flags?.artificer ?? cached.flags?.[MODULE.ID];
-            if (f?.type !== 'container') return null;
+            const t = f?.[ARTIFICER_FLAG_KEYS.TYPE] ?? f?.type;
+            const fam = f?.[ARTIFICER_FLAG_KEYS.FAMILY] ?? f?.family;
+            const isContainer = t === 'container' || (t === 'Tool' && fam === 'Container');
+            if (!isContainer) return null;
         }
         return cached;
     }
@@ -370,7 +374,10 @@ export async function getFromCache(name, typeFilter) {
         if (!item) return null;
         if (typeFilter === 'container') {
             const f = item.flags?.artificer ?? item.flags?.[MODULE.ID];
-            if (f?.type !== 'container') return null;
+            const t = f?.[ARTIFICER_FLAG_KEYS.TYPE] ?? f?.type;
+            const fam = f?.[ARTIFICER_FLAG_KEYS.FAMILY] ?? f?.family;
+            const isContainer = t === 'container' || (t === 'Tool' && fam === 'Container');
+            if (!isContainer) return null;
         }
         return item;
     } catch {

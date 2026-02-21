@@ -6,7 +6,7 @@ import { MODULE } from '../../const.js';
 import { postDebug, postError } from '../../utils/helpers.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 import { getArtificerTypeFromFlags, getFamilyFromFlags, getTraitsFromFlags } from '../../utility-artificer-item.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../../schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, ARTIFICER_FLAG_KEYS } from '../../schema-artificer-item.js';
 
 /**
  * ArtificerIngredient - Raw material data model
@@ -25,22 +25,27 @@ export class ArtificerIngredient {
         const type = getArtificerTypeFromFlags(flags);
         const family = getFamilyFromFlags(flags);
         const traits = getTraitsFromFlags(flags) ?? [];
-        const isLegacyIngredient = flags?.type === 'ingredient';
+        const flagType = flags?.[ARTIFICER_FLAG_KEYS.TYPE] ?? flags?.type;
+        const isLegacyIngredient = flagType === 'ingredient';
         const isComponent = type === ARTIFICER_TYPES.COMPONENT;
         if (!isComponent && !isLegacyIngredient) return null;
         const primaryTag = traits[0] ?? flags?.primaryTag ?? '';
         const secondaryTags = traits.length > 1 ? traits.slice(1) : (Array.isArray(flags?.secondaryTags) ? flags.secondaryTags : []);
-        const quirk = flags?.quirk ?? null;
+        const quirk = flags?.[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags?.quirk ?? null;
+        const flagFamily = flags?.[ARTIFICER_FLAG_KEYS.FAMILY] ?? flags?.family;
+        const flagTier = flags?.[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags?.skillLevel ?? flags?.tier;
+        const flagBiomes = flags?.[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags?.biomes;
+        const itemRarity = (item.system?.rarity ?? '').trim();
         return new ArtificerIngredient({
             id: item.uuid,
             name: item.name,
-            family: family || flags?.family || INGREDIENT_FAMILIES.HERBS,
-            tier: Math.max(1, parseInt(flags?.skillLevel ?? flags?.tier, 10) || 1),
-            rarity: flags?.rarity ?? INGREDIENT_RARITIES.COMMON,
+            family: family || flagFamily || INGREDIENT_FAMILIES.HERBS,
+            tier: Math.max(1, parseInt(flagTier, 10) || 1),
+            rarity: itemRarity || INGREDIENT_RARITIES.COMMON,
             primaryTag,
             secondaryTags,
             quirk,
-            biomes: Array.isArray(flags?.biomes) ? flags.biomes : [],
+            biomes: Array.isArray(flagBiomes) ? flagBiomes : [],
             description: item.system?.description?.value ?? '',
             image: item.img ?? null,
             source: item.compendium?.collection?.metadata?.id ?? null

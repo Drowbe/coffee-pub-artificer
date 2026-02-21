@@ -4,14 +4,12 @@ Name:
 Type: 
 Source: 
 License:
-Artificer type: container
+Artificer type: Tool
 Family: 
-Primary tag: 
-Secondary tags: 
-Tier: 
+Traits: 
+Skill level: 
 Rarity: 
 Quirk: 
-Biomes: 
 Weight: 
 Price: 
 Description: 
@@ -38,22 +36,19 @@ For the image, show the container as a crafting tool. Do not embed the JSON in t
 JSON TEMPLATE FOR CONTAINERS
 ===============================
 
-Containers use type "loot" and flags.artificer.type "container". Include core Artificer fields for recipe matching.
+Use namespaced Artificer flags: artificerType "Tool", artificerFamily "Container" or "Apparatus". Include artificerTraits for recipe matching.
 
-CONTAINER FAMILIES (family):
-- Glass (Beaker, Vial)
-- Ceramic (Mortar and Pestle)
-- Metal (Crucible)
-- General (Mixing Bowl)
-- Cloth (Herb Bag)
+FAMILY (artificerType "Tool" only):
+- Container: Vials, herb bags, mixing bowls — items that hold/carry results
+- Apparatus: Beakers, mortar and pestle, crucibles — items used to process (heat, grind)
 
-TAGS for recipe matching (primaryTag, secondaryTags):
-- Beaker: Liquid, Heat-Safe
-- Vial: Liquid, Small
-- Mortar and Pestle: Grinding, Dry
-- Crucible: Metal, High-Heat
-- Mixing Bowl: General, Mixing
-- Herb Bag: Herbal, Infusion
+ARTIFICER TRAITS for recipe matching (2–5 strings):
+- Beaker: ["Liquid", "Heat-Safe", "Glass"]
+- Vial: ["Liquid", "Small", "Glass"]
+- Mortar and Pestle: ["Grinding", "Dry", "Ceramic"]
+- Crucible: ["Metal", "High-Heat"]
+- Mixing Bowl: ["General", "Mixing", "Ceramic"]
+- Herb Bag: ["Herbal", "Infusion", "Cloth"]
 
 {
   "name": "CONTAINERNAME",
@@ -68,14 +63,10 @@ TAGS for recipe matching (primaryTag, secondaryTags):
   },
   "flags": {
     "coffee-pub-artificer": {
-      "type": "container",
-      "family": "FAMILY",
-      "primaryTag": "PRIMARYTAG",
-      "secondaryTags": ["TAG1", "TAG2"],
-      "tier": 1,
-      "rarity": "Common",
-      "quirk": null,
-      "biomes": []
+      "artificerType": "Tool",
+      "artificerFamily": "Container",
+      "artificerTraits": ["TRAIT1", "TRAIT2"],
+      "artificerSkillLevel": 1
     }
   }
 }
@@ -83,7 +74,5 @@ TAGS for recipe matching (primaryTag, secondaryTags):
 REQUIRED:
 - source: Always set. Use system.source with value, custom, and license.
 - license: Use "OGL", "CC-BY-4.0", or project license. Never leave empty.
-- family: One of Glass, Ceramic, Metal, General, Cloth.
-- primaryTag, secondaryTags: For recipe/container matching. Tags help recipes require specific containers (e.g. potion recipes → Liquid container).
-
-Note: The Artificer import currently requires type "ingredient", "component", or "essence". Container support may need to be added to the import utility. Until then, create these items manually via the Create Item form with flags.artificer.type = "container".
+- artificerFamily: "Container" or "Apparatus" (for artificerType Tool).
+- artificerTraits: Non-empty array. Used for recipe matching (e.g. potion recipes require Liquid container).

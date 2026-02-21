@@ -9,7 +9,8 @@ import {
     ARTIFICER_TYPES,
     LEGACY_TYPE_TO_ARTIFICER_TYPE,
     LEGACY_FAMILY_TO_FAMILY,
-    FAMILIES_BY_TYPE
+    FAMILIES_BY_TYPE,
+    ARTIFICER_FLAG_KEYS
 } from './schema-artificer-item.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 
@@ -70,7 +71,9 @@ export async function resolveItemByName(name, type) {
                 if (!item) continue;
                 if (type === 'container') {
                     const f = item.flags?.artificer ?? item.flags?.[MODULE.ID];
-                    const isContainer = f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
+                    const t = f?.[ARTIFICER_FLAG_KEYS.TYPE] ?? f?.type;
+                    const fam = f?.[ARTIFICER_FLAG_KEYS.FAMILY] ?? f?.family;
+                    const isContainer = t === 'container' || (t === ARTIFICER_TYPES.TOOL && fam === 'Container');
                     if (!isContainer) continue;
                 }
                 return item;
@@ -88,7 +91,9 @@ export async function resolveItemByName(name, type) {
             if ((i.name ?? '').trim() !== targetName) continue;
             if (type === 'container') {
                 const f = i.flags?.artificer ?? i.flags?.[MODULE.ID];
-                const isContainer = f?.type === 'container' || (f?.type === ARTIFICER_TYPES.TOOL && f?.family === 'Container');
+                const t = f?.[ARTIFICER_FLAG_KEYS.TYPE] ?? f?.type;
+                const fam = f?.[ARTIFICER_FLAG_KEYS.FAMILY] ?? f?.family;
+                const isContainer = t === 'container' || (t === ARTIFICER_TYPES.TOOL && fam === 'Container');
                 if (!isContainer) continue;
             }
             return i;
@@ -319,26 +324,25 @@ function deepMergeSystem(defaults, incoming) {
 }
 
 /**
- * Build Artificer flags (TYPE > FAMILY > TRAITS).
+ * Build Artificer flags (namespaced keys: artificerType, artificerFamily, etc.).
  * @param {Object} artificerData - { type, family, traits, skillLevel, rarity, biomes?, affinity? }
  * @returns {Object} Flags structure
  */
 function buildArtificerFlags(artificerData) {
     const type = artificerData.type || ARTIFICER_TYPES.COMPONENT;
     const flags = {
-        type,
-        family: artificerData.family || '',
-        traits: Array.isArray(artificerData.traits) ? artificerData.traits : [],
-        skillLevel: Math.max(1, parseInt(artificerData.skillLevel, 10) || 1),
-        rarity: artificerData.rarity || 'Common'
+        [ARTIFICER_FLAG_KEYS.TYPE]: type,
+        [ARTIFICER_FLAG_KEYS.FAMILY]: artificerData.family || '',
+        [ARTIFICER_FLAG_KEYS.TRAITS]: Array.isArray(artificerData.traits) ? artificerData.traits : [],
+        [ARTIFICER_FLAG_KEYS.SKILL_LEVEL]: Math.max(1, parseInt(artificerData.skillLevel, 10) || 1)
     };
     if (type === ARTIFICER_TYPES.COMPONENT) {
         if (Array.isArray(artificerData.biomes)) {
-            flags.biomes = artificerData.biomes.filter(b => OFFICIAL_BIOMES.includes(b));
+            flags[ARTIFICER_FLAG_KEYS.BIOMES] = artificerData.biomes.filter(b => OFFICIAL_BIOMES.includes(b));
         }
-        if (artificerData.quirk) flags.quirk = String(artificerData.quirk).trim();
+        if (artificerData.quirk) flags[ARTIFICER_FLAG_KEYS.QUIRK] = String(artificerData.quirk).trim();
     }
-    if (artificerData.affinity) flags.affinity = artificerData.affinity;
+    if (artificerData.affinity) flags[ARTIFICER_FLAG_KEYS.AFFINITY] = artificerData.affinity;
     return flags;
 }
 
@@ -372,58 +376,64 @@ export function validateArtificerData(artificerData) {
 }
 
 /**
- * Get artificer type from flags (supports legacy type values).
+ * Get artificer type from flags (supports namespaced artificerType and legacy type).
  * @param {Object} flags - flags[MODULE.ID]
  * @returns {string|null} Component | Creation | Tool | null
  */
 export function getArtificerTypeFromFlags(flags) {
     if (!flags) return null;
-    if (Object.values(ARTIFICER_TYPES).includes(flags.type)) return flags.type;
-    return LEGACY_TYPE_TO_ARTIFICER_TYPE[flags.type] ?? null;
+    const t = flags[ARTIFICER_FLAG_KEYS.TYPE] ?? flags.type;
+    if (Object.values(ARTIFICER_TYPES).includes(t)) return t;
+    return LEGACY_TYPE_TO_ARTIFICER_TYPE[t] ?? null;
 }
 
 /**
- * Get family from flags (supports legacy family values).
+ * Get family from flags (supports namespaced artificerFamily and legacy family).
  * @param {Object} flags - flags[MODULE.ID]
  * @returns {string|null}
  */
 export function getFamilyFromFlags(flags) {
     if (!flags) return null;
-    if (flags.family && !flags.primaryTag) return flags.family;
-    return LEGACY_FAMILY_TO_FAMILY[flags.family] ?? flags.family ?? null;
+    const fam = flags[ARTIFICER_FLAG_KEYS.FAMILY] ?? flags.family;
+    if (fam && !flags.primaryTag) {
+        return LEGACY_FAMILY_TO_FAMILY[fam] ?? fam;
+    }
+    return LEGACY_FAMILY_TO_FAMILY[fam] ?? fam ?? null;
 }
 
 /**
- * Get traits array from flags (supports legacy primaryTag/secondaryTags/quirk).
+ * Get traits array from flags (supports namespaced artificerTraits and legacy primaryTag/secondaryTags/quirk).
  * @param {Object} flags - flags[MODULE.ID]
  * @returns {string[]}
  */
 export function getTraitsFromFlags(flags) {
     if (!flags) return [];
-    if (Array.isArray(flags.traits)) return flags.traits;
+    const arr = flags[ARTIFICER_FLAG_KEYS.TRAITS] ?? flags.traits;
+    if (Array.isArray(arr)) return arr;
     const primary = flags.primaryTag ? [flags.primaryTag] : [];
     const secondary = Array.isArray(flags.secondaryTags) ? flags.secondaryTags : [];
-    const quirk = flags.quirk ? [flags.quirk] : [];
+    const q = flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk;
+    const quirk = q ? [q] : [];
     return [...primary, ...secondary, ...quirk].filter(Boolean);
 }
 
 /**
- * Extract artificer data from an item (normalized; supports legacy flags).
+ * Extract artificer data from an item (normalized; supports namespaced and legacy flags).
  * @param {Item} item - Item to extract data from
  * @returns {Object} Artificer data (type, family, traits, skillLevel, rarity, biomes, quirk, affinity)
  */
 export function extractArtificerData(item) {
     const flags = item.flags[MODULE.ID] || {};
-    const rawBiomes = flags.biomes || [];
+    const rawBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
     return {
         type: getArtificerTypeFromFlags(flags) || ARTIFICER_TYPES.COMPONENT,
         family: getFamilyFromFlags(flags) || '',
         traits: getTraitsFromFlags(flags),
-        skillLevel: flags.skillLevel ?? 1,
-        rarity: flags.rarity || 'Common',
+        skillLevel: flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1,
+        rarity: (item.system?.rarity ?? 'Common').trim() || 'Common',
         biomes: Array.isArray(rawBiomes) ? rawBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : [],
-        quirk: flags.quirk || null,
-        affinity: flags.affinity || null
+        quirk: (flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk) || null,
+        affinity: (flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity) || null
     };
 }
 
@@ -433,7 +443,9 @@ export function extractArtificerData(item) {
  * @returns {boolean}
  */
 export function isArtificerItem(item) {
-    const t = item.flags[MODULE.ID]?.type;
+    const f = item.flags[MODULE.ID];
+    if (!f) return false;
+    const t = f[ARTIFICER_FLAG_KEYS.TYPE] ?? f.type;
     return !!(t && (Object.values(ARTIFICER_TYPES).includes(t) || LEGACY_TYPE_TO_ARTIFICER_TYPE[t]));
 }
 

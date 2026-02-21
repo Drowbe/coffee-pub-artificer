@@ -5,7 +5,7 @@
 import { MODULE } from '../const.js';
 import { postError } from '../utils/helpers.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
-import { resolveItemByName, getTraitsFromFlags, addCraftedItemToActor } from '../utility-artificer-item.js';
+import { resolveItemByName, getTraitsFromFlags, getArtificerTypeFromFlags, addCraftedItemToActor } from '../utility-artificer-item.js';
 import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
 
 /**
@@ -16,7 +16,7 @@ import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
 export function getTagsFromItem(item) {
     const flags = item?.flags?.[MODULE.ID] || item?.flags?.artificer;
     if (!flags) return [];
-    const type = flags.type;
+    const type = getArtificerTypeFromFlags(flags);
 
     if (type === ARTIFICER_TYPES.COMPONENT || type === ARTIFICER_TYPES.CREATION || type === ARTIFICER_TYPES.TOOL) {
         return getTraitsFromFlags(flags).map(t => String(t).toLowerCase());

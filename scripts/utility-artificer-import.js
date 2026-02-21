@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 import { postDebug, postError } from './utils/helpers.js';
 import { createArtificerItem, validateArtificerData } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, LEGACY_FAMILY_TO_FAMILY, FAMILIES_BY_TYPE } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 
 /**
@@ -64,39 +64,40 @@ export function validateImportPayload(payload) {
         throw new Error('Payload must have a "name" field (string)');
     }
     
-    const artificerFlags = payload.flags?.[MODULE.ID] || payload.artificer || {};
-    let type = artificerFlags.type;
-    const legacyTypes = ['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer', 'tool'];
-    if (!type || (!Object.values(ARTIFICER_TYPES).includes(type) && !legacyTypes.includes(type))) {
-        throw new Error(`Payload must have flags.${MODULE.ID}.type (Component, Creation, Tool, or legacy)`);
+    const artificerFlags = payload.flags?.[MODULE.ID];
+    if (!artificerFlags || typeof artificerFlags !== 'object') {
+        throw new Error(`Payload must have flags.${MODULE.ID} with artificerType, artificerFamily, and artificerTraits`);
     }
-    if (legacyTypes.includes(type)) type = LEGACY_TYPE_TO_ARTIFICER_TYPE[type] ?? ARTIFICER_TYPES.COMPONENT;
-
-    let family = artificerFlags.family ?? '';
-    family = LEGACY_FAMILY_TO_FAMILY[family] ?? family;
-    if (!family && FAMILIES_BY_TYPE[type]?.length) family = FAMILIES_BY_TYPE[type][0];
-
-    let traits = Array.isArray(artificerFlags.traits) ? artificerFlags.traits : [];
+    const type = artificerFlags[ARTIFICER_FLAG_KEYS.TYPE] ?? artificerFlags.type;
+    if (!type || !Object.values(ARTIFICER_TYPES).includes(type)) {
+        throw new Error(`Payload must have flags.${MODULE.ID}.artificerType (Component, Creation, or Tool)`);
+    }
+    const family = artificerFlags[ARTIFICER_FLAG_KEYS.FAMILY] ?? artificerFlags.family ?? '';
+    const validFamilies = FAMILIES_BY_TYPE[type];
+    if (!family || (validFamilies?.length && !validFamilies.includes(family))) {
+        throw new Error(`Payload must have flags.${MODULE.ID}.artificerFamily (one of: ${validFamilies?.join(', ') ?? 'see schema'})`);
+    }
+    const traitsRaw = artificerFlags[ARTIFICER_FLAG_KEYS.TRAITS] ?? artificerFlags.traits;
+    const traits = Array.isArray(traitsRaw) ? traitsRaw : [];
     if (traits.length === 0) {
-        const p = artificerFlags.primaryTag ? [artificerFlags.primaryTag] : [];
-        const s = Array.isArray(artificerFlags.secondaryTags) ? artificerFlags.secondaryTags : [];
-        const q = artificerFlags.quirk ? [artificerFlags.quirk] : [];
-        traits = [...p, ...s, ...q].filter(Boolean);
+        throw new Error(`Payload must have flags.${MODULE.ID}.artificerTraits (non-empty array of tag strings)`);
     }
 
     const artificerData = {
         type,
         family,
         traits,
-        skillLevel: Math.max(1, parseInt(artificerFlags.skillLevel, 10) || 1),
-        rarity: artificerFlags.rarity || payload.rarity || payload.system?.rarity || 'Common'
+        skillLevel: Math.max(1, parseInt(artificerFlags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? artificerFlags.skillLevel, 10) || 1)
     };
     if (type === ARTIFICER_TYPES.COMPONENT) {
-        artificerData.biomes = Array.isArray(artificerFlags.biomes)
-            ? artificerFlags.biomes.filter(b => OFFICIAL_BIOMES.includes(b))
+        const biomesRaw = artificerFlags[ARTIFICER_FLAG_KEYS.BIOMES] ?? artificerFlags.biomes;
+        artificerData.biomes = Array.isArray(biomesRaw)
+            ? biomesRaw.filter(b => OFFICIAL_BIOMES.includes(b))
             : [];
-        if (artificerFlags.quirk) artificerData.quirk = String(artificerFlags.quirk).trim();
-        if (artificerFlags.affinity) artificerData.affinity = artificerFlags.affinity;
+        const quirk = artificerFlags[ARTIFICER_FLAG_KEYS.QUIRK] ?? artificerFlags.quirk;
+        if (quirk) artificerData.quirk = String(quirk).trim();
+        const affinity = artificerFlags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? artificerFlags.affinity;
+        if (affinity) artificerData.affinity = affinity;
     }
 
     validateArtificerData(artificerData);

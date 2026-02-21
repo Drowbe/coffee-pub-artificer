@@ -10,8 +10,7 @@ import {
     getFamilyFromFlags,
     getTraitsFromFlags
 } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES } from './schema-artificer-item.js';
-import { FAMILY_LABELS } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 
 /**
  * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
@@ -145,11 +144,11 @@ function buildArtificerSection(item, flags, editable) {
     const traits = getTraitsFromFlags(flags);
     const familyLabel = family ? (FAMILY_LABELS[family] ?? family) : '';
     const traitsStr = traits.length ? traits.join(', ') : '';
-    const biomes = Array.isArray(flags.biomes) ? flags.biomes : [];
+    const biomes = Array.isArray(flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes) ? (flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes) : [];
     const biomesStr = biomes.join(', ');
-    const quirk = flags.quirk ?? '';
-    const affinity = flags.affinity ?? '';
-    const skillLevel = flags.skillLevel ?? 1;
+    const quirk = flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk ?? '';
+    const affinity = flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity ?? '';
+    const skillLevel = flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1;
 
     const rows = [];
     if (artificerType) rows.push({ label: 'Type', value: artificerType });

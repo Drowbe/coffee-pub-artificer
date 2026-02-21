@@ -36,12 +36,13 @@ const errors = [];
 
 for (const item of game.items) {
     const flags = item.flags?.[MODULE_ID] ?? item.flags?.artificer;
-    if (!flags || !Array.isArray(flags.biomes) || flags.biomes.length === 0) {
+    const biomesRaw = flags?.artificerBiomes ?? flags?.biomes;
+    if (!flags || !Array.isArray(biomesRaw) || biomesRaw.length === 0) {
         skipped++;
         continue;
     }
 
-    const rawBiomes = flags.biomes;
+    const rawBiomes = biomesRaw;
     const allOfficial = rawBiomes.every(b => OFFICIAL_BIOMES.has(String(b).toUpperCase()));
     if (allOfficial) {
         skipped++;
@@ -49,7 +50,8 @@ for (const item of game.items) {
     }
 
     const newBiomes = new Set();
-    let quirkToAdd = flags.quirk ? [flags.quirk] : [];
+    const existingQuirk = flags?.artificerQuirk ?? flags?.quirk;
+    let quirkToAdd = existingQuirk ? [existingQuirk] : [];
 
     for (const b of rawBiomes) {
         const key = String(b).toLowerCase().trim();
@@ -65,12 +67,12 @@ for (const item of game.items) {
     }
 
     const finalBiomes = Array.from(newBiomes);
-    const finalQuirk = quirkToAdd.length > 0 ? quirkToAdd.join('; ') : (flags.quirk || '');
+    const finalQuirk = quirkToAdd.length > 0 ? quirkToAdd.join('; ') : (existingQuirk || '');
 
     try {
         const flagKey = item.flags[MODULE_ID] ? MODULE_ID : 'artificer';
-        const updateData = { [`flags.${flagKey}.biomes`]: finalBiomes };
-        if (finalQuirk) updateData[`flags.${flagKey}.quirk`] = finalQuirk;
+        const updateData = { [`flags.${flagKey}.artificerBiomes`]: finalBiomes };
+        if (finalQuirk) updateData[`flags.${flagKey}.artificerQuirk`] = finalQuirk;
         await item.update(updateData);
         migrated++;
     } catch (e) {

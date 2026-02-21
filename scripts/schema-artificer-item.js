@@ -111,13 +111,33 @@ export const LEGACY_FAMILY_TO_FAMILY = {
 };
 
 /**
+ * Namespaced flag keys to avoid confusion with item.type, item.system, etc.
+ * Readers support both namespaced (artificerX) and legacy (x) keys for backward compatibility.
+ */
+export const ARTIFICER_FLAG_KEYS = {
+    TYPE: 'artificerType',
+    FAMILY: 'artificerFamily',
+    TRAITS: 'artificerTraits',
+    SKILL_LEVEL: 'artificerSkillLevel',
+    BIOMES: 'artificerBiomes',
+    QUIRK: 'artificerQuirk',
+    AFFINITY: 'artificerAffinity'
+};
+
+/**
  * @typedef {Object} ArtificerItemFlags
- * @property {string} type - ARTIFICER_TYPES value (Component | Creation | Tool)
- * @property {string} family - Family within type (e.g. Plant, Potion, Apparatus)
- * @property {string[]} traits - Modifier traits (do not repeat type/family)
- * @property {number} skillLevel - Minimum crafting skill level (1+)
- * @property {string} [rarity] - Rarity
- * @property {string[]} [biomes] - Biomes (components)
- * @property {string} [affinity] - Essence Affinity (Heat|Cold|Electric|...). Only when family is Essence.
- * @property {string} [quirk] - Optional quirk (e.g. Found in Battlefields). Components only.
+ * @property {string} [artificerType] - ARTIFICER_TYPES value (Component | Creation | Tool)
+ * @property {string} [artificerFamily] - Family within type (e.g. Plant, Potion, Apparatus)
+ * @property {string[]} [artificerTraits] - Modifier traits (do not repeat type/family)
+ * @property {number} [artificerSkillLevel] - Minimum crafting skill level (1+)
+ * @property {string[]} [artificerBiomes] - Biomes (components only)
+ * @property {string} [artificerAffinity] - Essence Affinity (Heat|Cold|Electric|...). Essence family only.
+ * @property {string} [artificerQuirk] - Optional quirk (e.g. Found in Battlefields). Components only.
+ * @property {string} [type] - (legacy) Use artificerType
+ * @property {string} [family] - (legacy) Use artificerFamily
+ * @property {string[]} [traits] - (legacy) Use artificerTraits
+ * @property {number} [skillLevel] - (legacy) Use artificerSkillLevel
+ * @property {string[]} [biomes] - (legacy) Use artificerBiomes
+ * @property {string} [affinity] - (legacy) Use artificerAffinity
+ * @property {string} [quirk] - (legacy) Use artificerQuirk
  */
