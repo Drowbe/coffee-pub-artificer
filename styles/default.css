@@ -22,9 +22,6 @@
 /* --- Skills Window ---------------- */
 @import "window-skills.css";
 
-/* --- Import Window --------------- */
-@import "import-items.css";
-
 /* --- Item Sheet Integration ------ */
 @import "item-sheet.css";
 
