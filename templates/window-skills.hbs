@@ -1,8 +1,7 @@
-{{!-- Artificer Skills - Stacked horizontal skill panels left, details right. Same header/button bar as crafting. --}}
+{{!-- Artificer Skills - Stacked panels left, details right. Badge = skill details; slot = slot details. --}}
 
 <div class="skills-window-root">
-
-    {{!-- HEADER (same style as window-crafting) --}}
+    <!-- Header -->
     <header class="skills-window-header">
         <div class="skills-window-header-content">
             <div class="skills-window-header-icon">
@@ -23,33 +22,20 @@
         </div>
     </header>
 
-    {{!-- BODY: left = stacked skill panels, right = details --}}
     <div class="skills-window-body">
-        {{!-- Left: stacked horizontal panels (one per skill path) --}}
-        <div class="skills-window-panels">
+        <!-- Skill panels -->
+            <div class="skills-window-panels">
             {{#each skillPaths}}
             <section class="skills-panel" data-skill="{{this.id}}">
-                <div class="skills-panel-badge" title="{{this.name}}">
-                    {{#if this.img}}
-                    <div class="skills-panel-badge-img-wrap">
-                        <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
-                    </div>
-                    {{else}}
-                    <div class="skills-panel-badge-icon-wrap">
-                        <i class="{{this.icon}}"></i>
-                    </div>
-                    {{/if}}
-                    <span class="skills-panel-badge-label">{{this.name}}</span>
+                <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}">
+                    <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
+                    <div class="skills-panel-badge-label">{{this.name}}</div>
                 </div>
                 <div class="skills-panel-slots">
                     {{#each this.slots}}
-                    <div class="skills-slot {{#if this.unlocked}}skills-slot-unlocked{{/if}}{{#if this.locked}}skills-slot-locked{{/if}}{{#if this.selected}}skills-slot-selected{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{@index}}" data-action="selectSkillSlot" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}">
-                        {{#if this.locked}}
-                        <i class="fa-solid fa-lock skills-slot-lock-icon"></i>
-                        {{else}}
-                        {{#if this.unlocked}}<i class="fa-solid fa-check skills-slot-check-icon"></i>{{/if}}
-                        <i class="fa-solid {{this.icon}} skills-slot-icon"></i>
-                        {{/if}}
+                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.backgroundColor}} style="--slot-bg: {{this.backgroundColor}}; --slot-border: {{this.borderColor}}; background-color: {{this.backgroundColor}}; border-color: {{this.borderColor}};"{{/if}}>
+                        {{#if this.iconClass}}<i class="{{this.iconClass}} skills-slot-icon"></i>{{/if}}
+                        <span class="skills-slot-number">{{this.displayValue}}</span>
                     </div>
                     {{/each}}
                 </div>
@@ -57,31 +43,38 @@
             {{/each}}
         </div>
 
-        {{!-- Right: details pane (same concept as crafting Details) --}}
+        <!-- Details pane -->
         <aside class="skills-window-details">
             <section class="skills-zone-section">
                 <h3 class="skills-zone-section-title">Details</h3>
                 <div class="skills-details-content">
-                    {{#if selectedSkill}}
-                    <div class="skills-detail-name">{{selectedSkill.name}}</div>
-                    {{#if selectedSkill.requirement}}
-                    <div class="skills-detail-requirement">{{selectedSkill.requirement}}</div>
-                    {{/if}}
-                    {{#if selectedSkill.description}}
-                    <div class="skills-detail-description">{{{selectedSkill.description}}}</div>
-                    {{/if}}
-                    {{#if selectedSkill.cost}}
-                    <div class="skills-detail-cost">Cost: {{selectedSkill.cost}} point(s)</div>
-                    {{/if}}
+                    {{#if selectedDetail}}
+                        {{#if selectedDetail.slot}}
+                        <div class="skills-detail-name">{{#if selectedDetail.slot.iconClass}}<i class="{{selectedDetail.slot.iconClass}} skills-detail-slot-icon"></i> {{/if}}{{selectedDetail.slot.name}}{{#unless selectedDetail.slot.name}}Slot {{selectedDetail.slot.index}}{{/unless}}</div>
+                        {{#if selectedDetail.slot.requirement}}
+                        <div class="skills-detail-requirement">{{selectedDetail.slot.requirement}}</div>
+                        {{/if}}
+                        {{#if selectedDetail.slot.description}}
+                        <div class="skills-detail-description">{{{selectedDetail.slot.description}}}</div>
+                        {{/if}}
+                        {{#if selectedDetail.slot.cost}}
+                        <div class="skills-detail-cost">Cost: {{selectedDetail.slot.cost}} point(s)</div>
+                        {{/if}}
+                        {{else}}
+                        <div class="skills-detail-name">{{selectedDetail.skill.name}}</div>
+                        {{#if selectedDetail.skill.description}}
+                        <div class="skills-detail-description">{{{selectedDetail.skill.description}}}</div>
+                        {{/if}}
+                        {{/if}}
                     {{else}}
-                    <div class="skills-zone-empty">Select a skill to see details.</div>
+                    <div class="skills-zone-empty">Select a skill or slot to see details.</div>
                     {{/if}}
                 </div>
             </section>
         </aside>
     </div>
 
-    {{!-- BUTTON BAR (same as crafting: Reset | Apply) --}}
+    <!-- Action buttons --> 
     <section class="skills-window-buttons">
         <div class="skills-window-action-bar">
             <div class="skills-window-action-left"></div>

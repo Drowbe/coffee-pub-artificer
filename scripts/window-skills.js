@@ -2,43 +2,41 @@
 // ===== ARTIFICER SKILLS WINDOW ====================================
 // ==================================================================
 // Stacked horizontal skill panels (left) + details pane (right).
-// Same header and button bar pattern as window-crafting.
-// Architecture placeholder: skill point investment and unlock logic TBD.
+// Data driven by resources/skills-details.json.
+// Click badge → skill details. Click slot → slot details.
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
-import { CRAFTING_SKILLS } from './schema-recipes.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
+const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
 
-/** Default skill path config: id, name, img (optional), icon (fallback), slotCount (2 rows × 4 cols = 8) */
-const SKILL_PATH_CONFIG = [
-    { id: CRAFTING_SKILLS.ALCHEMY, name: 'Alchemy', img: 'modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp', icon: 'fa-solid fa-flask', slotCount: 8 }
-    // Herbalism, Metallurgy, Artifice, Monster Handling: add when ready
-];
+/** Cached skills data from JSON */
+let _skillsDetailsCache = null;
 
-/** Placeholder: build stub slots for a skill path (unlocked/locked for UI demo) */
-function buildPlaceholderSlots(skillId, count = 8) {
-    const slots = [];
-    for (let i = 0; i < count; i++) {
-        slots.push({
-            name: `${skillId} ${i + 1}`,
-            icon: 'fa-solid fa-circle',
-            unlocked: i < 2,
-            locked: i >= 2,
-            selected: false,
-            requirement: i === 0 ? null : `Requires ${skillId} ${i}`,
-            cost: 1
-        });
+/**
+ * Load skills details from JSON. Caches result.
+ * @returns {Promise<{skills: Array}>}
+ */
+async function loadSkillsDetails() {
+    if (_skillsDetailsCache) return _skillsDetailsCache;
+    try {
+        const res = await fetch(SKILLS_DETAILS_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        _skillsDetailsCache = data;
+        return data;
+    } catch (e) {
+        console.warn('Artificer Skills: Could not load skills-details.json', e);
+        _skillsDetailsCache = { schemaVersion: 1, skills: [] };
+        return _skillsDetailsCache;
     }
-    return slots;
 }
 
 let _skillsDelegationAttached = false;
 let _currentSkillsWindowRef = null;
 
 /**
- * Artificer Skills Window - Invest skill points, unlock levels.
- * Layout: header (avatar, title, points) | body [ stacked skill panels | details ] | Reset / Apply.
+ * Artificer Skills Window - Skill and slot details driven by JSON.
  */
 export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
@@ -49,6 +47,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         actions: {
             reset: SkillsWindow._actionReset,
             apply: SkillsWindow._actionApply,
+            selectSkillBadge: SkillsWindow._actionSelectSkillBadge,
             selectSkillSlot: SkillsWindow._actionSelectSkillSlot
         }
     });
@@ -65,24 +64,20 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         super(opts);
         /** @type {Actor|null} */
         this._actor = null;
-        /** @type {string|null} skillId */
+        /** @type {string|null} selected skill id (badge or slot) */
         this._selectedSkillId = null;
-        /** @type {number|null} slot index */
+        /** @type {number|null} selected slot index (null = viewing skill details) */
         this._selectedSlotIndex = null;
-        /** Placeholder: available points to spend (TBD: read from actor flags) */
         this._availablePoints = 3;
     }
 
-    /** Resolve actor: same pattern as crafting (GM → controlled token, else player character) */
     _getActor() {
         if (game.user?.isGM && canvas.ready) {
             const controlled = canvas.tokens?.controlled ?? [];
             const token = controlled[0];
             if (token?.actor) return token.actor;
         }
-        const player = game.user;
-        const char = player?.character;
-        return char ?? null;
+        return game.user?.character ?? null;
     }
 
     async _prepareContext(options = {}) {
@@ -90,7 +85,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return foundry.utils.mergeObject(base, await this.getData(options));
     }
 
-    getData(options = {}) {
+    async getData(options = {}) {
         const actor = this._getActor();
         this._actor = actor;
 
@@ -98,28 +93,36 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const actorImg = actor?.img ?? null;
         const availablePoints = this._availablePoints;
 
-        const skillPaths = SKILL_PATH_CONFIG.map((cfg) => {
-            const slotCount = cfg.slotCount ?? 8;
-            const slots = buildPlaceholderSlots(cfg.id, slotCount);
-            const selId = this._selectedSkillId;
-            const selIdx = this._selectedSlotIndex;
-            if (selId === cfg.id && selIdx != null && slots[selIdx]) {
-                slots[selIdx] = { ...slots[selIdx], selected: true };
-            }
+        const { skills = [] } = await loadSkillsDetails();
+
+        const skillPaths = skills.map((skill) => {
+            const slots = (skill.slots ?? []).map((s, idx) => ({
+                ...s,
+                slotIndex: idx,
+                displayValue: Math.min(3, Math.max(0, s.value ?? 0)),
+                iconClass: s.icon ? (s.icon.startsWith('fa-') ? `fa-solid ${s.icon}` : `fa-solid fa-${s.icon}`) : null,
+                selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
+            }));
+
             return {
-                id: cfg.id,
-                name: cfg.name,
-                img: cfg.img ?? null,
-                icon: cfg.icon,
-                slots
+                id: skill.id,
+                name: skill.name,
+                img: skill.img,
+                description: skill.description ?? '',
+                slots,
+                badgeSelected: this._selectedSkillId === skill.id && this._selectedSlotIndex === null
             };
         });
 
-        let selectedSkill = null;
-        if (this._selectedSkillId != null && this._selectedSlotIndex != null) {
-            const path = skillPaths.find((p) => p.id === this._selectedSkillId);
-            const slot = path?.slots?.[this._selectedSlotIndex];
-            if (slot) selectedSkill = slot;
+        let selectedDetail = null;
+        const selSkill = skillPaths.find((p) => p.id === this._selectedSkillId);
+        if (selSkill) {
+            if (this._selectedSlotIndex != null) {
+                const slot = selSkill.slots?.[this._selectedSlotIndex];
+                if (slot) selectedDetail = { type: 'slot', skill: selSkill, slot };
+            } else {
+                selectedDetail = { type: 'skill', skill: selSkill, slot: null };
+            }
         }
 
         return {
@@ -128,7 +131,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             actorImg,
             availablePoints,
             skillPaths,
-            selectedSkill
+            selectedDetail
         };
     }
 
@@ -152,7 +155,19 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
-        // Placeholder: persist to actor flags TBD
+        w.render();
+    }
+
+    static _actionSelectSkillBadge(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w) return;
+        event?.preventDefault?.();
+        const badge = target?.closest?.('.skills-panel-badge[data-skill]');
+        if (!badge) return;
+        const skillId = badge.dataset?.skill;
+        if (!skillId) return;
+        w._selectedSkillId = skillId;
+        w._selectedSlotIndex = null;
         w.render();
     }
 
@@ -193,6 +208,12 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 SkillsWindow._actionApply.call(null, e, applyBtn);
                 return;
             }
+            const badge = e.target?.closest?.('.skills-panel-badge[data-action="selectSkillBadge"]');
+            if (badge) {
+                e.preventDefault?.();
+                SkillsWindow._actionSelectSkillBadge.call(null, e, badge);
+                return;
+            }
             const slot = e.target?.closest?.('.skills-slot');
             if (slot) {
                 e.preventDefault?.();
@@ -200,6 +221,14 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 return;
             }
         });
+    }
+
+    /**
+     * ApplicationV2 PARTS may not call activateListeners; attach delegation on first render.
+     */
+    async _onFirstRender(_context, options) {
+        await super._onFirstRender?.(_context, options);
+        this._attachDelegationOnce();
     }
 
     activateListeners(html) {
