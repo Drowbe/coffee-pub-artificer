@@ -102,6 +102,11 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 slotIndex: idx,
                 displayValue: s.cost ?? 0,
                 slotApplied: (s.value ?? 0) > 0,
+                slotMinSkillLevel: s.slotMinSkillLevel ?? 0,
+                slotMaxSkillLevel: s.slotMaxSkillLevel ?? 0,
+                slotBackgroundColor: s.slotBackgroundColor ?? s.backgroundColor ?? 'rgba(47, 63, 56, 0.4)',
+                slotBorderColor: s.slotBorderColor ?? s.borderColor ?? 'rgba(47, 63, 56, 0.6)',
+                slotSkillLearnedBackgroundColor: s.slotSkillLearnedBackgroundColor ?? 'rgba(47, 63, 56, 0.4)',
                 iconClass: s.icon ? (s.icon.startsWith('fa-') ? `fa-solid ${s.icon}` : `fa-solid fa-${s.icon}`) : null,
                 selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
             }));
@@ -113,6 +118,10 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 name: skill.name,
                 img: skill.img,
                 description: skill.description ?? '',
+                skillEnabled: skill.skillEnabled ?? false,
+                skillPanelColor: skill.skillPanelColor ?? 'rgba(0, 0, 0, 0.2)',
+                skillBadgeColor: skill.skillBadgeColor ?? 'rgba(0, 0, 0, 0.2)',
+                skillKit: skill.skillKit ?? '',
                 slots,
                 totalCost,
                 totalCostDots: Array.from({ length: totalCost }),

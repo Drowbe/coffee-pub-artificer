@@ -183,13 +183,16 @@
     align-items: stretch;
     gap: 8px;
     padding: 10px;
-    background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--skills-border-color);
     border-radius: 6px;
     flex: 0 0 auto;
     width: max-content;
     height: auto;
     min-height: 0;
+}
+
+.skills-panel-disabled {
+    opacity: 0.7;
 }
 
 
@@ -262,7 +265,6 @@
     min-width: 0;
     min-height: 0;
 
-    background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--skills-border-color);
     border-radius: 8px 8px 8px 8px;
     overflow: hidden;
@@ -296,7 +298,6 @@
     min-width: max-content;
     min-height: max-content;
     padding: 0px;
-    background: rgb(31, 45, 23, 0.9);
     box-sizing: border-box;
 }
 
@@ -316,8 +317,8 @@
 
     position: relative;
 
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid var(--skills-border-color);
+    background-color: rgba(0, 0, 0, 0.4);
+    border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;

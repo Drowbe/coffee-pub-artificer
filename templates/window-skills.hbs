@@ -26,7 +26,7 @@
         <!-- Skill panels -->
             <div class="skills-window-panels">
             {{#each skillPaths}}
-            <section class="skills-panel" data-skill="{{this.id}}">
+            <section class="skills-panel {{#unless this.skillEnabled}}skills-panel-disabled{{/unless}}" data-skill="{{this.id}}" style="background-color: {{this.skillPanelColor}};">
                 <div class="skills-panel-label">
                     <span class="skills-panel-label-text">{{this.name}}</span>
                     <span class="skills-panel-label-dots">
@@ -36,14 +36,14 @@
                     </span>
                 </div>
                 <div class="skills-panel-row">
-                <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}">
+                <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}" style="background-color: {{this.skillBadgeColor}};">
                     <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
                 </div>
                 <div class="skills-panel-slots">
                     {{#each this.slots}}
-                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.backgroundColor}} style="--slot-bg: {{this.backgroundColor}}; --slot-border: {{this.borderColor}}; background-color: {{this.backgroundColor}}; border-color: {{this.borderColor}};"{{/if}}>
+                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}{{#if this.slotApplied}} skills-slot-learned{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotBackgroundColor}}; border-color: {{this.slotBorderColor}};"{{/if}}>
                         {{#if this.iconClass}}<i class="{{this.iconClass}} skills-slot-icon"></i>{{/if}}
-                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}">{{this.displayValue}}</span>
+                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotSkillLearnedBackgroundColor}};"{{/if}}>{{this.displayValue}}</span>
                     </div>
                     {{/each}}
                 </div>

@@ -1,85 +1,118 @@
 {
-    "schemaVersion": 1,
-    "skills": [
-      {
-        "id": "Alchemy",
-        "name": "Alchemy",
-        "img": "modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp",
-        "description": "Brew potions, refine ingredients, and push experimental mixtures.",
-        "slots": [
-          { "index": 1, "value": 0, "name": "Yield", "description": "Increase the number of doses produced when brewing.", "requirement": "", "cost": 1, "backgroundColor": "#2e3a34", "borderColor": "#485a52", "icon": "fa-flask" },
-          { "index": 2, "value": 0, "name": "Potency", "description": "Increase the strength and effectiveness of brewed potions.", "requirement": "", "cost": 2, "backgroundColor": "#4a2f33", "borderColor": "#6a474c", "icon": "fa-bolt" },
-          { "index": 3, "value": 0, "name": "Precision", "description": "Improve reliability and reduce waste during brewing.", "requirement": "", "cost": 1, "backgroundColor": "#2c3942", "borderColor": "#435760", "icon": "fa-crosshairs" },
-          { "index": 4, "value": 0, "name": "Stability", "description": "Reduce mishaps and dangerous side effects.", "requirement": "", "cost": 1, "backgroundColor": "#3a3244", "borderColor": "#544b63", "icon": "fa-shield-halved" },
-          { "index": 5, "value": 0, "name": "Efficiency", "description": "Lower ingredient consumption and reduce waste.", "requirement": "", "cost": 2, "backgroundColor": "#3e3a2d", "borderColor": "#5b5644", "icon": "fa-recycle" },
-          { "index": 6, "value": 0, "name": "Extraction", "description": "Harvest more usable essence from raw ingredients.", "requirement": "", "cost": 1, "backgroundColor": "#2f3f38", "borderColor": "#4b5d55", "icon": "fa-leaf" },
-          { "index": 7, "value": 0, "name": "Refinement", "description": "Process components into higher-quality materials.", "requirement": "", "cost": 2, "backgroundColor": "#42352c", "borderColor": "#5e4b3f", "icon": "fa-filter" },
-          { "index": 8, "value": 0, "name": "Speed", "description": "Reduce brewing time under pressure.", "requirement": "", "cost": 1, "backgroundColor": "#2c3440", "borderColor": "#445163", "icon": "fa-hourglass-half" },
-          { "index": 9, "value": 0, "name": "Experimentation", "description": "Attempt experimental and unconventional recipes.", "requirement": "", "cost": 3, "backgroundColor": "#3b2e3f", "borderColor": "#58475d", "icon": "fa-vials" },
-          { "index": 10, "value": 0, "name": "Mastery", "description": "Unlock higher-tier and advanced alchemical recipes.", "requirement": "", "cost": 3, "backgroundColor": "#3f2c2c", "borderColor": "#5c4242", "icon": "fa-crown" },
-          { "index": 11, "value": 0, "name": "Preservation", "description": "Improve storage stability and shelf life.", "requirement": "", "cost": 1, "backgroundColor": "#2f3f35", "borderColor": "#4a5e53", "icon": "fa-box-archive" },
-          { "index": 12, "value": 0, "name": "Volatility", "description": "Push brews beyond safe limits for greater reward at greater risk.", "requirement": "", "cost": 2, "backgroundColor": "#4a3035", "borderColor": "#6a484e", "icon": "fa-burst" }
-        ]
-      },
-      {
-        "id": "Herbalism",
-        "name": "Herbalism",
-        "img": "modules/coffee-pub-artificer/images/skills/skill-herbalism-01.webp",
-        "description": "Harvest, cultivate, and prepare botanical ingredients.",
-        "slots": [
-          { "index": 1, "value": 0, "name": "Foraging", "description": "Increase quantity of herbs gathered.", "requirement": "", "cost": 1, "backgroundColor": "#2f3a2e", "borderColor": "#4f5e4a", "icon": "fa-leaf" },
-          { "index": 2, "value": 0, "name": "Identification", "description": "Reveal hidden plant properties.", "requirement": "", "cost": 1, "backgroundColor": "#32402f", "borderColor": "#50644a", "icon": "fa-magnifying-glass" },
-          { "index": 3, "value": 0, "name": "Cultivation", "description": "Grow herbs more efficiently.", "requirement": "", "cost": 2, "backgroundColor": "#2e4036", "borderColor": "#4a6256", "icon": "fa-seedling" },
-          { "index": 4, "value": 0, "name": "Drying", "description": "Preserve harvested plants without losing potency.", "requirement": "", "cost": 1, "backgroundColor": "#3a3a2e", "borderColor": "#595944", "icon": "fa-wind" },
-          { "index": 5, "value": 0, "name": "Distillation", "description": "Extract stronger botanical essences.", "requirement": "", "cost": 2, "backgroundColor": "#2e3f3a", "borderColor": "#4a5e57", "icon": "fa-flask" },
-          { "index": 6, "value": 0, "name": "Toxicology", "description": "Safely handle poisonous flora.", "requirement": "", "cost": 2, "backgroundColor": "#3a2f2f", "borderColor": "#5a4747", "icon": "fa-skull" },
-          { "index": 7, "value": 0, "name": "Restoration", "description": "Improve healing potential of medicinal plants.", "requirement": "", "cost": 2, "backgroundColor": "#2f3f35", "borderColor": "#4a5e53", "icon": "fa-heart" },
-          { "index": 8, "value": 0, "name": "Hybridization", "description": "Combine plant traits into rare variants.", "requirement": "", "cost": 3, "backgroundColor": "#3f352f", "borderColor": "#5e5047", "icon": "fa-code-branch" },
-          { "index": 9, "value": 0, "name": "Resilience", "description": "Reduce spoilage and environmental degradation.", "requirement": "", "cost": 1, "backgroundColor": "#334035", "borderColor": "#4f6352", "icon": "fa-shield" },
-          { "index": 10, "value": 0, "name": "Preparation", "description": "Increase efficiency converting herbs to components.", "requirement": "", "cost": 1, "backgroundColor": "#3a3a34", "borderColor": "#58584f", "icon": "fa-mortar-pestle" },
-          { "index": 11, "value": 0, "name": "Experimentation", "description": "Attempt unconventional botanical recipes.", "requirement": "", "cost": 3, "backgroundColor": "#3b2e3f", "borderColor": "#58475d", "icon": "fa-vials" },
-          { "index": 12, "value": 0, "name": "Mastery", "description": "Unlock higher-tier botanical recipes.", "requirement": "", "cost": 3, "backgroundColor": "#3f2c2c", "borderColor": "#5c4242", "icon": "fa-crown" }
-        ]
-      },
-      {
-        "id": "Poisoncraft",
-        "name": "Poisoncraft",
-        "img": "modules/coffee-pub-artificer/images/skills/skill-poisoncraft-01.webp",
-        "description": "Create toxins, venoms, and subtle debilitating agents.",
-        "slots": [
-          { "index": 1, "value": 0, "name": "Toxic Potency", "description": "Increase the strength of applied poisons.", "requirement": "", "cost": 2, "backgroundColor": "#2d332f", "borderColor": "#46524b", "icon": "fa-skull" },
-          { "index": 2, "value": 0, "name": "Application", "description": "Improve success when coating weapons or food.", "requirement": "", "cost": 1, "backgroundColor": "#32322d", "borderColor": "#515148", "icon": "fa-droplet" },
-          { "index": 3, "value": 0, "name": "Stealth Blending", "description": "Reduce chance of detection in prepared toxins.", "requirement": "", "cost": 2, "backgroundColor": "#2f343a", "borderColor": "#49545e", "icon": "fa-mask" },
-          { "index": 4, "value": 0, "name": "Resistance Bypass", "description": "Improve effectiveness against resilient targets.", "requirement": "", "cost": 3, "backgroundColor": "#3a2f33", "borderColor": "#5a474c", "icon": "fa-biohazard" },
-          { "index": 5, "value": 0, "name": "Extraction", "description": "Harvest venom and toxins more efficiently.", "requirement": "", "cost": 1, "backgroundColor": "#2f3f38", "borderColor": "#4b5d55", "icon": "fa-spider" },
-          { "index": 6, "value": 0, "name": "Stability", "description": "Prevent toxins from degrading prematurely.", "requirement": "", "cost": 1, "backgroundColor": "#3a3244", "borderColor": "#544b63", "icon": "fa-shield-halved" },
-          { "index": 7, "value": 0, "name": "Dilution", "description": "Create multiple doses from a single batch.", "requirement": "", "cost": 2, "backgroundColor": "#3e3a2d", "borderColor": "#5b5644", "icon": "fa-vials" },
-          { "index": 8, "value": 0, "name": "Catalysts", "description": "Enhance toxins with secondary effects.", "requirement": "", "cost": 2, "backgroundColor": "#42352c", "borderColor": "#5e4b3f", "icon": "fa-flask" },
-          { "index": 9, "value": 0, "name": "Volatility", "description": "Create unstable but devastating poisons.", "requirement": "", "cost": 3, "backgroundColor": "#4a3035", "borderColor": "#6a484e", "icon": "fa-burst" },
-          { "index": 10, "value": 0, "name": "Ingestion Craft", "description": "Specialize in edible and drinkable toxins.", "requirement": "", "cost": 1, "backgroundColor": "#3f352f", "borderColor": "#5e5047", "icon": "fa-utensils" },
-          { "index": 11, "value": 0, "name": "Contact Agents", "description": "Improve effectiveness of skin-contact poisons.", "requirement": "", "cost": 2, "backgroundColor": "#2e4036", "borderColor": "#4a6256", "icon": "fa-hand" },
-          { "index": 12, "value": 0, "name": "Mastery", "description": "Unlock rare and legendary toxins.", "requirement": "", "cost": 3, "backgroundColor": "#3f2c2c", "borderColor": "#5c4242", "icon": "fa-crown" }
-        ]
-      },
-      {
-        "id": "Cooking",
-        "name": "Cooking",
-        "img": "modules/coffee-pub-artificer/images/skills/skill-cooking-01.webp",
-        "description": "Prepare meals that restore, empower, and sustain.",
-        "slots": [
-          { "index": 1, "value": 0, "name": "Portions", "description": "Increase servings produced per recipe.", "requirement": "", "cost": 1, "backgroundColor": "#3a332c", "borderColor": "#5a4f44", "icon": "fa-bowl-food" },
-          { "index": 2, "value": 0, "name": "Flavor Balance", "description": "Improve quality and morale bonuses from meals.", "requirement": "", "cost": 2, "backgroundColor": "#3e342e", "borderColor": "#5f4d45", "icon": "fa-pepper-hot" },
-          { "index": 3, "value": 0, "name": "Preservation", "description": "Extend shelf life of prepared food.", "requirement": "", "cost": 1, "backgroundColor": "#3a3a34", "borderColor": "#58584f", "icon": "fa-box-archive" },
-          { "index": 4, "value": 0, "name": "Nutrition", "description": "Increase restorative effects of meals.", "requirement": "", "cost": 2, "backgroundColor": "#2f3f35", "borderColor": "#4a5e53", "icon": "fa-heart" },
-          { "index": 5, "value": 0, "name": "Efficiency", "description": "Reduce ingredient waste during preparation.", "requirement": "", "cost": 1, "backgroundColor": "#3e3a2d", "borderColor": "#5b5644", "icon": "fa-recycle" },
-          { "index": 6, "value": 0, "name": "Heat Control", "description": "Improve outcomes based on temperature precision.", "requirement": "", "cost": 2, "backgroundColor": "#3f2c2c", "borderColor": "#5c4242", "icon": "fa-fire" },
-          { "index": 7, "value": 0, "name": "Butchery", "description": "Increase yield from harvested meat.", "requirement": "", "cost": 1, "backgroundColor": "#42352c", "borderColor": "#5e4b3f", "icon": "fa-knife-kitchen" },
-          { "index": 8, "value": 0, "name": "Baking", "description": "Improve baked goods and endurance-based meals.", "requirement": "", "cost": 1, "backgroundColor": "#3f352f", "borderColor": "#5e5047", "icon": "fa-bread-slice" },
-          { "index": 9, "value": 0, "name": "Spices", "description": "Add secondary buffs through rare seasonings.", "requirement": "", "cost": 2, "backgroundColor": "#4a2f33", "borderColor": "#6a474c", "icon": "fa-mortar-pestle" },
-          { "index": 10, "value": 0, "name": "Speed Prep", "description": "Reduce cooking time.", "requirement": "", "cost": 1, "backgroundColor": "#2c3440", "borderColor": "#445163", "icon": "fa-hourglass-half" },
-          { "index": 11, "value": 0, "name": "Experimentation", "description": "Attempt unconventional and fusion dishes.", "requirement": "", "cost": 3, "backgroundColor": "#3b2e3f", "borderColor": "#58475d", "icon": "fa-vials" },
-          { "index": 12, "value": 0, "name": "Mastery", "description": "Unlock legendary feasts and signature dishes.", "requirement": "", "cost": 3, "backgroundColor": "#3f2c2c", "borderColor": "#5c4242", "icon": "fa-crown" }
-        ]
-      }
-    ]
-  }
+  "schemaVersion": 1,
+  "skills": [
+    {
+      "id": "Herbalism",
+      "name": "Herbalism",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-herbalism-01.webp",
+      "description": "Harvest, cultivate, and prepare botanical ingredients.",
+      "skillEnabled": false,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "",
+      "slots": [
+        {
+          "slotID": "herbalism-basic-foraging",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Foraging",
+          "description": "You have the <strong>Herbalism Kit</strong> and the desire to forage for herbs. Nothing can stop you now.",
+          "requirement": "Herbalism Kit",
+          "cost": 0,
+          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
+          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
+          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "icon": "fa-leaf"
+        },
+        {
+          "slotID": "herbalism-advanced-foraging",
+          "index": 2,
+          "value": 0,
+          "name": "Advanced Foraging",
+          "description": "You have the <strong>Herbalism Kit</strong> and deep experience gathering herbs. You can now gather more herbs and more rare herbs.",
+          "requirement": "Basic Foraging",
+          "cost": 2,
+          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
+          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
+          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "icon": "fa-leaf"
+        }
+      ]
+    },
+    {
+      "id": "Alchemy",
+      "name": "Alchemy",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp",
+      "description": "Brew potions, refine ingredients, and push experimental mixtures.",
+      "skillEnabled": false,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "",
+      "slots": [
+        {
+          "slotID": "alchemy-basic-alchemy",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Alchemy",
+          "description": "You have the <strong>Alchemist's Supplies</strong> and the desire to brew potions. Nothing can stop you now.",
+          "requirement": "Alchemist's Supplies",
+          "cost": 0,
+          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
+          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
+          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "icon": "fa-flask"
+        }
+      ]
+    },
+    {
+      "id": "Poisoncraft",
+      "name": "Poisoncraft",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-poisoncraft-01.webp",
+      "description": "Create toxins, venoms, and subtle debilitating agents.",
+      "skillEnabled": false,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "",
+      "slots": [
+        {
+          "slotID": "poisoncraft-basic-poisons",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Poisons",
+          "description": "You have the <strong>Poisoner's Kit</strong>  and the desire to craft poisons. Nothing can stop you now.",
+          "requirement": "Poisoner's Kit",
+          "cost": 0,
+          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
+          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
+          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "icon": "fa-skull"
+        }
+      ]
+    },
+    {
+      "id": "Cooking",
+      "name": "Cooking",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-cooking-01.webp",
+      "description": "Prepare meals that restore, empower, and sustain.",
+      "skillEnabled": false,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "",
+      "slots": [
+        {
+          "slotID": "cooking-basic-cooking",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Cooking",
+          "description": "You have the <strong>Cook's Utensils</strong> and the desire to cook. Nothing can stop you now.",
+          "requirement": "Cook's Utensils",
+          "cost": 0,
+          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
+          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
+          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "icon": "fa-bowl-food"
+        }
+      ]
+    }
+  ]
+}
