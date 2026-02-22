@@ -105,12 +105,16 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
             }));
 
+            const totalCost = slots.reduce((sum, s) => sum + (s.cost ?? 0), 0);
+
             return {
                 id: skill.id,
                 name: skill.name,
                 img: skill.img,
                 description: skill.description ?? '',
                 slots,
+                totalCost,
+                totalCostDots: Array.from({ length: totalCost }),
                 badgeSelected: this._selectedSkillId === skill.id && this._selectedSlotIndex === null
             };
         });

@@ -27,9 +27,17 @@
             <div class="skills-window-panels">
             {{#each skillPaths}}
             <section class="skills-panel" data-skill="{{this.id}}">
+                <div class="skills-panel-label">
+                    <span class="skills-panel-label-text">{{this.name}}</span>
+                    <span class="skills-panel-label-dots">
+                        {{#each this.totalCostDots}}
+                        <i class="fa-solid fa-circle skills-panel-dot"></i>
+                        {{/each}}
+                    </span>
+                </div>
+                <div class="skills-panel-row">
                 <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}">
                     <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
-                    <div class="skills-panel-badge-label">{{this.name}}</div>
                 </div>
                 <div class="skills-panel-slots">
                     {{#each this.slots}}
@@ -38,6 +46,7 @@
                         <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}">{{this.displayValue}}</span>
                     </div>
                     {{/each}}
+                </div>
                 </div>
             </section>
             {{/each}}
