@@ -162,28 +162,50 @@
 .skills-panel-badge {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
     width: 56px;
-    height: 56px;
+    min-height: 72px;
     flex-shrink: 0;
     background: rgba(0, 0, 0, 0.5);
     border: 2px solid var(--craft-border-color);
     border-radius: 8px;
     color: var(--craft-accent-color);
+    overflow: hidden;
+}
+
+.skills-panel-badge-img-wrap {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skills-panel-badge-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.skills-panel-badge-icon-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .skills-panel-badge i {
     font-size: 1.4em;
-    margin-bottom: 2px;
 }
 
 .skills-panel-badge-label {
+    flex-shrink: 0;
     font-size: 0.65em;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     text-align: center;
     line-height: 1.1;
+    padding: 2px 0;
 }
 
 /* 2 rows × 4 columns per panel (8 slots) */

@@ -10,9 +10,9 @@ import { CRAFTING_SKILLS } from './schema-recipes.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
 
-/** Default skill path config: id, name, Font Awesome icon class, slotCount (2 rows × 4 cols = 8) */
+/** Default skill path config: id, name, img (optional), icon (fallback), slotCount (2 rows × 4 cols = 8) */
 const SKILL_PATH_CONFIG = [
-    { id: CRAFTING_SKILLS.ALCHEMY, name: 'Alchemy', icon: 'fa-solid fa-flask', slotCount: 8 }
+    { id: CRAFTING_SKILLS.ALCHEMY, name: 'Alchemy', img: 'modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp', icon: 'fa-solid fa-flask', slotCount: 8 }
     // Herbalism, Metallurgy, Artifice, Monster Handling: add when ready
 ];
 
@@ -109,6 +109,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             return {
                 id: cfg.id,
                 name: cfg.name,
+                img: cfg.img ?? null,
                 icon: cfg.icon,
                 slots
             };

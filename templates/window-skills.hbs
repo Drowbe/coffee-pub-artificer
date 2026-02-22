@@ -30,7 +30,15 @@
             {{#each skillPaths}}
             <section class="skills-panel" data-skill="{{this.id}}">
                 <div class="skills-panel-badge" title="{{this.name}}">
-                    <i class="{{this.icon}}"></i>
+                    {{#if this.img}}
+                    <div class="skills-panel-badge-img-wrap">
+                        <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
+                    </div>
+                    {{else}}
+                    <div class="skills-panel-badge-icon-wrap">
+                        <i class="{{this.icon}}"></i>
+                    </div>
+                    {{/if}}
                     <span class="skills-panel-badge-label">{{this.name}}</span>
                 </div>
                 <div class="skills-panel-slots">
