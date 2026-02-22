@@ -12,6 +12,7 @@
     --skills-banner-image-title: url('../images/backgrounds/background-herbs-green.webp');
     --skills-banner-image-details: url('../images/backgrounds/panel-background-04.webp'); 
     --skills-banner-image-panels: url('../images/backgrounds/panel-background-05.webp');
+    --skills-slot-size: 50px;
     background: var(--skills-background) !important;
     border: 0 solid var(--skills-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -131,7 +132,7 @@
 /* ----- Body: left panels | right details ----- */
 .skills-window-body {
     display: grid;
-    grid-template-columns: 700px 1fr;
+    grid-template-columns: max-content 1fr;
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -154,31 +155,40 @@
 /* ----- Left: stacked horizontal skill panels ----- */
 
 .skills-window-panels {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
     padding: 8px;
     background-image:
     linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
     var(--skills-banner-image-panels);
-    width: 700px;
-    min-width: 700px;
-    max-width: 700px;
+    width: max-content;
+    min-width: 0;
+    max-width: none;
 }
 
 
-
-
-
-
-
 .skills-panel {
+    --skills-slot-size: 50px;
+    --skills-slot-gap: 10px;
+    --skills-slot-pad: 10px;
+    --skills-badge-size: calc(
+        (var(--skills-slot-size) * 3) +
+        (var(--skills-slot-gap) * 2) +
+        (var(--skills-slot-pad) * 2)
+    );
     display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0px 0px;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--skills-border-color);
     border-radius: 6px;
-    height: 200px;
-    min-height: 200px;
+    flex: 0 0 auto;
+    width: max-content;
+    height: auto;
+    min-height: 0;
 }
 
 
@@ -186,13 +196,13 @@
 
 .skills-panel-badge {
     position: relative;
-
-    height: 100%;        /* Match parent height */
-    width: auto;         /* Let width be computed */
-
-    aspect-ratio: 1 / 1; /* Force square */
-
-    flex-shrink: 0;
+    width: var(--skills-badge-size);
+    height: var(--skills-badge-size);
+    aspect-ratio: 1 / 1;
+    align-self: flex-start;
+    flex: 0 0 auto;
+    min-width: 0;
+    min-height: 0;
 
     background: rgba(0, 0, 0, 0.5);
     border-right: 1px solid var(--skills-border-color);
@@ -232,33 +242,36 @@
 
 
 
-/* 2 rows × 6 columns per panel (12 slots) - square slots scale to space */
-
-
-
-
 .skills-panel-slots {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 8px;
-    flex: 1;
-    min-width: 0;
-    padding: 8px;
+    grid-template-columns: repeat(4, var(--skills-slot-size));
+    grid-template-rows: repeat(3, var(--skills-slot-size));
+    gap: var(--skills-slot-gap);
+    justify-content: start;
+    align-content: start;
+    flex: 0 0 auto;
+    width: max-content;
+    height: max-content;
+    min-width: max-content;
+    min-height: max-content;
+    padding: var(--skills-slot-pad);
     background: rgb(31, 45, 23, 0.9);
-    height: 100%;
+    box-sizing: border-box;
 }
 
 /* ----- Skill slots: square, scale to fit ----- */
 
 .skills-slot {
-    aspect-ratio: 1;
+    width: var(--skills-slot-size);
+    height: var(--skills-slot-size);
     min-width: 0;
     min-height: 0;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    font-size: var(--skills-slot-size);
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
 
     position: relative;
 
@@ -283,10 +296,12 @@
 }
 
 .skills-slot-icon {
-    font-size: 1em;              /* base size */
+    width: 90%;
+    height: 90%;
+    display: grid;
+    place-items: center;
+    font-size: 90%;
     line-height: 1;
-    transform: scale(0.9);       /* THIS makes it 90% of slot */
-    transform-origin: center;    /* keep it centered */
     color: rgba(255, 255, 255, 0.9);
 }
 
@@ -314,7 +329,7 @@
     background: rgba(59, 132, 66, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.3);
     border-radius: 4px;
-    font-size: 0.8em;
+    font-size: 13px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
     z-index: 10;
