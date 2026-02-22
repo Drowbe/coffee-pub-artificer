@@ -5,7 +5,7 @@
 
 .window-artificer-skills,
 .window-artificer-skills .window-content {
-    --skills-border-color: #444;
+    --skills-border-color: rgba(68, 68, 68, 0.5);
     --skills-accent-color: #ac9f81;
     --skills-background: #232323;
     --skills-header-bg: rgba(0, 0, 0, 0.7);
@@ -13,6 +13,12 @@
     --skills-banner-image-details: url('../images/backgrounds/panel-background-04.webp'); 
     --skills-banner-image-panels: url('../images/backgrounds/panel-background-05.webp');
     --skills-slot-size: 50px;
+    --skills-slot-gap: 10px;
+    --skills-slots-pad: 10px;
+    --skills-badge-size: calc(
+        (var(--skills-slot-size) * 3) +
+        (var(--skills-slot-gap) * 2)
+    );
     background: var(--skills-background) !important;
     border: 0 solid var(--skills-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -160,6 +166,8 @@
     align-items: flex-start;
     gap: 8px;
     padding: 8px;
+    min-height: 0;
+    overflow-y: auto;
     background-image:
     linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
     var(--skills-banner-image-panels);
@@ -170,14 +178,7 @@
 
 
 .skills-panel {
-    --skills-slot-size: 50px;
-    --skills-slot-gap: 10px;
-    --skills-slot-pad: 10px;
-    --skills-badge-size: calc(
-        (var(--skills-slot-size) * 3) +
-        (var(--skills-slot-gap) * 2) +
-        (var(--skills-slot-pad) * 2)
-    );
+
     display: flex;
     align-items: stretch;
     gap: 10px;
@@ -204,9 +205,9 @@
     min-width: 0;
     min-height: 0;
 
-    background: rgba(0, 0, 0, 0.5);
-    border-right: 1px solid var(--skills-border-color);
-    border-radius: 8px 0 0 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--skills-border-color);
+    border-radius: 8px 8px 8px 8px;
     overflow: hidden;
     cursor: pointer;
 }
@@ -254,7 +255,7 @@
     height: max-content;
     min-width: max-content;
     min-height: max-content;
-    padding: var(--skills-slot-pad);
+    padding: 0px;
     background: rgb(31, 45, 23, 0.9);
     box-sizing: border-box;
 }
@@ -295,12 +296,14 @@
     border-color: var(--skills-accent-color);
 }
 
+
+
 .skills-slot-icon {
-    width: 90%;
-    height: 90%;
+    width: 60%;
+    height: 60%;
     display: grid;
     place-items: center;
-    font-size: 90%;
+    font-size: 60%;
     line-height: 1;
     color: rgba(255, 255, 255, 0.9);
 }
@@ -311,33 +314,36 @@
 
 
 
-
-
-
-
 /* Slot number: upper-right (like crafting-bench-slot-count) */
+/* Slot number: upper-right */
 .skills-slot-number {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
+    top: 6%;
+    right: 6%;
+
+    width: 1.25em;            /* scales with parent */
+    aspect-ratio: 1 / 1;   /* forces square */
+
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(59, 132, 66, 0.9);
+    background: rgba(88, 24, 14, 0.8);
     border: 1px solid rgba(0, 0, 0, 0.3);
     border-radius: 4px;
-    font-size: 13px;
+
+    font-size: 0.25em;      /* scales naturally */
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);
+
     z-index: 10;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
     pointer-events: none;
 }
 
-
+/* Slot applied - green background when user has invested points */
+.skills-slot-number.slot-applied {
+    background: rgba(59, 132, 66, 0.8);
+}
 
 
 

@@ -99,7 +99,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const slots = (skill.slots ?? []).map((s, idx) => ({
                 ...s,
                 slotIndex: idx,
-                displayValue: Math.min(3, Math.max(0, s.value ?? 0)),
+                displayValue: s.cost ?? 0,
+                slotApplied: (s.value ?? 0) > 0,
                 iconClass: s.icon ? (s.icon.startsWith('fa-') ? `fa-solid ${s.icon}` : `fa-solid fa-${s.icon}`) : null,
                 selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
             }));

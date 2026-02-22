@@ -35,7 +35,7 @@
                     {{#each this.slots}}
                     <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.backgroundColor}} style="--slot-bg: {{this.backgroundColor}}; --slot-border: {{this.borderColor}}; background-color: {{this.backgroundColor}}; border-color: {{this.borderColor}};"{{/if}}>
                         {{#if this.iconClass}}<i class="{{this.iconClass}} skills-slot-icon"></i>{{/if}}
-                        <span class="skills-slot-number">{{this.displayValue}}</span>
+                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}">{{this.displayValue}}</span>
                     </div>
                     {{/each}}
                 </div>
