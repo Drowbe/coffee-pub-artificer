@@ -56,6 +56,12 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 **Phase 3:** Crafting window exists; recipe/blueprint browser integration ongoing
 
+**Phase 4 (Skills):** Skills Window UI in place
+- ✅ Skills Window (ApplicationV2) from Artificer bar; data from `resources/skills-details.json`
+- ✅ Panels: label (left) + total-cost dots (right), badge + slots; click badge → skill details, slot → slot details
+- ✅ Slots show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
+- ⏳ Persist to actor flags, skill progression logic (next)
+
 ---
 
 ## 2.5 Top Priority: Organizing Principles & Item Form
@@ -190,7 +196,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 - Skill data model (actor flags)
 - Skill categories: Herbalism, Metallurgy, Artifice, Alchemy, Monster Handling
 - XP gain, level-up, skill gating
-- Skill UI in crafting window / actor sheet
+- **Skill UI:** ✅ Skills Window (ApplicationV2) — JSON-driven panels, badge + slots, details pane; ⏳ actor persistence, progression
 
 ---
 

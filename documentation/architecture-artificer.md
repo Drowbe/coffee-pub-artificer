@@ -688,11 +688,15 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
   - IngredientStorage uses cache when available; otherwise notifies GM
 - Settings: `itemLookupOrder`, `ingredientStorageSource`
 - Rarity: Very Rare (D&D 5e standard; no "Epic")
+- Skills Window ✅
+  - ApplicationV2, data from `resources/skills-details.json`
+  - Panels: label (left) + total-cost dots (right), badge (image) + slots grid; click badge → skill details, slot → slot details
+  - Slot number = cost; applied state (value > 0) uses `.slot-applied`; panels column 700px, details flex; panels scroll
 
 ### 🔄 In Progress
 - **Persisted Item Cache:** Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; D&D consumable → family mapping
 - Recipe/Blueprint journal parser and browser (parsers exist; UI integration ongoing)
-- Skill system, workstation system
+- Skill system: Skills Window UI done; actor persistence (Apply), progression logic (XP, gating) next; workstation system
 
 ### 📋 Next Steps
 1. Persisted item cache (schema §11.7)

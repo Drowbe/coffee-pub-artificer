@@ -96,7 +96,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const { skills = [] } = await loadSkillsDetails();
 
         const skillPaths = skills.map((skill) => {
-            const slots = (skill.slots ?? []).map((s, idx) => ({
+            const rawSlots = (skill.slots ?? []).slice(0, 10);
+            const slots = rawSlots.map((s, idx) => ({
                 ...s,
                 slotIndex: idx,
                 displayValue: s.cost ?? 0,
@@ -105,7 +106,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
             }));
 
-            const totalCost = slots.reduce((sum, s) => sum + (s.cost ?? 0), 0);
+            const totalCost = rawSlots.reduce((sum, s) => sum + (s.cost ?? 0), 0);
 
             return {
                 id: skill.id,

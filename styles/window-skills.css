@@ -285,7 +285,7 @@
 
 .skills-panel-slots {
     display: grid;
-    grid-template-columns: repeat(6, var(--skills-slot-size));
+    grid-template-columns: repeat(5, var(--skills-slot-size));
     grid-template-rows: repeat(2, var(--skills-slot-size));
     gap: var(--skills-slot-gap);
     justify-content: start;

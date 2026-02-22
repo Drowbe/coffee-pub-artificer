@@ -100,6 +100,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Recipe defaults:** When recipe does not set heat or time, sliders reset to 0 (none)
 - **Tags display:** "Tags for this combination" moved from Crafting Bench to Details section
 
+### Skills Window (13.0.2)
+- **Skills Window** (ApplicationV2) opened from Artificer secondary bar
+- **Data-driven UI:** Skills and slots loaded from `resources/skills-details.json` (skill name, img, description; slot name, description, requirement, cost, value, icon, backgroundColor, borderColor)
+- **Panel layout:** Label row above badge and slots — left-aligned skill name, right-aligned dots (count = sum of slot costs); badge (square image) + 2×5 grid of slots (10 max)
+- **Interactions:** Click badge → show skill details in Details pane; click slot → show slot details (name, requirement, description, cost)
+- **Slot display:** Number in upper-right = cost from JSON; when slot is applied (value > 0), number badge uses `.slot-applied` (green) styling
+- **Layout:** Panels column fixed 700px; details pane flexes with window; panels area scrolls when many skills
+- **Event handling:** Delegation attached in `_onFirstRender` so badge and slot clicks work with ApplicationV2 PARTS
+
 ### Technical Details
 - All data models use class-based structure with validation
 - Storage managers use Map-based caching for performance
