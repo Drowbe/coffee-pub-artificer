@@ -10,17 +10,14 @@ import { CRAFTING_SKILLS } from './schema-recipes.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
 
-/** Default skill path config: id, name, Font Awesome icon class */
+/** Default skill path config: id, name, Font Awesome icon class, slotCount (2 rows × 4 cols = 8) */
 const SKILL_PATH_CONFIG = [
-    { id: CRAFTING_SKILLS.HERBALISM, name: 'Herbalism', icon: 'fa-solid fa-leaf' },
-    { id: CRAFTING_SKILLS.METALLURGY, name: 'Metallurgy', icon: 'fa-solid fa-hammer' },
-    { id: CRAFTING_SKILLS.ARTIFICE, name: 'Artifice', icon: 'fa-solid fa-gem' },
-    { id: CRAFTING_SKILLS.ALCHEMY, name: 'Alchemy', icon: 'fa-solid fa-flask' },
-    { id: CRAFTING_SKILLS.MONSTER_HANDLING, name: 'Monster Handling', icon: 'fa-solid fa-paw' }
+    { id: CRAFTING_SKILLS.ALCHEMY, name: 'Alchemy', icon: 'fa-solid fa-flask', slotCount: 8 }
+    // Herbalism, Metallurgy, Artifice, Monster Handling: add when ready
 ];
 
 /** Placeholder: build stub slots for a skill path (unlocked/locked for UI demo) */
-function buildPlaceholderSlots(skillId, count = 6) {
+function buildPlaceholderSlots(skillId, count = 8) {
     const slots = [];
     for (let i = 0; i < count; i++) {
         slots.push({
@@ -88,6 +85,11 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return char ?? null;
     }
 
+    async _prepareContext(options = {}) {
+        const base = await super._prepareContext?.(options) ?? {};
+        return foundry.utils.mergeObject(base, await this.getData(options));
+    }
+
     getData(options = {}) {
         const actor = this._getActor();
         this._actor = actor;
@@ -97,7 +99,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const availablePoints = this._availablePoints;
 
         const skillPaths = SKILL_PATH_CONFIG.map((cfg) => {
-            const slots = buildPlaceholderSlots(cfg.id);
+            const slotCount = cfg.slotCount ?? 8;
+            const slots = buildPlaceholderSlots(cfg.id, slotCount);
             const selId = this._selectedSkillId;
             const selIdx = this._selectedSlotIndex;
             if (selId === cfg.id && selIdx != null && slots[selIdx]) {
@@ -129,6 +132,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _getSkillsRoot() {
+        const byId = document.getElementById(this.id);
+        if (byId) return byId;
         return document.querySelector('.skills-window-root') ?? this.element ?? null;
     }
 
@@ -187,8 +192,9 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 SkillsWindow._actionApply.call(null, e, applyBtn);
                 return;
             }
-            const slot = e.target?.closest?.('.skills-slot[data-action="selectSkillSlot"]');
+            const slot = e.target?.closest?.('.skills-slot');
             if (slot) {
+                e.preventDefault?.();
                 SkillsWindow._actionSelectSkillSlot.call(null, e, slot);
                 return;
             }

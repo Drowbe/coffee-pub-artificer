@@ -186,9 +186,11 @@
     line-height: 1.1;
 }
 
+/* 2 rows × 4 columns per panel (8 slots) */
 .skills-panel-slots {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(4, 48px);
+    grid-template-rows: repeat(2, 48px);
     gap: 8px;
     flex: 1;
     min-width: 0;
