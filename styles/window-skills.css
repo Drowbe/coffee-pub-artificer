@@ -12,12 +12,12 @@
     --skills-banner-image-title: url('../images/backgrounds/background-herbs-green.webp');
     --skills-banner-image-details: url('../images/backgrounds/panel-background-04.webp'); 
     --skills-banner-image-panels: url('../images/backgrounds/panel-background-05.webp');
-    --skills-slot-size: 50px;
+    --skills-slot-size: 60px;
     --skills-slot-gap: 10px;
     --skills-slots-pad: 10px;
     --skills-badge-size: calc(
-        (var(--skills-slot-size) * 3) +
-        (var(--skills-slot-gap) * 2)
+        (var(--skills-slot-size) * 2) +
+        (var(--skills-slot-gap) * 1)
     );
     background: var(--skills-background) !important;
     border: 0 solid var(--skills-border-color) !important;
@@ -245,8 +245,8 @@
 
 .skills-panel-slots {
     display: grid;
-    grid-template-columns: repeat(4, var(--skills-slot-size));
-    grid-template-rows: repeat(3, var(--skills-slot-size));
+    grid-template-columns: repeat(6, var(--skills-slot-size));
+    grid-template-rows: repeat(2, var(--skills-slot-size));
     gap: var(--skills-slot-gap);
     justify-content: start;
     align-content: start;
@@ -305,7 +305,7 @@
     place-items: center;
     font-size: 60%;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.75);
 }
 
 
