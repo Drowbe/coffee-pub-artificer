@@ -10,7 +10,7 @@ import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
-import { getAllItemsFromCache } from './cache/cache-items.js';
+import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
 
 /** @typedef {{ dc: number, biome: string, componentTypes: string[] }} PendingGather */
 
@@ -53,8 +53,28 @@ export function consumePendingGather() {
 }
 
 /**
+ * Get cache records that match biome and selected component families (no fromUuid).
+ * Use this for gather so we only fetch the single chosen item.
+ * @param {string} biome - Selected biome
+ * @param {string[]} families - Selected component families (e.g. ['Plant', 'Mineral'])
+ * @returns {Array<{ name: string, uuid: string, family: string, biomes?: string[] }>}
+ */
+export function getEligibleGatherRecords(biome, families) {
+    if (!biome || !families?.length) return [];
+    const records = getAllRecordsFromCache();
+    const familySet = new Set(families.map((f) => f.trim()).filter(Boolean));
+    return records.filter((rec) => {
+        const itemFamily = rec.family ?? '';
+        if (!itemFamily || !familySet.has(itemFamily)) return false;
+        const biomes = Array.isArray(rec.biomes) ? rec.biomes : [];
+        if (biomes.length === 0) return true;
+        return biomes.includes(biome);
+    });
+}
+
+/**
  * Get items from cache that match biome and selected component families.
- * Phase 1: one item per gather; item must have family in families and (biome in item biomes or no biomes set).
+ * Prefer getEligibleGatherRecords + fetch only winner for fast gather; this loads all items (slow when cache cold).
  * @param {string} biome - Selected biome
  * @param {string[]} families - Selected component families (e.g. ['Plant', 'Mineral'])
  * @returns {Promise<Item[]>}
@@ -72,6 +92,17 @@ export async function getEligibleGatherItems(biome, families) {
         if (!Array.isArray(biomes) || biomes.length === 0) return true;
         return biomes.includes(biome);
     });
+}
+
+/**
+ * Pick one random record from list (or first if single). Returns record or null.
+ * @param {Array<{ uuid: string, name?: string }>} records
+ * @returns {typeof records[0] | null}
+ */
+export function pickOneGatherRecord(records) {
+    if (!records?.length) return null;
+    const idx = records.length === 1 ? 0 : Math.floor(Math.random() * records.length);
+    return records[idx] ?? null;
 }
 
 /**
@@ -164,9 +195,21 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         sendGatherFailureCard(actor);
         return;
     }
-    const eligible = await getEligibleGatherItems(biome, componentTypes);
-    const item = pickOneGatherItem(eligible);
+    // Use records only (no getAllItemsFromCache) so we do at most one fromUuid for the winner
+    const eligibleRecords = getEligibleGatherRecords(biome, componentTypes);
+    const record = pickOneGatherRecord(eligibleRecords);
     if (!actor) {
+        sendGatherFailureCard(actor);
+        return;
+    }
+    if (!record) {
+        sendGatherFailureCard(actor);
+        return;
+    }
+    let item = null;
+    try {
+        item = await fromUuid(record.uuid);
+    } catch {
         sendGatherFailureCard(actor);
         return;
     }
@@ -175,5 +218,5 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         return;
     }
     await addGatherItemToActor(actor, item);
-    sendGatherSuccessCard(actor, [item.name]);
+    sendGatherSuccessCard(actor, [record.name ?? item.name]);
 }

@@ -701,12 +701,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (!root?.contains?.(e.target)) return;
             const refreshBtn = e.target?.closest?.('[data-action="refreshCache"]');
             if (refreshBtn) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 w._refreshCache();
                 return;
             }
             const clearRecipeBtn = e.target?.closest?.('[data-action="clearRecipeSearch"]');
             if (clearRecipeBtn) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 w.filterRecipeSearch = '';
                 w.render();
                 return;
@@ -714,17 +718,24 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const clearComponentBtn = e.target?.closest?.('[data-action="clearComponentSearch"]');
             if (clearComponentBtn) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 w.filterSearch = '';
                 w.render();
                 return;
             }
             const recipeRow = e.target?.closest?.('.crafting-recipe-row');
             if (recipeRow?.dataset?.recipeId) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});
                 return;
             }
             const row = e.target?.closest?.('.crafting-ingredient-row');
             if (row?.dataset?.itemId) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 const action = row.dataset.action || row.getAttribute?.('data-action');
                 if (action === 'addToApparatus') w._addToApparatus(row.dataset.itemId);
                 else if (action === 'addToContainer') w._addToContainer(row.dataset.itemId);
@@ -734,16 +745,33 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             const slotItem = e.target?.closest?.('.crafting-bench-slot-item');
             if (slotItem) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 const slot = slotItem.closest('.crafting-bench-slot');
                 if (slot?.dataset?.slotIndex !== undefined) w._removeFromSlot(slot.dataset.slotIndex);
                 return;
             }
             const apparatusEl = e.target?.closest?.('.crafting-bench-apparatus-slot');
-            if (apparatusEl && w.selectedApparatus) { w._removeApparatus(); return; }
+            if (apparatusEl && w.selectedApparatus) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w._removeApparatus();
+                return;
+            }
             const containerEl = e.target?.closest?.('.crafting-bench-container-slot');
-            if (containerEl && w.selectedContainer) { w._removeContainer(); return; }
+            if (containerEl && w.selectedContainer) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w._removeContainer();
+                return;
+            }
             const toolEl = e.target?.closest?.('.crafting-bench-tool-slot');
-            if (toolEl && w.selectedTool) { w._removeTool(); return; }
+            if (toolEl && w.selectedTool) {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w._removeTool();
+                return;
+            }
             const roundTimer = e.target?.closest?.('.crafting-bench-round-timer');
             if (roundTimer) {
                 CraftingWindow._actionSetTimeFromRoundTimer.call(w, e, roundTimer);
@@ -752,6 +780,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const cyclePrev = e.target?.closest?.('[data-action="cycleProcessPrev"]');
             if (cyclePrev) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 const idx = PROCESS_TYPES.indexOf(w.processType);
                 w.processType = PROCESS_TYPES[(idx - 1 + PROCESS_TYPES.length) % PROCESS_TYPES.length];
                 w.render();
@@ -760,12 +790,14 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const cycleNext = e.target?.closest?.('[data-action="cycleProcessNext"]');
             if (cycleNext) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 const idx = PROCESS_TYPES.indexOf(w.processType);
                 w.processType = PROCESS_TYPES[(idx + 1) % PROCESS_TYPES.length];
                 w.render();
                 return;
             }
-        });
+        }, true);
 
         document.addEventListener('change', (e) => {
             const w = _currentCraftingWindowRef;

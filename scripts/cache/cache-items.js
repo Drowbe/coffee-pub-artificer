@@ -85,7 +85,7 @@ const DND_CONSUMABLE_FAMILY = {
  * Build a lightweight cache record from an Item
  * @param {Item} item
  * @param {string} source - compendium id or 'world'
- * @returns {{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null }}
+ * @returns {{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null, biomes: string[] }}
  */
 function itemToRecord(item, source) {
     const flags = item.flags?.artificer ?? item.flags?.[MODULE.ID] ?? {};
@@ -105,6 +105,7 @@ function itemToRecord(item, source) {
         : [flags.primaryTag, ...(Array.isArray(flags.secondaryTags) ? flags.secondaryTags : []), flags.quirk].filter(Boolean);
 
     const tierVal = flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? flags.tier;
+    const biomes = Array.isArray(flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes) ? (flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes) : [];
     return {
         name: item.name ?? '',
         uuid: item.uuid ?? '',
@@ -116,7 +117,8 @@ function itemToRecord(item, source) {
         tier: typeof tierVal === 'number' ? tierVal : 1,
         rarity: (item.system?.rarity ?? 'Common').trim() || 'Common',
         source,
-        artificerType: flags[ARTIFICER_FLAG_KEYS.TYPE] ?? flags.type ?? null
+        artificerType: flags[ARTIFICER_FLAG_KEYS.TYPE] ?? flags.type ?? null,
+        biomes
     };
 }
 
@@ -387,7 +389,7 @@ export async function getFromCache(name, typeFilter) {
 /**
  * Get all records from persisted cache. NO compendium/fromUuid calls.
  * Use this for fast init: build ArtificerIngredient etc. from records.
- * @returns {Array<{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null }>}
+ * @returns {Array<{ name: string, uuid: string, img?: string, type?: string, dndType?: string, family: string, tags?: string[], tier?: number, rarity?: string, source?: string, artificerType?: string|null, biomes?: string[] }>}
  */
 export function getAllRecordsFromCache() {
     if (_status.building) return [];

@@ -13,6 +13,7 @@ import {
     getBiomeOptions,
     getComponentTypeOptions,
     setPendingGather,
+    consumePendingGather,
     handleGatherRollResult
 } from './manager-gather.js';
 
@@ -60,7 +61,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         };
     }
 
-    /** ApplicationV2 PARTS may not call activateListeners with the part html; use document-level delegation. */
+    /** ApplicationV2 PARTS may not call activateListeners with the part html; use document-level delegation. Capture phase + stopPropagation so only delegation runs (avoids double fire with ApplicationV2 action). */
     _attachDelegationOnce() {
         _currentGatherWindowRef = this;
         if (_gatherDelegationAttached) return;
@@ -73,9 +74,11 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const btn = e.target?.closest?.('[data-action="requestRoll"]');
             if (btn) {
                 e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
                 w._requestRoll();
             }
-        });
+        }, true);
     }
 
     _getGatherRoot() {
@@ -117,6 +120,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
 
         setPendingGather({ dc, biome, componentTypes });
+        this._lastGatherContext = { dc, biome, componentTypes };
 
         // Resolve selected tokens on the canvas so the roll is requested for those players
         const selectedActors = this._getSelectedCanvasActors();
@@ -131,7 +135,8 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        // Herbalism Kit: use tool type if supported, else Nature as proxy. Pass selected actors so the dialog requests the roll for them.
+        // Herbalism Kit; pass selected actors so the dialog requests the roll for them.
+        // API: onRollComplete(payload) with payload = { message, messageData, tokenId, result, allComplete }
         api.openRequestRollDialog({
             title: 'Forage for components',
             dc,
@@ -139,8 +144,9 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             initialType: 'tool',
             initialValue: 'Herbalism Kit',
             actors: selectedActors,
-            onRollComplete: (message) => this._onRollComplete(message)
+            onRollComplete: (payload) => this._onRollComplete(payload)
         });
+        this.close();
     }
 
     /**
@@ -162,36 +168,38 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Called by Blacksmith when the requested roll completes (player clicked and rolled).
-     * Extract roll total and actor from the chat message and resolve gather result.
-     * @param {ChatMessage} [message]
+     * Called by Blacksmith when a roll result is delivered (per [Request Roll API](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Request-Roll)).
+     * payload = { message, messageData, tokenId, result, allComplete }. Process each roll and resolve gather (DC check, add item or failure card).
+     * @param {{ message?: ChatMessage, messageData?: object, tokenId?: string, result?: { total: number }, allComplete?: boolean }} payload
      */
-    _onRollComplete(message) {
-        // Log what we received so we can debug callback shape and message structure
-        const hasMessage = !!message;
-        const speaker = message?.speaker ?? {};
-        const actorId = speaker.actor ?? null;
-        const rolls = message?.rolls ?? [];
-        const first = rolls[0];
-        let rollTotal = null;
-        if (first != null) {
-            if (typeof first.total === 'number') rollTotal = first.total;
-            else if (typeof first.total === 'function') rollTotal = first.total();
+    _onRollComplete(payload) {
+        const { result, tokenId, message } = payload ?? {};
+        const rollTotal = result?.total != null ? result.total : null;
+        let actor = null;
+        if (tokenId && canvas?.scene) {
+            const tokenDoc = canvas.scene.tokens.get(tokenId);
+            if (tokenDoc) {
+                actor = tokenDoc.actor ?? (tokenDoc.actorId ? game.actors.get(tokenDoc.actorId) : null) ?? null;
+            }
         }
-        const actor = actorId ? game.actors.get(actorId) : null;
-
-        const summary = `onRollComplete: hasMessage=${hasMessage}, rollTotal=${rollTotal ?? 'null'}, actor=${actor?.name ?? actorId ?? 'null'}, rolls.length=${rolls.length}`;
-        const detail = first != null ? `first roll keys: ${Object.keys(first).join(', ')}` : 'no rolls';
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, summary, detail, true, true);
+        if (!actor && message?.speaker?.actor) {
+            actor = game.actors.get(message.speaker.actor) ?? null;
+        }
 
         if (rollTotal == null) {
             ui.notifications?.warn('Could not read roll result.');
             return;
         }
 
-        handleGatherRollResult(rollTotal, actor ?? null).catch((err) => {
+        const pending = this._lastGatherContext ?? consumePendingGather();
+        handleGatherRollResult(rollTotal, actor ?? null, pending).catch((err) => {
             console.error(`${MODULE.NAME} gather roll result:`, err);
             ui.notifications?.error('Gather result failed.');
         });
+
+        if (payload.allComplete) {
+            consumePendingGather();
+            this._lastGatherContext = null;
+        }
     }
 }
