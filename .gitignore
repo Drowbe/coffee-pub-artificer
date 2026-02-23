@@ -30,9 +30,9 @@ npm-debug.log*
 *.tmp
 *.temp
 
-# Foundry compendium pack lock files (created at runtime)
+# Foundry compendium pack: exclude only runtime lock file (LOCK).
+# Do NOT ignore packs/*/CURRENT — LevelDB needs it to open the pack; without it compendiums appear empty when the module is installed from the release zip.
 packs/*/LOCK
-packs/*/CURRENT
 
 # Lock files (uncomment if you don't want to track these)
 # *.lock

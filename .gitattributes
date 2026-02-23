@@ -1,0 +1,3 @@
+# LevelDB pack files: treat as binary so line endings are not converted (Foundry v11 packaging guide).
+# Prevents "cannot connect to database" errors when developing on Windows.
+packs/** binary
