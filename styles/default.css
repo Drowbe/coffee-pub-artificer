@@ -22,6 +22,9 @@
 /* --- Skills Window ---------------- */
 @import "window-skills.css";
 
+/* --- Gather (Roll for Components) - */
+@import "window-gather.css";
+
 /* --- Item Sheet Integration ------ */
 @import "item-sheet.css";
 

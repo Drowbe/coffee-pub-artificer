@@ -11,6 +11,7 @@ import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js';
 import { CraftingWindow } from './window-crafting.js';
 import { SkillsWindow } from './window-skills.js';
+import { GatherWindow } from './window-gather.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -31,6 +32,7 @@ Hooks.once('init', async () => {
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/window-crafting.hbs',
         'modules/coffee-pub-artificer/templates/window-skills.hbs',
+        'modules/coffee-pub-artificer/templates/window-gather.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
     ]);
@@ -238,14 +240,27 @@ function registerMenubarIntegration() {
             win.render(true);
         }
     });
+
+    // Register secondary bar item for Roll for Components (gather)
+    const gatherItemId = 'artificer-roll-components';
+    const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
+        icon: 'fa-solid fa-leaf',
+        title: 'Roll for Components',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const win = new GatherWindow();
+            win.render(true);
+        }
+    });
     
-    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered) {
+    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered) {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
         }
     } else {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}`, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}`, true, false);
         }
     }
 }

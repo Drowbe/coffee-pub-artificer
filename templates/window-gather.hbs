@@ -1,0 +1,52 @@
+{{!-- Roll for Components (Phase 1 gather) - Header top, body scrollable, actions bottom --}}
+<div class="gather-window-root">
+    <header class="gather-window-header">
+        <div class="gather-window-header-content">
+            <div class="gather-window-header-icon">
+                <i class="fa-solid fa-leaf"></i>
+            </div>
+            <div class="gather-window-header-title-block">
+                <div class="gather-window-header-title">Roll for Components</div>
+                <div class="gather-window-header-subtitle">Forage for herbs and components</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="gather-window-body">
+        <div class="gather-field">
+            <label for="gather-biome">Biome</label>
+            <select id="gather-biome" class="gather-select">
+                <option value="">— Select biome —</option>
+                {{#each biomeOptions}}
+                <option value="{{this.value}}">{{this.label}}</option>
+                {{/each}}
+            </select>
+        </div>
+        <div class="gather-field">
+            <span class="gather-label">Component types</span>
+            <div class="gather-checkboxes">
+                {{#each componentTypeOptions}}
+                <label class="gather-checkbox-label">
+                    <input type="checkbox" class="gather-checkbox" name="gather-type" value="{{this.value}}" />
+                    <span>{{this.label}}</span>
+                </label>
+                {{/each}}
+            </div>
+        </div>
+        <div class="gather-field">
+            <label for="gather-dc">DC</label>
+            <input type="number" id="gather-dc" class="gather-input" min="1" max="30" value="{{dc}}" placeholder="10" />
+        </div>
+    </div>
+
+    <section class="gather-window-buttons">
+        <div class="gather-window-action-bar">
+            <div class="gather-window-action-left"></div>
+            <div class="gather-window-action-right">
+                <button type="button" class="gather-window-btn-primary" data-action="requestRoll" title="Open Request a Roll for selected tokens">
+                    <i class="fa-solid fa-dice-d20"></i> Request Roll
+                </button>
+            </div>
+        </div>
+    </section>
+</div>

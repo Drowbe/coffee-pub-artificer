@@ -79,6 +79,8 @@
     "scripts/manager-blueprints.js",
     "scripts/manager-workstations.js",
     "scripts/manager-skills.js",
+    "scripts/manager-gather.js",
+    "scripts/window-gather.js",
     "scripts/api-artificer.js",
     "scripts/migrations/migrate-artificer-flags.js",
     "scripts/artificer.js"

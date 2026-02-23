@@ -1,0 +1,197 @@
+/* ================================================================== */
+/* Roll for Components (Gather) window - Phase 1                      */
+/* Header top, body scrollable, action bar locked to bottom           */
+/* Same layout pattern as window-skills / window-crafting             */
+/* ================================================================== */
+
+.window-gather .window-content,
+.artificer-gather-window .window-content {
+    --gather-border-color: rgba(68, 68, 68, 0.5);
+    --gather-accent-color: #ac9f81;
+    --gather-background: #232323;
+    --gather-header-bg: rgba(0, 0, 0, 0.7);
+    background: var(--gather-background) !important;
+    border: 0 solid var(--gather-border-color) !important;
+    color: rgba(224, 224, 224, 0.9);
+    font-family: "Signika", sans-serif;
+}
+
+.window-gather .window-content,
+.artificer-gather-window .window-content {
+    min-height: 360px !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+.window-gather .window-header,
+.artificer-gather-window .window-header {
+    background: var(--gather-header-bg) !important;
+    border-bottom: 1px solid var(--gather-border-color) !important;
+    color: var(--gather-accent-color) !important;
+}
+
+/* ----- Root ----- */
+.gather-window-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 360px;
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* ----- Header ----- */
+.gather-window-header {
+    flex-shrink: 0;
+    background: var(--gather-header-bg);
+    border-bottom: 1px solid var(--gather-border-color);
+    padding: 8px 12px;
+    min-height: 50px;
+}
+
+.gather-window-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.gather-window-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid rgba(172, 159, 129, 0.9);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.gather-window-header-icon i {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.4em;
+}
+
+.gather-window-header-title-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gather-window-header-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--gather-accent-color);
+    letter-spacing: 0.02em;
+}
+
+.gather-window-header-subtitle {
+    font-size: 0.85em;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* ----- Body (scrollable) ----- */
+.gather-window-body {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.gather-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gather-field label,
+.gather-label {
+    font-size: 0.9em;
+    color: rgba(200, 200, 200, 0.9);
+}
+
+.gather-select,
+.gather-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(68, 68, 68, 0.6);
+    color: #eee;
+    padding: 6px 8px;
+    border-radius: 4px;
+    max-width: 280px;
+}
+
+.gather-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+}
+
+.gather-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 0.95em;
+}
+
+.gather-checkbox {
+    margin: 0;
+}
+
+/* ----- Button bar (locked to bottom) ----- */
+.gather-window-buttons {
+    flex-shrink: 0;
+    border-top: 1px solid var(--gather-border-color);
+    background: var(--gather-header-bg);
+    padding: 10px 12px;
+}
+
+.gather-window-action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.gather-window-action-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.gather-window-action-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gather-window-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--gather-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1em;
+    text-transform: uppercase;
+    background: rgba(41, 94, 47, 0.9);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.gather-window-btn-primary:hover:not(:disabled) {
+    background: rgba(255, 100, 0, 0.6);
+    border-color: rgba(255, 100, 0, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.gather-window-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
