@@ -180,13 +180,25 @@ export function sendGatherNoPoolCard(actor = null) {
 
 /**
  * Send "You found ... Added to your inventory." chat card.
+ * Formats each item like the investigation tool: image + UUID document link.
  * @param {Actor} [actor]
- * @param {string[]} itemNames - Names of items added
+ * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
  */
-export function sendGatherSuccessCard(actor = null, itemNames = []) {
+export function sendGatherSuccessCard(actor = null, items = []) {
     const title = 'Forage for components';
-    const list = itemNames.length ? itemNames.map((n) => `<li>${n}</li>`).join('') : '<li>(none)</li>';
-    const body = `<p>You found:</p><ul>${list}</ul><p>Added to your inventory.</p>`;
+    const escapeHtml = (s) => {
+        if (s == null) return '';
+        const str = String(s);
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+    const itemRows = items.length
+        ? items.map((it) => {
+            const img = it.img ? `<img src="${escapeHtml(it.img)}" alt="" class="gather-result-img" />` : '';
+            const link = it.uuid ? `@UUID[${escapeHtml(it.uuid)}]{${escapeHtml(it.name)}}` : escapeHtml(it.name);
+            return `<div class="gather-result-item">${img} ${link}</div>`;
+        }).join('')
+        : '<div class="gather-result-item">(none)</div>';
+    const body = `<p>You found:</p><div class="gather-result-list">${itemRows}</div><p>Added to your inventory.</p>`;
     const html = buildChatCardHtml(title, body, 'card');
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
@@ -234,5 +246,5 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         return;
     }
     await addGatherItemToActor(actor, item);
-    sendGatherSuccessCard(actor, [record.name ?? item.name]);
+    sendGatherSuccessCard(actor, [{ name: record.name ?? item.name, uuid: record.uuid, img: record.img ?? item.img }]);
 }

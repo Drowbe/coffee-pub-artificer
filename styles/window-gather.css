@@ -195,3 +195,25 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* ----- Gather result in chat card (image + UUID link, investigation-tool style) ----- */
+.gather-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0;
+}
+
+.gather-result-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gather-result-img {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    border: none;
+    flex-shrink: 0;
+}
