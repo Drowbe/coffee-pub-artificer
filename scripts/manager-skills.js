@@ -107,6 +107,29 @@ export class SkillManager {
     }
 
     /**
+     * Get slotIDs that depend on this slot (i.e. have this slot as prerequisite).
+     * @param {string} slotID - Slot ID
+     * @returns {Promise<string[]>}
+     */
+    async getDependentSlotIds(slotID) {
+        const found = await this._findSlot(slotID);
+        if (!found) return [];
+        const slotName = found.slot.name ?? '';
+        if (!slotName) return [];
+        const { skills = [] } = await _loadSkillsDetails();
+        const dependents = [];
+        for (const skill of skills) {
+            for (const s of skill.slots ?? []) {
+                if ((s.requirement ?? '') === slotName) {
+                    const id = s.slotID ?? '';
+                    if (id) dependents.push(id);
+                }
+            }
+        }
+        return dependents;
+    }
+
+    /**
      * Find slotID for prerequisite by requirement name within the same skill.
      * @param {string} skillId - Skill ID (e.g. Herbalism)
      * @param {string} requirement - Requirement string (e.g. "Basic Foraging")
@@ -158,6 +181,32 @@ export class SkillManager {
             }
         });
         return { ok: true };
+    }
+
+    /**
+     * Revoke multiple slots at once (e.g. when kit is removed). Unlearns each and refunds points.
+     * @param {Actor} actor - Actor document
+     * @param {string[]} slotIDs - Slot IDs to revoke
+     * @returns {Promise<void>}
+     */
+    async revokeSlots(actor, slotIDs) {
+        if (!actor || !Array.isArray(slotIDs) || slotIDs.length === 0) return;
+        const data = await this._ensureActorSkills(actor);
+        const toRevoke = slotIDs.filter((id) => data.learnedSlots.includes(id));
+        if (toRevoke.length === 0) return;
+        let refund = 0;
+        for (const slotID of toRevoke) {
+            const found = await this._findSlot(slotID);
+            if (found) refund += found.slot.cost ?? 0;
+        }
+        const newLearned = data.learnedSlots.filter((id) => !toRevoke.includes(id));
+        const newPoints = data.pointsRemaining + refund;
+        await actor.update({
+            [`flags.${MODULE.ID}.actorSkills`]: {
+                learnedSlots: newLearned,
+                pointsRemaining: newPoints
+            }
+        });
     }
 
     /**

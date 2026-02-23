@@ -14,6 +14,18 @@ const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-detail
 
 const _skillManager = new SkillManager();
 
+/**
+ * Check if actor has item matching name (for kit requirement)
+ * @param {Actor|null} actor
+ * @param {string} name - Item name to match (e.g. "Herbalism Kit")
+ * @returns {boolean}
+ */
+function actorHasItemNamed(actor, name) {
+    if (!actor || !name?.trim()) return true;
+    const target = name.trim();
+    return actor.items.some((i) => (i.name || '').trim() === target);
+}
+
 /** Cached skills data from JSON */
 let _skillsDetailsCache = null;
 
@@ -40,6 +52,46 @@ let _skillsDelegationAttached = false;
 let _currentSkillsWindowRef = null;
 
 /**
+ * Sort slotIDs by prerequisite order (prereqs first).
+ * @param {string[]} slotIDs - Slot IDs to sort
+ * @returns {Promise<string[]>}
+ */
+async function _sortByPrereqs(slotIDs) {
+    const { skills = [] } = await loadSkillsDetails();
+    const slotById = /** @type {Map<string, { requirement: string, skillId: string }>} */ (new Map());
+    for (const skill of skills) {
+        for (const s of skill.slots ?? []) {
+            const id = s.slotID ?? '';
+            if (id) slotById.set(id, { requirement: s.requirement ?? '', skillId: skill.id });
+        }
+    }
+    const prereqId = (slotID) => {
+        const info = slotById.get(slotID);
+        if (!info?.requirement) return null;
+        const skill = skills.find((sk) => sk.id === info.skillId);
+        const slot = (skill?.slots ?? []).find((s) => s.name === info.requirement);
+        return slot?.slotID ?? null;
+    };
+    const result = [];
+    const remaining = new Set(slotIDs);
+    while (remaining.size > 0) {
+        let picked = null;
+        for (const id of remaining) {
+            const pre = prereqId(id);
+            if (!pre || !remaining.has(pre)) {
+                picked = id;
+                break;
+            }
+        }
+        if (picked == null) break;
+        remaining.delete(picked);
+        result.push(picked);
+    }
+    for (const id of remaining) result.push(id);
+    return result;
+}
+
+/**
  * Artificer Skills Window - Skill and slot details driven by JSON.
  */
 export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -52,7 +104,11 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             reset: SkillsWindow._actionReset,
             apply: SkillsWindow._actionApply,
             selectSkillBadge: SkillsWindow._actionSelectSkillBadge,
-            selectSkillSlot: SkillsWindow._actionSelectSkillSlot
+            selectSkillSlot: SkillsWindow._actionSelectSkillSlot,
+            learnSlot: SkillsWindow._actionLearnSlot,
+            unlearnSlot: SkillsWindow._actionUnlearnSlot,
+            removePendingLearn: SkillsWindow._actionRemovePendingLearn,
+            removePendingUnlearn: SkillsWindow._actionRemovePendingUnlearn
         }
     });
 
@@ -72,6 +128,10 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._selectedSkillId = null;
         /** @type {number|null} selected slot index (null = viewing skill details) */
         this._selectedSlotIndex = null;
+        /** @type {string[]} pending learn slotIDs */
+        this._pendingLearn = [];
+        /** @type {string[]} pending unlearn slotIDs */
+        this._pendingUnlearn = [];
     }
 
     _getActor() {
@@ -94,7 +154,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const actorName = actor?.name ?? null;
         const actorImg = actor?.img ?? null;
-        const [availablePoints, learnedSlots] = actor
+        const [actorPoints, learnedSlots] = actor
             ? await Promise.all([
                 _skillManager.getPointsRemaining(actor),
                 _skillManager.getLearnedSlots(actor)
@@ -103,13 +163,64 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const { skills = [] } = await loadSkillsDetails();
 
-        const skillPaths = skills.map((skill) => {
+        // Revoke learned slots for skills where kit is now missing
+        let actorPointsRev = actorPoints;
+        let learnedSlotsRev = [...learnedSlots];
+        if (actor) {
+            for (const skill of skills) {
+                if (!skill.skillEnabled) continue;
+                const kit = skill.skillKit ?? '';
+                if (!kit) continue;
+                const hasKit = actorHasItemNamed(actor, kit);
+                if (hasKit) continue;
+                const slotIds = (skill.slots ?? []).map((s) => s.slotID).filter(Boolean);
+                const toRevoke = slotIds.filter((id) => learnedSlotsRev.includes(id));
+                if (toRevoke.length > 0) {
+                    await _skillManager.revokeSlots(actor, toRevoke);
+                    this._pendingLearn = this._pendingLearn.filter((id) => !toRevoke.includes(id));
+                    this._pendingUnlearn = this._pendingUnlearn.filter((id) => !toRevoke.includes(id));
+                    const [p, l] = await Promise.all([
+                        _skillManager.getPointsRemaining(actor),
+                        _skillManager.getLearnedSlots(actor)
+                    ]);
+                    actorPointsRev = p;
+                    learnedSlotsRev = l;
+                }
+            }
+        }
+
+        const actorPointsFinal = actorPointsRev;
+        const learnedSlotsFinal = learnedSlotsRev;
+
+        // Build slot lookup for cart and effective state
+        const slotById = /** @type {Map<string, { name: string, cost: number }>} */ (new Map());
+        for (const skill of skills) {
+            for (const s of skill.slots ?? []) {
+                const id = s.slotID ?? '';
+                if (id) slotById.set(id, { name: s.name ?? `Slot ${s.index ?? ''}`, cost: s.cost ?? 0 });
+            }
+        }
+
+        const effectiveLearned = (slotID) => {
+            const learned = learnedSlotsFinal.includes(slotID);
+            const pendingUnl = this._pendingUnlearn.includes(slotID);
+            const pendingLn = this._pendingLearn.includes(slotID);
+            return (learned && !pendingUnl) || pendingLn;
+        };
+
+        const pendingLearnCost = this._pendingLearn.reduce((sum, id) => sum + (slotById.get(id)?.cost ?? 0), 0);
+        const pendingUnlearnRefund = this._pendingUnlearn.reduce((sum, id) => sum + (slotById.get(id)?.cost ?? 0), 0);
+        const effectivePoints = actorPointsFinal + pendingUnlearnRefund - pendingLearnCost;
+
+        const skillPaths = skills
+            .filter((skill) => skill.skillEnabled === true)
+            .map((skill) => {
             const rawSlots = (skill.slots ?? []).slice(0, 10);
             const slots = rawSlots.map((s, idx) => ({
                 ...s,
                 slotIndex: idx,
                 displayValue: s.cost ?? 0,
-                slotApplied: learnedSlots.includes(s.slotID ?? ''),
+                slotApplied: effectiveLearned(s.slotID ?? ''),
                 slotMinSkillLevel: s.slotMinSkillLevel ?? 0,
                 slotMaxSkillLevel: s.slotMaxSkillLevel ?? 0,
                 slotBackgroundColor: s.slotBackgroundColor ?? s.backgroundColor ?? 'rgba(47, 63, 56, 0.4)',
@@ -121,15 +232,18 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
             const totalCost = rawSlots.reduce((sum, s) => sum + (s.cost ?? 0), 0);
 
+            const skillKit = skill.skillKit ?? '';
+            const hasKit = skillKit ? actorHasItemNamed(actor, skillKit) : true;
             return {
                 id: skill.id,
                 name: skill.name,
                 img: skill.img,
                 description: skill.description ?? '',
-                skillEnabled: skill.skillEnabled ?? false,
+                skillEnabled: true,
                 skillPanelColor: skill.skillPanelColor ?? 'rgba(0, 0, 0, 0.2)',
                 skillBadgeColor: skill.skillBadgeColor ?? 'rgba(0, 0, 0, 0.2)',
-                skillKit: skill.skillKit ?? '',
+                skillKit,
+                hasKit,
                 slots,
                 totalCost,
                 totalCostDots: Array.from({ length: totalCost }),
@@ -142,19 +256,74 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (selSkill) {
             if (this._selectedSlotIndex != null) {
                 const slot = selSkill.slots?.[this._selectedSlotIndex];
-                if (slot) selectedDetail = { type: 'slot', skill: selSkill, slot };
+                if (slot) {
+                    const slotID = slot.slotID ?? '';
+                    const cost = slot.cost ?? 0;
+                    const isEffectiveLearned = effectiveLearned(slotID);
+                    const prereqSlotId = selSkill.slots?.find((s) => s.name === slot.requirement)?.slotID ?? '';
+                    const isKitRequirement = (slot.requirement ?? '') === (selSkill.skillKit ?? '');
+                    let prereqMet = !(slot.requirement ?? '');
+                    if (!prereqMet) {
+                        if (isKitRequirement) prereqMet = selSkill.hasKit;
+                        else if (prereqSlotId) prereqMet = effectiveLearned(prereqSlotId);
+                        else prereqMet = actorHasItemNamed(actor, slot.requirement);
+                    }
+                    const canAfford = effectivePoints >= cost;
+                    const kitMissing = !selSkill.hasKit && !!selSkill.skillKit;
+                    const canLearn = !kitMissing && !isEffectiveLearned && prereqMet && canAfford;
+                    let canUnlearn = false;
+                    let unlearnBlockedReason = '';
+                    if (isEffectiveLearned) {
+                        const dependents = await _skillManager.getDependentSlotIds(slotID);
+                        const stillLearned = dependents.filter((d) => effectiveLearned(d));
+                        if (stillLearned.length > 0) {
+                            canUnlearn = false;
+                            const names = stillLearned.map((d) => slotById.get(d)?.name ?? d).join(', ');
+                            unlearnBlockedReason = `This can't be unlearned until ${names} are unlearned first.`;
+                        } else {
+                            canUnlearn = true;
+                        }
+                    }
+                    selectedDetail = {
+                        type: 'slot',
+                        skill: selSkill,
+                        slot,
+                        requirementLabel: slot.requirement ? slot.requirement : 'none',
+                        costDisplay: cost ?? 0,
+                        kitMissing: !selSkill.hasKit && !!selSkill.skillKit,
+                        canLearn,
+                        showUnlearn: isEffectiveLearned,
+                        canUnlearn,
+                        unlearnBlockedReason
+                    };
+                } else {
+                    selectedDetail = { type: 'skill', skill: selSkill, slot: null };
+                }
             } else {
                 selectedDetail = { type: 'skill', skill: selSkill, slot: null };
             }
         }
 
+        const pendingLearnItems = this._pendingLearn.map((id) => {
+            const info = slotById.get(id) ?? { name: id, cost: 0 };
+            return { slotID: id, name: info.name, cost: info.cost, pointsDelta: -info.cost, isUnlearn: false };
+        });
+        const pendingUnlearnItems = this._pendingUnlearn.map((id) => {
+            const info = slotById.get(id) ?? { name: id, cost: 0 };
+            return { slotID: id, name: info.name, cost: info.cost, pointsDelta: info.cost, isUnlearn: true };
+        });
+        const skillChanges = [...pendingLearnItems, ...pendingUnlearnItems];
+        const hasPendingChanges = skillChanges.length > 0;
+
         return {
             appId: this.id,
             actorName,
             actorImg,
-            availablePoints,
+            availablePoints: effectivePoints,
             skillPaths,
-            selectedDetail
+            selectedDetail,
+            skillChanges,
+            hasPendingChanges
         };
     }
 
@@ -168,15 +337,76 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        w._pendingLearn = [];
+        w._pendingUnlearn = [];
         w._selectedSkillId = null;
         w._selectedSlotIndex = null;
         w.render();
     }
 
-    static _actionApply(event, target) {
+    static async _actionApply(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w || !w._actor) return;
+        event?.preventDefault?.();
+        if (w._pendingLearn.length === 0 && w._pendingUnlearn.length === 0) return;
+        const actor = w._actor;
+        for (const slotID of w._pendingUnlearn) {
+            const result = await _skillManager.unlearnSlot(actor, slotID);
+            if (!result.ok) ui.notifications?.warn?.(result.reason ?? 'Could not unlearn slot');
+        }
+        const sortedLearn = await _sortByPrereqs(w._pendingLearn);
+        for (const slotID of sortedLearn) {
+            const result = await _skillManager.learnSlot(actor, slotID);
+            if (!result.ok) ui.notifications?.warn?.(result.reason ?? 'Could not learn slot');
+        }
+        w._pendingLearn = [];
+        w._pendingUnlearn = [];
+        w.render();
+    }
+
+    static _actionLearnSlot(event, target) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        const slotID = target?.dataset?.slotId ?? '';
+        if (!slotID) return;
+        if (w._pendingLearn.includes(slotID)) return;
+        w._pendingUnlearn = w._pendingUnlearn.filter((id) => id !== slotID);
+        w._pendingLearn.push(slotID);
+        w.render();
+    }
+
+    static _actionUnlearnSlot(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w) return;
+        event?.preventDefault?.();
+        const slotID = target?.dataset?.slotId ?? '';
+        if (!slotID) return;
+        const btn = target?.closest?.('[data-action="unlearnSlot"]');
+        if (btn?.hasAttribute?.('disabled')) return;
+        if (w._pendingUnlearn.includes(slotID)) return;
+        w._pendingLearn = w._pendingLearn.filter((id) => id !== slotID);
+        w._pendingUnlearn.push(slotID);
+        w.render();
+    }
+
+    static _actionRemovePendingLearn(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w) return;
+        event?.preventDefault?.();
+        const slotID = target?.dataset?.slotId ?? '';
+        if (!slotID) return;
+        w._pendingLearn = w._pendingLearn.filter((id) => id !== slotID);
+        w.render();
+    }
+
+    static _actionRemovePendingUnlearn(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w) return;
+        event?.preventDefault?.();
+        const slotID = target?.dataset?.slotId ?? '';
+        if (!slotID) return;
+        w._pendingUnlearn = w._pendingUnlearn.filter((id) => id !== slotID);
         w.render();
     }
 
@@ -240,6 +470,30 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (slot) {
                 e.preventDefault?.();
                 SkillsWindow._actionSelectSkillSlot.call(null, e, slot);
+                return;
+            }
+            const learnBtn = e.target?.closest?.('[data-action="learnSlot"]');
+            if (learnBtn) {
+                e.preventDefault?.();
+                SkillsWindow._actionLearnSlot.call(null, e, learnBtn);
+                return;
+            }
+            const unlearnBtn = e.target?.closest?.('[data-action="unlearnSlot"]');
+            if (unlearnBtn) {
+                e.preventDefault?.();
+                SkillsWindow._actionUnlearnSlot.call(null, e, unlearnBtn);
+                return;
+            }
+            const removeLearnBtn = e.target?.closest?.('[data-action="removePendingLearn"]');
+            if (removeLearnBtn) {
+                e.preventDefault?.();
+                SkillsWindow._actionRemovePendingLearn.call(null, e, removeLearnBtn);
+                return;
+            }
+            const removeUnlearnBtn = e.target?.closest?.('[data-action="removePendingUnlearn"]');
+            if (removeUnlearnBtn) {
+                e.preventDefault?.();
+                SkillsWindow._actionRemovePendingUnlearn.call(null, e, removeUnlearnBtn);
                 return;
             }
         });

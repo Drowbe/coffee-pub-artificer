@@ -60,19 +60,38 @@
                     {{#if selectedDetail}}
                         {{#if selectedDetail.slot}}
                         <div class="skills-detail-name">{{#if selectedDetail.slot.iconClass}}<i class="{{selectedDetail.slot.iconClass}} skills-detail-slot-icon"></i> {{/if}}{{selectedDetail.slot.name}}{{#unless selectedDetail.slot.name}}Slot {{selectedDetail.slot.index}}{{/unless}}</div>
-                        {{#if selectedDetail.slot.requirement}}
-                        <div class="skills-detail-requirement">{{selectedDetail.slot.requirement}}</div>
+                        <div class="skills-detail-rows">
+                            <div class="skills-detail-row"><span class="skills-detail-label">Requirements:</span><span class="skills-detail-value">{{selectedDetail.requirementLabel}}</span></div>
+                            <div class="skills-detail-row"><span class="skills-detail-label">Cost:</span><span class="skills-detail-value">{{selectedDetail.costDisplay}} point(s)</span></div>
+                        </div>
+                        {{#if selectedDetail.kitMissing}}
+                        <div class="skills-detail-kit-missing">Required kit is missing. Add {{selectedDetail.skill.skillKit}} to inventory to learn slots.</div>
                         {{/if}}
                         {{#if selectedDetail.slot.description}}
                         <div class="skills-detail-description">{{{selectedDetail.slot.description}}}</div>
                         {{/if}}
-                        {{#if selectedDetail.slot.cost}}
-                        <div class="skills-detail-cost">Cost: {{selectedDetail.slot.cost}} point(s)</div>
+                        {{#if selectedDetail.canLearn}}
+                        <button type="button" class="skills-detail-btn-learn" data-action="learnSlot" data-slot-id="{{selectedDetail.slot.slotID}}" title="Queue to learn">
+                            <i class="fa-solid fa-plus"></i> Learn
+                        </button>
+                        {{/if}}
+                        {{#if selectedDetail.showUnlearn}}
+                        <button type="button" class="skills-detail-btn-unlearn" data-action="unlearnSlot" data-slot-id="{{selectedDetail.slot.slotID}}" title="{{#if selectedDetail.canUnlearn}}Queue to unlearn{{else}}{{selectedDetail.unlearnBlockedReason}}{{/if}}"{{#unless selectedDetail.canUnlearn}} disabled{{/unless}}>
+                            <i class="fa-solid fa-minus"></i> Unlearn
+                        </button>
+                        {{#if selectedDetail.unlearnBlockedReason}}
+                        <div class="skills-detail-unlearn-blocked">{{selectedDetail.unlearnBlockedReason}}</div>
+                        {{/if}}
                         {{/if}}
                         {{else}}
                         <div class="skills-detail-name">{{selectedDetail.skill.name}}</div>
                         {{#if selectedDetail.skill.description}}
                         <div class="skills-detail-description">{{{selectedDetail.skill.description}}}</div>
+                        {{/if}}
+                        {{#if selectedDetail.skill.skillKit}}
+                        <div class="skills-detail-rows">
+                            <div class="skills-detail-row"><span class="skills-detail-label">Required Kit:</span><span class="skills-detail-value">{{selectedDetail.skill.skillKit}} <span class="skills-detail-kit-status {{#if selectedDetail.skill.hasKit}}skills-detail-kit-present{{else}}skills-detail-kit-missing{{/if}}">({{#if selectedDetail.skill.hasKit}}Present{{else}}Missing{{/if}})</span></span></div>
+                        </div>
                         {{/if}}
                         {{/if}}
                     {{else}}
@@ -83,6 +102,26 @@
         </aside>
     </div>
 
+    <!-- Skill changes (shopping cart) -->
+    {{#if hasPendingChanges}}
+    <section class="skills-window-changes">
+        <h3 class="skills-changes-title">Skill changes</h3>
+        <ul class="skills-changes-list">
+            {{#each skillChanges}}
+            <li class="skills-changes-item {{#if this.isUnlearn}}skills-changes-unlearn{{else}}skills-changes-learn{{/if}}">
+                <span class="skills-changes-name">{{this.name}}</span>
+                <span class="skills-changes-delta">{{#if this.isUnlearn}}+{{this.pointsDelta}}{{else}}{{this.pointsDelta}}{{/if}}</span>
+                {{#if this.isUnlearn}}
+                <button type="button" class="skills-changes-remove" data-action="removePendingUnlearn" data-slot-id="{{this.slotID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
+                {{else}}
+                <button type="button" class="skills-changes-remove" data-action="removePendingLearn" data-slot-id="{{this.slotID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
+                {{/if}}
+            </li>
+            {{/each}}
+        </ul>
+    </section>
+    {{/if}}
+
     <!-- Action buttons --> 
     <section class="skills-window-buttons">
         <div class="skills-window-action-bar">
@@ -91,7 +130,7 @@
                 <button type="button" class="skills-window-btn-secondary" data-action="reset" title="Reset unapplied changes">
                     <i class="fa-solid fa-undo"></i> Reset
                 </button>
-                <button type="button" class="skills-window-btn-primary" data-action="apply" title="Apply skill point investments">
+                <button type="button" class="skills-window-btn-primary" data-action="apply" title="Apply skill point investments"{{#unless hasPendingChanges}} disabled{{/unless}}>
                     <i class="fa-solid fa-check"></i> Apply
                 </button>
             </div>

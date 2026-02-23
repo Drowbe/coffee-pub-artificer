@@ -6,10 +6,10 @@
       "name": "Herbalism",
       "img": "modules/coffee-pub-artificer/images/skills/skill-herbalism-01.webp",
       "description": "Harvest, cultivate, and prepare botanical ingredients.",
-      "skillEnabled": false,
+      "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
-      "skillKit": "",
+      "skillKit": "Herbalism Kit",
       "slots": [
         {
           "slotID": "herbalism-basic-foraging",
@@ -44,10 +44,10 @@
       "name": "Alchemy",
       "img": "modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp",
       "description": "Brew potions, refine ingredients, and push experimental mixtures.",
-      "skillEnabled": false,
+      "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
-      "skillKit": "",
+      "skillKit": "Alchemist's Supplies",
       "slots": [
         {
           "slotID": "alchemy-basic-alchemy",
@@ -72,7 +72,7 @@
       "skillEnabled": false,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
-      "skillKit": "",
+      "skillKit": "Poisoner's Kit",
       "slots": [
         {
           "slotID": "poisoncraft-basic-poisons",
@@ -97,7 +97,7 @@
       "skillEnabled": false,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
-      "skillKit": "",
+      "skillKit": "Cook's Utensils",
       "slots": [
         {
           "slotID": "cooking-basic-cooking",

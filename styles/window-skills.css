@@ -169,7 +169,7 @@
     min-height: 0;
     overflow-y: auto;
     background-image:
-    linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)),
     var(--skills-banner-image-panels);
     width: max-content;
     min-width: 0;
@@ -212,8 +212,8 @@
     justify-content: space-between;
     width: 100%;
     gap: 8px;
-    background: rgba(145, 131, 107, 0.9);
-    border-radius: 2px 2px 2px 2px;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 3px 3px 3px 3px;
     padding: 3px 6px 3px 6px;
 }
 
@@ -224,7 +224,7 @@
     letter-spacing: 0.04em;
     text-align: left;
     line-height: 1.1;
-    color: rgba(0, 0, 0, 0.9);
+    color: rgba(145, 131, 107, 0.9);
 }
 
 .skills-panel-label-dots {
@@ -234,10 +234,14 @@
 }
 
 .skills-panel-dot {
-    font-size: 0.4em;
-    color: rgba(0, 0, 0, 0.1);
+    font-size: 0.6em;
+    color: rgba(145, 131, 107, 0.4);
 }
 
+.skills-panel-dot .dot-learned {
+
+    color: rgba(145, 131, 107, 0.9);
+}
 
 
 
@@ -454,9 +458,101 @@
     opacity: 0.9;
 }
 
-.skills-detail-requirement {
+/* ----- Detail rows (label + value fields, like Artificer Properties) ----- */
+.skills-detail-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
+}
+
+.skills-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 0.85em;
-    color: rgba(201, 201, 201, 0.9);
+}
+
+.skills-detail-label {
+    flex: 0 0 100px;
+    font-weight: 600;
+    color: var(--skills-accent-color);
+}
+
+.skills-detail-value {
+    flex: 1;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(68, 68, 68, 0.5);
+    color: rgba(224, 224, 224, 0.95);
+}
+
+.skills-detail-kit-status {
+    font-style: italic;
+    font-weight: 600;
+}
+
+.skills-detail-kit-status.skills-detail-kit-present {
+    color: rgba(100, 180, 100, 0.95);
+}
+
+.skills-detail-kit-status.skills-detail-kit-missing {
+    color: rgba(255, 140, 100, 0.95);
+}
+
+.skills-detail-btn-learn,
+.skills-detail-btn-unlearn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-top: 8px;
+    margin-right: 8px;
+    border: 1px solid var(--skills-border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9em;
+}
+
+.skills-detail-btn-learn {
+    background: rgba(41, 94, 47, 0.7);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.skills-detail-btn-unlearn {
+    background: rgba(88, 44, 24, 0.7);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.skills-detail-btn-learn:hover,
+.skills-detail-btn-unlearn:hover:not(:disabled) {
+    background: rgba(255, 100, 0, 0.5);
+    border-color: rgba(255, 100, 0, 0.6);
+}
+
+.skills-detail-btn-unlearn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.skills-detail-unlearn-blocked {
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: rgba(255, 180, 120, 0.95);
+    font-style: italic;
+}
+
+.skills-detail-kit-missing {
+    margin: 8px 0;
+    padding: 8px 10px;
+    background: rgba(120, 50, 30, 0.4);
+    border: 1px solid rgba(180, 80, 50, 0.5);
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: rgba(255, 180, 120, 0.95);
 }
 
 .skills-detail-description {
@@ -465,15 +561,87 @@
     color: rgba(201, 201, 201, 0.9);
 }
 
-.skills-detail-cost {
-    font-size: 0.9em;
-    color: rgba(172, 159, 129, 0.95);
-}
-
 .skills-zone-empty {
     font-size: 0.9em;
     color: #999;
     padding: 8px 0;
+}
+
+/* ----- Skill changes (shopping cart) ----- */
+.skills-window-changes {
+    flex-shrink: 0;
+    border-top: 1px solid var(--skills-border-color);
+    background: rgba(0, 0, 0, 0.35);
+    padding: 10px 12px;
+}
+
+.skills-changes-title {
+    margin: 0 0 8px 0;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--skills-accent-color);
+}
+
+.skills-changes-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.skills-changes-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0px 8px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.skills-changes-item.skills-changes-learn {
+    border-left: 3px solid rgba(59, 132, 66, 0.8);
+}
+
+.skills-changes-item.skills-changes-unlearn {
+    border-left: 3px solid rgba(255, 140, 80, 0.8);
+}
+
+.skills-changes-name {
+    flex: 1;
+    font-size: 0.9em;
+}
+
+.skills-changes-delta {
+    font-weight: 600;
+    font-size: 0.9em;
+    min-width: 2.5em;
+}
+
+.skills-changes-learn .skills-changes-delta {
+    color: rgba(100, 200, 110, 0.95);
+}
+
+.skills-changes-unlearn .skills-changes-delta {
+    color: rgba(255, 180, 120, 0.95);
+}
+
+.skills-changes-remove {
+    padding: 1px 4px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 0.65em;
+}
+
+.skills-changes-remove:hover {
+    background: rgba(255, 80, 80, 0.3);
+    border-color: rgba(255, 80, 80, 0.6);
+    color: rgba(255, 255, 255, 0.95);
 }
 
 /* ----- Button bar (match crafting) ----- */
