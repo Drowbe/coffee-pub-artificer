@@ -7,8 +7,12 @@
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+import { SkillManager } from './manager-skills.js';
+
 const SKILLS_APP_ID = 'artificer-skills';
 const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
+
+const _skillManager = new SkillManager();
 
 /** Cached skills data from JSON */
 let _skillsDetailsCache = null;
@@ -68,7 +72,6 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._selectedSkillId = null;
         /** @type {number|null} selected slot index (null = viewing skill details) */
         this._selectedSlotIndex = null;
-        this._availablePoints = 3;
     }
 
     _getActor() {
@@ -91,7 +94,12 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         const actorName = actor?.name ?? null;
         const actorImg = actor?.img ?? null;
-        const availablePoints = this._availablePoints;
+        const [availablePoints, learnedSlots] = actor
+            ? await Promise.all([
+                _skillManager.getPointsRemaining(actor),
+                _skillManager.getLearnedSlots(actor)
+            ])
+            : [0, []];
 
         const { skills = [] } = await loadSkillsDetails();
 
@@ -101,7 +109,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 ...s,
                 slotIndex: idx,
                 displayValue: s.cost ?? 0,
-                slotApplied: (s.value ?? 0) > 0,
+                slotApplied: learnedSlots.includes(s.slotID ?? ''),
                 slotMinSkillLevel: s.slotMinSkillLevel ?? 0,
                 slotMaxSkillLevel: s.slotMaxSkillLevel ?? 0,
                 slotBackgroundColor: s.slotBackgroundColor ?? s.backgroundColor ?? 'rgba(47, 63, 56, 0.4)',
@@ -160,7 +168,6 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
-        w._availablePoints = 3;
         w._selectedSkillId = null;
         w._selectedSlotIndex = null;
         w.render();
