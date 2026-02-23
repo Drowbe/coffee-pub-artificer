@@ -147,12 +147,28 @@ function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
 }
 
 /**
- * Send "You didn't find anything" chat card.
+ * Send "You didn't find anything" chat card (failed roll or no actor).
  * @param {Actor} [actor] - Optional actor (for speaker)
  */
 export function sendGatherFailureCard(actor = null) {
     const title = 'Forage for components';
     const body = '<p>You didn\'t find anything.</p>';
+    const html = buildChatCardHtml(title, body, 'card');
+    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
+    ChatMessage.create({
+        content: html,
+        speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+}
+
+/**
+ * Send "You searched but found no matching components here." (roll succeeded but pool empty).
+ * @param {Actor} [actor] - Optional actor (for speaker)
+ */
+export function sendGatherNoPoolCard(actor = null) {
+    const title = 'Forage for components';
+    const body = '<p>You searched the area but found no components of the types you were looking for here.</p>';
     const html = buildChatCardHtml(title, body, 'card');
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
@@ -203,7 +219,7 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         return;
     }
     if (!record) {
-        sendGatherFailureCard(actor);
+        sendGatherNoPoolCard(actor);
         return;
     }
     let item = null;
