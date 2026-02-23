@@ -4,7 +4,6 @@
 
 import { MODULE } from './const.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
-import { postError } from './utils/helpers.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
@@ -180,7 +179,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 if (form && typeof w.submit === 'function') {
                     w.submit().catch((err) => {
                         ui.notifications?.error?.(err?.message ?? 'Submit failed');
-                        postError(MODULE.NAME, 'Artificer Item Form submit error', err?.message ?? String(err));
+                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Artificer Item Form submit error', err?.message ?? String(err), true, false);
                     });
                 } else if (form) {
                     w._handleSubmit(new FormData(form));
@@ -275,7 +274,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             item.sheet?.render(true);
         } catch (err) {
             ui.notifications?.error?.(err?.message ?? 'Failed to remove Artificer data');
-            postError(MODULE.NAME, 'Delete Artificer error', err?.message ?? String(err));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Delete Artificer error', err?.message ?? String(err), true, false);
         }
     }
 
@@ -504,7 +503,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         } catch (error) {
             const errorMessage = error.message || String(error);
             ui.notifications.error(`Error creating item: ${errorMessage}`);
-            postError(MODULE.NAME, 'Artificer Item Form Error', error?.message ?? String(error), true);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Artificer Item Form Error', error?.message ?? String(error), true, true);
             // Don't re-throw - we want to show the error but not crash
         }
     }

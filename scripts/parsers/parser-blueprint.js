@@ -3,7 +3,6 @@
 // ================================================================== 
 
 import { MODULE } from '../const.js';
-import { postDebug, postError } from '../utils/helpers.js';
 import { ArtificerBlueprint } from '../data/models/model-blueprint.js';
 import { BLUEPRINT_STAGE_STATES } from '../schema-blueprints.js';
 
@@ -65,7 +64,7 @@ export class BlueprintParser {
                     if (uuidMatch) {
                         data.resultItemUuid = uuidMatch[1].trim();
                     } else {
-                        postDebug(MODULE.NAME, `Blueprint "${data.name}" result does not use @UUID format`, value);
+                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Blueprint "${data.name}" result does not use @UUID format`, value, true, false);
                     }
                 } else if (labelLower === 'tags') {
                     // Parse comma-separated tags
@@ -83,26 +82,26 @@ export class BlueprintParser {
             
             // Validate required fields
             if (!data.resultItemUuid) {
-                postDebug(MODULE.NAME, `Blueprint "${data.name}" is missing resultItemUuid`);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Blueprint "${data.name}" is missing resultItemUuid`, null, true, false);
                 return null;
             }
             
             if (data.stages.length === 0) {
-                postDebug(MODULE.NAME, `Blueprint "${data.name}" has no stages`);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Blueprint "${data.name}" has no stages`, null, true, false);
                 return null;
             }
             
             // Create blueprint object
             const blueprint = new ArtificerBlueprint(data);
             if (!blueprint.validate()) {
-                postDebug(MODULE.NAME, `Blueprint "${data.name}" failed validation`);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Blueprint "${data.name}" failed validation`, null, true, false);
                 return null;
             }
             
             return blueprint;
             
         } catch (error) {
-            postError(MODULE.NAME, `Error parsing blueprint from page "${page.name}"`, error?.message ?? String(error));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error parsing blueprint from page "${page.name}"`, error?.message ?? String(error), true, false);
             return null;
         }
     }

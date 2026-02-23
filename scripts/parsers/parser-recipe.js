@@ -3,7 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../const.js';
-import { postDebug, postError, extractNameFromUuidLink } from '../utils/helpers.js';
+import { extractNameFromUuidLink } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from '../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
@@ -143,14 +143,14 @@ export class RecipeParser {
             // Create recipe object
             const recipe = new ArtificerRecipe(data);
             if (!recipe.validate()) {
-                postDebug(MODULE.NAME, `Recipe "${data.name}" failed validation`);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Recipe "${data.name}" failed validation`, null, true, false);
                 return null;
             }
             
             return recipe;
             
         } catch (error) {
-            postError(MODULE.NAME, `Error parsing recipe from page "${page.name}"`, error?.message ?? String(error));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error parsing recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
             return null;
         }
     }

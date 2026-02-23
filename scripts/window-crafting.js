@@ -3,7 +3,6 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { postError } from './utils/helpers.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
@@ -879,10 +878,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const item = actor.items.get(itemId);
         if (!item) return;
         const available = item.system?.quantity ?? 1;
-        const existingIdx = this.selectedSlots.findIndex(s => s && s.item.id === itemId);
+        const existingIdx = this.selectedSlots.findIndex(s => s && s.item && s.item.id === itemId);
         if (existingIdx !== -1) {
             const totalInSlots = this.selectedSlots.reduce(
-                (sum, s) => sum + (s && s.item.id === itemId ? s.count : 0),
+                (sum, s) => sum + (s && s.item && s.item.id === itemId ? s.count : 0),
                 0
             );
             if (totalInSlots >= available) return;
@@ -948,7 +947,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const api = getAPI();
             if (api?.ingredients?.refresh) await api.ingredients.refresh();
         } catch (err) {
-            postError(MODULE.NAME, 'Cache refresh failed', err?.message ?? String(err));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Cache refresh failed', err?.message ?? String(err), true, false);
             ui.notifications?.error?.('Failed to refresh item cache.');
         }
         await this.render();
@@ -1196,7 +1195,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 quality: 'Basic'
             };
         } catch (err) {
-            postError(MODULE.NAME, 'Recipe craft error', err?.message ?? String(err));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Recipe craft error', err?.message ?? String(err), true, false);
             return { success: false, item: null, name: err?.message ?? 'Craft failed', quality: 'Failed' };
         }
     }

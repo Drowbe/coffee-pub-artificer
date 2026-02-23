@@ -6,7 +6,6 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { postDebug } from '../utils/helpers.js';
 import { LEGACY_FAMILY_TO_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 
 /** Schema version for cache invalidation */
@@ -287,7 +286,7 @@ export async function refreshCache(onProgress) {
                 }
             }
         } catch (err) {
-            postDebug(MODULE.NAME, `Cache: error loading compendium "${cid}"`, err?.message ?? null);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Cache: error loading compendium "${cid}"`, err?.message ?? null, true, false);
         }
     }
 
@@ -306,7 +305,7 @@ export async function refreshCache(onProgress) {
             entries
         });
     } catch (e) {
-        postDebug(MODULE.NAME, 'Cache: failed to persist', e?.message ?? null);
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Cache: failed to persist', e?.message ?? null, true, false);
     }
 
     _status.building = false;

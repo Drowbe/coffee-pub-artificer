@@ -3,7 +3,6 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
-import { postDebug, postError } from './utils/helpers.js';
 import { getFromCache } from './cache/cache-items.js';
 import {
     ARTIFICER_TYPES,
@@ -78,7 +77,7 @@ export async function resolveItemByName(name, type) {
                 }
                 return item;
             } catch (err) {
-                postDebug(MODULE.NAME, `Error searching compendium "${compendiumId}" for "${targetName}"`, err?.message ?? null);
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error searching compendium "${compendiumId}" for "${targetName}"`, err?.message ?? null, true, false);
                 continue;
             }
         }
@@ -143,7 +142,7 @@ export async function createArtificerItem(payload, artificerData, options = {}) 
             const createdItems = await Item.createDocuments([itemStructure], {});
             item = createdItems[0];
         } catch (error) {
-            postError(MODULE.NAME, 'Error creating item', error?.message ?? String(error));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Error creating item', error?.message ?? String(error), true, false);
             throw new Error(`Failed to create item: ${error.message}`);
         }
     } else {

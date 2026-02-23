@@ -3,7 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { getOrCreateJournal, postDebug, postError, extractNameFromUuidLink } from './utils/helpers.js';
+import { getOrCreateJournal, extractNameFromUuidLink } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
@@ -281,7 +281,7 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
         } else if (ui?.notifications) {
             isError ? ui.notifications.error(msg) : ui.notifications.info(msg);
         } else {
-            postDebug(moduleName, msg);
+            BlacksmithUtils.postConsoleAndNotification(moduleName, msg, null, true, false);
         }
     };
     if (errorCount === 0) {
@@ -292,9 +292,9 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
         notify(`Imported ${successCount} of ${total} recipe${total !== 1 ? 's' : ''} (${errorCount} error${errorCount !== 1 ? 's' : ''})`);
     }
     if (errors?.length) {
-        errors.forEach(({ name, error, index }) => postError(moduleName, `Recipe Import Error: ${index + 1} (${name})`, error?.message ?? String(error)));
+        errors.forEach(({ name, error, index }) => BlacksmithUtils.postConsoleAndNotification(moduleName, `Recipe Import Error: ${index + 1} (${name})`, error?.message ?? String(error), true, false));
     }
     if (created?.length) {
-        created.forEach(({ name, index }) => postDebug(moduleName, `Imported: ${index + 1}. ${name}`));
+        created.forEach(({ name, index }) => BlacksmithUtils.postConsoleAndNotification(moduleName, `Imported: ${index + 1}. ${name}`, null, true, false));
     }
 }

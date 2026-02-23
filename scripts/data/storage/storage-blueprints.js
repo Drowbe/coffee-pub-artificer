@@ -3,7 +3,6 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
-import { postDebug, postError } from '../../utils/helpers.js';
 import { ArtificerBlueprint } from '../models/model-blueprint.js';
 import { BlueprintParser } from '../../parsers/parser-blueprint.js';
 
@@ -60,7 +59,7 @@ export class BlueprintStorage {
 
         const journal = await fromUuid(journalUuid);
         if (!journal || journal.documentName !== 'JournalEntry') {
-            postDebug(MODULE.NAME, `Blueprint journal "${journalUuid}" not found. Blueprints will not be loaded.`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Blueprint journal "${journalUuid}" not found. Blueprints will not be loaded.`, null, true, false);
             return;
         }
         
@@ -81,7 +80,7 @@ export class BlueprintStorage {
                     this._cache.set(blueprint.id, blueprint);
                 }
             } catch (error) {
-                postError(MODULE.NAME, `Error loading blueprint from page "${page.name}"`, error?.message ?? String(error));
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error loading blueprint from page "${page.name}"`, error?.message ?? String(error), true, false);
             }
         }
     }

@@ -3,7 +3,6 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
-import { postDebug, postError } from '../../utils/helpers.js';
 import { COMPONENT_TYPES } from '../../schema-components.js';
 import { INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 
@@ -64,19 +63,19 @@ export class ArtificerComponent {
     _validateAndNormalize() {
         // Validate type
         if (!Object.values(COMPONENT_TYPES).includes(this.type)) {
-            postDebug(MODULE.NAME, `Invalid component type: ${this.type}. Defaulting to ${COMPONENT_TYPES.METAL}`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid component type: ${this.type}. Defaulting to ${COMPONENT_TYPES.METAL}`, null, true, false);
             this.type = COMPONENT_TYPES.METAL;
         }
         
         // Validate rarity
         if (!Object.values(INGREDIENT_RARITIES).includes(this.rarity)) {
-            postDebug(MODULE.NAME, `Invalid component rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid component rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`, null, true, false);
             this.rarity = INGREDIENT_RARITIES.COMMON;
         }
         
         // Validate tier (1-10)
         if (typeof this.tier !== 'number' || this.tier < 1 || this.tier > 10) {
-            postDebug(MODULE.NAME, `Invalid component tier: ${this.tier}. Defaulting to 1`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid component tier: ${this.tier}. Defaulting to 1`, null, true, false);
             this.tier = 1;
         }
         
@@ -110,11 +109,11 @@ export class ArtificerComponent {
      */
     validate() {
         if (!this.id) {
-            postError(MODULE.NAME, 'ArtificerComponent: Missing id');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerComponent: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            postError(MODULE.NAME, 'ArtificerComponent: Missing name');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerComponent: Missing name', null, true, false);
             return false;
         }
         return true;

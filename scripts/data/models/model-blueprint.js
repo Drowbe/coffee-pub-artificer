@@ -3,9 +3,6 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
-import { postDebug, postError } from '../../utils/helpers.js';
-import { CRAFTING_SKILLS } from '../../schema-recipes.js';
-import { BLUEPRINT_STAGE_STATES } from '../../schema-blueprints.js';
 import { hashString } from '../../utils/helpers.js';
 
 /**
@@ -41,13 +38,13 @@ export class ArtificerBlueprint {
     _validateAndNormalize() {
         // Validate skill
         if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            postDebug(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ARTIFICE}`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ARTIFICE}`, null, true, false);
             this.skill = CRAFTING_SKILLS.ARTIFICE;
         }
         
         // Validate skillLevel (0-100)
         if (typeof this.skillLevel !== 'number' || this.skillLevel < 0 || this.skillLevel > 100) {
-            postDebug(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 0`);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 0`, null, true, false);
             this.skillLevel = 0;
         }
         
@@ -276,19 +273,19 @@ export class ArtificerBlueprint {
      */
     validate() {
         if (!this.id) {
-            postError(MODULE.NAME, 'ArtificerBlueprint: Missing id');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            postError(MODULE.NAME, 'ArtificerBlueprint: Missing name');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing name', null, true, false);
             return false;
         }
         if (!this.resultItemUuid) {
-            postError(MODULE.NAME, 'ArtificerBlueprint: Missing resultItemUuid');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing resultItemUuid', null, true, false);
             return false;
         }
         if (this.stages.length === 0) {
-            postError(MODULE.NAME, 'ArtificerBlueprint: No stages specified');
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: No stages specified', null, true, false);
             return false;
         }
         return true;

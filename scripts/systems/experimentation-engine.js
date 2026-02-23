@@ -3,7 +3,6 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { postError } from '../utils/helpers.js';
 import { ArtificerComponent } from '../data/models/model-component.js';
 import { resolveItemByName, getTraitsFromFlags, getArtificerTypeFromFlags, addCraftedItemToActor } from '../utility-artificer-item.js';
 import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
@@ -114,7 +113,7 @@ export class ExperimentationEngine {
                 };
             }
         } catch (err) {
-            postError(MODULE.NAME, 'ExperimentationEngine.craft error', err?.message ?? String(err));
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ExperimentationEngine.craft error', err?.message ?? String(err), true, false);
             return { success: false, item: null, name: err.message, quality: 'Failed' };
         }
 

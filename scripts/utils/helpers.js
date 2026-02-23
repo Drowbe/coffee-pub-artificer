@@ -3,31 +3,6 @@
 // ================================================================== 
 
 /**
- * Log debug/warn via Blacksmith API (only when debug enabled). Do not use console.warn.
- * @param {string} moduleName - Module name (e.g. MODULE.NAME)
- * @param {string} message - Log message
- * @param {string|null} [detail] - Optional detail
- */
-export function postDebug(moduleName, message, detail = null) {
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(moduleName, message, detail, true, false);
-    }
-}
-
-/**
- * Log error via Blacksmith API.
- * @param {string} moduleName - Module name
- * @param {string} message - Log message
- * @param {string|null} [detail] - Optional detail
- * @param {boolean} [showNotification=false] - Show UI notification
- */
-export function postError(moduleName, message, detail = null, showNotification = false) {
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(moduleName, message, detail, true, showNotification);
-    }
-}
-
-/**
  * Get or create a journal entry
  * @param {string} name - Journal name
  * @param {Object} options - Options
