@@ -109,6 +109,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Layout:** Panels column fixed 700px; details pane flexes with window; panels area scrolls when many skills
 - **Event handling:** Delegation attached in `_onFirstRender` so badge and slot clicks work with ApplicationV2 PARTS
 
+### Roll for Components (Gather) — 13.0.2
+- **Gather window** (Roll for Components): GM selects habitats (biomes), component types, and DC; requests a roll for selected canvas tokens.
+- **Habitat multi-select:** Same approach as Create window — grid of Habitat buttons (multi-select, `.gather-biome-btn` with `.active`); eligibility uses selected biomes (item eligible if it has no biomes or its biomes intersect the selection).
+- **Blacksmith Request a Roll integration:**
+  - **Wisdom roll:** Uses `initialType: 'ability'`, `initialValue: 'wis'` (no Herbalism Kit).
+  - **Silent mode:** `silent: true` — request is posted to chat immediately without opening the dialog; gather window closes after posting.
+  - **onRollComplete payload:** Uses `payload.result.total`, `payload.tokenId` (actor from scene token), `payload.allComplete`.
+- **Only components:** Eligibility filters by `artificerType === Component` so weapons/tools/creations are never returned.
+- **No cards until all have rolled:** Results are buffered per roll; chat cards (success, failure, or “no matching components here”) are sent only when `payload.allComplete`, one card per actor.
+- **Remember settings:** `gatherWindowSettings` world setting stores last-used biomes, component types, and DC; restored when the gather window is reopened.
+- **Chat cards:** Success card shows found item with image and UUID link (investigation-tool style), left-aligned. Distinct “You searched the area but found no components of the types you were looking for here” when roll succeeded but pool was empty (`sendGatherNoPoolCard`).
+- **Manager:** `processGatherRollResult()` runs DC check, picks item, adds to actor; returns outcome without sending cards. `handleGatherRollResult()` uses it and sends one card (for non-buffered use). Cache records include `biomes`; `getEligibleGatherRecords(biomes, families)` uses records only and fetches a single item via `fromUuid` for speed (no bulk load when cache is cold).
+
 ### Technical Details
 - All data models use class-based structure with validation
 - Storage managers use Map-based caching for performance
