@@ -216,21 +216,30 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             .filter((skill) => skill.skillEnabled === true)
             .map((skill) => {
             const rawSlots = (skill.slots ?? []).slice(0, 10);
-            const slots = rawSlots.map((s, idx) => ({
+            const MAX_SLOTS = 10;
+            const filledSlots = rawSlots.map((s, idx) => ({
                 ...s,
                 slotIndex: idx,
+                empty: false,
                 displayValue: s.cost ?? 0,
                 slotApplied: effectiveLearned(s.slotID ?? ''),
                 slotMinSkillLevel: s.slotMinSkillLevel ?? 0,
                 slotMaxSkillLevel: s.slotMaxSkillLevel ?? 0,
-                slotBackgroundColor: s.slotBackgroundColor ?? s.backgroundColor ?? 'rgba(47, 63, 56, 0.4)',
-                slotBorderColor: s.slotBorderColor ?? s.borderColor ?? 'rgba(47, 63, 56, 0.6)',
                 slotSkillLearnedBackgroundColor: s.slotSkillLearnedBackgroundColor ?? 'rgba(47, 63, 56, 0.4)',
                 iconClass: s.icon ? (s.icon.startsWith('fa-') ? `fa-solid ${s.icon}` : `fa-solid fa-${s.icon}`) : null,
                 selected: this._selectedSkillId === skill.id && this._selectedSlotIndex === idx
             }));
+            const emptyCount = MAX_SLOTS - filledSlots.length;
+            const emptySlots = Array.from({ length: emptyCount }, (_, i) => ({
+                empty: true,
+                slotIndex: filledSlots.length + i
+            }));
+            const slots = [...filledSlots, ...emptySlots];
 
             const totalCost = rawSlots.reduce((sum, s) => sum + (s.cost ?? 0), 0);
+            const learnedPoints = rawSlots
+                .filter((s) => effectiveLearned(s.slotID ?? ''))
+                .reduce((sum, s) => sum + (s.cost ?? 0), 0);
 
             const skillKit = skill.skillKit ?? '';
             const hasKit = skillKit ? actorHasItemNamed(actor, skillKit) : true;
@@ -246,7 +255,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 hasKit,
                 slots,
                 totalCost,
-                totalCostDots: Array.from({ length: totalCost }),
+                totalCostDots: Array.from({ length: totalCost }, (_, i) => ({ learned: i < learnedPoints })),
                 badgeSelected: this._selectedSkillId === skill.id && this._selectedSlotIndex === null
             };
         });
@@ -256,7 +265,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (selSkill) {
             if (this._selectedSlotIndex != null) {
                 const slot = selSkill.slots?.[this._selectedSlotIndex];
-                if (slot) {
+                if (slot && !slot.empty) {
                     const slotID = slot.slotID ?? '';
                     const cost = slot.cost ?? 0;
                     const isEffectiveLearned = effectiveLearned(slotID);

@@ -31,7 +31,7 @@
                     <span class="skills-panel-label-text">{{this.name}}</span>
                     <span class="skills-panel-label-dots">
                         {{#each this.totalCostDots}}
-                        <i class="fa-solid fa-circle skills-panel-dot"></i>
+                        <i class="fa-solid fa-circle skills-panel-dot{{#if this.learned}} dot-learned{{/if}}"></i>
                         {{/each}}
                     </span>
                 </div>
@@ -41,10 +41,14 @@
                 </div>
                 <div class="skills-panel-slots">
                     {{#each this.slots}}
-                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}{{#if this.slotApplied}} skills-slot-learned{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotBackgroundColor}}; border-color: {{this.slotBorderColor}};"{{/if}}>
+                    {{#if this.empty}}
+                    <div class="skills-slot skills-slot-empty"></div>
+                    {{else}}
+                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}{{#if this.slotApplied}} skills-slot-learned{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotSkillLearnedBackgroundColor}};"{{/if}}>
                         {{#if this.iconClass}}<i class="{{this.iconClass}} skills-slot-icon"></i>{{/if}}
-                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotSkillLearnedBackgroundColor}};"{{/if}}>{{this.displayValue}}</span>
+                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}">{{this.displayValue}}</span>
                     </div>
+                    {{/if}}
                     {{/each}}
                 </div>
                 </div>
@@ -90,7 +94,7 @@
                         {{/if}}
                         {{#if selectedDetail.skill.skillKit}}
                         <div class="skills-detail-rows">
-                            <div class="skills-detail-row"><span class="skills-detail-label">Required Kit:</span><span class="skills-detail-value">{{selectedDetail.skill.skillKit}} <span class="skills-detail-kit-status {{#if selectedDetail.skill.hasKit}}skills-detail-kit-present{{else}}skills-detail-kit-missing{{/if}}">({{#if selectedDetail.skill.hasKit}}Present{{else}}Missing{{/if}})</span></span></div>
+                            <div class="skills-detail-row"><span class="skills-detail-label">Required Kit:</span><span class="skills-detail-value">{{selectedDetail.skill.skillKit}} <span class="skills-detail-kit-status {{#if selectedDetail.skill.hasKit}}skills-detail-kit-present{{else}}skills-detail-kit-missing{{/if}}">({{#if selectedDetail.skill.hasKit}}Owned{{else}}Missing{{/if}})</span></span></div>
                         </div>
                         {{/if}}
                         {{/if}}

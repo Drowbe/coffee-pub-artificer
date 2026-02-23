@@ -5,7 +5,7 @@
       "id": "Herbalism",
       "name": "Herbalism",
       "img": "modules/coffee-pub-artificer/images/skills/skill-herbalism-01.webp",
-      "description": "Harvest, cultivate, and prepare botanical ingredients.",
+      "description": "<p><strong>Herbalism</strong> is the study and practical mastery of natural growths and botanical materials. It governs the identification, acquisition, and preparation of plants, fungi, and other naturally occurring organic substances used in crafting.</p><p>It encompasses three primary areas:</p><ul><li><strong>Identification:</strong> Recognizing natural growths and understanding their properties; distinguishing useful, edible, medicinal, toxic, or reactive specimens; identifying which parts hold potency; assessing freshness and quality; and spotting contamination, infestation, or natural mutation.</li><li><strong>Gathering &amp; Cultivation:</strong> Knowing where, when, and how to safely acquire botanical materials; harvesting without diminishing potency; extracting delicate materials such as sap, pollen, spores, or resin; preserving materials during transport; and cultivating or propagating useful plants.</li><li><strong>Botanical Preparation:</strong> Transforming raw materials into usable forms through cleaning, trimming, drying, curing, and grinding; preparing teas, poultices, salves, oils, and basic infusions; reducing natural toxicity or stabilizing volatile properties; and readying botanical ingredients for broader crafting processes.</li></ul><p>Herbalism focuses on natural materials and their direct preparation. It does not cover mineral refinement, advanced alchemical synthesis, or arcane essence manipulation.</p>",
       "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
@@ -19,9 +19,7 @@
           "description": "You have the <strong>Herbalism Kit</strong> and the desire to forage for herbs. Nothing can stop you now.",
           "requirement": "Herbalism Kit",
           "cost": 0,
-          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
-          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
-          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         },
         {
@@ -32,18 +30,29 @@
           "description": "You have the <strong>Herbalism Kit</strong> and deep experience gathering herbs. You can now gather more herbs and more rare herbs.",
           "requirement": "Basic Foraging",
           "cost": 2,
-          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
-          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
-          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-leaf"
+        },
+        {
+          "slotID": "herbalism-expert-foraging",
+          "index": 3,
+          "value": 0,
+          "name": "Advanced Foraging",
+          "description": "You have the <strong>Herbalism Kit</strong> and are an expert at gathering herbs. You can now gather more herbs and more rare herbs.",
+          "requirement": "Advanced Foraging",
+          "cost": 2,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         }
       ]
     },
+
+
     {
       "id": "Alchemy",
       "name": "Alchemy",
       "img": "modules/coffee-pub-artificer/images/skills/skill-alchemy-01.webp",
-      "description": "Brew potions, refine ingredients, and push experimental mixtures.",
+      "description": "<p><strong>Alchemy</strong> is the disciplined art of transforming materials through chemical, reactive, and arcane processes. It governs refinement, distillation, synthesis, and controlled reaction. Alchemy is concerned not with gathering ingredients, but with what happens when materials are combined, altered, or destabilized.</p><p>It encompasses three primary areas:</p><ul><li><strong>Reaction &amp; Synthesis:</strong> Combining components to produce new substances; managing heat, pressure, and catalysts; preventing runaway reactions; controlling volatility and instability; and balancing opposing properties. Alchemy governs the moment materials cease being themselves and become something new.</li><li><strong>Refinement &amp; Distillation:</strong> Extracting, concentrating, or purifying material properties; distilling essences from raw inputs; separating impurities; enhancing potency; stabilizing unstable compounds; and converting crude materials into refined reagents.</li><li><strong>Volatility &amp; Control:</strong> Managing dangerous or unstable processes; preventing explosions or toxic releases; neutralizing hazardous byproducts; safely containing magical or chemical reactions; and recovering partial failures.</li></ul><p>Alchemy governs potions, refined poisons, reactive compounds, stabilized essences, and advanced synthesis. It does not cover natural gathering, botanical identification, or basic field preparation of materials.</p>",
       "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
@@ -57,19 +66,19 @@
           "description": "You have the <strong>Alchemist's Supplies</strong> and the desire to brew potions. Nothing can stop you now.",
           "requirement": "Alchemist's Supplies",
           "cost": 0,
-          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
-          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
-          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-flask"
         }
       ]
     },
+
+
     {
       "id": "Poisoncraft",
       "name": "Poisoncraft",
       "img": "modules/coffee-pub-artificer/images/skills/skill-poisoncraft-01.webp",
-      "description": "Create toxins, venoms, and subtle debilitating agents.",
-      "skillEnabled": false,
+      "description": "<p><strong>Poisoncraft</strong> is the specialized discipline of creating, refining, and deploying toxic substances for harm or incapacitation. It governs the extraction, concentration, stabilization, and application of poisons and venoms. Where Alchemy transforms materials broadly, Poisoncraft focuses on lethality, precision, and controlled delivery.</p><p>It encompasses three primary areas:</p><ul><li><strong>Extraction &amp; Concentration:</strong> Isolating venom from creature parts; extracting toxic compounds from plants and fungi; concentrating mild irritants into dangerous agents; and preserving potency during storage and transport.</li><li><strong>Refinement &amp; Stabilization:</strong> Enhancing toxicity; adjusting onset time and duration; reducing detectable color, scent, or taste; preventing accidental degradation; and minimizing risk of self-exposure.</li><li><strong>Delivery &amp; Application:</strong> Coating weapons; preparing contact, ingested, or inhaled toxins; introducing poisons into food or drink; designing delayed or conditional activation; and safely handling volatile agents.</li></ul><p>Poisoncraft governs weaponized toxins, applied venoms, and controlled delivery systems. It does not cover general botanical gathering, broad chemical synthesis, or restorative preparations.</p>",
+      "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Poisoner's Kit",
@@ -82,19 +91,19 @@
           "description": "You have the <strong>Poisoner's Kit</strong>  and the desire to craft poisons. Nothing can stop you now.",
           "requirement": "Poisoner's Kit",
           "cost": 0,
-          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
-          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
-          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-skull"
         }
       ]
     },
+
+
     {
       "id": "Cooking",
       "name": "Cooking",
       "img": "modules/coffee-pub-artificer/images/skills/skill-cooking-01.webp",
-      "description": "Prepare meals that restore, empower, and sustain.",
-      "skillEnabled": false,
+      "description": "<p><strong>Cooking</strong> is the practical craft of preparing food and drink that is nourishing, safe, and enjoyable. It governs selecting ingredients, applying heat and technique, preserving food, and combining flavors to produce meals, rations, and specialty dishes.</p><p>It encompasses three primary areas:</p><ul><li><strong>Preparation &amp; Technique:</strong> Cleaning, trimming, grinding, mixing, and portioning ingredients; using knives and basic tools safely; and applying methods such as roasting, boiling, frying, baking, fermenting, smoking, and drying.</li><li><strong>Flavor &amp; Quality:</strong> Balancing taste and texture; managing doneness; adjusting seasoning; and recognizing when ingredients are fresh, spoiled, or contaminated.</li><li><strong>Preservation &amp; Provisioning:</strong> Producing travel-ready rations; preserving food through salting, curing, pickling, drying, and storage; and planning meals with limited supplies and field conditions.</li></ul><p>Cooking supports the creation of food-based items, rations, and restorative meals. It focuses on nutrition, safety, and quality rather than alchemical transformation or weaponized toxins.</p>",
+      "skillEnabled": true,
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Cook's Utensils",
@@ -107,12 +116,239 @@
           "description": "You have the <strong>Cook's Utensils</strong> and the desire to cook. Nothing can stop you now.",
           "requirement": "Cook's Utensils",
           "cost": 0,
-          "slotBackgroundColor": "rgba(0, 0, 0, 0.4)",
-          "slotBorderColor": "rgba(0, 0, 0, 0.2)",
-          "slotSkillLearnedBackgroundColor": "rgba(47, 63, 56, 0.4)",
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-bowl-food"
         }
       ]
+    },
+
+
+    {
+      "id": "Smithing",
+      "name": "Smithing",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-smithing-01.webp",
+      "description": "<p><strong>Smithing</strong> is the craft of shaping, forging, and refining metal into functional forms. It governs heating, hammering, tempering, joining, and finishing metal components for tools, hardware, and structural use.</p><p>It encompasses three primary areas:</p><ul><li><strong>Metal Preparation:</strong> Assessing raw metal; removing impurities; managing heat; and preparing material for shaping without compromising integrity.</li><li><strong>Forging &amp; Forming:</strong> Hammering, bending, drawing, riveting, and welding metal into precise shapes; creating balanced and durable components; and maintaining structural strength during shaping.</li><li><strong>Tempering &amp; Finish:</strong> Hardening and tempering metal for resilience; refining edges and surfaces; reinforcing stress points; and applying protective finishes.</li></ul><p>Smithing supports the creation of metal fittings, structural components, tools, hardware, and forged elements used in broader crafting. It focuses on material strength and precision shaping rather than enchantment or alchemical transformation.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Smith's Tools",
+      "slots": [
+        {
+          "slotID": "smithing-basic-smithing",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Smithing",
+          "description": "You have <strong>Smith's Tools</strong> and the foundational knowledge to heat, shape, and temper metal safely. You can produce reliable metal components, fittings, and basic forged items suitable for practical use.",
+          "requirement": "Smith's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hammer"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Leatherworking",
+      "name": "Leatherworking",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-leatherworking-01.webp",
+      "description": "<p><strong>Leatherworking</strong> is the craft of transforming hides, pelts, and treated skins into durable, flexible materials and finished goods. It governs curing, cutting, stitching, shaping, and reinforcing leather for practical use in equipment, clothing, and crafted components.</p><p>It encompasses three primary areas:</p><ul><li><strong>Curing &amp; Treatment:</strong> Cleaning raw hides; tanning and preserving material; preventing rot and brittleness; and preparing leather for long-term durability.</li><li><strong>Cutting &amp; Construction:</strong> Measuring, trimming, stitching, riveting, and layering leather into functional forms such as straps, sheaths, pouches, and fitted pieces.</li><li><strong>Reinforcement &amp; Finish:</strong> Strengthening stress points; adding linings or structural supports; sealing against moisture; and finishing surfaces for protection or aesthetic appeal.</li></ul><p>Leatherworking supports the creation of gear, bindings, cases, flexible armor components, and fitted coverings. It focuses on structural integrity and material performance rather than metal forging or textile weaving.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Leatherworker's Tools",
+      "slots": [
+        {
+          "slotID": "leatherworking-basic-leatherworking",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Leatherworking",
+          "description": "You have <strong>Leatherworker's Tools</strong> and the foundational knowledge to cure hides, cut clean patterns, and stitch durable leather goods. You can produce functional straps, sheaths, pouches, and fitted components suitable for everyday use.",
+          "requirement": "Leatherworker's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-scissors"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Tinkering",
+      "name": "Tinkering",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-tinkering-01.webp",
+      "description": "<p><strong>Tinkering</strong> is the craft of designing, assembling, and repairing small mechanical devices and precision components. It governs gears, springs, housings, simple mechanisms, and the careful integration of moving parts into reliable constructs.</p><p>It encompasses three primary areas:</p><ul><li><strong>Mechanical Assembly:</strong> Constructing and aligning gears, levers, pins, and springs; ensuring balanced motion; and minimizing friction and wear.</li><li><strong>Repair &amp; Adjustment:</strong> Diagnosing mechanical faults; restoring damaged components; recalibrating misaligned parts; and improving reliability through fine adjustment.</li><li><strong>Integration &amp; Innovation:</strong> Combining mechanical elements with crafted materials; building compact mechanisms; and designing functional devices within practical size constraints.</li></ul><p>Tinkering supports the creation of tools, small devices, precision mechanisms, and integrated components used in broader crafting systems. It focuses on mechanical reliability and functional design rather than large-scale construction or magical binding.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Tinker's Tools",
+      "slots": [
+        {
+          "slotID": "tinkering-basic-tinkering",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Tinkering",
+          "description": "You have <strong>Tinker's Tools</strong> and the foundational understanding to assemble, repair, and adjust small mechanical devices. You can produce simple mechanisms and maintain precision components with dependable accuracy.",
+          "requirement": "Tinker's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-gears"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Cartography",
+      "name": "Cartography",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-cartography-01.webp",
+      "description": "<p><strong>Cartography</strong> is the craft of measuring, recording, and communicating places through maps. It governs navigation-ready layouts, terrain interpretation, distance estimation, and the practical translation of a real location into something others can trust.</p><p>It encompasses three primary areas:</p><ul><li><strong>Survey &amp; Observation:</strong> Reading terrain, landmarks, and routes; estimating scale and distance; and capturing accurate notes under field conditions.</li><li><strong>Drafting &amp; Representation:</strong> Building clear map structure with symbols, labels, legends, and consistent scale; producing usable diagrams for travel, exploration, and planning.</li><li><strong>Navigation &amp; Reliability:</strong> Correcting maps over time, cross-checking sources, and spotting errors or misleading information before it gets someone lost.</li></ul><p>Cartography supports the creation of maps, charts, route guides, and location records. It focuses on clarity and accuracy rather than artistic illustration.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Cartographer's Tools",
+      "slots": [
+        {
+          "slotID": "cartography-basic-cartography",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Cartography",
+          "description": "You have <strong>Cartographer's Tools</strong> and the instincts to turn travel into something legible. You can sketch reliable maps, mark routes, and capture landmarks with a consistent scale and clear legend.",
+          "requirement": "Cartographer's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-map"
+        }
+      ]
+    },
+
+
+
+    {
+      "id": "Inscription",
+      "name": "Inscription",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-inscription-01.webp",
+      "description": "<p><strong>Inscription</strong> is the disciplined craft of marking language, symbols, and structured meaning onto physical surfaces. It governs precise writing, rune carving, sigil placement, and the durable recording of knowledge for practical or arcane use.</p><p>It encompasses three primary areas:</p><ul><li><strong>Script &amp; Precision:</strong> Producing clean, legible text across materials such as parchment, wood, metal, and stone; maintaining alignment, spacing, and clarity under controlled or field conditions.</li><li><strong>Symbol &amp; Rune Craft:</strong> Accurately reproducing sigils, seals, glyphs, and structured markings that must retain exact form to function as intended.</li><li><strong>Material Application:</strong> Selecting appropriate tools, inks, etching methods, or carving techniques to ensure markings endure without distortion or degradation.</li></ul><p>Inscription supports the creation of scrolls, engraved plates, runic objects, and structured written records. It focuses on accuracy, durability, and symbolic integrity rather than artistic illustration or magical synthesis.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Calligrapher's Supplies",
+      "slots": [
+        {
+          "slotID": "inscription-basic-inscription",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Inscription",
+          "description": "You possess <strong>Calligrapher's Supplies</strong> and the steady hand required to record language and symbols with clarity. You can produce clean script, consistent markings, and durable written records suitable for study, labeling, or formal documentation.",
+          "requirement": "Calligrapher's Supplies",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-feather-pointed"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Enchanting",
+      "name": "Enchanting",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-enchanting-01.webp",
+      "description": "<p><strong>Enchanting</strong> is the structured craft of binding magical properties to objects through deliberate ritual, symbolic alignment, and controlled infusion. It governs the attachment, stabilization, and refinement of arcane effects within physical forms.</p><p>It encompasses three primary areas:</p><ul><li><strong>Arcane Imbuement:</strong> Channeling magical energy into prepared objects; anchoring effects to physical forms; and ensuring compatibility between material and intended enchantment.</li><li><strong>Stabilization &amp; Control:</strong> Preventing magical backlash, energy bleed, or structural failure; reinforcing bindings; and managing volatility during infusion.</li><li><strong>Runic &amp; Symbolic Structure:</strong> Aligning glyphs, sigils, and symbolic frameworks that allow magical effects to persist in a controlled and repeatable manner.</li></ul><p>Enchanting supports the creation and enhancement of magical items, infused tools, and stabilized arcane constructs. It focuses on controlled magical binding rather than raw spellcasting or alchemical reaction.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Enchanter's Tools",
+      "slots": [
+        {
+          "slotID": "enchanting-basic-enchanting",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Enchanting",
+          "description": "You have access to <strong>Enchanter's Tools</strong> and the foundational knowledge to bind minor magical properties to prepared objects. You can safely perform basic infusions and stabilize simple enchantments.",
+          "requirement": "Enchanter's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-wand-magic-sparkles"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Gemcraft",
+      "name": "Gemcraft",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-gemcraft-01.webp",
+      "description": "<p><strong>Gemcraft</strong> is the disciplined craft of cutting, shaping, and setting gemstones for structural, aesthetic, and arcane purposes. It governs precision cutting, flaw assessment, polishing, and the preparation of gems for use in crafting, enchantment, or trade.</p><p>It encompasses three primary areas:</p><ul><li><strong>Assessment &amp; Grading:</strong> Identifying gem types; recognizing flaws, fractures, and inclusions; determining quality and value; and judging suitability for structural or arcane use.</li><li><strong>Cutting &amp; Shaping:</strong> Splitting, faceting, grinding, and polishing stones to maximize clarity, strength, and energy alignment.</li><li><strong>Setting &amp; Stabilization:</strong> Mounting gems securely into metal, wood, or other materials; ensuring structural integrity; and preparing stones for magical infusion or mechanical integration.</li></ul><p>Gemcraft supports the refinement of gemstones for jewelry, embedded components, arcane focuses, and precision fittings. It focuses on structural precision and material integrity rather than magical binding or mineral extraction.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Jeweler's Tools",
+      "slots": [
+        {
+          "slotID": "gemcraft-basic-gemcraft",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Gemcraft",
+          "description": "You have <strong>Jeweler's Tools</strong> and the steady precision required to cut, polish, and set gemstones. You can assess quality, shape stones safely, and prepare gems for mounting or crafting.",
+          "requirement": "Jeweler's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-gem"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Tailoring",
+      "name": "Tailoring",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-tailoring-01.webp",
+      "description": "<p><strong>Tailoring</strong> is the craft of cutting, shaping, and assembling textiles into functional and fitted garments. It governs pattern drafting, stitching, reinforcement, and the transformation of cloth and soft materials into durable clothing and fabric components.</p><p>It encompasses three primary areas:</p><ul><li><strong>Pattern &amp; Measurement:</strong> Drafting accurate patterns; measuring for proper fit; planning seams, folds, and structure; and minimizing material waste.</li><li><strong>Construction &amp; Stitching:</strong> Cutting fabric cleanly; hand-sewing or machine stitching; reinforcing stress points; and assembling layered or lined garments.</li><li><strong>Finish &amp; Reinforcement:</strong> Hemming, sealing seams, adding closures or fastenings, and ensuring garments maintain shape and durability under regular use.</li></ul><p>Tailoring supports the creation of clothing, padded armor layers, fabric linings, banners, and flexible textile components. It focuses on fit, structure, and material integrity rather than leather curing or metal fabrication.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Weaver's Tools",
+      "slots": [
+        {
+          "slotID": "tailoring-basic-tailoring",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Tailoring",
+          "description": "You have <strong>Weaver's Tools</strong> and the foundational skill to measure, cut, and stitch textiles into reliable garments and fabric components. You can produce fitted clothing, simple padded layers, and reinforced cloth items suitable for everyday use.",
+          "requirement": "Weaver's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-scissors"
+        }
+      ]
+    },
+
+
+    {
+      "id": "Masonry",
+      "name": "Masonry",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-masonry-01.webp",
+      "description": "<p><strong>Masonry</strong> is the craft of shaping, fitting, and assembling stone for structural and decorative purposes. It governs quarrying, cutting, carving, and joining stone to produce durable constructions and precise stone components.</p><p>It encompasses three primary areas:</p><ul><li><strong>Stone Selection &amp; Assessment:</strong> Identifying suitable stone types; recognizing fractures and weaknesses; judging structural integrity; and selecting material appropriate to load, environment, and purpose.</li><li><strong>Cutting &amp; Shaping:</strong> Splitting, chiseling, smoothing, and carving stone to precise dimensions; creating interlocking forms; and producing fitted blocks, panels, and structural elements.</li><li><strong>Assembly &amp; Reinforcement:</strong> Laying stone with proper alignment and support; applying mortar or dry-fit techniques; reinforcing stress points; and ensuring long-term stability.</li></ul><p>Masonry supports the construction of walls, foundations, statues, structural components, and fitted stonework. It focuses on durability, precision, and load-bearing integrity rather than mineral extraction or metal forging.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Mason's Tools",
+      "slots": [
+        {
+          "slotID": "masonry-basic-masonry",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Masonry",
+          "description": "You have <strong>Mason's Tools</strong> and the foundational knowledge to cut, shape, and set stone with reliable precision. You can produce fitted blocks, simple carvings, and structurally sound stonework suitable for practical construction.",
+          "requirement": "Mason's Tools",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hammer"
+        }
+      ]
     }
+
+
+
   ]
 }
