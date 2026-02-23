@@ -36,6 +36,17 @@ function asCraftableConsumable(item) {
 }
 
 /**
+ * Check if item passes craft validation (same logic as _craft).
+ * Used when selecting from name-colliding candidates (e.g. multiple "Sage" items).
+ */
+function isCraftValidItem(item) {
+    const f = item?.flags?.[MODULE.ID] || item?.flags?.artificer;
+    if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
+    const cc = asCraftableConsumable(item);
+    return cc.ok;
+}
+
+/**
  * Check if actor has item matching name (for tool, apparatus, container)
  * @param {Actor|null} actor
  * @param {string} name - Item name to match
@@ -987,7 +998,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     return typeof q === 'number' ? q : (q?.value ?? 1);
                 };
                 have = candidates.reduce((sum, item) => sum + getQty(item), 0);
-                matchedItem = candidates[0] ?? null;
+                // Prefer items that pass craft validation (avoids name collision: e.g. actor has both
+                // "Sage" consumable and "Sage" loot; recipe auto-fill must pick the craftable one)
+                matchedItem = candidates.find(isCraftValidItem) ?? candidates[0] ?? null;
             }
 
             const isMissing = have < need;
