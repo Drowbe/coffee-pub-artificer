@@ -143,6 +143,43 @@
     margin: 0;
 }
 
+/* Habitat (biome) multiselect - same approach as create window */
+.gather-habitat-field .gather-label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.gather-biomes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.gather-biome-btn {
+    padding: 4px 10px;
+    min-width: 90px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--gather-border-color);
+    border-radius: 4px;
+    color: #e0e0e0;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85em;
+    text-transform: uppercase;
+}
+
+.gather-biome-btn:hover {
+    border-color: rgba(255, 100, 0, 0.6);
+    background: rgba(255, 100, 0, 0.2);
+    color: #fff;
+}
+
+.gather-biome-btn.active {
+    background: rgba(57, 88, 104, 0.9);
+    border-color: rgba(0, 0, 0, 0.6);
+    color: #fff;
+}
+
 /* ----- Button bar (locked to bottom) ----- */
 .gather-window-buttons {
     flex-shrink: 0;
@@ -196,18 +233,22 @@
     cursor: not-allowed;
 }
 
-/* ----- Gather result in chat card (image + UUID link, investigation-tool style) ----- */
+/* ----- Gather result in chat card (image + UUID link, left-aligned) ----- */
 .gather-result-list {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
     margin: 6px 0;
+    text-align: left;
 }
 
 .gather-result-item {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 8px;
+    text-align: left;
 }
 
 .gather-result-img {

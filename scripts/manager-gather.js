@@ -12,12 +12,22 @@ import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
 
-/** @typedef {{ dc: number, biome: string, componentTypes: string[] }} PendingGather */
+/** @typedef {{ dc: number, biomes: string[], componentTypes: string[] }} PendingGather */
 
 let _pendingGather = null;
 
 /**
- * Get biome options for dropdown (value + label).
+ * Get biome options for multiselect (create-window style: name + selected).
+ * @param {string[]} selectedBiomes - Currently selected biome keys
+ * @returns {Array<{ name: string, selected: boolean }>}
+ */
+export function getBiomeOptionsForMultiselect(selectedBiomes = []) {
+    const set = new Set(Array.isArray(selectedBiomes) ? selectedBiomes : []);
+    return OFFICIAL_BIOMES.map((b) => ({ name: b, selected: set.has(b) }));
+}
+
+/**
+ * Get biome options for dropdown (value + label). Prefer getBiomeOptionsForMultiselect for gather window.
  * @returns {Array<{ value: string, label: string }>}
  */
 export function getBiomeOptions() {
@@ -53,44 +63,47 @@ export function consumePendingGather() {
 }
 
 /**
- * Get cache records that match biome and selected component families (no fromUuid).
- * Use this for gather so we only fetch the single chosen item.
- * @param {string} biome - Selected biome
+ * Get cache records that match selected biomes and component families (no fromUuid).
+ * Only returns items that are Artificer type Component. Item eligible if it has no biomes or its biomes intersect selected.
+ * @param {string[]} biomes - Selected biomes (e.g. ['FOREST', 'HILL'])
  * @param {string[]} families - Selected component families (e.g. ['Plant', 'Mineral'])
- * @returns {Array<{ name: string, uuid: string, family: string, biomes?: string[] }>}
+ * @returns {Array<{ name: string, uuid: string, family: string, img?: string, biomes?: string[] }>}
  */
-export function getEligibleGatherRecords(biome, families) {
-    if (!biome || !families?.length) return [];
+export function getEligibleGatherRecords(biomes, families) {
+    if (!biomes?.length || !families?.length) return [];
     const records = getAllRecordsFromCache();
+    const biomeSet = new Set(biomes.map((b) => String(b).trim()).filter(Boolean));
     const familySet = new Set(families.map((f) => f.trim()).filter(Boolean));
     return records.filter((rec) => {
+        if ((rec.artificerType ?? null) !== ARTIFICER_TYPES.COMPONENT) return false;
         const itemFamily = rec.family ?? '';
         if (!itemFamily || !familySet.has(itemFamily)) return false;
-        const biomes = Array.isArray(rec.biomes) ? rec.biomes : [];
-        if (biomes.length === 0) return true;
-        return biomes.includes(biome);
+        const recBiomes = Array.isArray(rec.biomes) ? rec.biomes : [];
+        if (recBiomes.length === 0) return true;
+        return recBiomes.some((b) => biomeSet.has(b));
     });
 }
 
 /**
- * Get items from cache that match biome and selected component families.
- * Prefer getEligibleGatherRecords + fetch only winner for fast gather; this loads all items (slow when cache cold).
- * @param {string} biome - Selected biome
+ * Get items from cache that match biomes and selected component families.
+ * @param {string[]} biomes - Selected biomes
  * @param {string[]} families - Selected component families (e.g. ['Plant', 'Mineral'])
  * @returns {Promise<Item[]>}
  */
-export async function getEligibleGatherItems(biome, families) {
-    if (!biome || !families?.length) return [];
+export async function getEligibleGatherItems(biomes, families) {
+    if (!biomes?.length || !families?.length) return [];
     const items = await getAllItemsFromCache();
     const flagsKey = MODULE.ID;
+    const biomeSet = new Set(biomes.map((b) => String(b).trim()).filter(Boolean));
     const familySet = new Set(families.map((f) => f.trim()).filter(Boolean));
     return items.filter((item) => {
         const f = item.flags?.[flagsKey] || item.flags?.artificer;
+        if ((f?.[ARTIFICER_FLAG_KEYS.TYPE] ?? f?.type) !== ARTIFICER_TYPES.COMPONENT) return false;
         const itemFamily = getFamilyFromFlags(f);
         if (!itemFamily || !familySet.has(itemFamily)) return false;
-        const biomes = f?.[ARTIFICER_FLAG_KEYS.BIOMES] ?? f?.biomes ?? [];
-        if (!Array.isArray(biomes) || biomes.length === 0) return true;
-        return biomes.includes(biome);
+        const itemBiomes = f?.[ARTIFICER_FLAG_KEYS.BIOMES] ?? f?.biomes ?? [];
+        if (!Array.isArray(itemBiomes) || itemBiomes.length === 0) return true;
+        return itemBiomes.some((b) => biomeSet.has(b));
     });
 }
 
@@ -198,7 +211,7 @@ export function sendGatherSuccessCard(actor = null, items = []) {
             return `<div class="gather-result-item">${img} ${link}</div>`;
         }).join('')
         : '<div class="gather-result-item">(none)</div>';
-    const body = `<p>You found:</p><div class="gather-result-list">${itemRows}</div><p>Added to your inventory.</p>`;
+    const body = `<p>Foraging has paid off.</p><div class="gather-result-list">${itemRows}</div><p>Items added to your inventory.</p>`;
     const html = buildChatCardHtml(title, body, 'card');
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
@@ -209,42 +222,59 @@ export function sendGatherSuccessCard(actor = null, items = []) {
 }
 
 /**
- * Handle roll completion from Blacksmith Request a Roll: compare total to DC, then send card and optionally add items.
- * Call this from the onRollComplete callback (or similar). Expects roll total and actor from the callback args.
+ * Process one gather roll: DC check, pick item, add to actor. Does NOT send any chat card.
+ * Use this when buffering results; send cards separately when all rolls are complete.
+ * @param {number} rollTotal - The roll total
+ * @param {Actor|null} actor - Actor who rolled
+ * @param {PendingGather} pending - Gather context (dc, biomes, componentTypes)
+ * @returns {Promise<{ success: boolean, noPool?: boolean, itemRecord?: { name: string, uuid: string, img?: string } }>}
+ */
+export async function processGatherRollResult(rollTotal, actor, pending) {
+    if (!pending) return { success: false };
+    const { dc, biomes, componentTypes } = pending;
+    if (rollTotal < dc) return { success: false };
+    if (!actor) return { success: false };
+    const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
+    const record = pickOneGatherRecord(eligibleRecords);
+    if (!record) return { success: true, noPool: true };
+    let item = null;
+    try {
+        item = await fromUuid(record.uuid);
+    } catch {
+        return { success: false };
+    }
+    if (!item) return { success: false };
+    await addGatherItemToActor(actor, item);
+    return {
+        success: true,
+        itemRecord: { name: record.name ?? item.name, uuid: record.uuid, img: record.img ?? item.img }
+    };
+}
+
+/**
+ * Handle roll completion: process and send a single chat card. Use when not buffering.
  * @param {number} rollTotal - The roll total (e.g. d20 + modifier)
  * @param {Actor} [actor] - Actor who rolled (for adding items and speaker)
  * @param {PendingGather} [pending] - If not provided, uses consumePendingGather()
  */
 export async function handleGatherRollResult(rollTotal, actor = null, pending = null) {
     const ctx = pending ?? consumePendingGather();
-    if (!ctx) return;
-    const { dc, biome, componentTypes } = ctx;
-    if (rollTotal < dc) {
-        sendGatherFailureCard(actor);
-        return;
-    }
-    // Use records only (no getAllItemsFromCache) so we do at most one fromUuid for the winner
-    const eligibleRecords = getEligibleGatherRecords(biome, componentTypes);
-    const record = pickOneGatherRecord(eligibleRecords);
+    const outcome = await processGatherRollResult(rollTotal, actor ?? null, ctx);
     if (!actor) {
         sendGatherFailureCard(actor);
         return;
     }
-    if (!record) {
+    if (outcome.noPool) {
         sendGatherNoPoolCard(actor);
         return;
     }
-    let item = null;
-    try {
-        item = await fromUuid(record.uuid);
-    } catch {
+    if (!outcome.success) {
         sendGatherFailureCard(actor);
         return;
     }
-    if (!item) {
+    if (outcome.itemRecord) {
+        sendGatherSuccessCard(actor, [outcome.itemRecord]);
+    } else {
         sendGatherFailureCard(actor);
-        return;
     }
-    await addGatherItemToActor(actor, item);
-    sendGatherSuccessCard(actor, [{ name: record.name ?? item.name, uuid: record.uuid, img: record.img ?? item.img }]);
 }

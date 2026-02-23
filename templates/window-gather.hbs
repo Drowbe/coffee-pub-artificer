@@ -13,21 +13,20 @@
     </header>
 
     <div class="gather-window-body">
-        <div class="gather-field">
-            <label for="gather-biome">Biome</label>
-            <select id="gather-biome" class="gather-select">
-                <option value="">— Select biome —</option>
+        <div class="gather-field gather-habitat-field">
+            <span class="gather-label">Habitat</span>
+            <div class="gather-biomes-grid">
                 {{#each biomeOptions}}
-                <option value="{{this.value}}">{{this.label}}</option>
+                <button type="button" class="gather-biome-btn {{#if selected}}active{{/if}}" data-biome="{{name}}" data-action="toggleBiome">{{name}}</button>
                 {{/each}}
-            </select>
+            </div>
         </div>
         <div class="gather-field">
             <span class="gather-label">Component types</span>
             <div class="gather-checkboxes">
                 {{#each componentTypeOptions}}
                 <label class="gather-checkbox-label">
-                    <input type="checkbox" class="gather-checkbox" name="gather-type" value="{{this.value}}" />
+                    <input type="checkbox" class="gather-checkbox" name="gather-type" value="{{this.value}}" {{#if this.checked}}checked{{/if}} />
                     <span>{{this.label}}</span>
                 </label>
                 {{/each}}

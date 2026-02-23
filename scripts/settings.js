@@ -375,6 +375,16 @@ export const registerSettings = () => {
         type: Object
     });
 
+    // -- Gather window last-used settings (Roll for Components: biomes, component types, DC) --
+    game.settings.register(MODULE.ID, 'gatherWindowSettings', {
+        name: 'Gather window settings (last used)',
+        hint: 'Stores last used Habitat, component types, and DC for Roll for Components.',
+        scope: 'world',
+        config: false,
+        default: { biomes: [], componentTypes: [], dc: 10 },
+        type: Object
+    });
+
     // Add more settings here as needed
     
 
