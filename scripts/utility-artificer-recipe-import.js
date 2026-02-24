@@ -34,8 +34,18 @@ export async function parseRecipeImportInput(input) {
     } else {
         throw new Error('Invalid input type. Expected File, string, or object/array');
     }
-    if (Array.isArray(rawData)) return rawData;
-    if (rawData && typeof rawData === 'object') return [rawData];
+    if (Array.isArray(rawData)) return { payloads: rawData, journalName: null };
+    if (rawData && typeof rawData === 'object') {
+        if (rawData.recipes && Array.isArray(rawData.recipes) && typeof rawData.recipeJournal === 'string') {
+            return { payloads: rawData.recipes, journalName: rawData.recipeJournal.trim() || null };
+        }
+        const journalName = typeof rawData.recipeJournal === 'string' ? (rawData.recipeJournal.trim() || null) : null;
+        if (journalName !== null) {
+            const { recipeJournal: _drop, ...payload } = rawData;
+            return { payloads: [payload], journalName };
+        }
+        return { payloads: [rawData], journalName: null };
+    }
     throw new Error('Invalid JSON structure. Expected object or array of objects');
 }
 
@@ -179,10 +189,29 @@ export function escapeHtml(str) {
 }
 
 /**
+ * Find or create a world journal by name (optionally in folder).
+ * @param {string} journalName - Exact journal name
+ * @returns {Promise<JournalEntry|null>}
+ */
+async function findOrCreateRecipeJournal(journalName) {
+    const name = (journalName || '').trim() || DEFAULT_RECIPE_JOURNAL_NAME;
+    const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
+    if (folderId && game.journal) {
+        const inFolder = game.journal.find((j) => j.folder?.id === folderId && (j.name || '').trim() === name);
+        if (inFolder) return inFolder;
+    }
+    const anywhere = game.journal?.find((j) => (j.name || '').trim() === name);
+    if (anywhere) return anywhere;
+    const createOpts = folderId && game.folders?.get(folderId) ? { folder: folderId } : {};
+    return getOrCreateJournal(name, createOpts);
+}
+
+/**
  * Import recipes into the recipe journal
  * @param {Array} payloads - Array of recipe payloads
  * @param {Object} options
- * @param {string} options.journalUuid - Override journal UUID (optional)
+ * @param {string} [options.journalUuid] - Override: use this journal UUID (optional)
+ * @param {string} [options.journalName] - Override: find or create journal with this name (optional)
  * @returns {Promise<Object>} { created, errors, total, successCount, errorCount }
  */
 export async function importRecipes(payloads, options = {}) {
@@ -194,21 +223,17 @@ export async function importRecipes(payloads, options = {}) {
         errorCount: 0
     };
 
-    let journalUuid = options.journalUuid ?? '';
-    if (!journalUuid) {
-        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
-        const folder = folderId && game.folders ? game.folders.get(folderId) : null;
-        const journalsInFolder = folder && game.journal ? game.journal.filter(j => j.folder?.id === folderId) : [];
-        const existing = journalsInFolder[0];
-        const createOpts = folder ? { folder: folder.id } : {};
-        const journal = existing ?? await getOrCreateJournal(DEFAULT_RECIPE_JOURNAL_NAME, createOpts);
-        journalUuid = journal.uuid;
+    let journal;
+    if (options.journalUuid) {
+        journal = await fromUuid(options.journalUuid);
+    } else {
+        const journalName = options.journalName ?? game.settings.get(MODULE.ID, 'recipeJournalName') ?? DEFAULT_RECIPE_JOURNAL_NAME;
+        journal = await findOrCreateRecipeJournal(journalName);
     }
 
-    const journal = await fromUuid(journalUuid);
     if (!journal || journal.documentName !== 'JournalEntry') {
         result.errorCount = payloads.length;
-        payloads.forEach((p, i) => result.errors.push({ name: p?.name ?? `Recipe ${i + 1}`, error: 'Recipe journal not found. Create or configure it in module settings.', index: i }));
+        payloads.forEach((p, i) => result.errors.push({ name: p?.name ?? `Recipe ${i + 1}`, error: 'Recipe journal not found or could not be created. Check module settings (recipe journal name).', index: i }));
         return result;
     }
 
@@ -254,13 +279,16 @@ export async function importRecipes(payloads, options = {}) {
 
 /**
  * Import recipes from JSON text
- * @param {string} text
- * @param {Object} options
+ * @param {string} text - JSON string: array of recipes, or single recipe object, or { recipeJournal: string, recipes: array }
+ * @param {Object} options - { journalName?: string, journalUuid?: string }
  * @returns {Promise<Object>}
  */
 export async function importRecipesFromText(text, options = {}) {
-    const payloads = await parseRecipeImportInput(text);
-    return importRecipes(payloads, options);
+    const parsed = await parseRecipeImportInput(text);
+    const payloads = parsed.payloads ?? (Array.isArray(parsed) ? parsed : [parsed]);
+    const opts = { ...options };
+    if (parsed.journalName) opts.journalName = parsed.journalName;
+    return importRecipes(payloads, opts);
 }
 
 /**
@@ -276,7 +304,7 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
         } else if (ui?.notifications) {
             isError ? ui.notifications.error(msg) : ui.notifications.info(msg);
         } else {
-            BlacksmithUtils.postConsoleAndNotification(moduleName, msg, null, true, false);
+            console.warn(`[${moduleName}] ${msg}`);
         }
     };
     if (errorCount === 0) {
@@ -286,10 +314,10 @@ export function showRecipeImportResult(result, moduleName = MODULE.NAME) {
     } else {
         notify(`Imported ${successCount} of ${total} recipe${total !== 1 ? 's' : ''} (${errorCount} error${errorCount !== 1 ? 's' : ''})`);
     }
-    if (errors?.length) {
+    if (errors?.length && typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
         errors.forEach(({ name, error, index }) => BlacksmithUtils.postConsoleAndNotification(moduleName, `Recipe Import Error: ${index + 1} (${name})`, error?.message ?? String(error), true, false));
     }
-    if (created?.length) {
+    if (created?.length && typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
         created.forEach(({ name, index }) => BlacksmithUtils.postConsoleAndNotification(moduleName, `Imported: ${index + 1}. ${name}`, null, true, false));
     }
 }

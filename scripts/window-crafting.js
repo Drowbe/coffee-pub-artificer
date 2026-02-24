@@ -122,14 +122,13 @@ async function getRecipeSourceJournals() {
     const loadCompendia = ['compendia-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
     const loadWorld = ['world-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
     const list = [];
-    if (loadWorld) {
+    if (loadWorld && game.journal) {
+        const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
         const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
-        if (folderId && game.journal) {
-            for (const j of game.journal) {
-                if (j.folder?.id === folderId && j.uuid) {
-                    list.push({ uuid: j.uuid, name: j.name ?? '' });
-                }
-            }
+        for (const j of game.journal) {
+            if (!j.uuid || (j.name || '').trim() !== journalName) continue;
+            if (folderId && j.folder?.id !== folderId) continue;
+            list.push({ uuid: j.uuid, name: j.name ?? '' });
         }
     }
     if (loadCompendia) {

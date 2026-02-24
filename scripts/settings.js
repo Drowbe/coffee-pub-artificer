@@ -228,7 +228,18 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('JournalSettings', 'headingH3JournalSettings-Label', 'headingH3JournalSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-    // -- Recipe journal folder (world: all journals in this folder are recipe sources) --
+    // -- Recipe journal name (world: journal with this name is the recipe source; import creates it if missing) --
+	game.settings.register(MODULE.ID, 'recipeJournalName', {
+        name: MODULE.ID + '.recipeJournalName-Label',
+        hint: MODULE.ID + '.recipeJournalName-Hint',
+        scope: 'world',
+        config: true,
+        default: 'Artificer Recipes',
+        type: String,
+		group: WORKFLOW_GROUPS.COMMON_SETTINGS
+	});
+
+    // -- Recipe journal folder (optional: where to look for/create the named recipe journal) --
 	game.settings.register(MODULE.ID, 'recipeJournalFolder', {
         name: MODULE.ID + '.recipeJournalFolder-Label',
         hint: MODULE.ID + '.recipeJournalFolder-Hint',

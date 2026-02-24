@@ -58,14 +58,13 @@ export class RecipeStorage {
         const loadWorld = source === 'world-only' || source === 'compendia-then-world' || source === 'world-then-compendia';
 
         const journalBatches = []; // [{ uuid, isWorld }]
-        if (loadWorld) {
+        if (loadWorld && game.journal) {
+            const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
             const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
-            if (folderId && game.journal) {
-                for (const journal of game.journal) {
-                    if (journal.folder?.id === folderId && journal.uuid) {
-                        journalBatches.push({ uuid: journal.uuid, isWorld: true });
-                    }
-                }
+            for (const journal of game.journal) {
+                if (!journal.uuid || (journal.name || '').trim() !== journalName) continue;
+                if (folderId && journal.folder?.id !== folderId) continue;
+                journalBatches.push({ uuid: journal.uuid, isWorld: true });
             }
         }
         if (loadCompendia) {
@@ -225,12 +224,14 @@ export class RecipeStorage {
     async cleanAndRewriteRecipePages(options = {}) {
         const dryRun = !!options.dryRun;
         const result = { updated: 0, errors: [], skipped: 0 };
+        const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
         const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
-        if (!folderId || !game.journal) {
-            result.errors.push({ name: '', error: 'No recipe journal folder configured in module settings.' });
+        if (!game.journal) {
+            result.errors.push({ name: '', error: 'No journal collection available.' });
             return result;
         }
-        const journals = game.journal.filter((j) => j.folder?.id === folderId && j.documentName === 'JournalEntry');
+        let journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && (j.name || '').trim() === journalName);
+        if (folderId) journals = journals.filter((j) => j.folder?.id === folderId);
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];
             for (const page of pages) {

@@ -1,26 +1,29 @@
 VARIABLES FOR THE ARTIFICER RECIPE
 
-Name: 
-Result (resultItemName): 
-Type: 
-Category: 
-Skill: 
-Skill Level: 
-Skill Kit: 
-Apparatus: 
-Container: 
-Process Type: 
-Process Level: 
-Time (seconds, process time—not workHours): 
-Gold Cost: 
-Work Hours (in-game duration): 
-Ingredients: 
-Traits: 
-Description: 
-Source: 
-License: 
 
-OPTIONAL FIELDS: Omit when not relevant, or use null. Import auto-maps: apparatus→Mixing Bowl, container→Vial, source→Artificer; processType→heat, processLevel→0; time→20 seconds. Output valid JSON only—no trailing commas, no duplicate keys. Escape double quotes (") in strings. Do not output "tags"; use "traits" only.
+JOURNALNAME: 
+RECIPENAME: 
+RESULTNAME: 
+TYPE: 
+CATEGORY: 
+SKILL: 
+SKILLLEVEL: 
+SKILLKIT: 
+APPARATUSNAME: 
+CONTAINERNAME: 
+PROCESSTYPE: 
+PROCESSLEVEL: 
+TIME: 
+GOLDCOST:
+WORKHOURS:  
+INGREDIENTS: 
+TRAITS: 
+DESCRIPTION: 
+SOURCE: 
+LICENSE: 
+
+
+Do not output the VARIABLES section. Output only JSON (and later the image when asked).
 
 If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed. Focus most of the description on the recipe and the prep with only a light touch on the items being crafted.
 
@@ -30,18 +33,14 @@ For the image, put the ingredient in its natural environment with a focus on the
 JSON TEMPLATE FOR ARTIFICER RECIPES
 ========================================
 
-You are a Dungeon Master. You design crafting recipes for the Coffee Pub Artificer module. Recipes are imported as JSON and stored as journal pages; every recipe field is shown on the page (even when empty) so authors can see what is possible. Generate well-structured JSON for a single recipe or a batch (array of recipes) that conforms to the Artificer import format. Resolve items by name only—no UUIDs—for portability across worlds.
+You are a Dungeon Master. You design crafting recipes for the Coffee Pub Artificer module. Recipes are imported as JSON and stored as journal pages. Generate well-structured JSON for a single recipe or a batch (array of recipes) that conforms to the Artificer import format. Resolve items by name only—no UUIDs—for portability across worlds.
 
-IMPORTANT:
-- name, resultItemName, and ingredients are required. Each ingredient has type ("Component" | "Creation" | "Tool"), optional family (e.g. Plant, Essence, Potion, Apparatus), name, and quantity. Match the item's TYPE and optional FAMILY (see architecture: TYPE > FAMILY > TRAITS).
-- skillKit: the kit required for this skill (e.g. Herbalism Kit, Alchemist's Supplies, Poisoner's Kit). Use key "skillKit". Importer also accepts "tool" or "toolName" for backward compatibility.
-- apparatusName = vessel to craft in (not consumed). Omit or null → default "Mixing Bowl". containerName = vessel result goes in (one consumed per craft). Omit or null → default "Vial".
-- processType: "heat" or "grind". Omit or null → default "heat". Use "grind" for mortar-and-pestle or dry-grinding (powders, dried herbs); use "heat" for cooking, distillation, or heating. processLevel: number 0–3. Omit or null → 0. Use numbers only—no words. All processes share the same 0–3 scale. time in seconds.
+IMPORTANT: If any required field is missing, derive it from the recipe data. If required data cannot be derived from the recipe data, make a reasonable and consistent design choice.
 
 You will generate two outputs based on the same RECIPES concept:
 
 1. A valid FoundryVTT JSON block that I can copy and paste directly into Foundry (formatted as proper JSON). It will be imported directly into the Coffee Pub Artificer module. The output must be proper JSON suitable for the Artificer "Import Recipes" flow.
-2. An actual generated 1024x1024 image of the same item. Do not describe the image, generate it. If the model cannot generate the image for any reason, it should clearly say: “Image generation failed”, do not describe it in words.
+2. An actual generated 1024x1024 image of the same item. Do not describe the image, generate it. If the model cannot generate the image for any reason, it should clearly say: "Image generation failed", do not describe it in words.
 
 IMPORTANT: CREATE THE JSON FIRST. WHEN THE JSON HAS BEEN GENERATED, ASK IF YOU SHOULD CREATE THE IMAGE.
 
@@ -53,46 +52,73 @@ For the ITEM JSON you will generate well-structured JSON for each single Artific
 - Output valid JSON
 - Escape double quotes (") in description strings. Description may contain HTML; it will be rendered. Use structured HTML: <p> for paragraphs, <ul>/<ol>/<li> for lists, <strong> for emphasis. Break long text into multiple paragraphs—do not output one giant paragraph.
 - Avoid trailing commas or duplicate keys
-- Omit optional fields when not relevant; use null when including but empty
-- Set all mandatory fields. Do not output "tags"; use "traits" only.
+- Set all Required fields.
 
 ----------------------------
 JSON FIELD RULES & EXPECTATIONS
 ----------------------------
 
-REQUIRED:
-- name: (string) Recipe name.
-- description: (string) Recipe notes and instructions. Use HTML structure: <p> for each paragraph, <ul>/<ol>/<li> for lists (e.g., steps or ingredients), <strong> for emphasis. Weave the other data into this field. Break into paragraphs—not one giant block. If a description is provided, use it only as guidance; rewrite and expand. Help the user understand the recipe, what it does, and how to make it.
-- resultItemName: (string) Name of resulting item. Resolved by name at runtime from the item cache (compendia + world). May equal name.
-- ingredients: (array) Each element: { type, name, quantity } or { type, family, name, quantity }. type = "Component" | "Creation" | "Tool". family (optional) = identity within type (e.g. Plant, Essence, Potion, Apparatus). Mundane D&D items (no Artificer flags) match by name only; use type "Creation" or "Component" as appropriate.
+-- CORE --
+
+JOURNALNAME: (string) (Optional) Exact name of the journal to import this recipe into. If omitted, the module uses the configured recipe journal name. Supported in both single-recipe objects and the batch wrapper { "recipeJournal": "...", "recipes": [ ... ] }.
+
+RECIPENAME: (string) (Required) Recipe name.
+
+DESCRIPTION: (string)(Required) Recipe notes and instructions. Use HTML structure: <p> for each paragraph, <ul>/<ol>/<li> for lists (e.g., steps or ingredients), <strong> for emphasis. Weave the other data into this field. Break into paragraphs—not one giant block. If a description is provided, use it only as guidance; rewrite and expand. Help the user understand the recipe, what it does, and how to make it.
+
+RESULTNAME: (string) (Required) Name of resulting item. Resolved by name at runtime from the item cache (compendia + world). May equal name.
+
+INGREDIENTS: (array) (Required) Each element: { type, name, quantity } or { type, family, name, quantity }. type = "Component" | "Creation" | "Tool". family (optional) = identity within type (e.g. Plant, Essence, Potion, Apparatus). Mundane D&D items (which have no Artificer flags) match by name only; use type "Creation" or "Component" as appropriate.
 
 
-CRAFTING PROCESS:
-- skillKit: (string) Required kit for this skill. E.g. "Alchemist's Supplies", "Herbalism Kit", "Poisoner's Kit". Must match the skill (see skills-details.json). Importer also accepts key "tool" or "toolName".
-- apparatusName: (string) Vessel to craft in (beaker, mortar, mixing bowl). Not consumed. Omit or null → "Mixing Bowl".
-- containerName: (string) Vessel result goes in (vial, flask, herb bag). One consumed per craft. Omit or null → "Vial".
-- processType: (string) "heat" | "grind". Omit or null → "heat". Use "grind" for mortar-and-pestle or dry-grinding recipes (powders, dried herbs, crushing); use "heat" for cooking, boiling, distillation, or heating.
-- processLevel: (number) 0–3. Omit or null → 0. Use numbers only. Same scale for heat and grind.
-- time: (number) Process time in seconds—how long the actual process runs. Not the same as workHours. Omit or null → 20.
 
-ITEM & SKILL:
-- type: (string) Item type. Default "Consumable". One of: Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice.
-- category: (string) e.g. Potion, Oil, Poison. Default "".
-- skill: (string) Must be exactly one of: Herbalism, Alchemy, Poisoncraft, Cooking, Smithing, Leatherworking, Tinkering, Cartography, Inscription, Enchanting, Gemcraft, Tailoring, Masonry. Default "Alchemy".
-- skillLevel: (number) 0–20. Same scale as components (gathering). Default 1.
+-- CRAFTING PROCESS --
 
-COST & METADATA:
-- goldCost: (number) Optional. Cost in gp. Default null/0.
-- workHours: (number) Optional. In-game duration (hours to craft). Separate from time—do not derive one from the other.
-- traits: (array of strings) Recipe traits (modifiers; do not repeat type/family). May be derived from ingredients on import; author can add more in the journal.
-- source: (string) Author or source. Omit or null → "Artificer".
-- license: (string) Optional. Omit or null if none.
+SKILLKIT: (string) (Required) Required kit for this skill. One of: "Herbalism Kit", "Alchemist's Supplies", "Poisoner's Kit", "Cook's Utensils", "Smith's Tools", "Leatherworker's Tools", "Tinker's Tools", "Cartographer's Tools", "Calligrapher's Supplies", "Enchanter's Implements", "Jeweler's Tools", "Weaver's Tools", "Mason's Tools". Must match the skill.
+
+APPARATUSNAME: (string) (Required) Vessel to craft in (one of: "Beaker", "Mixing Bowl", "Mortar and Pestle", "Crucible"). Not consumed.
+
+CONTAINERNAME: (string) (Required) Vessel result goes in (one of: "Herb Bag", "Bottle", "Pouch", "Vial"). One consumed per craft. 
+
+PROCESSTYPE: (string) (Required) "heat" | "grind". Must be exactly "heat" or "grind" (lowercase). Use "grind" for Mortar and Pestle or grinding or pressing recipes (powders, dried herbs, crushing); use "heat" for cooking, boiling, distillation, or heating. 
+
+PROCESSLEVEL: (integer) (Required) 0–3. Use numbers only. Same scale for heat and grind. 0 = off, 1 = low, 2 = medium, 3 = high. If there is a process time, there is typically a process level of 1 to 3. All processes share the same 0–3 scale. 
+
+TIME: (integer) (Required) Process time in seconds (0–120). If processLevel is 0, set time to 0. Suggested time bands: level 1 = 20–40, level 2 = 40–80, level 3 = 80–120. Not the same as WORKHOURS.
+
+
+-- ITEM & SKILL --
+
+TYPE: (string) (Required) Item type. Default "Consumable". One of: Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice.
+
+CATEGORY: (string) (Required) This would be the subtype of the type: e.g. "Food", "Material", "Poison", "Potion".   
+
+SKILL: (string) (Required) Must be exactly one of: Herbalism, Alchemy, Poisoncraft, Cooking, Smithing, Leatherworking, Tinkering, Cartography, Inscription, Enchanting, Gemcraft, Tailoring, Masonry. Default "Alchemy".
+
+SKILLLEVEL: (integer) (Required) 0–20. Same scale as components (gathering). 0 implies zero training needed. 20 implies expert level needed. If not provided, use the recipe data to derive the appropriate skill level.
+
+
+-- COST & METADATA --
+
+GOLDCOST: (integer) (Optional). Cost in gp. Default null/0.
+
+WORKHOURS: (integer) (Optional). In-game duration (hours to craft). Separate from time—do not derive one from the other.
+
+TRAITS: (array of strings) Recipe traits (modifiers; do not repeat type/family). May be derived from ingredients on import; author can add more in the journal.
+
+SOURCE: (string) (Required) Author or source. If not provided, default to "Artificer".
+
+LICENSE: (string) (Required). If not provided, default to "CC BY-NC 4.0".
+
+
 
 ----------------------------
 JSON TEMPLATE: SINGLE RECIPE
 ----------------------------
 
+
 {
+  "recipeJournal": "JOURNALNAME",
   "name": "RECIPENAME",
   "resultItemName": "RESULTNAME",
   "type": "TYPE",
@@ -106,6 +132,7 @@ JSON TEMPLATE: SINGLE RECIPE
   "processLevel": PROCESSLEVEL,
   "time": TIME,
   "goldCost": GOLDCOST,
+  "workHours": WORKHOURS,
   "ingredients": [
     { "type": "Component", "family": "Plant", "name": "INGREDIENTNAME", "quantity": QTY }
   ],
@@ -121,6 +148,12 @@ JSON TEMPLATE: BATCH (ARRAY)
 
 For multiple recipes, output a JSON array. Each object uses the same fields as the single-recipe template, including description (required).
 
+Optional wrapper: to target a specific journal by name when importing, use an object with "recipeJournal" (string, journal name) and "recipes" (array of recipe objects). If recipeJournal is omitted, the module uses the configured recipe journal name.
+
+{ "recipeJournal": "JOURNALNAME", "recipes": [ ... ] }
+
+Plain array (uses configured journal):
+
 [
   {
     "name": "RECIPENAME",
@@ -135,9 +168,13 @@ For multiple recipes, output a JSON array. Each object uses the same fields as t
     "processType": "PROCESSTYPE",
     "processLevel": PROCESSLEVEL,
     "time": TIME,
+    "goldCost": GOLDCOST,
+    "workHours": WORKHOURS,
     "ingredients": [ ... ],
     "traits": [ ... ],
-    "description": "DESCRIPTION"
+    "description": "DESCRIPTION",
+    "source": "SOURCE",
+    "license": "LICENSE"
   },
   {
     "name": "RECIPENAME",
@@ -152,8 +189,6 @@ USAGE INSTRUCTIONS
 When asked to generate an Artificer recipe, use the variables at the top (or the user's request) to fill the template. Consider:
 - Potions: Consumable, category Potion, Alchemist's Supplies, Vial, heat process.
 - Poisons: Consumable, category Poison, Poisoner's Kit, Vial.
-- Herbal preparations: Herbalism Kit, apparatus Mixing Bowl or Mortar and Pestle, container Vial or Herb Bag.
-- Powders, crushed herbs, dry mixes: processType "grind", apparatusName "Mortar and Pestle".
 
 Use the exact item name as it appears in the source. The module resolves resultItemName and ingredient names by name at runtime from the item cache (configured compendia + world). Use type "Component" | "Creation" | "Tool" and optional family (e.g. Plant, Essence, Potion) for Artificer items; mundane D&D items (Flask of Oil, Charcoal) match by name only.
 
@@ -198,10 +233,16 @@ Provide a valid, copy-pasteable JSON block inside json code fences.
 { ... }
 ```
 
-or for batch:
+or for batch (array or wrapper with recipeJournal + recipes):
 
 ```json
 [ { ... }, { ... } ]
+```
+
+or with target journal:
+
+```json
+{ "recipeJournal": "Journal Name", "recipes": [ { ... }, { ... } ] }
 ```
 
 ========================================
@@ -210,5 +251,6 @@ RULES
 
 - Output valid JSON only. No trailing commas, no duplicate keys. Escape double quotes in strings.
 - Use names only for resultItemName, ingredients, apparatusName, containerName, skillKit—no UUIDs.
-- skillKit: official D&D 5e SRD kit name for the skill (e.g. Herbalism Kit, Alchemist's Supplies). apparatusName: not consumed. containerName: one consumed per craft.
-- processLevel 0–3 (number only). time in seconds. skillLevel 0–20, default 1. Omit optional fields; import applies defaults. Do not output "tags"; use "traits" only.
+- skillKit: official D&D 5e SRD kit name for the skill (e.g. Herbalism Kit, Alchemist's Supplies). 
+- apparatusName: not consumed. containerName: one consumed per craft.
+
