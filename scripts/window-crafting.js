@@ -467,19 +467,49 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         ];
 
         const toSlotData = (item) => {
-            if (!item) return { item: null, tooltip: '' };
+            if (!item) return { item: null, tooltip: '', isMissing: false };
             const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
             const traits = getTagsFromItem(item).join(', ');
             const family = f?.family ?? '';
-            return { item: { id: item.id, name: item.name, img: item.img }, tooltip: [item.name, family ? `Family: ${family}` : '', traits ? `Traits: ${traits}` : ''].filter(Boolean).join('\n') };
+            return { item: { id: item.id, name: item.name, img: item.img }, tooltip: [item.name, family ? `Family: ${family}` : '', traits ? `Traits: ${traits}` : ''].filter(Boolean).join('\n'), isMissing: false };
+        };
+        const r = this.selectedRecipe;
+        const trimName = (x) => (x ?? '').toString().trim();
+        const apparatusRequired = r?.apparatusName?.trim();
+        const containerRequired = r?.containerName?.trim();
+        const skillKitRequired = r?.skillKit?.trim();
+        const hasMatchingApparatus = apparatusRequired && this.selectedApparatus && trimName(this.selectedApparatus.name) === trimName(r.apparatusName);
+        const hasMatchingContainer = containerRequired && this.selectedContainer && trimName(this.selectedContainer.name) === trimName(r.containerName);
+        const hasMatchingSkillKit = skillKitRequired && this.selectedTool && trimName(this.selectedTool.name) === trimName(r.skillKit);
+        const DEFAULT_ITEM_IMG = 'icons/svg/item-bag.svg';
+        const resolveRequiredDisplay = async (name) => {
+            if (!name) return null;
+            const item = await resolveItemByName(name);
+            return item ? { name: item.name, img: item.img || DEFAULT_ITEM_IMG } : { name, img: DEFAULT_ITEM_IMG };
         };
         let apparatusSlot = toSlotData(this.selectedApparatus);
+        apparatusSlot.isMissing = !!apparatusRequired && !hasMatchingApparatus;
+        if (apparatusSlot.isMissing && apparatusRequired) {
+            apparatusSlot.tooltip = `Required: ${apparatusRequired}`;
+            apparatusSlot.requiredItem = await resolveRequiredDisplay(apparatusRequired);
+        }
         let containerSlot = toSlotData(this.selectedContainer);
+        containerSlot.isMissing = !!containerRequired && !hasMatchingContainer;
+        if (containerSlot.isMissing && containerRequired) {
+            containerSlot.tooltip = `Required: ${containerRequired}`;
+            containerSlot.requiredItem = await resolveRequiredDisplay(containerRequired);
+        }
         let toolSlot = toSlotData(this.selectedTool);
+        toolSlot.isMissing = !!skillKitRequired && !hasMatchingSkillKit;
+        if (toolSlot.isMissing && skillKitRequired) {
+            toolSlot.tooltip = `Required: ${skillKitRequired}`;
+            toolSlot.requiredItem = await resolveRequiredDisplay(skillKitRequired);
+        }
 
         const hasSlots = this.selectedSlots.some(s => s !== null);
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
-        const canCraft = hasSlots && !anyMissing;
+        const vesselMissing = apparatusSlot.isMissing || containerSlot.isMissing || toolSlot.isMissing;
+        const canCraft = hasSlots && !anyMissing && !vesselMissing;
         const sourceJournals = await getRecipeSourceJournals();
         const journalByUuid = new Map(sourceJournals.map((j) => [j.uuid, j.name]));
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
@@ -513,7 +543,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
         const cacheStatus = getCacheStatus();
-        const r = this.selectedRecipe;
         const selectedRecipeData = r
             ? {
                 name: r.name ?? '',

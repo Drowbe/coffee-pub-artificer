@@ -569,6 +569,14 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Dimmed vessel slot when apparatus, container, or skill kit is required but missing (same as components) */
+.crafting-bench-vessel-missing {
+    opacity: 0.5;
+}
+.crafting-bench-vessel-missing .crafting-container-img {
+    filter: grayscale(0.6);
+}
+
 /* 3-column grid rows (apparatus, container) - matches component slot grid alignment */
 .crafting-bench-grid-row {
     display: grid;
