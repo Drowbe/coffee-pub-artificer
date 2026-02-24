@@ -19,6 +19,22 @@ function _str(val) {
 }
 
 /**
+ * Normalize AI/Unicode punctuation to plain ASCII so stored text matches what a user would type.
+ * Replaces curly/smart apostrophes and quotes with straight ' and ".
+ * @param {string} s - Raw string (e.g. from AI output)
+ * @returns {string} Normalized string
+ */
+function normalizePunctuationForStorage(s) {
+    if (s == null || typeof s !== 'string') return '';
+    let t = s;
+    // Curly/smart single quotes → straight apostrophe
+    t = t.replace(/[\u2018\u2019\u201A\u201B\u02BC\u02BE\u0060]/g, "'");
+    // Curly/smart double quotes → straight double quote
+    t = t.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"');
+    return t;
+}
+
+/**
  * Parse recipe import input (File, string, or object/array) into array of payloads
  * @param {File|string|Object|Array} input
  * @returns {Promise<Array>}
@@ -86,11 +102,12 @@ export async function validateRecipePayload(payload) {
         ? Math.round(rawSkillLevel) : 1;
 
     // Store names only—no world UUIDs. Recipes resolve items by name at runtime (compendia + world).
+    // Normalize AI punctuation (curly apostrophes/quotes) to straight ASCII so stored text matches what users type.
     // Apply defaults when omitted: apparatus→Mixing Bowl, container→Vial, source→Artificer; processType→heat, processLevel→0.
     const data = {
-        name: payload.name,
+        name: normalizePunctuationForStorage(payload.name),
         type: payload.type ?? ITEM_TYPES.CONSUMABLE,
-        category: payload.category ?? '',
+        category: normalizePunctuationForStorage(payload.category ?? ''),
         skill,
         skillLevel,
         ingredients: ingredients.map((i) => {
@@ -99,23 +116,23 @@ export async function validateRecipePayload(payload) {
             return {
                 type: obj.type,
                 family: obj.family,
-                name: extractNameFromUuidLink(rawName),
+                name: normalizePunctuationForStorage(extractNameFromUuidLink(rawName)),
                 quantity: (obj.quantity ?? 1) >= 0 ? Number(obj.quantity) : 1
             };
         }),
-        resultItemName: resultItemName.trim(),
-        traits: Array.isArray(payload.traits) ? payload.traits : (Array.isArray(payload.tags) ? payload.tags : []),
-        description: String(payload.description),
+        resultItemName: normalizePunctuationForStorage(resultItemName.trim()),
+        traits: (Array.isArray(payload.traits) ? payload.traits : (Array.isArray(payload.tags) ? payload.tags : [])).map((t) => normalizePunctuationForStorage(String(t))),
+        description: normalizePunctuationForStorage(String(payload.description)),
         processType: payload.processType != null && PROCESS_TYPES.includes(String(payload.processType).toLowerCase()) ? String(payload.processType).toLowerCase() : 'heat',
         processLevel: payload.processLevel != null && Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= HEAT_MAX ? Math.round(Number(payload.processLevel)) : 0,
         time: Math.min(120, payload.time != null && Number(payload.time) >= 0 ? Number(payload.time) : 20),
-        apparatusName: apparatusName?.trim() || 'Mixing Bowl',
-        containerName: containerName?.trim() || 'Vial',
-        skillKit: skillKit?.trim() || null,
+        apparatusName: normalizePunctuationForStorage(apparatusName?.trim() || 'Mixing Bowl'),
+        containerName: normalizePunctuationForStorage(containerName?.trim() || 'Vial'),
+        skillKit: skillKit ? normalizePunctuationForStorage(skillKit.trim()) : null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
-        source: _str(payload.source ?? payload.Source) || 'Artificer',
-        license: _str(payload.license ?? payload.License)
+        source: normalizePunctuationForStorage(_str(payload.source ?? payload.Source) || 'Artificer'),
+        license: normalizePunctuationForStorage(_str(payload.license ?? payload.License))
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
     if (!recipe.validate?.()) {
