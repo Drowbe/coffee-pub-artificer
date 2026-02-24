@@ -108,6 +108,31 @@ export async function copyToClipboard(text, options = {}) {
 }
 
 /**
+ * Normalize an item/ingredient name for matching (recipe vs inventory).
+ * Extracts label from @UUID links, strips non-alphanumeric, normalizes accents, then uppercases
+ * so "Cat's Tongue", "@UUID[Item.x]{Cat's Tongue}", and "cats tongue" all match.
+ * @param {string} name - Display name (may contain @UUID[Id]{Label})
+ * @returns {string} Normalized string for comparison
+ */
+export function normalizeItemNameForMatch(name) {
+    if (name == null || typeof name !== 'string') return '';
+    let s = extractNameFromUuidLink(name).trim();
+    if (!s) return '';
+    // Normalize accents (é -> e) then keep only letters, digits, spaces
+    try {
+        s = s.normalize('NFD').replace(/\p{M}/gu, '');
+    } catch (_) {
+        // Older engines without \p{M}
+    }
+    s = s
+        .replace(/[^A-Za-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+    return s;
+}
+
+/**
  * Extract display name from @UUID[Id]{Label} link. Returns Label for name-based matching.
  * @param {string} value - Raw value (e.g. "Red Amanita" or "@UUID[Item.xyz]{Red Amanita}")
  * @returns {string} The label (name) for matching; original string if not a UUID link

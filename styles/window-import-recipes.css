@@ -1,0 +1,85 @@
+/* ==================================================================
+   ===== IMPORT RECIPES WINDOW LAYOUT ===============================
+   ==================================================================
+   Ensures the template fills the app window, the textarea takes
+   remaining space, and action buttons stay visible at the bottom.
+*/
+
+/* ApplicationV2 body wrapper: allow our template to fill and shrink */
+.window-artificer-recipe-import .window-content,
+.artificer-import-window .window-content {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+}
+
+.window-artificer-recipe-import .window-content > *,
+.artificer-import-window .window-content > * {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Import layout root: flex column, shrink so buttons stay in view */
+.artificer-import-layout.artificer-window,
+.artificer-import-recipes-window.artificer-window {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header and actions do not shrink */
+.artificer-import-layout .artificer-header,
+.artificer-import-layout .artificer-form-actions {
+    flex-shrink: 0;
+}
+
+/* Content area: takes remaining space, scrolls if needed */
+.artificer-import-layout .artificer-import-content,
+.artificer-import-recipes-window .artificer-import-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.artificer-import-toolbar {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(145, 133, 107, 0.3);
+    display: flex;
+    gap: 8px;
+}
+
+/* Textarea fills remaining space and scrolls internally */
+.artificer-import-textarea {
+    flex: 1 1 auto;
+    min-height: 120px;
+    width: 100%;
+    margin: 0;
+    padding: 12px;
+    resize: none;
+    font-family: monospace;
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(145, 133, 107, 0.3);
+    border-radius: 4px;
+    color: #e0e0e0;
+    overflow: auto;
+}
+
+.artificer-import-textarea::placeholder {
+    color: rgba(224, 224, 224, 0.5);
+}
+
+.artificer-import-textarea:focus {
+    outline: none;
+    border-color: rgba(145, 133, 107, 0.7);
+    box-shadow: 0 0 0 1px rgba(145, 133, 107, 0.3);
+}

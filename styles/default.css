@@ -25,6 +25,9 @@
 /* --- Gather (Roll for Components) - */
 @import "window-gather.css";
 
+/* --- Import Recipes Window --------- */
+@import "window-import-recipes.css";
+
 /* --- Item Sheet Integration ------ */
 @import "item-sheet.css";
 

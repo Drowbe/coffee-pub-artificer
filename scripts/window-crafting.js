@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
+import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
@@ -53,8 +54,8 @@ function isCraftValidItem(item) {
  */
 function actorHasItemNamed(actor, name) {
     if (!actor || !name?.trim()) return true;
-    const target = name.trim();
-    return actor.items.some((i) => (i.name || '').trim() === target);
+    const target = normalizeItemNameForMatch(name);
+    return actor.items.some((i) => normalizeItemNameForMatch(i.name) === target);
 }
 
 /**
@@ -73,9 +74,10 @@ function recipeCanCraft(actor, recipe) {
         const need = ing.quantity ?? 1;
         const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
         const wantFamily = (ing.family || '').trim();
+        const wantName = normalizeItemNameForMatch(ing.name);
         const candidates = actor.items.filter((item) => {
             const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-            const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+            const nameMatches = normalizeItemNameForMatch(item.name) === wantName;
             if (!nameMatches) return false;
             if (!f) return true;
             const itemType = getArtificerTypeFromFlags(f);
@@ -1005,6 +1007,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             });
             const api = getAPI();
             if (api?.ingredients?.refresh) await api.ingredients.refresh();
+            if (api?.recipes?.refresh) await api.recipes.refresh();
         } catch (err) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Cache refresh failed', err?.message ?? String(err), true, false);
             ui.notifications?.error?.('Failed to refresh item cache.');
@@ -1038,9 +1041,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (actor) {
                 const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
                 const wantFamily = (ing.family || '').trim();
+                const wantName = normalizeItemNameForMatch(ing.name);
                 const candidates = actor.items.filter((item) => {
                     const f = item.flags?.[MODULE.ID] || item.flags?.artificer;
-                    const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+                    const nameMatches = normalizeItemNameForMatch(item.name) === wantName;
                     if (!nameMatches) return false;
                     if (!f) return true;
                     const itemType = getArtificerTypeFromFlags(f);
@@ -1092,14 +1096,14 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedSlots = newSlots;
 
         const matchByName = (items, name, flagsFilter) => {
-            const target = (name || '').trim();
+            const target = normalizeItemNameForMatch(name);
             if (!target) return null;
             return items?.find((i) => {
                 if (flagsFilter) {
                     const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                     if (!flagsFilter(f)) return false;
                 }
-                return (i.name || '').trim() === target;
+                return normalizeItemNameForMatch(i.name) === target;
             }) ?? null;
         };
         const isApparatus = (f) => {

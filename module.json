@@ -87,20 +87,9 @@
   ],
   "packs": [
     {
-      "name": "recipies",
-      "label": "Recipies",
-      "path": "packs/recipies",
-      "type": "JournalEntry",
-      "system": "dnd5e",
-      "ownership": {
-        "PLAYER": "OBSERVER",
-        "ASSISTANT": "OWNER"
-      }
-    },
-    {
-      "name": "blueprints",
-      "label": "Blueprints",
-      "path": "packs/blueprints",
+      "name": "recipes-blueprints",
+      "label": "Recipes & Blueprints",
+      "path": "packs/recipes-blueprints",
       "type": "JournalEntry",
       "system": "dnd5e",
       "ownership": {
@@ -124,33 +113,33 @@
       "label": "Components",
       "path": "packs/components",
       "type": "Item",
+      "system": "dnd5e",
       "ownership": {
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
-      },
-      "system": "dnd5e"
+      }
     },
     {
       "name": "creations",
       "label": "Creations",
       "path": "packs/creations",
       "type": "Item",
+      "system": "dnd5e",
       "ownership": {
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
-      },
-      "system": "dnd5e"
+      }
     },
     {
       "name": "tools",
       "label": "Tools",
       "path": "packs/tools",
       "type": "Item",
+      "system": "dnd5e",
       "ownership": {
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
-      },
-      "system": "dnd5e"
+      }
     }
   ],
   "relationships": {

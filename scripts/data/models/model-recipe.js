@@ -3,10 +3,10 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
-import { hashString } from '../../utils/helpers.js';
+import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
-import { getArtificerTypeFromFlags } from '../../utility-artificer-item.js';
+import { getArtificerTypeFromFlags, getFamilyFromFlags } from '../../utility-artificer-item.js';
 
 /** Normalize ingredient type to TYPE (Component | Creation | Tool). Legacy ingredient/component/essence → Component. */
 function normalizeIngredientType(t) {
@@ -211,9 +211,10 @@ export class ArtificerRecipe {
         for (const ing of this.ingredients) {
             const wantType = ing.type || ARTIFICER_TYPES.COMPONENT;
             const wantFamily = (ing.family || '').trim();
+            const wantName = normalizeItemNameForMatch(ing.name);
             const items = actor.items.filter(item => {
                 const flags = item.flags?.[MODULE.ID] || item.flags?.artificer;
-                const nameMatches = (item.name || '').trim() === (ing.name || '').trim();
+                const nameMatches = normalizeItemNameForMatch(item.name) === wantName;
                 if (!nameMatches) return false;
                 if (!flags) {
                     // Normal D&D item (no Artificer flags): match by name only
