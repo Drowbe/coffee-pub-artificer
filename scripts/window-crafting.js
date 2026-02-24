@@ -60,12 +60,12 @@ function actorHasItemNamed(actor, name) {
 /**
  * Check if actor can craft a recipe: ingredients, tool, apparatus, container
  * @param {Actor|null} actor
- * @param {Object} recipe - ArtificerRecipe with ingredients, toolName, apparatusName, containerName
+ * @param {Object} recipe - ArtificerRecipe with ingredients, skillKit, apparatusName, containerName
  * @returns {boolean}
  */
 function recipeCanCraft(actor, recipe) {
     if (!actor || !recipe?.ingredients?.length) return false;
-    if (recipe.toolName?.trim() && !actorHasItemNamed(actor, recipe.toolName)) return false;
+    if (recipe.skillKit?.trim() && !actorHasItemNamed(actor, recipe.skillKit)) return false;
     if (recipe.apparatusName?.trim() && !actorHasItemNamed(actor, recipe.apparatusName)) return false;
     if (recipe.containerName?.trim() && !actorHasItemNamed(actor, recipe.containerName)) return false;
     const ingredients = recipe.ingredients ?? [];
@@ -524,14 +524,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             : null;
         const selectedRecipeMetadata = r
             ? [
-                r.toolName ? `Tool: ${r.toolName}` : null,
+                r.skill ? `Skill: ${r.skill}` : null,
+                r.skillKit ? `Skill Kit: ${r.skillKit}` : null,
                 r.apparatusName ? `Apparatus: ${r.apparatusName}` : null,
                 r.containerName ? `Container: ${r.containerName}` : null,
                 r.processType ? `Process: ${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() : null,
                 r.time != null ? `Time: ${r.time}s` : null,
-                r.skill ? `Skill: ${r.skill}` : null,
                 r.skillLevel != null ? `Skill Level: ${r.skillLevel}` : null,
-                r.workstation ? `Workstation: ${r.workstation}` : null,
                 r.goldCost != null ? `Gold Cost: ${r.goldCost}` : null,
                 r.workHours != null ? `Work Hours: ${r.workHours}` : null
             ].filter(Boolean)
@@ -1085,7 +1084,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         };
         this.selectedApparatus = matchByName(actor?.items, recipe.apparatusName, isApparatus);
         this.selectedContainer = matchByName(actor?.items, recipe.containerName, isContainer);
-        this.selectedTool = matchByName(actor?.items, recipe.toolName);
+        this.selectedTool = matchByName(actor?.items, recipe.skillKit);
 
         this.processType = recipe.processType === 'grind' ? 'grind' : 'heat';
         const rawLevel = recipe.processLevel != null ? Number(recipe.processLevel) : (recipe.heat != null ? Number(recipe.heat) : null);

@@ -80,12 +80,11 @@ Hooks.once('ready', async () => {
             }
         }
         
-        // Initialize module API
+        // Create and expose API so macros and external callers can use it even if init fails later
         const api = getAPI();
-        await api.initialize();
-        
-        // Expose API globally for external access
         game.modules.get(MODULE.ID).api = api;
+
+        await api.initialize();
         
         // Initialize module features
         initializeModule();

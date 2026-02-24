@@ -4,7 +4,7 @@
 
 import { MODULE } from '../../const.js';
 import { hashString } from '../../utils/helpers.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES } from '../../schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
 import { getArtificerTypeFromFlags } from '../../utility-artificer-item.js';
 
@@ -32,15 +32,14 @@ export class ArtificerRecipe {
         this.type = data.type ?? ITEM_TYPES.CONSUMABLE;
         this.category = data.category ?? '';
         this.skill = data.skill ?? CRAFTING_SKILLS.ALCHEMY;
-        this.skillLevel = data.skillLevel ?? 0;
-        this.workstation = data.workstation ?? null;
+        this.skillLevel = data.skillLevel ?? 1;
         this.heat = data.heat ?? null;
         this.processType = data.processType ?? null;
         this.processLevel = data.processLevel ?? null;
         this.time = data.time ?? null;
         this.apparatusName = data.apparatusName ?? data.containerName ?? null;
         this.containerName = data.containerName ?? null;
-        this.toolName = data.toolName ?? data.tool ?? null;
+        this.skillKit = data.skillKit ?? data.toolName ?? data.tool ?? null;
         this.goldCost = data.goldCost != null ? Number(data.goldCost) : null;
         this.workHours = data.workHours != null ? Number(data.workHours) : null;
         this.ingredients = data.ingredients ?? [];
@@ -72,10 +71,10 @@ export class ArtificerRecipe {
             this.skill = CRAFTING_SKILLS.ALCHEMY;
         }
         
-        // Validate skillLevel (0-100)
-        if (typeof this.skillLevel !== 'number' || this.skillLevel < 0 || this.skillLevel > 100) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 0`, null, true, false);
-            this.skillLevel = 0;
+        // Validate skillLevel (0-20)
+        if (typeof this.skillLevel !== 'number' || this.skillLevel < SKILL_LEVEL_MIN || this.skillLevel > SKILL_LEVEL_MAX) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
+            this.skillLevel = 1;
         }
         
         // Ensure ingredients is array
@@ -146,18 +145,12 @@ export class ArtificerRecipe {
         if (skillValue < this.skillLevel) {
             reasons.push(`Requires ${this.skill} ${this.skillLevel}, actor has ${skillValue}`);
         }
-        
-        // Check workstation (if required)
-        if (this.workstation) {
-            // TODO: Check if actor is at required workstation
-            // For now, assume workstation check is handled elsewhere
-        }
 
-        // Check tool (e.g. Alchemist's Supplies)
-        if (this.toolName?.trim()) {
-            const hasTool = actor.items.some((i) => (i.name || '').trim() === this.toolName.trim());
-            if (!hasTool) {
-                reasons.push(`Missing tool: ${this.toolName}`);
+        // Check skill kit (e.g. Alchemist's Supplies)
+        if (this.skillKit?.trim()) {
+            const hasKit = actor.items.some((i) => (i.name || '').trim() === this.skillKit.trim());
+            if (!hasKit) {
+                reasons.push(`Missing skill kit: ${this.skillKit}`);
             }
         }
 
@@ -268,14 +261,13 @@ export class ArtificerRecipe {
             category: this.category,
             skill: this.skill,
             skillLevel: this.skillLevel,
-            workstation: this.workstation,
             heat: this.heat,
             processType: this.processType,
             processLevel: this.processLevel,
             time: this.time,
             apparatusName: this.apparatusName,
             containerName: this.containerName,
-            toolName: this.toolName,
+            skillKit: this.skillKit,
             goldCost: this.goldCost,
             workHours: this.workHours,
             ingredients: [...this.ingredients],

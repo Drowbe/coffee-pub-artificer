@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 import { getOrCreateJournal, extractNameFromUuidLink } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from './schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
 
 /** Default journal name when none configured */
@@ -17,15 +17,6 @@ function _str(val) {
     const s = String(val).trim();
     return s === 'null' || s === 'undefined' ? '' : s;
 }
-
-/** Skill → default workstation when not provided (architecture: import auto-mapping). */
-const SKILL_TO_WORKSTATION = {
-    [CRAFTING_SKILLS.ALCHEMY]: 'Alchemist Table',
-    [CRAFTING_SKILLS.HERBALISM]: 'Cookfire',
-    [CRAFTING_SKILLS.METALLURGY]: 'Smithy',
-    [CRAFTING_SKILLS.ARTIFICE]: 'Arcane Workbench',
-    [CRAFTING_SKILLS.MONSTER_HANDLING]: 'Tinker'
-};
 
 /**
  * Parse recipe import input (File, string, or object/array) into array of payloads
@@ -73,11 +64,16 @@ export async function validateRecipePayload(payload) {
     if (!resultItemName?.trim()) {
         return { valid: false, error: `Recipe "${payload.name}" requires resultItemName` };
     }
+    if (payload.description == null || typeof payload.description !== 'string') {
+        return { valid: false, error: `Recipe "${payload.name}" requires a "description" field (string)` };
+    }
     const skill = payload.skill ?? CRAFTING_SKILLS.ALCHEMY;
     const apparatusName = payload.apparatusName ?? payload.containerName ?? payload.container ?? null;
     const containerName = payload.containerName ?? null;
-    const toolName = payload.toolName ?? payload.tool ?? null;
-    const workstation = payload.workstation?.trim() || SKILL_TO_WORKSTATION[skill] || null;
+    const skillKit = payload.skillKit ?? payload.toolName ?? payload.tool ?? null;
+    const rawSkillLevel = payload.skillLevel ?? 1;
+    const skillLevel = typeof rawSkillLevel === 'number' && rawSkillLevel >= SKILL_LEVEL_MIN && rawSkillLevel <= SKILL_LEVEL_MAX
+        ? Math.round(rawSkillLevel) : 1;
 
     // Store names only—no world UUIDs. Recipes resolve items by name at runtime (compendia + world).
     // Apply defaults when omitted: apparatus→Mixing Bowl, container→Vial, source→Artificer; processType→heat, processLevel→0.
@@ -86,8 +82,7 @@ export async function validateRecipePayload(payload) {
         type: payload.type ?? ITEM_TYPES.CONSUMABLE,
         category: payload.category ?? '',
         skill,
-        skillLevel: payload.skillLevel ?? 0,
-        workstation,
+        skillLevel,
         ingredients: ingredients.map((i) => {
             const obj = typeof i === 'object' ? i : { name: String(i), quantity: 1 };
             const rawName = obj.name ? String(obj.name) : '';
@@ -100,13 +95,13 @@ export async function validateRecipePayload(payload) {
         }),
         resultItemName: resultItemName.trim(),
         traits: Array.isArray(payload.traits) ? payload.traits : (Array.isArray(payload.tags) ? payload.tags : []),
-        description: payload.description ?? '',
+        description: String(payload.description),
         processType: payload.processType != null && PROCESS_TYPES.includes(String(payload.processType).toLowerCase()) ? String(payload.processType).toLowerCase() : 'heat',
         processLevel: payload.processLevel != null && Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= HEAT_MAX ? Math.round(Number(payload.processLevel)) : 0,
         time: Math.min(120, payload.time != null && Number(payload.time) >= 0 ? Number(payload.time) : 20),
         apparatusName: apparatusName?.trim() || 'Mixing Bowl',
         containerName: containerName?.trim() || 'Vial',
-        toolName: toolName?.trim() || null,
+        skillKit: skillKit?.trim() || null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
         source: _str(payload.source ?? payload.Source) || 'Artificer',
@@ -122,10 +117,11 @@ export async function validateRecipePayload(payload) {
 /**
  * Build HTML content for a recipe journal page (matches RecipeParser format).
  * Always outputs every recipe field so authors can see what is possible, even when empty.
- * @param {Object} data - Validated recipe data
+ * Exported for recipe clean/migrate macro.
+ * @param {Object} data - Validated recipe data (name, resultItemName, skill, skillLevel, skillKit, ingredients, description, etc.)
  * @returns {string} HTML
  */
-function buildRecipePageHtml(data) {
+export function buildRecipePageHtml(data) {
     const v = (x) => (x != null && x !== '' ? escapeHtml(String(x)) : '');
     const processLevel = data.processLevel != null && data.processLevel >= 0 && data.processLevel <= HEAT_MAX ? data.processLevel : 0;
     const section = (title, content) => `<h4>${title}</h4><p></p>${content}<p></p><hr><p></p>`;
@@ -166,8 +162,7 @@ function buildRecipePageHtml(data) {
         `<p><strong>Category:</strong> ${v(data.category)}</p>`,
         `<p><strong>Skill:</strong> ${v(data.skill)}</p>`,
         `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
-        `<p><strong>Workstation:</strong> ${v(data.workstation)}</p>`,
-        `<p><strong>Tool:</strong> ${v(data.toolName)}</p>`,
+        `<p><strong>Skill Kit:</strong> ${v(data.skillKit)}</p>`,
         `<p><strong>Source:</strong> ${v(data.source)}</p>`,
         `<p><strong>License:</strong> ${v(data.license)}</p>`
     ].join('')));
@@ -175,7 +170,7 @@ function buildRecipePageHtml(data) {
     return parts.join('') + '<p></p><p></p><p></p>';
 }
 
-function escapeHtml(str) {
+export function escapeHtml(str) {
     if (str == null) return '';
     const s = String(str);
     const div = document.createElement('div');

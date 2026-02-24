@@ -5,7 +5,7 @@
 import { MODULE } from '../const.js';
 import { extractNameFromUuidLink } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES } from '../schema-recipes.js';
+import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 
 /**
@@ -63,9 +63,8 @@ export class RecipeParser {
                 } else if (labelLower === 'skill') {
                     data.skill = value;
                 } else if (labelLower === 'skill level') {
-                    data.skillLevel = parseInt(value) || 0;
-                } else if (labelLower === 'workstation') {
-                    data.workstation = value || null;
+                    const num = parseInt(value, 10);
+                    data.skillLevel = (!isNaN(num) && num >= SKILL_LEVEL_MIN && num <= SKILL_LEVEL_MAX) ? num : 1;
                 } else if (labelLower === 'process type') {
                     const v = (value || '').toString().trim().toLowerCase();
                     if (PROCESS_TYPES.includes(v)) data.processType = v;
@@ -99,8 +98,8 @@ export class RecipeParser {
                         if (!data.apparatusName) data.apparatusName = val;
                         else data.containerName = val;
                     }
-                } else if (labelLower === 'tool') {
-                    if (value.trim()) data.toolName = value.trim();
+                } else if (labelLower === 'tool' || labelLower === 'skill kit') {
+                    if (value.trim()) data.skillKit = value.trim();
                 } else if (labelLower === 'gold cost') {
                     const num = parseInt(value, 10);
                     if (!isNaN(num) && num >= 0) data.goldCost = num;

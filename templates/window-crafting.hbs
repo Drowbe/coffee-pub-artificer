@@ -84,7 +84,7 @@
                         </div>
                     </div>
                     {{else}}
-                    <div class="crafting-zone-empty">{{#if showApparatusOnly}}No apparatus in inventory.{{else}}{{#if showContainerOnly}}No containers in inventory.{{else}}{{#if showToolOnly}}No tools in inventory.{{else}}No components or vessels in inventory.{{/if}}{{/if}}{{/if}}</div>
+                    <div class="crafting-zone-empty">{{#if showApparatusOnly}}No apparatus in inventory.{{else}}{{#if showContainerOnly}}No containers in inventory.{{else}}{{#if showToolOnly}}No skill kit in inventory.{{else}}No components or vessels in inventory.{{/if}}{{/if}}{{/if}}</div>
                     {{/each}}
                 </div>
             </section>
@@ -109,16 +109,16 @@
                     </div>
                     {{/each}}
                 </div>
-                {{!-- Row 2: 3-column grid - Tool (left, no border) | Apparatus (center, like slots) | Timer (right, no border) --}}
+                {{!-- Row 2: 3-column grid - Skill (left, no border) | Apparatus (center, like slots) | Timer (right, no border) --}}
                 <div class="crafting-bench-grid-row crafting-bench-apparatus-row">
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-center">
-                        <div class="crafting-bench-tool-slot crafting-bench-vessel-slot" data-action="removeTool" data-tooltip="{{toolSlot.tooltip}}" title="Tool (kit)">
+                        <div class="crafting-bench-tool-slot crafting-bench-vessel-slot" data-action="removeTool" data-tooltip="{{toolSlot.tooltip}}" title="Skill">
                             {{#if toolSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{toolSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}
                         <div class="crafting-bench-container-empty">
                             <i class="fa-solid fa-toolbox"></i>
-                            <span>Tool</span>
+                            <span>Skill</span>
                         </div>
                             {{/if}}
                         </div>

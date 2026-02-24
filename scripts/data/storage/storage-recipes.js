@@ -5,6 +5,8 @@
 import { MODULE } from '../../const.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
+import { buildRecipePageHtml } from '../../utility-artificer-recipe-import.js';
+import { SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 
 /**
  * RecipeStorage - Manages loading recipes from journal entries
@@ -210,5 +212,68 @@ export class RecipeStorage {
         }
         
         return results;
+    }
+
+    /**
+     * Clean and adjust recipe journal pages to current schema: skillKit (not Tool), no Workstation,
+     * skillLevel 0–20 (scale from old 0–100 if present), valid skill, description present.
+     * Only updates world journal pages in the configured recipe journal folder.
+     * @param {Object} [options]
+     * @param {boolean} [options.dryRun=false] - If true, do not write; only report what would be updated.
+     * @returns {Promise<{ updated: number, errors: Array<{ name: string, error: string }>, skipped: number }>}
+     */
+    async cleanAndRewriteRecipePages(options = {}) {
+        const dryRun = !!options.dryRun;
+        const result = { updated: 0, errors: [], skipped: 0 };
+        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
+        if (!folderId || !game.journal) {
+            result.errors.push({ name: '', error: 'No recipe journal folder configured in module settings.' });
+            return result;
+        }
+        const journals = game.journal.filter((j) => j.folder?.id === folderId && j.documentName === 'JournalEntry');
+        for (const journal of journals) {
+            const pages = journal.pages?.contents ?? [];
+            for (const page of pages) {
+                if (page.type !== 'text') {
+                    result.skipped++;
+                    continue;
+                }
+                const rawContent = page.text?.content ?? page.text?.markdown ?? '';
+                if (!rawContent?.trim()) {
+                    result.skipped++;
+                    continue;
+                }
+                try {
+                    const recipe = await RecipeParser.parseSinglePage(page, rawContent, journal);
+                    if (!recipe) {
+                        result.skipped++;
+                        continue;
+                    }
+                    // If stored skill level was in old 0–100 range, scale to 0–20
+                    const skillLevelMatch = rawContent.match(/Skill Level:\s*<\/strong>\s*(\d+)/i);
+                    if (skillLevelMatch) {
+                        const rawNum = parseInt(skillLevelMatch[1], 10);
+                        if (!isNaN(rawNum) && rawNum > SKILL_LEVEL_MAX) {
+                            recipe.skillLevel = Math.min(SKILL_LEVEL_MAX, Math.max(0, Math.round((rawNum / 100) * SKILL_LEVEL_MAX)));
+                        }
+                    }
+                    const data = recipe.serialize();
+                    const html = buildRecipePageHtml(data);
+                    if (!dryRun) {
+                        await page.update({ text: { content: html } });
+                    }
+                    result.updated++;
+                } catch (e) {
+                    result.errors.push({
+                        name: page.name ?? page.id ?? 'Unknown',
+                        error: e?.message ?? String(e)
+                    });
+                }
+            }
+        }
+        if (result.updated > 0 && !dryRun) {
+            await this.refresh();
+        }
+        return result;
     }
 }

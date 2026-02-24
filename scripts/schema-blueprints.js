@@ -17,7 +17,6 @@
  * @property {string} name - Stage name/description
  * @property {string} state - Stage state: 'active', 'completed', 'failed', 'hidden'
  * @property {BlueprintStageRequirement[]} requirements - Required materials
- * @property {string|null} workstation - Required workstation (if any)
  * @property {string} description - Stage description/instructions
  */
 
@@ -26,8 +25,8 @@
  * @property {string} id - Unique identifier (UUID)
  * @property {string} name - Blueprint name
  * @property {string} narrative - Narrative hook/story element
- * @property {string} skill - Required skill (Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling)
- * @property {number} skillLevel - Minimum skill level required
+ * @property {string} skill - Required skill (see CRAFTING_SKILLS in schema-recipes.js)
+ * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {BlueprintStage[]} stages - Multi-stage requirements
  * @property {string} resultItemUuid - UUID of resulting item (Item document UUID)
  * @property {string[]} tags - Blueprint tags

@@ -91,5 +91,15 @@ export class RecipeManager {
     async refresh() {
         await this._storage.refresh();
     }
+
+    /**
+     * Clean and adjust recipe journal pages to current schema (skillKit, no workstation, skillLevel 0–20).
+     * Only world journals in the configured recipe folder are updated.
+     * @param {Object} [options] - { dryRun: boolean }
+     * @returns {Promise<{ updated: number, errors: Array<{ name: string, error: string }>, skipped: number }>}
+     */
+    async cleanRecipeJournalPages(options = {}) {
+        return this._storage.cleanAndRewriteRecipePages(options);
+    }
 }
 

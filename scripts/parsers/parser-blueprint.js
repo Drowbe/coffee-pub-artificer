@@ -5,6 +5,7 @@
 import { MODULE } from '../const.js';
 import { ArtificerBlueprint } from '../data/models/model-blueprint.js';
 import { BLUEPRINT_STAGE_STATES } from '../schema-blueprints.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 
 /**
  * Parser for Blueprint journal entries
@@ -57,7 +58,8 @@ export class BlueprintParser {
                 } else if (labelLower === 'skill') {
                     data.skill = value;
                 } else if (labelLower === 'skill level') {
-                    data.skillLevel = parseInt(value) || 0;
+                    const num = parseInt(value, 10);
+                    data.skillLevel = (!isNaN(num) && num >= SKILL_LEVEL_MIN && num <= SKILL_LEVEL_MAX) ? num : 1;
                 } else if (labelLower === 'result') {
                     // Extract UUID from @UUID format
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
@@ -175,7 +177,6 @@ export class BlueprintParser {
                 name,
                 state,
                 requirements: [],
-                workstation: null,
                 description
             };
         }
@@ -191,19 +192,11 @@ export class BlueprintParser {
         const nestedUl = item.querySelector('ul');
         const requirements = nestedUl ? this._parseRequirements(nestedUl) : [];
         
-        // Look for workstation requirement in paragraph or nested content
-        let workstation = null;
-        const workstationMatch = description.match(/workstation[:\s]+([^,.\n]+)/i);
-        if (workstationMatch) {
-            workstation = workstationMatch[1].trim();
-        }
-        
         return {
             stageNumber,
             name: stageName,
             state,
             requirements,
-            workstation,
             description
         };
     }

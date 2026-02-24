@@ -4,6 +4,8 @@
 
 import { MODULE } from '../../const.js';
 import { hashString } from '../../utils/helpers.js';
+import { CRAFTING_SKILLS, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { BLUEPRINT_STAGE_STATES } from '../../schema-blueprints.js';
 
 /**
  * ArtificerBlueprint - Blueprint data model
@@ -18,8 +20,8 @@ export class ArtificerBlueprint {
         this.id = data.id ?? '';
         this.name = data.name ?? '';
         this.narrative = data.narrative ?? '';
-        this.skill = data.skill ?? CRAFTING_SKILLS.ARTIFICE;
-        this.skillLevel = data.skillLevel ?? 0;
+        this.skill = data.skill ?? CRAFTING_SKILLS.ALCHEMY;
+        this.skillLevel = data.skillLevel ?? 1;
         this.stages = data.stages ?? [];
         this.resultItemUuid = data.resultItemUuid ?? '';
         this.tags = data.tags ?? [];
@@ -38,14 +40,14 @@ export class ArtificerBlueprint {
     _validateAndNormalize() {
         // Validate skill
         if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ARTIFICE}`, null, true, false);
-            this.skill = CRAFTING_SKILLS.ARTIFICE;
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ALCHEMY}`, null, true, false);
+            this.skill = CRAFTING_SKILLS.ALCHEMY;
         }
-        
-        // Validate skillLevel (0-100)
-        if (typeof this.skillLevel !== 'number' || this.skillLevel < 0 || this.skillLevel > 100) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 0`, null, true, false);
-            this.skillLevel = 0;
+
+        // Validate skillLevel (0-20)
+        if (typeof this.skillLevel !== 'number' || this.skillLevel < SKILL_LEVEL_MIN || this.skillLevel > SKILL_LEVEL_MAX) {
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
+            this.skillLevel = 1;
         }
         
         // Ensure stages is array
@@ -60,7 +62,6 @@ export class ArtificerBlueprint {
                 name: stage.name ?? `Stage ${index + 1}`,
                 state: stage.state ?? BLUEPRINT_STAGE_STATES.ACTIVE,
                 requirements: stage.requirements ?? [],
-                workstation: stage.workstation ?? null,
                 description: stage.description ?? ''
             };
         });
@@ -256,7 +257,6 @@ export class ArtificerBlueprint {
                 name: stage.name,
                 state: stage.state,
                 requirements: [...stage.requirements],
-                workstation: stage.workstation,
                 description: stage.description
             })),
             resultItemUuid: this.resultItemUuid,

@@ -18,16 +18,15 @@
  * @property {string} name - Recipe name
  * @property {string} type - Item type (Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice)
  * @property {string} category - Category within type (e.g., "Potion" for Consumable)
- * @property {string} skill - Required skill (Herbalism, Metallurgy, Artifice, Alchemy, MonsterHandling)
- * @property {number} skillLevel - Minimum skill level required
- * @property {string|null} workstation - Required workstation (if any)
+ * @property {string} skill - Required skill (see CRAFTING_SKILLS; must match skills-details.json ids)
+ * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
  * @property {string|null} processType - Process type: 'heat' | 'grind' (null = any / legacy heat)
  * @property {number|null} processLevel - Process level 0–3: heat 0=Off,1=Low,2=Medium,3=High; grind 0=Off,1=Coarse,2=Medium,3=Fine (null = any)
  * @property {number|null} time - Process time in seconds. Duration of the crafting process. Not derived from workHours.
  * @property {string|null} apparatusName - Apparatus item name: vessel to craft in (beaker, mortar, crucible). Resolved at runtime.
  * @property {string|null} containerName - Container item name: vessel to put result in (vial, flask, herb bag). Resolved at runtime.
- * @property {string|null} toolName - Required kit (Alchemist's Supplies, Herbalism Kit, Poisoner's Kit). Actor must have in inventory.
+ * @property {string|null} skillKit - Required kit for this skill (e.g. Alchemist's Supplies, Herbalism Kit). Actor must have in inventory.
  * @property {number|null} goldCost - Cost to make in gp after ingredient deduction (Phase 2)
  * @property {number|null} workHours - In-game duration (hours to craft). Separate from time; not a translation.
  * @property {RecipeIngredient[]} ingredients - Required ingredients (TYPE + optional family + name + quantity)
@@ -53,16 +52,28 @@ export const ITEM_TYPES = {
 };
 
 /**
- * Crafting Skills
+ * Crafting Skills (ids must match resources/skills-details.json)
  * @enum {string}
  */
 export const CRAFTING_SKILLS = {
     HERBALISM: 'Herbalism',
-    METALLURGY: 'Metallurgy',
-    ARTIFICE: 'Artifice',
     ALCHEMY: 'Alchemy',
-    MONSTER_HANDLING: 'MonsterHandling'
+    POISONCRAFT: 'Poisoncraft',
+    COOKING: 'Cooking',
+    SMITHING: 'Smithing',
+    LEATHERWORKING: 'Leatherworking',
+    TINKERING: 'Tinkering',
+    CARTOGRAPHY: 'Cartography',
+    INSCRIPTION: 'Inscription',
+    ENCHANTING: 'Enchanting',
+    GEMCRAFT: 'Gemcraft',
+    TAILORING: 'Tailoring',
+    MASONRY: 'Masonry'
 };
+
+/** Skill level range for recipes and components (gathering). Default 1. */
+export const SKILL_LEVEL_MIN = 0;
+export const SKILL_LEVEL_MAX = 20;
 
 /** Heat levels for temperature slider: 0=Off, 1=Low, 2=Medium, 3=High */
 export const HEAT_LEVELS = { 0: 'Off', 1: 'Low', 2: 'Medium', 3: 'High' };
