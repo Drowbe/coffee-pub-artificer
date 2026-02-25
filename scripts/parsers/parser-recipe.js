@@ -3,7 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../const.js';
-import { extractNameFromUuidLink } from '../utils/helpers.js';
+import { extractNameFromUuidLink, normalizePunctuationForStorage } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
@@ -31,7 +31,7 @@ export class RecipeParser {
             const journalUuid = journal?.uuid ?? page.parent?.uuid ?? '';
             const data = {
                 id: page.uuid,
-                name: page.name,
+                name: normalizePunctuationForStorage(page.name ?? ''),
                 source: journalUuid,
                 journalPageId: page.id
             };
@@ -55,13 +55,13 @@ export class RecipeParser {
                 const labelLower = label.toLowerCase();
                 
                 if (labelLower === 'name') {
-                    if (value.trim()) data.name = value.trim();
+                    if (value.trim()) data.name = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'type') {
-                    data.type = value;
+                    data.type = normalizePunctuationForStorage(value) || value;
                 } else if (labelLower === 'category') {
-                    data.category = value;
+                    data.category = normalizePunctuationForStorage(value);
                 } else if (labelLower === 'skill') {
-                    data.skill = value;
+                    data.skill = normalizePunctuationForStorage(value) || value;
                 } else if (labelLower === 'skill level') {
                     const num = parseInt(value, 10);
                     data.skillLevel = (!isNaN(num) && num >= SKILL_LEVEL_MIN && num <= SKILL_LEVEL_MAX) ? num : 1;
@@ -87,19 +87,20 @@ export class RecipeParser {
                 } else if (labelLower === 'apparatus') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
-                        data.apparatusName = uuidMatch[2].trim();
+                        data.apparatusName = normalizePunctuationForStorage(uuidMatch[2].trim());
                     } else if (value.trim()) {
-                        data.apparatusName = value.trim();
+                        data.apparatusName = normalizePunctuationForStorage(value.trim());
                     }
                 } else if (labelLower === 'container') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     const val = uuidMatch ? uuidMatch[2].trim() : value.trim();
                     if (val) {
-                        if (!data.apparatusName) data.apparatusName = val;
-                        else data.containerName = val;
+                        const normalized = normalizePunctuationForStorage(val);
+                        if (!data.apparatusName) data.apparatusName = normalized;
+                        else data.containerName = normalized;
                     }
                 } else if (labelLower === 'tool' || labelLower === 'skill kit') {
-                    if (value.trim()) data.skillKit = value.trim();
+                    if (value.trim()) data.skillKit = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'gold cost') {
                     const num = parseInt(value, 10);
                     if (!isNaN(num) && num >= 0) data.goldCost = num;
@@ -112,25 +113,26 @@ export class RecipeParser {
                 } else if (labelLower === 'result') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
-                        data.resultItemName = uuidMatch[2].trim(); // Use label, not UUID (portable)
+                        data.resultItemName = normalizePunctuationForStorage(uuidMatch[2].trim());
                     } else if (value.trim()) {
-                        data.resultItemName = value.trim();
+                        data.resultItemName = normalizePunctuationForStorage(value.trim());
                     }
                 } else if (labelLower === 'tags' || labelLower === 'traits') {
                     // Parse comma-separated traits (journal may still say "Tags:" for display)
-                    const list = value.split(',').map(t => t.trim()).filter(t => t);
+                    const list = value.split(',').map(t => normalizePunctuationForStorage(t.trim())).filter(t => t);
                     data.traits = data.traits ?? [];
                     data.traits.push(...list);
                 } else if (labelLower === 'description') {
                     const descDiv = p.nextElementSibling;
-                    data.description = (descDiv?.classList?.contains('recipe-description') ? descDiv.innerHTML : value) || value;
+                    const rawDesc = (descDiv?.classList?.contains('recipe-description') ? descDiv.innerHTML : value) || value;
+                    data.description = normalizePunctuationForStorage(rawDesc);
                 } else if (labelLower === 'source') {
-                    if (value.trim()) data.source = value.trim();
+                    if (value.trim()) data.source = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'rarity') {
-                    const r = value.trim().toLowerCase();
+                    const r = normalizePunctuationForStorage(value.trim()).toLowerCase();
                     if (['common', 'uncommon', 'rare', 'very rare', 'legendary'].includes(r)) data.rarity = r;
                 } else if (labelLower === 'license') {
-                    if (value.trim()) data.license = value.trim();
+                    if (value.trim()) data.license = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'ingredients') {
                     // Ingredients are in a following <ul> element
                     const ul = p.nextElementSibling;
@@ -194,13 +196,13 @@ export class RecipeParser {
             if (match) {
                 const [, label, name, quantity] = match;
                 const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
-                ingredients.push({ type, family, name: extractNameFromUuidLink(name), quantity: parseInt(quantity) || 1 });
+                ingredients.push({ type, family, name: normalizePunctuationForStorage(extractNameFromUuidLink(name)), quantity: parseInt(quantity) || 1 });
             } else {
                 const simpleMatch = text.match(/^([^:]+):\s*(.+)$/);
                 if (simpleMatch) {
                     const [, label, name] = simpleMatch;
                     const { type, family } = this._labelToTypeAndFamily(label.trim(), allFamilies);
-                    ingredients.push({ type, family, name: extractNameFromUuidLink(name), quantity: 1 });
+                    ingredients.push({ type, family, name: normalizePunctuationForStorage(extractNameFromUuidLink(name)), quantity: 1 });
                 }
             }
         }

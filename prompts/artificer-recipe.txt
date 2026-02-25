@@ -353,7 +353,5 @@ RULES
 ========================================
 
 - Output valid JSON only. No trailing commas, no duplicate keys. Escape double quotes in strings.
-- Use names only for resultItemName, ingredients, apparatusName, containerName, skillKit—no UUIDs.
-- skillKit: official D&D 5e SRD kit name for the skill (e.g. Herbalism Kit, Alchemist's Supplies). 
-- apparatusName: not consumed. containerName: one consumed per craft.
+- Use only straight ASCII apostrophes ('). Do not use curly or typographic apostrophes ('). Do not use smart quotes. Never output typographic or curved quotes.
 

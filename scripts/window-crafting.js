@@ -1131,7 +1131,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;
 
-        this.render();
+        const recipesListEl = this.element?.querySelector?.('.crafting-zone-recipes-list');
+        const scrollTop = recipesListEl ? recipesListEl.scrollTop : 0;
+
+        await this.render();
+
+        if (scrollTop > 0 && this.element) {
+            const list = this.element.querySelector('.crafting-zone-recipes-list');
+            if (list) list.scrollTop = scrollTop;
+        }
     }
 
     async _craft() {

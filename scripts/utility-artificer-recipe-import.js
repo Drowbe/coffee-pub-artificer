@@ -3,7 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { getOrCreateJournal, extractNameFromUuidLink } from './utils/helpers.js';
+import { getOrCreateJournal, extractNameFromUuidLink, normalizePunctuationForStorage } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
 import { resolveItemByName } from './utility-artificer-item.js';
@@ -19,22 +19,6 @@ function _str(val) {
     if (val == null) return '';
     const s = String(val).trim();
     return s === 'null' || s === 'undefined' ? '' : s;
-}
-
-/**
- * Normalize AI/Unicode punctuation to plain ASCII so stored text matches what a user would type.
- * Replaces curly/smart apostrophes and quotes with straight ' and ".
- * @param {string} s - Raw string (e.g. from AI output)
- * @returns {string} Normalized string
- */
-function normalizePunctuationForStorage(s) {
-    if (s == null || typeof s !== 'string') return '';
-    let t = s;
-    // Curly/smart single quotes → straight apostrophe
-    t = t.replace(/[\u2018\u2019\u201A\u201B\u02BC\u02BE\u0060]/g, "'");
-    // Curly/smart double quotes → straight double quote
-    t = t.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"');
-    return t;
 }
 
 /**

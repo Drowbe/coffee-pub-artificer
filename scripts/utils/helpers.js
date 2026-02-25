@@ -144,6 +144,25 @@ export function extractNameFromUuidLink(value) {
 }
 
 /**
+ * Normalize typographic/Unicode punctuation to straight ASCII so parsing and matching work.
+ * Replaces curly/smart apostrophes and quotes with straight ' (U+0027) and " (U+0022).
+ * Use on import and when parsing journal content so nothing "sneaks in" from AI or paste.
+ * @param {string} s - Raw string (e.g. from AI output or journal HTML)
+ * @returns {string} Normalized string
+ */
+export function normalizePunctuationForStorage(s) {
+    if (s == null || typeof s !== 'string') return '';
+    let t = s;
+    // All apostrophe-like / single-quote-like → straight apostrophe U+0027
+    // U+2018 ' U+2019 ' U+201A ‚ U+201B ‛ U+02BC ʼ U+02BE ʾ U+0060 ` U+00B4 ´ U+2032 ′ U+2033 ″
+    t = t.replace(/[\u2018\u2019\u201A\u201B\u02BC\u02BE\u0060\u00B4\u2032\u2033]/g, "'");
+    // All curly/smart double quotes and angle quotes → straight double quote U+0022
+    // U+201C " U+201D " U+201E „ U+201F ‟ U+00AB « U+00BB »
+    t = t.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"');
+    return t;
+}
+
+/**
  * Generate hash-based number from UUID (for recipe/blueprint numbering)
  * @param {string} uuid - UUID string
  * @param {string} prefix - Prefix (e.g., "R" for recipes, "B" for blueprints)

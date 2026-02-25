@@ -4,6 +4,7 @@
 
 import { MODULE } from './const.js';
 import { getFromCache } from './cache/cache-items.js';
+import { normalizePunctuationForStorage } from './utils/helpers.js';
 import {
     ARTIFICER_TYPES,
     LEGACY_TYPE_TO_ARTIFICER_TYPE,
@@ -455,5 +456,73 @@ export function isArtificerItem(item) {
  */
 export function getArtificerType(item) {
     return getArtificerTypeFromFlags(item.flags[MODULE.ID] || null);
+}
+
+/**
+ * Build update payload to normalize typographic punctuation on one item (name, description, artificer quirk/traits).
+ * @param {Item} item
+ * @returns {Object|null} Update payload or null if nothing to change
+ */
+function buildItemPunctuationUpdatePayload(item) {
+    const updates = {};
+    const nameNorm = normalizePunctuationForStorage(item.name);
+    if (nameNorm !== (item.name || '')) updates.name = nameNorm;
+
+    const descPath = 'system.description.value';
+    const descRaw = foundry.utils.getProperty(item, descPath);
+    if (descRaw != null && typeof descRaw === 'string') {
+        const descNorm = normalizePunctuationForStorage(descRaw);
+        if (descNorm !== descRaw) updates[descPath] = descNorm;
+    }
+
+    const flagKey = item.flags[MODULE.ID] ? MODULE.ID : 'artificer';
+    const flags = item.flags[flagKey] || {};
+    const quirkRaw = flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk;
+    if (quirkRaw != null && typeof quirkRaw === 'string') {
+        const quirkNorm = normalizePunctuationForStorage(quirkRaw);
+        if (quirkNorm !== quirkRaw) updates[`flags.${flagKey}.artificerQuirk`] = quirkNorm;
+    }
+    const traitsRaw = flags[ARTIFICER_FLAG_KEYS.TRAITS] ?? flags.traits;
+    if (Array.isArray(traitsRaw) && traitsRaw.length > 0) {
+        const traitsNorm = traitsRaw.map((t) => (typeof t === 'string' ? normalizePunctuationForStorage(t) : t));
+        if (traitsNorm.some((t, i) => t !== traitsRaw[i])) {
+            updates[`flags.${flagKey}.artificerTraits`] = traitsNorm;
+        }
+    }
+
+    return Object.keys(updates).length ? updates : null;
+}
+
+/**
+ * Normalize typographic punctuation (curly/smart apostrophes and quotes) on world items that have Artificer data.
+ * Updates name, system.description.value, and artificer quirk/traits to straight ASCII.
+ * Only items with Artificer flags (type in flags) are processed.
+ * @param {Object} [options]
+ * @param {boolean} [options.dryRun=false] - If true, do not write; only report counts.
+ * @returns {Promise<{ updated: number, skipped: number, errors: Array<{ name: string, error: string }> }>}
+ */
+export async function normalizeItemsPunctuation(options = {}) {
+    const dryRun = !!options.dryRun;
+    const result = { updated: 0, skipped: 0, errors: [] };
+    if (!game.items?.size) return result;
+
+    for (const item of game.items) {
+        if (!isArtificerItem(item)) {
+            result.skipped++;
+            continue;
+        }
+        const payload = buildItemPunctuationUpdatePayload(item);
+        if (!payload) {
+            result.skipped++;
+            continue;
+        }
+        try {
+            if (!dryRun) await item.update(payload);
+            result.updated++;
+        } catch (e) {
+            result.errors.push({ name: item.name ?? item.id ?? 'Unknown', error: e?.message ?? String(e) });
+        }
+    }
+    return result;
 }
 

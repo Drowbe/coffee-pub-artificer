@@ -12,6 +12,7 @@ import { WorkstationManager } from './manager-workstations.js';
 import { SkillManager } from './manager-skills.js';
 import { getTagManager } from './systems/tag-manager.js';
 import { runArtificerMigration } from './migrations/migrate-artificer-flags.js';
+import { normalizeItemsPunctuation } from './utility-artificer-item.js';
 
 /**
  * Module API - Public interface for external access
@@ -37,6 +38,16 @@ export class ArtificerAPI {
      */
     async runMigration(options = {}) {
         return runArtificerMigration(options);
+    }
+
+    /**
+     * Normalize typographic punctuation (curly/smart apostrophes and quotes) on world items.
+     * Updates name, system.description.value, and artificer quirk/traits to straight ASCII.
+     * @param {Object} [options] - { dryRun: boolean }
+     * @returns {Promise<{ updated: number, skipped: number, errors: Array<{ name: string, error: string }> }>}
+     */
+    async normalizeItemsPunctuation(options = {}) {
+        return normalizeItemsPunctuation(options);
     }
 
     /**
