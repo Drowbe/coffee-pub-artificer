@@ -123,6 +123,8 @@
     font-size: 0.8em;
 }
 
+/* ----- Points display ----- */
+
 .skills-window-header-points {
     display: flex;
     flex-direction: column;
@@ -131,19 +133,20 @@
     min-width: 52px;
     padding: 4px 8px;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid var(--skills-border-color);
+    border: 2px solid rgba(122, 111, 91, 0.6);
     border-radius: 6px;
 }
 
 .skills-window-points-label {
-    font-size: 0.7em;
+    font-size: 0.6em;
+    font-weight: 700;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .skills-window-points-value {
-    font-size: 1.2em;
-    font-weight: 700;
+    font-size: 1.6em;
+    font-weight: 900;
     color: var(--skills-accent-color);
 }
 
@@ -325,6 +328,31 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+
+/* Craft icon overlay on badge - same style as perk number (red = no kit, green = has kit) */
+.skills-panel-badge-craft-icon {
+    position: absolute;
+    top: 6%;
+    right: 6%;
+    width: 1.7em;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(88, 24, 14, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.9);
+    z-index: 10;
+    pointer-events: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.skills-panel-badge-craft-icon.skills-panel-badge-craft-has-kit {
+    background: rgba(59, 132, 66, 0.8);
 }
 
 .skills-panel-perks {
@@ -513,10 +541,12 @@
     gap: 8px;
 }
 
+
 .skills-detail-name {
-    font-weight: 600;
-    font-size: 1em;
-    color: var(--skills-accent-color);
+    font-weight: 900;
+    font-size: 1.4em;
+    color: var(--skills-accent-colorr);
+    text-transform: uppercase;
 }
 
 .skills-detail-perk-icon {

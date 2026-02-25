@@ -46,6 +46,7 @@
                 <div class="skills-panel-row">
                 <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}" style="background-color: {{this.skillBadgeColor}};">
                     <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
+                    <i class="fa-solid fa-hammer skills-panel-badge-craft-icon{{#if this.hasKit}} skills-panel-badge-craft-has-kit{{/if}}" aria-hidden="true" title="{{#if this.hasKit}}Has required kit{{else}}Missing required kit{{/if}}"></i>
                 </div>
                 <div class="skills-panel-perks">
                     {{#each this.perks}}

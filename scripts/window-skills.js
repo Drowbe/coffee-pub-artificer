@@ -244,7 +244,9 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 .reduce((sum, p) => sum + (p.cost ?? 0), 0);
 
             const skillKit = skill.skillKit ?? '';
-            const hasKit = skillKit ? actorHasItemNamed(actor, skillKit) : true;
+            const hasKit = skillKit
+                ? (actor ? actorHasItemNamed(actor, skillKit) : false)
+                : true;
             return {
                 id: skill.id,
                 name: skill.name,
@@ -390,8 +392,34 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async render(force = false) {
         const scrolls = this._saveScrollPositions();
         const result = await super.render(force);
-        requestAnimationFrame(() => this._restoreScrollPositions(scrolls));
+        requestAnimationFrame(() => {
+            this._restoreScrollPositions(scrolls);
+            this._attachHideUnavailableListener();
+        });
         return result;
+    }
+
+    /**
+     * Attach change listener for Hide Unavailable checkbox. Re-attach after each render so the
+     * checkbox (which is re-created when the template re-renders) is in the element we listen to.
+     */
+    _attachHideUnavailableListener() {
+        const root = this._getSkillsRoot();
+        if (!root) return;
+        if (this._hideUnavailableChangeEl) {
+            this._hideUnavailableChangeEl.removeEventListener('change', this._hideUnavailableChangeBound);
+            this._hideUnavailableChangeEl = null;
+        }
+        if (!this._hideUnavailableChangeBound) {
+            this._hideUnavailableChangeBound = (e) => {
+                if (e.target?.id === `${this.id}-hide-unavailable`) {
+                    this._hideUnavailable = !!e.target.checked;
+                    this.render();
+                }
+            };
+        }
+        root.addEventListener('change', this._hideUnavailableChangeBound);
+        this._hideUnavailableChangeEl = root;
     }
 
     static _actionReset(event, target) {
@@ -571,16 +599,6 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async _onFirstRender(_context, options) {
         await super._onFirstRender?.(_context, options);
         this._attachDelegationOnce();
-        const el = this.element ?? this._getSkillsRoot();
-        if (el && !this._hideUnavailableChangeBound) {
-            this._hideUnavailableChangeBound = (e) => {
-                if (e.target?.id === `${this.id}-hide-unavailable`) {
-                    this._hideUnavailable = !!e.target.checked;
-                    this.render();
-                }
-            };
-            el.addEventListener('change', this._hideUnavailableChangeBound);
-        }
     }
 
     activateListeners(html) {
