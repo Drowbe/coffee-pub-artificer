@@ -205,10 +205,19 @@
                     </div>
                     {{/if}}
                     {{#if selectedRecipeData}}
-                    <hr class="crafting-details-divider" />
+                    
                     <div class="crafting-recipe-details">
                         <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
-                        <div class="crafting-recipe-result-name">Result: {{selectedRecipeData.resultName}}</div>
+                        {{#if selectedRecipeData.journalName}}
+                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
+                        {{/if}}
+                        {{#if selectedRecipeTopFields.length}}
+                        <div class="crafting-detail-rows crafting-detail-rows-top">
+                            {{#each selectedRecipeTopFields}}
+                            <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
                         {{#if selectedRecipeData.traits.length}}
                         <div class="crafting-recipe-traits">
                             {{#each selectedRecipeData.traits}}
@@ -217,6 +226,7 @@
                         </div>
                         {{/if}}
                         {{#if selectedRecipeData.description}}
+                        <hr class="crafting-details-divider" />
                         <div class="crafting-recipe-description">{{{selectedRecipeData.description}}}</div>
                         {{/if}}
                     </div>

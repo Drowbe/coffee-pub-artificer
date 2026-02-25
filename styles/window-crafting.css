@@ -225,6 +225,17 @@
     text-transform: uppercase;
 }
 
+.crafting-recipe-journal-name {
+    font-size: 0.85em;
+    color: rgba(201, 201, 201, 0.75);
+    margin-top: 2px;
+    margin-bottom: 0;
+}
+
+.crafting-detail-rows-top {
+    margin-top: 8px;
+}
+
 .crafting-recipe-result-name {
     font-size: 0.9em;
     color: rgba(201, 201, 201, 0.9);

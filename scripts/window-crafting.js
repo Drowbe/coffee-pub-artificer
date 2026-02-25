@@ -429,6 +429,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                         ? [...filteredApparatus, ...filteredContainers, ...filteredTools]
                         : ingredients;
 
+        listItems.sort((a, b) =>
+            (a.name ?? '').localeCompare(b.name ?? '', undefined, { sensitivity: 'base' })
+        );
+
         const slots = this.selectedSlots.map((entry) => {
             if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
             const item = entry.item;
@@ -534,6 +538,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     (r.tags ?? []).some((t) => String(t).toLowerCase().includes(q))
             );
         }
+        knownCombinations.sort((a, b) =>
+            (a.result ?? '').localeCompare(b.result ?? '', undefined, { sensitivity: 'base' })
+        );
         const hasRecipes = knownCombinations.length > 0;
 
         // Tags in slots for feedback
@@ -544,17 +551,27 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
         const cacheStatus = getCacheStatus();
+        const journalUuidForRecipe = r ? getRecipeJournalUuid(r) : '';
+        const selectedRecipeJournalName = (r && journalByUuid.get(journalUuidForRecipe)) ?? '';
         const selectedRecipeData = r
             ? {
                 name: r.name ?? '',
                 resultName: r.resultItemName ?? r.name ?? '',
+                journalName: selectedRecipeJournalName,
                 traits: r.traits ?? [],
                 description: r.description ?? ''
             }
             : null;
+        /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */
+        const selectedRecipeTopFields = r
+            ? [
+                (r.resultItemName ?? r.name) ? { label: 'Result', value: (r.resultItemName ?? r.name ?? '').trim() } : null,
+                r.skill ? { label: 'Skill', value: r.skill } : null,
+                r.rarity ? { label: 'Rarity', value: r.rarity } : null
+            ].filter(Boolean)
+            : [];
         const selectedRecipeMetadata = r
             ? [
-                r.skill ? { label: 'Skill', value: r.skill } : null,
                 r.skillKit ? { label: 'Skill Kit', value: r.skillKit } : null,
                 r.apparatusName ? { label: 'Apparatus', value: r.apparatusName } : null,
                 r.containerName ? { label: 'Container', value: r.containerName } : null,
@@ -563,8 +580,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 r.skillLevel != null ? { label: 'Skill Level', value: String(r.skillLevel) } : null,
                 r.successDC != null ? { label: 'DC', value: String(r.successDC) } : null,
                 r.goldCost != null ? { label: 'Gold Cost', value: String(r.goldCost) } : null,
-                r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null,
-                r.rarity ? { label: 'Rarity', value: r.rarity } : null
+                r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null
             ].filter(Boolean)
             : [];
 
@@ -634,6 +650,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             recipeJournalOptions,
             combinedTags,
             selectedRecipeData,
+            selectedRecipeTopFields,
             selectedRecipeMetadata,
             familyOptions,
             typeOptions,
