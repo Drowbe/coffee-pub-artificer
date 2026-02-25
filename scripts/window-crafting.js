@@ -964,7 +964,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToSlot(itemId) {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5, false, false);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -987,7 +987,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _removeFromSlot(slotIndex) {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON09, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON09, 0.5, false, false);
         const i = parseInt(slotIndex, 10);
         if (i >= 0 && i < 6) {
             this.selectedSlots[i] = null;
@@ -996,7 +996,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToApparatus(itemId) {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5, false, false);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1009,7 +1009,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToContainer(itemId) {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5, false, false);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1022,7 +1022,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToTool(itemId) {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5, false, false);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1061,7 +1061,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!recipe) return;
 
         this.selectedRecipe = recipe;
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON03, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON03, 0.5, false, false);
 
         /** @type {Array<{item: Item|null, name?: string, img?: string, count: number, have?: number, isMissing?: boolean}|null>} */
         const newSlots = Array(6).fill(null);
@@ -1178,7 +1178,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _craft() {
-        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5, false, false);
         if (this._craftingCountdownRemaining != null) return;
 
         const actor = this._getActor();
@@ -1210,6 +1210,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this._craftingCountdownRemaining = countdownSec;
         this._craftPending = { actor, items, anyMissing };
+        const craftSoundPath = this.processType === 'grind'
+            ? `modules/${MODULE.ID}/sounds/grind-stone-01.mp3`
+            : `modules/${MODULE.ID}/sounds/fire-boil-01.mp3`;
+        BlacksmithUtils.playSound(craftSoundPath, 0.5, false, false, countdownSec);
         this._craftCountdownInterval = setInterval(() => {
             this._craftingCountdownRemaining = Math.max(0, (this._craftingCountdownRemaining ?? 0) - 1);
             this.render();
@@ -1242,10 +1246,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (this.lastResult?.success) {
             ui.notifications.info(`Created: ${this.lastResult.name}`);
-            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDNOTIFICATION05, 0.5);
+            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDNOTIFICATION05, 0.5, false, true);
         } else if (this.lastResult) {
             ui.notifications.warn(this.lastResult.name);
-            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDERROR05, 0.5);
+            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDERROR05, 0.5, false, true);
         }
     }
 
