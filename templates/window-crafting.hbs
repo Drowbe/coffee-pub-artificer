@@ -39,7 +39,7 @@
                 </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
-                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
+                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" tabindex="0" title="Click to load recipe into crafting bench">
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
                             <span class="crafting-recipe-result">{{this.result}}</span>
@@ -76,7 +76,7 @@
                 </div>
                 <div class="crafting-zone-ingredients-list">
                     {{#each listItems}}
-                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" data-tooltip="{{this.name}}{{#if this.tags}}\nTags: {{this.tags}}{{/if}}" title="{{this.name}}">
+                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" data-tooltip="{{this.name}}{{#if this.tags}}\nTags: {{this.tags}}{{/if}}" tabindex="0" title="{{this.name}}">
                         <img src="{{this.img}}" alt="" class="crafting-ingredient-row-img" />
                         <div class="crafting-ingredient-row-info">
                             <span class="crafting-ingredient-row-name">{{this.name}}</span>

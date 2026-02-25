@@ -561,6 +561,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 r.processType ? `Process: ${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() : null,
                 r.time != null ? `Time: ${r.time}s` : null,
                 r.skillLevel != null ? `Skill Level: ${r.skillLevel}` : null,
+                r.successDC != null ? `DC: ${r.successDC}` : null,
                 r.goldCost != null ? `Gold Cost: ${r.goldCost}` : null,
                 r.workHours != null ? `Work Hours: ${r.workHours}` : null,
                 r.rarity ? `Rarity: ${r.rarity}` : null
@@ -826,6 +827,52 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 w.processType = PROCESS_TYPES[(idx + 1) % PROCESS_TYPES.length];
                 w.render();
                 return;
+            }
+        }, true);
+
+        document.addEventListener('keydown', (e) => {
+            const w = _currentCraftingWindowRef;
+            if (!w) return;
+            const root = w._getCraftingRoot();
+            if (!root?.contains?.(e.target)) return;
+            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+            const el = e.target;
+            if (el?.matches?.('input, textarea, select')) return;
+
+            const inRecipes = el.closest?.('.crafting-zone-recipes');
+            const inIngredients = el.closest?.('.crafting-zone-ingredients');
+
+            if (inRecipes) {
+                const list = inRecipes.querySelector('.crafting-zone-recipes-list');
+                const rows = list ? [...list.querySelectorAll('.crafting-recipe-row[data-recipe-id]')] : [];
+                if (rows.length === 0) return;
+                const selected = list?.querySelector('.crafting-recipe-row-selected');
+                let idx = selected ? rows.indexOf(selected) : -1;
+                if (e.key === 'ArrowDown') idx = idx < rows.length - 1 ? idx + 1 : idx < 0 ? 0 : idx;
+                else if (e.key === 'ArrowUp') idx = idx > 0 ? idx - 1 : idx < 0 ? rows.length - 1 : idx;
+                if (idx >= 0 && idx < rows.length && rows[idx]?.dataset?.recipeId) {
+                    e.preventDefault();
+                    w._selectRecipe(rows[idx].dataset.recipeId).then(() => {
+                        const newRow = root.querySelector('.crafting-recipe-row-selected');
+                        if (newRow && typeof newRow.focus === 'function') newRow.focus();
+                    }).catch(() => {});
+                }
+                return;
+            }
+
+            if (inIngredients) {
+                const list = inIngredients.querySelector('.crafting-zone-ingredients-list');
+                const rows = list ? [...list.querySelectorAll('.crafting-ingredient-row[data-item-id]')] : [];
+                if (rows.length === 0) return;
+                const current = el.closest?.('.crafting-ingredient-row');
+                let idx = current ? rows.indexOf(current) : -1;
+                if (e.key === 'ArrowDown') idx = idx < rows.length - 1 ? idx + 1 : idx < 0 ? 0 : idx;
+                else if (e.key === 'ArrowUp') idx = idx > 0 ? idx - 1 : idx < 0 ? rows.length - 1 : idx;
+                if (idx >= 0 && idx < rows.length) {
+                    e.preventDefault();
+                    const row = rows[idx];
+                    if (row && typeof row.focus === 'function') row.focus();
+                }
             }
         }, true);
 
