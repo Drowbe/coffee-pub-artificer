@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.5] - Sounds, GM-only menubar, Split Minor Potions macro
+
+### Added
+- **Crafting sounds:** Component panel plays SOUNDBUTTON04 when clicking any component row (add to slot, apparatus, container, or tool).
+- **Timer sounds:** During crafting countdown, plays fire-boil-01.mp3 for heat process or grind-stone-01.mp3 for grinding, looped for the full timer duration (local only).
+- **Split Minor Potions macro:** New script macro `resources/split-minor-potions-by-skill-macro.js` — splits the world journal "Minor Potions" into "Minor Alchemy Potions" (Skill: Alchemy) and "Minor Herbal Potions" (Skill: Herbalism), pages sorted alphabetically; supports dry run.
+
+### Changed
+- **Sound scope:** All crafting-window and component-panel sounds play for the acting player only; Success (SOUNDNOTIFICATION05) and Failure (SOUNDERROR05) still broadcast to all clients.
+- **Menubar — GM only:** "Create Item", "Import Recipes", and "Roll for Components" secondary bar buttons are visible and usable only by the GM; non-GMs no longer see these buttons.
+- **Roll for Components window:** "Request Roll" button is shown only to the GM; `_requestRoll()` is guarded so only the GM can request a roll.
+
+### Fixed
+- **Split Minor Potions macro:** Skill detection now strips HTML before matching so "Skill: Alchemy" and "Skill: Herbalism" are found in journal pages whose content is stored as HTML (e.g. `<strong>Skill:</strong> Alchemy`).
+
 ## [13.0.4] - Compendium updates
 
 ## [13.0.3] - Quick error update
