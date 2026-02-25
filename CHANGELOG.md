@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Crafting sounds:** Component panel plays SOUNDBUTTON04 when clicking any component row (add to slot, apparatus, container, or tool).
 - **Timer sounds:** During crafting countdown, plays fire-boil-01.mp3 for heat process or grind-stone-01.mp3 for grinding, looped for the full timer duration (local only).
-- **Split Minor Potions macro:** New script macro `resources/split-minor-potions-by-skill-macro.js` — splits the world journal "Minor Potions" into "Minor Alchemy Potions" (Skill: Alchemy) and "Minor Herbal Potions" (Skill: Herbalism), pages sorted alphabetically; supports dry run.
+- **Split Minor Potions macro:** New script macro `macros/split-minor-potions-by-skill-macro.js` — splits the world journal "Minor Potions" into "Minor Alchemy Potions" (Skill: Alchemy) and "Minor Herbal Potions" (Skill: Herbalism), pages sorted alphabetically; supports dry run.
 
 ### Changed
 - **Sound scope:** All crafting-window and component-panel sounds play for the acting player only; Success (SOUNDNOTIFICATION05) and Failure (SOUNDERROR05) still broadcast to all clients.

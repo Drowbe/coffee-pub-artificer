@@ -1,5 +1,7 @@
 # TODO - Active Issues and Future Tasks
 
+**Progress overview:** Current release **v13.0.6**. For a full history of completed work see **CHANGELOG.md**. Recent highlights: persisted item cache (TYPE → FAMILY → TRAITS migration, macro in `macros/`), Skills Window (ApplicationV2, JSON-driven), Crafting Window (recipe rows, components, timer/sounds), Roll for Components (Gather) with biome/DC and chat cards, GM-only menubar (Create Item, Import Recipes, Roll for Components), Split Minor Potions macro; macro scripts live in `macros/`.
+
 ## IN PROGRESS / CURRENT FOCUS
 
 ### Data Model: TYPE > FAMILY > TRAITS (Priority) ✅
@@ -11,8 +13,8 @@
 - [x] Update item form UI: TYPE select, FAMILY select (options by type), TRAITS tagging UI (no primary/secondary/quirk).
 - [x] Update utility-artificer-item.js, item-sheet-artificer.js, cache, experimentation-engine, window-crafting, model-ingredient, utility-artificer-import to use `type`/`family`/`traits` (with legacy read support).
 - [x] **Migration:** `scripts/migrations/migrate-artificer-flags.js` + `api.runMigration(options)`; idempotent. Run on backup/copy first.
-- [x] **Macro for GMs:** Example script at `resources/migration-macro-example.js` — create a Script macro, paste, run as GM. Optional `includeCompendia: ['packId']` for compendium migration.
-- [x] Document macro: see `resources/migration-macro-example.js` header and plan-artificer.md §2.6.
+- [x] **Macro for GMs:** Example script at `macros/migration-macro-example.js` — create a Script macro, paste, run as GM. Optional `includeCompendia: ['packId']` for compendium migration.
+- [x] Document macro: see `macros/migration-macro-example.js` header and plan-artificer.md §2.6.
 
 **Related files:** schema-artificer-item.js, window-artificer-item.js, item-sheet-artificer.js, utility-artificer-item.js, cache, migrations, api-artificer.js.
 
@@ -45,6 +47,7 @@
 - [ ] Skill progression logic (XP, level-up, gating)
 
 ### Recently Completed
+- [x] **13.0.5 / 13.0.6:** Crafting sounds (component panel, timer heat/grind); sound scope (local for crafting, broadcast for success/failure); GM-only menubar — Create Item, Import Recipes, Roll for Components (and Request Roll) visible only to GM; Split Minor Potions macro (skill detection strips HTML); macro scripts moved to `macros/`.
 - [x] Persisted item cache (world setting `itemCache`; save on Refresh, restore on getCacheStatus)
 - [x] Rarity: EPIC → VERY_RARE (Very Rare) per D&D 5e
 - [x] IngredientStorage: use item cache when available, else notify GM
@@ -82,12 +85,12 @@
 - [x] Add localization keys for new settings in `lang/en.json`
 
 **Phase 1: Core Data System**
-- [ ] Item Creation & Import System:
+- [x] Item Creation & Import System:
   - [x] Create `utility-artificer-item.js` with core item creation functions
-  - [ ] Create `window-artificer-item.js` unified form for manual creation
-  - [ ] Create `utility-artificer-import.js` for JSON import (single + bulk)
-  - [ ] Define JSON structure template (D&D 5e + flags.artificer)
-  - [ ] Add menubar buttons for Create Item and Import Items
+  - [x] Create `window-artificer-item.js` unified form for manual creation
+  - [x] Create `utility-artificer-recipe-import.js` for recipe import (window-artificer-recipe-import.js)
+  - [x] Define JSON structure template (D&D 5e + flags.artificer)
+  - [x] Add menubar buttons for Create Item and Import Recipes (GM-only per 13.0.5)
 - [x] Create class-based data models:
   - [x] `ArtificerIngredient` (Raw materials with tags, family, tier, rarity)
   - [x] `ArtificerComponent` (Refined materials)
@@ -112,11 +115,11 @@
 - [ ] Add quality/stability calculation (based on skill, workstation, rarity)
 
 **Phase 3: Basic Crafting UI**
-- [ ] Create crafting window (ApplicationV2)
-- [ ] Implement ingredient browser (filter, search, tag display)
-- [ ] Implement recipe browser (filter by skill, workstation, category, tags)
-- [ ] Create result display area
-- [ ] Integrate with actor inventory
+- [x] Create crafting window (ApplicationV2)
+- [x] Implement ingredient browser (filter, search, tag display)
+- [x] Implement recipe browser (filter by skill, workstation, category, tags)
+- [x] Create result display area
+- [x] Integrate with actor inventory
 
 ### MEDIUM PRIORITY
 
@@ -135,11 +138,11 @@
 - [ ] Add level-up notifications
 
 **Phase 5: Recipe System**
-- [ ] Create `RecipeParser` class (parse HTML journal entries)
+- [x] Create `RecipeParser` class (parse HTML journal entries)
 - [ ] Create `RecipeForm` (FormApplication for editing)
-- [ ] Create `RecipePanel` (ApplicationV2 for browsing)
+- [ ] Create `RecipePanel` (ApplicationV2 for browsing) — recipes shown in crafting window
 - [ ] Implement recipe unlock system
-- [ ] Implement recipe crafting (override tag logic, apply benefits)
+- [x] Implement recipe crafting (override tag logic, apply benefits)
 - [ ] Create recipe discovery system (from books, NPCs, scrolls, etc.)
 
 **Phase 7: Salvage & Breakdown System**
@@ -157,13 +160,13 @@
 - [ ] Create workstation UI (browser, manager, placement tool)
 
 **Phase 8: Gathering System (Basic)**
-- [ ] Create gathering node definitions
-- [ ] Implement basic gathering interaction
-- [ ] Implement biome/seasonal logic
-- [ ] Create gathering UI (node indicators, interaction prompt)
+- [x] Create gathering node definitions (biomes/habitats, component types; compendium + eligibility)
+- [x] Implement basic gathering interaction (Roll for Components — GM selects biomes, types, DC; request roll for tokens)
+- [x] Implement biome/seasonal logic (habitat multi-select, eligible items by biome)
+- [x] Create gathering UI (Roll for Components window, chat cards, remember settings)
 
 **Phase 9: Blueprint System**
-- [ ] Create `BlueprintParser` class (parse multi-stage blueprints)
+- [x] Create `BlueprintParser` class (parse multi-stage blueprints)
 - [ ] Create `BlueprintForm` (FormApplication for editing)
 - [ ] Create `BlueprintPanel` (ApplicationV2 for browsing)
 - [ ] Implement multi-stage crafting flow

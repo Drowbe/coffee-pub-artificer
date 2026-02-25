@@ -672,7 +672,7 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
   - Schema files, manager placeholders, module API
 - Phase 1: Core Data System (major pieces) ✅
   - Core item creation utilities (`utility-artificer-item.js`)
-  - Unified form (`window-artificer-item.js`), JSON import (`utility-artificer-import.js`)
+  - Unified form (`window-artificer-item.js`), recipe import (`window-artificer-recipe-import.js`)
   - Data models (Ingredient, Component, Essence, Recipe, Blueprint)
   - Storage managers (ingredients, recipes, blueprints) with configurable compendium mapping
   - TagManager
@@ -682,31 +682,36 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
   - Experimentation engine (tag-based rules)
   - Ingredient filtering (Artificer ingredients only), known combinations
   - Refresh Cache button
-- Item cache (in-memory) ✅
-  - GM-initiated refresh from compendia + world
+  - Crafting sounds (component panel, timer heat/grind); success/failure broadcast (13.0.5)
+  - GM-only menubar: Create Item, Import Recipes, Roll for Components (13.0.5)
+- Item cache (persisted) ✅
+  - World setting `itemCache`; GM-initiated refresh from compendia + world
   - Name-based lookup, alias support from `resources/translation-item.json`
   - IngredientStorage uses cache when available; otherwise notifies GM
+  - TYPE → FAMILY → TRAITS migration macro: `macros/migration-macro-example.js`
 - Settings: `itemLookupOrder`, `ingredientStorageSource`
 - Rarity: Very Rare (D&D 5e standard; no "Epic")
 - Skills Window ✅
   - ApplicationV2, data from `resources/skills-details.json`
   - Panels: label (left) + total-cost dots (right), badge (image) + slots grid; click badge → skill details, slot → slot details
   - Slot number = cost; applied state (value > 0) uses `.slot-applied`; panels column 700px, details flex; panels scroll
+- Roll for Components (Gather) ✅
+  - Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
+  - Habitat multi-select, eligibility by biome; Blacksmith Request a Roll (Wisdom, silent); chat cards; remember settings
+- GM-only macro scripts in `macros/` (e.g. Split Minor Potions, migration example)
 
 ### 🔄 In Progress
-- **Persisted Item Cache:** Replace in-memory with persisted lightweight cache; integrate `translation-item.json`; D&D consumable → family mapping
-- Recipe/Blueprint journal parser and browser (parsers exist; UI integration ongoing)
-- Skill system: Skills Window UI done; actor persistence (Apply), progression logic (XP, gating) next; workstation system
+- **Skill system:** Skills Window UI done; actor persistence (Apply button), progression logic (XP, gating) next
+- Recipe/Blueprint browser (parsers exist; recipes in crafting window; dedicated RecipeForm/BlueprintForm TBD)
+- Workstation system; initial data set
 
 ### 📋 Next Steps
-1. Persisted item cache (schema §11.7)
+1. Skill persistence to actor flags (Apply button), progression logic (XP, gating)
 2. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
-3. Recipe/Blueprint browser UI
-4. Skill levels, workstation modifiers
+3. RecipeForm / BlueprintForm (editing); workstation system
+4. Initial data set (starter content)
 
 ---
-
-## 14. JSON Structures
 
 ### 14.1 Item JSON Structure
 
@@ -797,7 +802,7 @@ This crafting system supports:
 ### 16.2 Old/Outdated Decisions
 
 - **Rarity "Epic"** — Replaced with "Very Rare" per D&D 5e; schema and docs updated.
-- **Phase 1 "~60% complete"** — Many Phase 1 items are done (models, storage, TagManager, crafting window, cache); Item Creation UI and initial data set remain.
+- **Phase 1 "~60% complete"** — Phase 1 is largely complete: persisted item cache, TYPE→FAMILY→TRAITS migration (macro in `macros/`), GM-only menubar, crafting/timer sounds, Roll for Components (Gather), RecipeParser/BlueprintParser, crafting window. Remaining: initial data set, ArtificerWorkstation model, optional overlay metadata.
 
 ### 16.3 Related Documents
 

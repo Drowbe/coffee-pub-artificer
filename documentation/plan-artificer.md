@@ -41,26 +41,32 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 **Phase 0:** ✅ Complete (module structure, schemas, API, settings)
 
-**Phase 1:** In progress (major pieces done)
+**Phase 1:** Largely complete (see CHANGELOG.md through 13.0.6)
 - ✅ Data models (Ingredient, Component, Essence, Recipe, Blueprint)
 - ✅ Storage managers (ingredients, recipes, blueprints)
 - ✅ TagManager
-- ✅ Item creation utilities, unified form, JSON import
+- ✅ Item creation utilities, unified form, recipe import
 - ✅ Crafting window (ApplicationV2), experimentation engine, Refresh Cache
-- ✅ Item cache (in-memory); IngredientStorage uses cache
-- ⏳ Persisted item cache (next step per TODO.md)
-- ⏳ Initial data set
+- ✅ Item cache (persisted; world setting `itemCache`); IngredientStorage uses cache
+- ✅ TYPE → FAMILY → TRAITS migration + macro (`macros/migration-macro-example.js`)
+- ✅ GM-only menubar (Create Item, Import Recipes, Roll for Components); crafting/timer sounds
+- ⏳ Initial data set (starter content)
 - ⏳ ArtificerWorkstation model
 
 **Phase 2:** Blocked on Phase 1 (tag logic, ExperimentationEngine)
 
-**Phase 3:** Crafting window exists; recipe/blueprint browser integration ongoing
+**Phase 3:** ✅ Crafting window, recipe/ingredient browser, result display, actor integration
 
 **Phase 4 (Skills):** Skills Window UI in place
 - ✅ Skills Window (ApplicationV2) from Artificer bar; data from `resources/skills-details.json`
 - ✅ Panels: label (left) + total-cost dots (right), badge + slots; click badge → skill details, slot → slot details
 - ✅ Slots show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
-- ⏳ Persist to actor flags, skill progression logic (next)
+- ⏳ Persist to actor flags (Apply), skill progression logic (next)
+
+**Phase 8 (Gathering):** ✅ Roll for Components (Gather)
+- ✅ Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
+- ✅ Habitat multi-select, eligibility by biome; chat cards (success/failure/no pool); remember settings
+- ✅ Blacksmith Request a Roll integration (Wisdom, silent mode, onRollComplete)
 
 ---
 
@@ -137,7 +143,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 - [x] Iterate world items; optional `options.includeCompendia: ['packId', ...]` for compendium packs.
 - [x] Mapping: `LEGACY_TYPE_TO_ARTIFICER_TYPE`, `LEGACY_FAMILY_TO_FAMILY`; traits from primaryTag + secondaryTags + quirk (merge + dedupe).
 - [x] Idempotency: skip items that already have `traits` and no legacy tag fields.
-- [x] **Macro for GMs:** Example script at `resources/migration-macro-example.js`. Create a Script macro in Foundry, paste the script, run as GM. Backup world or run on a copy first.
+- [x] **Macro for GMs:** Example script at `macros/migration-macro-example.js`. Create a Script macro in Foundry, paste the script, run as GM. Backup world or run on a copy first.
 - [ ] Test on a copy of the world with a subset of items first (manual).
 - [x] Document: macro header + plan §2.6 + TODO.md.
 
@@ -156,14 +162,14 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 
 ---
 
-### Phase 1: Core Data System (In Progress)
-- Data models: ArtificerIngredient, ArtificerComponent, ArtificerEssence, ArtificerRecipe, ArtificerBlueprint, ArtificerWorkstation
+### Phase 1: Core Data System (Largely Complete)
+- Data models: ArtificerIngredient, ArtificerComponent, ArtificerEssence, ArtificerRecipe, ArtificerBlueprint, ArtificerWorkstation (placeholder)
 - TagManager (validation, families, combination rules)
-- Item creation & import (utility-artificer-item.js, window-artificer-item.js, utility-artificer-import.js)
+- Item creation & import (utility-artificer-item.js, window-artificer-item.js, window-artificer-recipe-import.js)
 - Storage: IngredientStorage, RecipeStorage, BlueprintStorage
 - Parsers: RecipeParser, BlueprintParser
-- Item cache (in-memory; persisted cache in progress)
-- Initial data set (starter ingredients, components, essences, example recipes/blueprint)
+- Item cache (persisted ✅; world setting `itemCache`, translation index, consumable→family)
+- Initial data set (starter ingredients, components, essences, example recipes/blueprint) — in progress
 
 **Deliverable:** Item creation working, data models working, ingredients load from cache/compendiums.
 
@@ -182,11 +188,12 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 ---
 
 ### Phase 3: Basic UI - Crafting Interface
-- Crafting window (✅ exists; recipe/blueprint browser integration)
+- Crafting window (✅ exists; recipe/ingredient browser, result display, actor integration)
 - Ingredient browser (filter, search, tag display)
 - Recipe browser (filter by skill, workstation, category)
 - Result display
 - Integration with actor inventory
+- Sounds (component panel, timer heat/grind); GM-only menubar (13.0.5)
 
 **Deliverable:** Full crafting UI with experimentation and recipe crafting.
 
@@ -225,10 +232,10 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 ---
 
 ### Phase 8: Gathering System (Basic)
-- Gathering node definitions
-- Basic gathering interaction (click, success check)
-- Biome/seasonal logic
-- Gathering UI
+- Gathering node definitions (biomes, component types; compendium eligibility)
+- Basic gathering interaction (✅ Roll for Components — GM selects biomes/types/DC, request roll for tokens)
+- Biome/seasonal logic (habitat multi-select)
+- Gathering UI (✅ Roll for Components window, chat cards, remember settings)
 
 ---
 
