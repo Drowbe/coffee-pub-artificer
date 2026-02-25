@@ -357,6 +357,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w || !w._actor) return;
         event?.preventDefault?.();
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         if (w._pendingLearn.length === 0 && w._pendingUnlearn.length === 0) return;
         const actor = w._actor;
         for (const slotID of w._pendingUnlearn) {
@@ -377,6 +378,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const slotID = target?.dataset?.slotId ?? '';
         if (!slotID) return;
         if (w._pendingLearn.includes(slotID)) return;
@@ -389,6 +391,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const slotID = target?.dataset?.slotId ?? '';
         if (!slotID) return;
         const btn = target?.closest?.('[data-action="unlearnSlot"]');
@@ -423,6 +426,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP02, 0.5);
         const badge = target?.closest?.('.skills-panel-badge[data-skill]');
         if (!badge) return;
         const skillId = badge.dataset?.skill;
@@ -436,6 +440,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
         event?.preventDefault?.();
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const slot = target?.closest?.('.skills-slot');
         if (!slot) return;
         const skillId = slot.dataset?.skill;

@@ -156,6 +156,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _requestRoll() {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const root = this._getGatherRoot();
         const dcEl = root?.querySelector('#gather-dc');
         const checkboxes = root?.querySelectorAll?.('input.gather-checkbox:checked');

@@ -964,6 +964,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToSlot(itemId) {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -986,6 +987,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _removeFromSlot(slotIndex) {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON09, 0.5);
         const i = parseInt(slotIndex, 10);
         if (i >= 0 && i < 6) {
             this.selectedSlots[i] = null;
@@ -994,6 +996,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToApparatus(itemId) {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1006,6 +1009,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToContainer(itemId) {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1018,6 +1022,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     _addToTool(itemId) {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON04, 0.5);
         const actor = this._getActor();
         if (!actor) return;
         const item = actor.items.get(itemId);
@@ -1056,6 +1061,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!recipe) return;
 
         this.selectedRecipe = recipe;
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON03, 0.5);
 
         /** @type {Array<{item: Item|null, name?: string, img?: string, count: number, have?: number, isMissing?: boolean}|null>} */
         const newSlots = Array(6).fill(null);
@@ -1172,6 +1178,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _craft() {
+        BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         if (this._craftingCountdownRemaining != null) return;
 
         const actor = this._getActor();
@@ -1235,11 +1242,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (this.lastResult?.success) {
             ui.notifications.info(`Created: ${this.lastResult.name}`);
-            if (typeof BlacksmithUtils?.playSound === 'function' && typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants.SOUNDSUCCESS) {
-                BlacksmithUtils.playSound(BlacksmithConstants.SOUNDSUCCESS, BlacksmithConstants.SOUNDVOLUMENORMAL ?? 0.7);
-            }
+            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDNOTIFICATION05, 0.5);
         } else if (this.lastResult) {
             ui.notifications.warn(this.lastResult.name);
+            BlacksmithUtils.playSound(BlacksmithConstants.SOUNDERROR05, 0.5);
         }
     }
 
