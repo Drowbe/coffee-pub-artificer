@@ -1,4 +1,4 @@
-{{!-- Artificer Skills - Stacked panels left, details right. Badge = skill details; slot = slot details. --}}
+{{!-- Artificer Skills - Stacked panels left, details right. Badge = skill details; perk = perk details. --}}
 
 <div class="skills-window-root">
     <!-- Header -->
@@ -15,9 +15,14 @@
                 <div class="skills-window-header-title">Artificer Skills</div>
                 <div class="skills-window-header-actor">{{#if actorName}}{{actorName}}{{else}}Select a character{{/if}}</div>
             </div>
-            <div class="skills-window-header-points">
-                <span class="skills-window-points-label">Points</span>
-                <span class="skills-window-points-value">{{availablePoints}}</span>
+            <div class="skills-window-header-right">
+                <div class="artificer-toggle-container skills-window-toggle-hide">
+                    {{> partials/toggle name=toggleHideUnavailableId labelLeft="Hide Unavailable" checked=hideUnavailable}}
+                </div>
+                <div class="skills-window-header-points">
+                    <span class="skills-window-points-label">Points</span>
+                    <span class="skills-window-points-value">{{availablePoints}}</span>
+                </div>
             </div>
         </div>
     </header>
@@ -26,9 +31,12 @@
         <!-- Skill panels -->
             <div class="skills-window-panels">
             {{#each skillPaths}}
-            <section class="skills-panel {{#unless this.skillEnabled}}skills-panel-disabled{{/unless}}" data-skill="{{this.id}}" style="background-color: {{this.skillPanelColor}};">
+            <section class="skills-panel {{#unless this.skillEnabled}}skills-panel-disabled{{/unless}}{{#unless this.hasKit}}{{#if this.skillKit}} skills-panel-kit-missing{{/if}}{{/unless}}" data-skill="{{this.id}}" style="background-color: {{this.skillPanelColor}};"{{#unless this.hasKit}}{{#if this.skillKit}} title="Required kit missing: {{this.skillKit}}"{{/if}}{{/unless}}>
                 <div class="skills-panel-label">
-                    <span class="skills-panel-label-text">{{this.name}}</span>
+                    <span class="skills-panel-label-left">
+                        <span class="skills-panel-label-text">{{this.name}}</span>
+                        {{#unless this.hasKit}}{{#if this.skillKit}}<i class="fa-solid fa-toolbox skills-panel-kit-missing-icon" title="Kit missing: {{this.skillKit}}"></i>{{/if}}{{/unless}}
+                    </span>
                     <span class="skills-panel-label-dots">
                         {{#each this.totalCostDots}}
                         <i class="fa-solid fa-circle skills-panel-dot{{#if this.learned}} dot-learned{{/if}}"></i>
@@ -39,14 +47,14 @@
                 <div class="skills-panel-badge {{#if this.badgeSelected}}skills-panel-badge-selected{{/if}}" data-skill="{{this.id}}" data-action="selectSkillBadge" title="{{this.name}}" style="background-color: {{this.skillBadgeColor}};">
                     <img src="{{this.img}}" alt="{{this.name}}" class="skills-panel-badge-img" />
                 </div>
-                <div class="skills-panel-slots">
-                    {{#each this.slots}}
+                <div class="skills-panel-perks">
+                    {{#each this.perks}}
                     {{#if this.empty}}
-                    <div class="skills-slot skills-slot-empty"></div>
+                    <div class="skills-perk skills-perk-empty"></div>
                     {{else}}
-                    <div class="skills-slot {{#if this.selected}}skills-slot-selected{{/if}}{{#if this.slotApplied}} skills-slot-learned{{/if}}" data-skill="{{../this.id}}" data-slot-index="{{this.slotIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.slotApplied}} style="background-color: {{this.slotSkillLearnedBackgroundColor}};"{{/if}}>
-                        {{#if this.iconClass}}<i class="{{this.iconClass}} skills-slot-icon"></i>{{/if}}
-                        <span class="skills-slot-number{{#if this.slotApplied}} slot-applied{{/if}}">{{this.displayValue}}</span>
+                    <div class="skills-perk {{#if this.selected}}skills-perk-selected{{/if}}{{#if this.perkApplied}} skills-perk-learned{{/if}}" data-skill="{{../this.id}}" data-perk-index="{{this.perkIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.perkApplied}} style="background-color: {{this.perkLearnedBackgroundColor}};"{{/if}}>
+                        {{#if this.iconClass}}<i class="{{this.iconClass}} skills-perk-icon"></i>{{/if}}
+                        <span class="skills-perk-number{{#if this.perkApplied}} perk-applied{{/if}}">{{this.displayValue}}</span>
                     </div>
                     {{/if}}
                     {{/each}}
@@ -62,25 +70,25 @@
                 <h3 class="skills-zone-section-title">Details</h3>
                 <div class="skills-details-content">
                     {{#if selectedDetail}}
-                        {{#if selectedDetail.slot}}
-                        <div class="skills-detail-name">{{#if selectedDetail.slot.iconClass}}<i class="{{selectedDetail.slot.iconClass}} skills-detail-slot-icon"></i> {{/if}}{{selectedDetail.slot.name}}{{#unless selectedDetail.slot.name}}Slot {{selectedDetail.slot.index}}{{/unless}}</div>
+                        {{#if selectedDetail.perk}}
+                        <div class="skills-detail-name">{{#if selectedDetail.perk.iconClass}}<i class="{{selectedDetail.perk.iconClass}} skills-detail-perk-icon"></i> {{/if}}{{selectedDetail.perk.name}}{{#unless selectedDetail.perk.name}}Perk {{selectedDetail.perk.index}}{{/unless}}</div>
                         <div class="skills-detail-rows">
                             <div class="skills-detail-row"><span class="skills-detail-label">Requirements:</span><span class="skills-detail-value">{{selectedDetail.requirementLabel}}</span></div>
                             <div class="skills-detail-row"><span class="skills-detail-label">Cost:</span><span class="skills-detail-value">{{selectedDetail.costDisplay}} point(s)</span></div>
                         </div>
                         {{#if selectedDetail.kitMissing}}
-                        <div class="skills-detail-kit-missing">Required kit is missing. Add {{selectedDetail.skill.skillKit}} to inventory to learn slots.</div>
+                        <div class="skills-detail-kit-missing">Required kit is missing. Add {{selectedDetail.skill.skillKit}} to inventory to learn perks.</div>
                         {{/if}}
-                        {{#if selectedDetail.slot.description}}
-                        <div class="skills-detail-description">{{{selectedDetail.slot.description}}}</div>
+                        {{#if selectedDetail.perk.description}}
+                        <div class="skills-detail-description">{{{selectedDetail.perk.description}}}</div>
                         {{/if}}
                         {{#if selectedDetail.canLearn}}
-                        <button type="button" class="skills-detail-btn-learn" data-action="learnSlot" data-slot-id="{{selectedDetail.slot.slotID}}" title="Queue to learn">
+                        <button type="button" class="skills-detail-btn-learn" data-action="learnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="Queue to learn">
                             <i class="fa-solid fa-plus"></i> Learn
                         </button>
                         {{/if}}
                         {{#if selectedDetail.showUnlearn}}
-                        <button type="button" class="skills-detail-btn-unlearn" data-action="unlearnSlot" data-slot-id="{{selectedDetail.slot.slotID}}" title="{{#if selectedDetail.canUnlearn}}Queue to unlearn{{else}}{{selectedDetail.unlearnBlockedReason}}{{/if}}"{{#unless selectedDetail.canUnlearn}} disabled{{/unless}}>
+                        <button type="button" class="skills-detail-btn-unlearn" data-action="unlearnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="{{#if selectedDetail.canUnlearn}}Queue to unlearn{{else}}{{selectedDetail.unlearnBlockedReason}}{{/if}}"{{#unless selectedDetail.canUnlearn}} disabled{{/unless}}>
                             <i class="fa-solid fa-minus"></i> Unlearn
                         </button>
                         {{#if selectedDetail.unlearnBlockedReason}}
@@ -99,7 +107,7 @@
                         {{/if}}
                         {{/if}}
                     {{else}}
-                    <div class="skills-zone-empty">Select a skill or slot to see details.</div>
+                    <div class="skills-zone-empty">Select a skill or perk to see details.</div>
                     {{/if}}
                 </div>
             </section>
@@ -116,9 +124,9 @@
                 <span class="skills-changes-name">{{this.name}}</span>
                 <span class="skills-changes-delta">{{#if this.isUnlearn}}+{{this.pointsDelta}}{{else}}{{this.pointsDelta}}{{/if}}</span>
                 {{#if this.isUnlearn}}
-                <button type="button" class="skills-changes-remove" data-action="removePendingUnlearn" data-slot-id="{{this.slotID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
+                <button type="button" class="skills-changes-remove" data-action="removePendingUnlearn" data-perk-id="{{this.perkID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
                 {{else}}
-                <button type="button" class="skills-changes-remove" data-action="removePendingLearn" data-slot-id="{{this.slotID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
+                <button type="button" class="skills-changes-remove" data-action="removePendingLearn" data-perk-id="{{this.perkID}}" title="Remove from changes"><i class="fa-solid fa-times"></i></button>
                 {{/if}}
             </li>
             {{/each}}

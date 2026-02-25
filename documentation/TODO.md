@@ -36,14 +36,14 @@
 
 ### Skills Window (Phase 4 – UI in progress)
 - [x] Skills Window (ApplicationV2) opened from Artificer secondary bar
-- [x] Data-driven from `resources/skills-details.json` (skills, slots, cost, value, name, description, requirement, icon, colors)
-- [x] Panel layout: label row (left-aligned name, right-aligned total-cost dots) above badge + slots
+- [x] Data-driven from `resources/skills-details.json` (skills, perks, cost, value, name, description, requirement, icon, colors)
+- [x] Panel layout: label row (left-aligned name, right-aligned total-cost dots) above badge + perks
 - [x] Badge: square image, clickable → skill details in Details pane
-- [x] Slots: 2×5 grid (10 slots max), square scaling; slot number = cost; click → slot details
-- [x] Applied state: slot with value > 0 uses `.slot-applied` styling (green number badge)
+- [x] Perks: 2×5 grid (10 perks max), square scaling; perk number = cost; click → perk details
+- [x] Applied state: perk with value > 0 uses `.perk-applied` styling (green number badge)
 - [x] Panels column fixed 700px; details pane flexes; panels scroll when many skills
-- [x] Event delegation via `_onFirstRender` so badge/slot clicks work with ApplicationV2 PARTS
-- [ ] Persist slot values to actor flags (Apply button)
+- [x] Event delegation via `_onFirstRender` so badge/perk clicks work with ApplicationV2 PARTS
+- [ ] Persist perk values to actor flags (Apply button)
 - [ ] Skill progression logic (XP, level-up, gating)
 
 ### Recently Completed
@@ -56,7 +56,7 @@
 - [x] **Broader component list:** Show D&D consumables (potions, oils, etc.) without artificer flags; fixed consumable detection (use `item.type` not `system.type.value`)
 - [x] **Recipe row redesign:** Result item image, title on top, tags below; async recipe resolution for images
 - [x] **UI tweaks:** "Ingredients" → "Components"; hammer icon right-justified; time slider 0–120; recipe defaults heat/time to 0 when unset; "Tags for this combination" moved to Details
-- [x] **Skills Window:** Full UI shell, JSON-driven panels/slots, badge and slot details, scrolling panels, cost dots
+- [x] **Skills Window:** Full UI shell, JSON-driven panels/perks, badge and perk details, scrolling panels, cost dots
 
 ---
 
@@ -133,8 +133,8 @@
 - [ ] Create skill data model (store in actor flags)
 - [ ] Implement skill progression logic (XP gain from crafting, quality, discoveries)
 - [ ] Implement skill gating (recipe/blueprint requirements)
-- [x] Create Skills Window UI (ApplicationV2, JSON-driven; badge + slots, details pane)
-- [ ] Persist slot investments to actor flags (Apply); integrate with SkillManager
+- [x] Create Skills Window UI (ApplicationV2, JSON-driven; badge + perks, details pane)
+- [ ] Persist perk investments to actor flags (Apply); integrate with SkillManager
 - [ ] Add level-up notifications
 
 **Phase 5: Recipe System**

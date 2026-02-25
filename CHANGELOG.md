@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
 
+### Changed
+- **Skills Window — slot → perk:** Renamed the skills UI concept from "slot" to "perk" everywhere (data: `slots`→`perks`, `slotID`→`perkID`, `slotSkillLearnedBackgroundColor`→`perkLearnedBackgroundColor` in `resources/skills-details.json`; code: `learnSlot`/`unlearnSlot`→`learnPerk`/`unlearnPerk`, CSS classes `.skills-slot-*`→`.skills-perk-*`, `.slot-applied`→`.perk-applied`). Actor flags now use `learnedPerks`; legacy `learnedSlots` is migrated automatically on first read.
 
 ## [13.0.6] - Compendium updates
 

@@ -693,8 +693,8 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 - Rarity: Very Rare (D&D 5e standard; no "Epic")
 - Skills Window ✅
   - ApplicationV2, data from `resources/skills-details.json`
-  - Panels: label (left) + total-cost dots (right), badge (image) + slots grid; click badge → skill details, slot → slot details
-  - Slot number = cost; applied state (value > 0) uses `.slot-applied`; panels column 700px, details flex; panels scroll
+  - Panels: label (left) + total-cost dots (right), badge (image) + perks grid; click badge → skill details, perk → perk details
+  - Perk number = cost; applied state (value > 0) uses `.perk-applied`; panels column 700px, details flex; panels scroll
 - Roll for Components (Gather) ✅
   - Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
   - Habitat multi-select, eligibility by biome; Blacksmith Request a Roll (Wisdom, silent); chat cards; remember settings

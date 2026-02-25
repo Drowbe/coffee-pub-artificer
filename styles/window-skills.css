@@ -12,12 +12,12 @@
     --skills-banner-image-title: url('../images/backgrounds/background-herbs-green.webp');
     --skills-banner-image-details: url('../images/backgrounds/panel-background-04.webp'); 
     --skills-banner-image-panels: url('../images/backgrounds/panel-background-05.webp');
-    --skills-slot-size: 60px;
-    --skills-slot-gap: 10px;
-    --skills-slots-pad: 10px;
+    --skills-perk-size: 60px;
+    --skills-perk-gap: 10px;
+    --skills-perks-pad: 10px;
     --skills-badge-size: calc(
-        (var(--skills-slot-size) * 2) +
-        (var(--skills-slot-gap) * 1)
+        (var(--skills-perk-size) * 2) +
+        (var(--skills-perk-gap) * 1)
     );
     background: var(--skills-background) !important;
     border: 0 solid var(--skills-border-color) !important;
@@ -111,6 +111,18 @@
     color: rgba(255, 255, 255, 0.75);
 }
 
+.skills-window-header-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.skills-window-toggle-hide .artificer-toggle-label-left {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.8em;
+}
+
 .skills-window-header-points {
     display: flex;
     flex-direction: column;
@@ -195,6 +207,25 @@
     opacity: 0.7;
 }
 
+/* Panel dimmed when required kit is missing (player can still open to see what kit is needed) */
+.skills-panel-kit-missing {
+    opacity: 0.6;
+    position: relative;
+}
+
+.skills-panel-kit-missing .skills-panel-badge {
+    filter: brightness(0.75);
+}
+
+.skills-panel-kit-missing .skills-panel-perks .skills-perk:not(.skills-perk-empty) {
+    filter: brightness(0.85);
+}
+
+.skills-panel-label .skills-panel-kit-missing-icon {
+    font-size: 0.85em;
+    color: rgba(255, 140, 100, 0.9);
+    margin-left: 4px;
+}
 
 
 
@@ -205,7 +236,8 @@
 
 
 
-/* Label above badge and slots - left text, right dots */
+
+/* Label above badge and perks - left text, right dots */
 .skills-panel-label {
     display: flex;
     align-items: center;
@@ -215,6 +247,13 @@
     background: rgba(0, 0, 0, 0.9);
     border-radius: 3px 3px 3px 3px;
     padding: 3px 6px 3px 6px;
+}
+
+.skills-panel-label-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
 }
 
 .skills-panel-label-text {
@@ -247,7 +286,7 @@
 
 
 
-/* Row: badge + slots */
+/* Row: badge + perks */
 .skills-panel-row {
     display: flex;
     align-items: stretch;
@@ -288,11 +327,11 @@
     object-fit: cover;
 }
 
-.skills-panel-slots {
+.skills-panel-perks {
     display: grid;
-    grid-template-columns: repeat(5, var(--skills-slot-size));
-    grid-template-rows: repeat(2, var(--skills-slot-size));
-    gap: var(--skills-slot-gap);
+    grid-template-columns: repeat(5, var(--skills-perk-size));
+    grid-template-rows: repeat(2, var(--skills-perk-size));
+    gap: var(--skills-perk-gap);
     justify-content: start;
     align-content: start;
     flex: 0 0 auto;
@@ -304,16 +343,16 @@
     box-sizing: border-box;
 }
 
-/* ----- Skill slots: square, scale to fit ----- */
+/* ----- Skill perks: square, scale to fit ----- */
 
-.skills-slot {
-    width: var(--skills-slot-size);
-    height: var(--skills-slot-size);
+.skills-perk {
+    width: var(--skills-perk-size);
+    height: var(--skills-perk-size);
     min-width: 0;
     min-height: 0;
     overflow: hidden;
     aspect-ratio: 1 / 1;
-    font-size: var(--skills-slot-size);
+    font-size: var(--skills-perk-size);
 
     display: grid;
     place-items: center;
@@ -327,22 +366,22 @@
     transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
-.skills-slot:hover {
+.skills-perk:hover {
     border-color: rgba(255, 100, 0, 0.6);
     background: rgba(255, 100, 0, 0.2);
 }
 
-.skills-slot-selected {
+.skills-perk-selected {
     box-shadow: 0 0 10px rgba(172, 159, 129, 0.5);
 }
 
-.skills-slot-selected:not([style*="border-color"]) {
+.skills-perk-selected:not([style*="border-color"]) {
     border-color: var(--skills-accent-color);
 }
 
-/* Slot background when learned: from JSON (slotSkillLearnedBackgroundColor) via inline style */
+/* Perk background when learned: from JSON (perkLearnedBackgroundColor) via inline style */
 
-.skills-slot-icon {
+.skills-perk-icon {
     width: 60%;
     height: 60%;
     display: grid;
@@ -354,16 +393,16 @@
 
 
 
-/*empty slot*/
+/*empty perk*/
 
-.skills-slot-empty {
-    width: var(--skills-slot-size);
-    height: var(--skills-slot-size);
+.skills-perk-empty {
+    width: var(--skills-perk-size);
+    height: var(--skills-perk-size);
     min-width: 0;
     min-height: 0;
     overflow: hidden;
     aspect-ratio: 1 / 1;
-    font-size: var(--skills-slot-size);
+    font-size: var(--skills-perk-size);
 
     display: grid;
     place-items: center;
@@ -377,7 +416,7 @@
     pointer-events: none;
 }
 
-.skills-slot-empty:hover {
+.skills-perk-empty:hover {
     border-color: rgba(0, 0, 0, 0.1);
     background-color: rgba(0, 0, 0, 0.1);
 }
@@ -386,9 +425,9 @@
 
 
 
-/* Slot number: upper-right (like crafting-bench-slot-count) */
-/* Slot number: upper-right */
-.skills-slot-number {
+/* Perk number: upper-right (like crafting-bench-slot-count) */
+/* Perk number: upper-right */
+.skills-perk-number {
     position: absolute;
     top: 6%;
     right: 6%;
@@ -412,8 +451,8 @@
     pointer-events: none;
 }
 
-/* Slot number when learned - fixed background */
-.skills-slot-number.slot-applied {
+/* Perk number when learned - fixed background */
+.skills-perk-number.perk-applied {
     background: rgba(59, 132, 66, 0.8);
 }
 
@@ -480,7 +519,7 @@
     color: var(--skills-accent-color);
 }
 
-.skills-detail-slot-icon {
+.skills-detail-perk-icon {
     margin-right: 6px;
     opacity: 0.9;
 }

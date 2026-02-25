@@ -59,8 +59,8 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 **Phase 4 (Skills):** Skills Window UI in place
 - ✅ Skills Window (ApplicationV2) from Artificer bar; data from `resources/skills-details.json`
-- ✅ Panels: label (left) + total-cost dots (right), badge + slots; click badge → skill details, slot → slot details
-- ✅ Slots show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
+- ✅ Panels: label (left) + total-cost dots (right), badge + perks; click badge → skill details, perk → perk details
+- ✅ Perks show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
 - ⏳ Persist to actor flags (Apply), skill progression logic (next)
 
 **Phase 8 (Gathering):** ✅ Roll for Components (Gather)
@@ -203,7 +203,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 - Skill data model (actor flags)
 - Skill categories: Herbalism, Metallurgy, Artifice, Alchemy, Monster Handling
 - XP gain, level-up, skill gating
-- **Skill UI:** ✅ Skills Window (ApplicationV2) — JSON-driven panels, badge + slots, details pane; ⏳ actor persistence, progression
+- **Skill UI:** ✅ Skills Window (ApplicationV2) — JSON-driven panels, badge + perks, details pane; ⏳ actor persistence, progression
 
 ---
 

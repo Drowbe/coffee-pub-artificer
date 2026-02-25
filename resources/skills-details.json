@@ -10,38 +10,38 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Herbalism Kit",
-      "slots": [
+      "perks": [
         {
-          "slotID": "herbalism-basic-foraging",
+          "perkID": "herbalism-basic-foraging",
           "index": 1,
           "value": 0,
           "name": "Basic Foraging",
           "description": "You have the <strong>Herbalism Kit</strong> and the desire to forage for herbs. Nothing can stop you now.",
           "requirement": "Herbalism Kit",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         },
         {
-          "slotID": "herbalism-advanced-foraging",
+          "perkID": "herbalism-advanced-foraging",
           "index": 2,
           "value": 0,
           "name": "Advanced Foraging",
           "description": "You have the <strong>Herbalism Kit</strong> and deep experience gathering herbs. You can now gather more herbs and more rare herbs.",
           "requirement": "Basic Foraging",
           "cost": 2,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         },
         {
-          "slotID": "herbalism-expert-foraging",
+          "perkID": "herbalism-expert-foraging",
           "index": 3,
           "value": 0,
           "name": "Advanced Foraging",
           "description": "You have the <strong>Herbalism Kit</strong> and are an expert at gathering herbs. You can now gather more herbs and more rare herbs.",
           "requirement": "Advanced Foraging",
           "cost": 2,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         }
       ]
@@ -57,16 +57,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Alchemist's Supplies",
-      "slots": [
+      "perks": [
         {
-          "slotID": "alchemy-basic-alchemy",
+          "perkID": "alchemy-basic-alchemy",
           "index": 1,
           "value": 0,
           "name": "Basic Alchemy",
           "description": "You have the <strong>Alchemist's Supplies</strong> and the desire to brew potions. Nothing can stop you now.",
           "requirement": "Alchemist's Supplies",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-flask"
         }
       ]
@@ -82,16 +82,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Poisoner's Kit",
-      "slots": [
+      "perks": [
         {
-          "slotID": "poisoncraft-basic-poisons",
+          "perkID": "poisoncraft-basic-poisons",
           "index": 1,
           "value": 0,
           "name": "Basic Poisons",
           "description": "You have the <strong>Poisoner's Kit</strong>  and the desire to craft poisons. Nothing can stop you now.",
           "requirement": "Poisoner's Kit",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-skull"
         }
       ]
@@ -107,16 +107,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Cook's Utensils",
-      "slots": [
+      "perks": [
         {
-          "slotID": "cooking-basic-cooking",
+          "perkID": "cooking-basic-cooking",
           "index": 1,
           "value": 0,
           "name": "Basic Cooking",
           "description": "You have the <strong>Cook's Utensils</strong> and the desire to cook. Nothing can stop you now.",
           "requirement": "Cook's Utensils",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-bowl-food"
         }
       ]
@@ -131,16 +131,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Healer's Kit",
-      "slots": [
+      "perks": [
         {
-          "slotID": "healing-basic-care",
+          "perkID": "healing-basic-care",
           "index": 1,
           "value": 0,
           "name": "Basic Care",
           "description": "You possess a <strong>Healer's Kit</strong> and the knowledge to use it properly. You can stabilize wounds, clean injuries, and provide competent field treatment.",
           "requirement": "Healer's Kit",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-kit-medical"
         }
       ]
@@ -155,16 +155,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Smith's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "smithing-basic-smithing",
+          "perkID": "smithing-basic-smithing",
           "index": 1,
           "value": 0,
           "name": "Basic Smithing",
           "description": "You have <strong>Smith's Tools</strong> and the foundational knowledge to heat, shape, and temper metal safely. You can produce reliable metal components, fittings, and basic forged items suitable for practical use.",
           "requirement": "Smith's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-hammer"
         }
       ]
@@ -180,16 +180,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Leatherworker's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "leatherworking-basic-leatherworking",
+          "perkID": "leatherworking-basic-leatherworking",
           "index": 1,
           "value": 0,
           "name": "Basic Leatherworking",
           "description": "You have <strong>Leatherworker's Tools</strong> and the foundational knowledge to cure hides, cut clean patterns, and stitch durable leather goods. You can produce functional straps, sheaths, pouches, and fitted components suitable for everyday use.",
           "requirement": "Leatherworker's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-scissors"
         }
       ]
@@ -205,16 +205,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Tinker's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "tinkering-basic-tinkering",
+          "perkID": "tinkering-basic-tinkering",
           "index": 1,
           "value": 0,
           "name": "Basic Tinkering",
           "description": "You have <strong>Tinker's Tools</strong> and the foundational understanding to assemble, repair, and adjust small mechanical devices. You can produce simple mechanisms and maintain precision components with dependable accuracy.",
           "requirement": "Tinker's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-gears"
         }
       ]
@@ -230,16 +230,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Cartographer's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "cartography-basic-cartography",
+          "perkID": "cartography-basic-cartography",
           "index": 1,
           "value": 0,
           "name": "Basic Cartography",
           "description": "You have <strong>Cartographer's Tools</strong> and the instincts to turn travel into something legible. You can sketch reliable maps, mark routes, and capture landmarks with a consistent scale and clear legend.",
           "requirement": "Cartographer's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-map"
         }
       ]
@@ -256,16 +256,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Calligrapher's Supplies",
-      "slots": [
+      "perks": [
         {
-          "slotID": "inscription-basic-inscription",
+          "perkID": "inscription-basic-inscription",
           "index": 1,
           "value": 0,
           "name": "Basic Inscription",
           "description": "You possess <strong>Calligrapher's Supplies</strong> and the steady hand required to record language and symbols with clarity. You can produce clean script, consistent markings, and durable written records suitable for study, labeling, or formal documentation.",
           "requirement": "Calligrapher's Supplies",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-feather-pointed"
         }
       ]
@@ -281,16 +281,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Enchanter's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "enchanting-basic-enchanting",
+          "perkID": "enchanting-basic-enchanting",
           "index": 1,
           "value": 0,
           "name": "Basic Enchanting",
           "description": "You have access to <strong>Enchanter's Tools</strong> and the foundational knowledge to bind minor magical properties to prepared objects. You can safely perform basic infusions and stabilize simple enchantments.",
           "requirement": "Enchanter's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-wand-magic-sparkles"
         }
       ]
@@ -306,16 +306,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Jeweler's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "gemcraft-basic-gemcraft",
+          "perkID": "gemcraft-basic-gemcraft",
           "index": 1,
           "value": 0,
           "name": "Basic Gemcraft",
           "description": "You have <strong>Jeweler's Tools</strong> and the steady precision required to cut, polish, and set gemstones. You can assess quality, shape stones safely, and prepare gems for mounting or crafting.",
           "requirement": "Jeweler's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-gem"
         }
       ]
@@ -331,16 +331,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Weaver's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "tailoring-basic-tailoring",
+          "perkID": "tailoring-basic-tailoring",
           "index": 1,
           "value": 0,
           "name": "Basic Tailoring",
           "description": "You have <strong>Weaver's Tools</strong> and the foundational skill to measure, cut, and stitch textiles into reliable garments and fabric components. You can produce fitted clothing, simple padded layers, and reinforced cloth items suitable for everyday use.",
           "requirement": "Weaver's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-scissors"
         }
       ]
@@ -356,16 +356,16 @@
       "skillPanelColor": "rgba(0, 0, 0, 0.2)",
       "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
       "skillKit": "Mason's Tools",
-      "slots": [
+      "perks": [
         {
-          "slotID": "masonry-basic-masonry",
+          "perkID": "masonry-basic-masonry",
           "index": 1,
           "value": 0,
           "name": "Basic Masonry",
           "description": "You have <strong>Mason's Tools</strong> and the foundational knowledge to cut, shape, and set stone with reliable precision. You can produce fitted blocks, simple carvings, and structurally sound stonework suitable for practical construction.",
           "requirement": "Mason's Tools",
           "cost": 0,
-          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-hammer"
         }
       ]
