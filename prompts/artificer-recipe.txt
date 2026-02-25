@@ -4,28 +4,34 @@ VARIABLES FOR THE ARTIFICER RECIPE
 JOURNALNAME: 
 RECIPENAME: 
 RESULTNAME: 
+DESCRIPTION: 
+RARITY: 
 TYPE: 
 CATEGORY: 
+
+TRAITS: 
+
 SKILL: 
 SKILLLEVEL: 
 SKILLKIT: 
+SUCCESSDC: 
+
 APPARATUSNAME: 
 CONTAINERNAME: 
 PROCESSTYPE: 
 PROCESSLEVEL: 
 TIME: 
+
 GOLDCOST:
 WORKHOURS:  
+
 INGREDIENTS: 
-TRAITS: 
-DESCRIPTION: 
+
 SOURCE: 
 LICENSE: 
 
 
 Do not output the VARIABLES section. Output only JSON (and later the image when asked).
-
-If a description is provided, it is to be used only for guidance. Always rewrite and expand the description as needed. Focus most of the description on the recipe and the prep with only a light touch on the items being crafted.
 
 For the image, put the ingredient in its natural environment with a focus on the item. Do not embed the JSON in the image!
 
@@ -66,15 +72,83 @@ RECIPENAME: (string) (Required) Recipe name.
 
 DESCRIPTION: (string)(Required) Recipe notes and instructions. Use HTML structure: <p> for each paragraph, <ul>/<ol>/<li> for lists (e.g., steps or ingredients), <strong> for emphasis. Weave the other data into this field. Break into paragraphs—not one giant block. If a description is provided, use it only as guidance; rewrite and expand. Help the user understand the recipe, what it does, and how to make it.
 
-RESULTNAME: (string) (Required) Name of resulting item. Resolved by name at runtime from the item cache (compendia + world). May equal name.
+RESULTNAME: (STRING) (REQUIRED) Name of resulting item. Resolved by name at runtime from the item cache (compendia + world). May equal name.
 
-INGREDIENTS: (array) (Required) Each element: { type, name, quantity } or { type, family, name, quantity }. type = "Component" | "Creation" | "Tool". family (optional) = identity within type (e.g. Plant, Essence, Potion, Apparatus). Mundane D&D items (which have no Artificer flags) match by name only; use type "Creation" or "Component" as appropriate.
+RARITY: (STRING) (REQUIRED) Always set to one of:
+- "common"
+- "uncommon"
+- "rare"
+- "very rare"
+- "legendary"
 
+TYPE: (STRING) (REQUIRED) Item type. The D&D 5e item document type only. One of: 
+-"Consumable"
+-"Container"
+-"Equipment"
+-"Loot"
+-"Tool"
+-"Weapon"
 
+CATEGORY: (string) (Required) This would be the subtype of the type. One of: 
+- Consumable: "Ammunition", "Food", "Poison", "Potion", "Rod", "Scroll", "Trinket", "Wand", "Wondrous Item".
+- Container: null
+- Equipment: "Clothing", "Ring", "Rod", "Trinket", "Vehicle Equipment", "Wand", "Wondrous Item", "Light Armor", "Medium Armor", "Heavy Armor", "Natural Armor", "Shield"
+- Loot: "Art Object", "Adventuring Gear", "Gemstone", "Junk", "Material", "Resource", "Trade Good", "Treasure"
+- Tool: "Artisian's Tools", "Gaming Set", "Musical Instrument"
+- Weapon: "Simple Melee", "Simple Ranged", "Martial Melee", "Martial Ranged", "Natural", "Improvised", "Siege Weapon"
 
--- CRAFTING PROCESS --
+TRAITS: (array of strings) Recipe traits (modifiers; do not repeat type/family). May be derived from ingredients on import; author can add more in the journal.
+- COMPONENT Traits: "Herb", "Floral", "Medicinal", "Toxic", "Metal", "Ore", "Crystal", "Resonant", "Arcane", "Bone", "Venom", "Creature", "Water", "Fire", "Earth", "Air", "Corrupted", "Pure", etc. Choose 2–5 that describe the component.
+- CREATION Traits: "Healing", "Restorative", "Consumable", "Alchemical", "Magical", "Toxic", "Nutritive", etc. Choose 2–5 that describe the crafted result.
+- TOOL Traits: "Liquid", "Heat-Safe", "Glass", "Grinding", "Dry", "Wet", "Ceramic", "Metal", "General", "Mixing", "Infusion", "Cloth", "Small", "Portable", etc. Choose 2–5 for recipe matching (e.g. potion recipes require Liquid container).
 
-SKILLKIT: (string) (Required) Required kit for this skill. One of: "Herbalism Kit", "Alchemist's Supplies", "Poisoner's Kit", "Cook's Utensils", "Smith's Tools", "Leatherworker's Tools", "Tinker's Tools", "Cartographer's Tools", "Calligrapher's Supplies", "Enchanter's Implements", "Jeweler's Tools", "Weaver's Tools", "Mason's Tools". Must match the skill.
+-- SKILL --
+
+SKILL: (string) (Required) Default "Herbalism". Must be exactly one of: 
+- "Herbalism"
+- "Alchemy"
+- "Poisoncraft"
+- "Cooking"
+- "Smithing"
+- "Leatherworking"
+- "Tinkering"
+- "Cartography"
+- "Inscription"
+- "Enchanting"
+- "Gemcraft"
+- "Tailoring"
+- "Masonry"
+
+SKILLKIT: (string) (Required) Required kit for the SKILL. One of: 
+- Herbalism: "Herbalism Kit"
+- Alchemy: "Alchemist's Supplies"
+- Poisoncraft: "Poisoner's Kit"
+- Cooking: "Cook's Utensils"
+- Smithing: "Smith's Tools"
+- Leatherworking: "Leatherworker's Tools"
+- Tinkering: "Tinker's Tools"
+- Cartography: "Cartographer's Tools"
+- Inscription: "Calligrapher's Supplies"
+- Enchanting: "Enchanter's Implements"
+- Gemcraft: "Jeweler's Tools"
+- Tailoring: "Weaver's Tools"
+- Masonry: "Mason's Tools"
+
+SKILLLEVEL: (integer) (Required) 0–20. 0 implies zero training needed. If not provided, use the recipe data to derive the appropriate skill level:
+- RARITY "common": 0-3: Common Rarity, basic crafting.
+- RARITY "uncommon": 4–9: Uncommon Rarity, intermediate recipes.
+- RARITY "rare": 10–14: Rare Rarity, advanced recipes.
+- RARITY "very rare": 15–19: Rare Rarity, advanced recipes.
+- RARITY "legendary": 20: Very rare/legendary Rarity, masterwork recipes.
+
+-- PROCESSING --
+
+SUCCESSDC: (integer) (Required) The roll required for a successful creation. This will be a DC20 roll that will se set based on the SKILLLEVEL unless otherwise specified:
+- SKILLLEVEL 0-3: DC = 4
+- SKILLLEVEL 4–9: DC = 8
+- SKILLLEVEL 10–14: DC = 12
+- SKILLLEVEL 15–19: DC = 16
+- SKILLLEVEL 20: DC = 18
 
 APPARATUSNAME: (string) (Required) Vessel to craft in (one of: "Beaker", "Mixing Bowl", "Mortar and Pestle", "Crucible"). Not consumed.
 
@@ -86,25 +160,46 @@ PROCESSLEVEL: (integer) (Required) 0–3. Use numbers only. Same scale for heat 
 
 TIME: (integer) (Required) Process time in seconds (0–120). If processLevel is 0, set time to 0. Suggested time bands: level 1 = 20–40, level 2 = 40–80, level 3 = 80–120. Not the same as WORKHOURS.
 
-
--- ITEM & SKILL --
-
-TYPE: (string) (Required) Item type. Default "Consumable". One of: Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice.
-
-CATEGORY: (string) (Required) This would be the subtype of the type: e.g. "Food", "Material", "Poison", "Potion".   
-
-SKILL: (string) (Required) Must be exactly one of: Herbalism, Alchemy, Poisoncraft, Cooking, Smithing, Leatherworking, Tinkering, Cartography, Inscription, Enchanting, Gemcraft, Tailoring, Masonry. Default "Alchemy".
-
-SKILLLEVEL: (integer) (Required) 0–20. Same scale as components (gathering). 0 implies zero training needed. 20 implies expert level needed. If not provided, use the recipe data to derive the appropriate skill level.
-
-
--- COST & METADATA --
+-- COST --
 
 GOLDCOST: (integer) (Optional). Cost in gp. Default null/0.
 
 WORKHOURS: (integer) (Optional). In-game duration (hours to craft). Separate from time—do not derive one from the other.
 
-TRAITS: (array of strings) Recipe traits (modifiers; do not repeat type/family). May be derived from ingredients on import; author can add more in the journal.
+-- INGREDIENTS --
+
+ingredients: (array) (Required) Each element: { type, family, name, quantity }. 
+
+INGREDIENTNAME: (string) (Required) Name of the ingedient. Resolved by name at runtime from the item cache (compendia + world).  Ideally comes from a lit of official items in the world.
+
+INGREDIENTTYPE: (STRING) (REQUIRED) These are one of the three supported artificer types.  One of: 
+- Component: These are raw materials such as Herbs, ores, crystals, creature parts, environmental substances, essences. Use for ingredients found in the world.
+- Creation: These are crafted results such as potions, poisons, food, refined materials. Use for items produced by crafting.
+- Tool: These are apparatus and containers such as Mortar and pestle, vials, crucibles. Use for equipment that holds or processes ingredients.
+
+INGREDIENTFAMILY: (STRING) (REQUIRED) The ingredient family is based on the artificer type:
+
+If INGREDIENTTYPE is "Component" the INGREDIENTFAMILY are: 
+- Plant (Herbs, fungi, flowers, etc.)
+- Mineral (Ores, metals, stones, etc.)
+- Gem (Crystals, gems, etc.)
+- CreaturePart (Bone, venom, scales, etc)
+- Environmental (Water, ash, ice, etc.)
+- Essence (Life, Fire, Shadow, etc.)
+
+If INGREDIENTTYPE is "Creation" the INGREDIENTFAMILY are: 
+- "Food": it can be grown or eaten.
+- "Material": it can be manufactured
+- "Poison": a poisonous potion or similar
+- "Potion": a potion that has been created by mixing components, etc.
+
+If INGREDIENTTYPE is "Tool" the INGREDIENTFAMILY are: 
+- "Apparatus": These are "beakers", "mortar and pestle", "crucible", "mixing bowl", etc. — items used to process things with heat, grind, blend, etc.
+- "Container": "vial", "herb bag", "ampoule", "bottle", "box", etc.  — items that hold or carry items
+
+ITEMQUANTITY: (integer) (Required) The qauntity of the item needed for the recipe.
+
+-- METADATA --
 
 SOURCE: (string) (Required) Author or source. If not provided, default to "Artificer".
 
@@ -121,23 +216,30 @@ JSON TEMPLATE: SINGLE RECIPE
   "recipeJournal": "JOURNALNAME",
   "name": "RECIPENAME",
   "resultItemName": "RESULTNAME",
+  "description": "DESCRIPTION",
   "type": "TYPE",
   "category": "CATEGORY",
+  "traits": ["TRAIT1", "TRAIT2"],
+
+  "skillKit": "SKILLKIT",
   "skill": "SKILL",
   "skillLevel": SKILLLEVEL,
-  "skillKit": "SKILLKIT",
+  "successDC": SUCCESSDC,
+  
+
   "apparatusName": "APPARATUSNAME",
   "containerName": "CONTAINERNAME",
   "processType": "PROCESSTYPE",
   "processLevel": PROCESSLEVEL,
   "time": TIME,
+
   "goldCost": GOLDCOST,
   "workHours": WORKHOURS,
+
   "ingredients": [
-    { "type": "Component", "family": "Plant", "name": "INGREDIENTNAME", "quantity": QTY }
+    { "type": "INGREDIENTTYPE", "family": "INGREDIENTFAMILY", "name": "INGREDIENTNAME", "quantity": ITEMQUANTITY }
   ],
-  "traits": ["TRAIT1", "TRAIT2"],
-  "description": "DESCRIPTION",
+
   "source": "SOURCE",
   "license": "LICENSE"
 }
@@ -146,41 +248,42 @@ JSON TEMPLATE: SINGLE RECIPE
 JSON TEMPLATE: BATCH (ARRAY)
 ----------------------------
 
-For multiple recipes, output a JSON array. Each object uses the same fields as the single-recipe template, including description (required).
+For multiple recipes, use an object with "recipeJournal" (journal name) at the top level and "recipes" (array of recipe objects). Each recipe uses the same fields as the single-recipe template, including description (required).
 
-Optional wrapper: to target a specific journal by name when importing, use an object with "recipeJournal" (string, journal name) and "recipes" (array of recipe objects). If recipeJournal is omitted, the module uses the configured recipe journal name.
+{
+  "recipeJournal": "JOURNALNAME",
+  "recipes": [
+    {
+      "recipeJournal": "JOURNALNAME",
+      "name": "RECIPENAME",
+      "resultItemName": "RESULTNAME",
+      "description": "DESCRIPTION",
+      "type": "TYPE",
+      "category": "CATEGORY",
+      "traits": [ ... ],
+      "skillKit": "SKILLKIT",
+      "skill": "SKILL",
+      "skillLevel": SKILLLEVEL,
+      "successDC": SUCCESSDC,
+      "apparatusName": "APPARATUSNAME",
+      "containerName": "CONTAINERNAME",
+      "processType": "PROCESSTYPE",
+      "processLevel": PROCESSLEVEL,
+      "time": TIME,
+      "goldCost": GOLDCOST,
+      "workHours": WORKHOURS,
+      "ingredients": [ ... ],
+      "source": "SOURCE",
+      "license": "LICENSE"
+    },
+    {
+      "name": "RECIPENAME",
+      ...
+    }
+  ]
+}
 
-{ "recipeJournal": "JOURNALNAME", "recipes": [ ... ] }
-
-Plain array (uses configured journal):
-
-[
-  {
-    "name": "RECIPENAME",
-    "resultItemName": "RESULTNAME",
-    "type": "TYPE",
-    "category": "CATEGORY",
-    "skill": "SKILL",
-    "skillLevel": SKILLLEVEL,
-    "skillKit": "SKILLKIT",
-    "apparatusName": "APPARATUSNAME",
-    "containerName": "CONTAINERNAME",
-    "processType": "PROCESSTYPE",
-    "processLevel": PROCESSLEVEL,
-    "time": TIME,
-    "goldCost": GOLDCOST,
-    "workHours": WORKHOURS,
-    "ingredients": [ ... ],
-    "traits": [ ... ],
-    "description": "DESCRIPTION",
-    "source": "SOURCE",
-    "license": "LICENSE"
-  },
-  {
-    "name": "RECIPENAME",
-    ...
-  }
-]
+Alternative: a plain array [ { ... }, { ... } ] (no top-level recipeJournal) uses the module's configured recipe journal name.
 
 ----------------------------
 USAGE INSTRUCTIONS

@@ -42,10 +42,12 @@ export class ArtificerRecipe {
         this.skillKit = data.skillKit ?? data.toolName ?? data.tool ?? null;
         this.goldCost = data.goldCost != null ? Number(data.goldCost) : null;
         this.workHours = data.workHours != null ? Number(data.workHours) : null;
+        this.successDC = data.successDC != null ? Number(data.successDC) : null;
         this.ingredients = data.ingredients ?? [];
         this.resultItemName = data.resultItemName ?? data.name ?? '';
         this.traits = Array.isArray(data.traits) ? data.traits : (Array.isArray(data.tags) ? data.tags : []);
         this.description = data.description ?? '';
+        this.rarity = (data.rarity != null && String(data.rarity).trim()) ? String(data.rarity).trim().toLowerCase() : null;
         this.source = data.source ?? '';
         this.license = data.license ?? '';
         this.journalPageId = data.journalPageId ?? '';
@@ -271,10 +273,12 @@ export class ArtificerRecipe {
             skillKit: this.skillKit,
             goldCost: this.goldCost,
             workHours: this.workHours,
+            successDC: this.successDC,
             ingredients: [...this.ingredients],
             resultItemName: this.resultItemName,
             traits: [...this.traits],
             description: this.description,
+            rarity: this.rarity,
             source: this.source,
             license: this.license,
             journalPageId: this.journalPageId

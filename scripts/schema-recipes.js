@@ -29,10 +29,12 @@
  * @property {string|null} skillKit - Required kit for this skill (e.g. Alchemist's Supplies, Herbalism Kit). Actor must have in inventory.
  * @property {number|null} goldCost - Cost to make in gp after ingredient deduction (Phase 2)
  * @property {number|null} workHours - In-game duration (hours to craft). Separate from time; not a translation.
+ * @property {number|null} successDC - Roll required for a successful creation (e.g. skill check DC).
  * @property {RecipeIngredient[]} ingredients - Required ingredients (TYPE + optional family + name + quantity)
  * @property {string} resultItemName - Name of resulting item. Resolved at runtime via compendia + world.
  * @property {string[]} traits - Recipe traits (modifiers; do not repeat type/family). Legacy "tags" map to traits.
  * @property {string} description - Recipe description/notes
+ * @property {string|null} rarity - Result item rarity: common, uncommon, rare, very rare, legendary (lowercase).
  * @property {string} source - Source journal UUID
  * @property {string} journalPageId - Journal page ID within source journal
  */

@@ -11,6 +11,9 @@ import { resolveItemByName } from './utility-artificer-item.js';
 /** Default journal name when none configured */
 const DEFAULT_RECIPE_JOURNAL_NAME = 'Artificer Recipes';
 
+/** Valid recipe rarity values (lowercase). Used to normalize on import. */
+const RECIPE_RARITIES = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
+
 /** Trim string for import; treat null, undefined, and the literal "null" as empty. */
 function _str(val) {
     if (val == null) return '';
@@ -32,6 +35,17 @@ function normalizePunctuationForStorage(s) {
     // Curly/smart double quotes → straight double quote
     t = t.replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"');
     return t;
+}
+
+/**
+ * Normalize rarity to one of the five valid values (lowercase). Returns null if missing/empty; invalid values become "common".
+ * @param {*} value - Raw rarity from payload
+ * @returns {string|null} Normalized rarity or null
+ */
+function _normalizeRarity(value) {
+    if (value == null || String(value).trim() === '') return null;
+    const lower = String(value).trim().toLowerCase();
+    return RECIPE_RARITIES.includes(lower) ? lower : 'common';
 }
 
 /**
@@ -131,6 +145,8 @@ export async function validateRecipePayload(payload) {
         skillKit: skillKit ? normalizePunctuationForStorage(skillKit.trim()) : null,
         goldCost: payload.goldCost != null ? Number(payload.goldCost) : null,
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
+        successDC: payload.successDC != null ? Math.max(1, Math.min(30, Math.round(Number(payload.successDC)))) : null,
+        rarity: _normalizeRarity(payload.rarity),
         source: normalizePunctuationForStorage(_str(payload.source ?? payload.Source) || 'Artificer'),
         license: normalizePunctuationForStorage(_str(payload.license ?? payload.License))
     };
@@ -181,12 +197,14 @@ export function buildRecipePageHtml(data) {
         `<p><strong>Apparatus:</strong> ${v(data.apparatusName)}</p>`,
         `<p><strong>Container:</strong> ${v(data.containerName)}</p>`,
         `<p><strong>Gold Cost:</strong> ${data.goldCost != null ? data.goldCost : ''}</p>`,
-        `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`
+        `<p><strong>Work Hours:</strong> ${data.workHours != null ? data.workHours : ''}</p>`,
+        `<p><strong>Success DC:</strong> ${data.successDC != null ? data.successDC : ''}</p>`
     ].join('')));
 
     parts.push(section('METADATA', [
         `<p><strong>Type:</strong> ${v(data.type)}</p>`,
         `<p><strong>Category:</strong> ${v(data.category)}</p>`,
+        `<p><strong>Rarity:</strong> ${v(data.rarity)}</p>`,
         `<p><strong>Skill:</strong> ${v(data.skill)}</p>`,
         `<p><strong>Skill Level:</strong> ${data.skillLevel != null ? data.skillLevel : ''}</p>`,
         `<p><strong>Skill Kit:</strong> ${v(data.skillKit)}</p>`,

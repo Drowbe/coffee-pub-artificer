@@ -106,6 +106,9 @@ export class RecipeParser {
                 } else if (labelLower === 'work hours') {
                     const num = parseFloat(value);
                     if (!isNaN(num) && num >= 0) data.workHours = num;
+                } else if (labelLower === 'success dc') {
+                    const num = parseInt(value, 10);
+                    if (!isNaN(num) && num >= 1 && num <= 30) data.successDC = num;
                 } else if (labelLower === 'result') {
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
@@ -123,6 +126,9 @@ export class RecipeParser {
                     data.description = (descDiv?.classList?.contains('recipe-description') ? descDiv.innerHTML : value) || value;
                 } else if (labelLower === 'source') {
                     if (value.trim()) data.source = value.trim();
+                } else if (labelLower === 'rarity') {
+                    const r = value.trim().toLowerCase();
+                    if (['common', 'uncommon', 'rare', 'very rare', 'legendary'].includes(r)) data.rarity = r;
                 } else if (labelLower === 'license') {
                     if (value.trim()) data.license = value.trim();
                 } else if (labelLower === 'ingredients') {

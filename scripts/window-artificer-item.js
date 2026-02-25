@@ -66,7 +66,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
      * _prepareContext delegates here for mixins that call it.
      */
     async getData(options = {}) {
-        const flags = this.itemData?.flags?.[MODULE.ID] ?? {};
+        const flags = (this.itemData?.flags?.[MODULE.ID] ?? this.existingItem?.flags?.[MODULE.ID] ?? this.existingItem?.flags?.artificer) ?? {};
         const artificerType = this._formState?.artificerType ?? getArtificerTypeFromFlags(flags) ?? this.itemType ?? ARTIFICER_TYPES.COMPONENT;
         const selectedFamily = Object.prototype.hasOwnProperty.call(this._formState ?? {}, 'family')
             ? (this._formState?.family ?? '')
@@ -106,7 +106,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             isEssenceFamily: selectedFamily === 'Essence',
             artificerTypeOptions,
             familyOptions,
-            itemName: this.itemData?.name || '',
+            itemName: (this.itemData?.name ?? this.existingItem?.name) ?? '',
             traitsValue: existingTraits.join(','),
             traitCandidates,
             skillLevel,
@@ -350,7 +350,16 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             if (tag) addTag(tag);
         });
 
-        setSelectedTags(getSelectedTags());
+        let initialTags = getSelectedTags();
+        if (initialTags.length === 0 && this.isEditMode && this.existingItem) {
+            const flags = this.existingItem.flags?.[MODULE.ID] ?? this.existingItem.flags?.artificer ?? {};
+            const fromFlags = getTraitsFromFlags(flags);
+            if (fromFlags.length) {
+                hiddenInput.value = fromFlags.join(',');
+                initialTags = fromFlags;
+            }
+        }
+        setSelectedTags(initialTags);
     }
 
     _renderPills(pillsEl, hiddenInput, tags, onRemove) {

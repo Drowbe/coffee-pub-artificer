@@ -562,7 +562,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 r.time != null ? `Time: ${r.time}s` : null,
                 r.skillLevel != null ? `Skill Level: ${r.skillLevel}` : null,
                 r.goldCost != null ? `Gold Cost: ${r.goldCost}` : null,
-                r.workHours != null ? `Work Hours: ${r.workHours}` : null
+                r.workHours != null ? `Work Hours: ${r.workHours}` : null,
+                r.rarity ? `Rarity: ${r.rarity}` : null
             ].filter(Boolean)
             : [];
 
