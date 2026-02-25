@@ -342,6 +342,44 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return document.querySelector('.skills-window-root') ?? this.element ?? null;
     }
 
+    /**
+     * Save scroll positions of scrollable panes so we can restore after render (prevents jumping to top on skill/slot click).
+     * @returns {{ panels: number, details: number, windowContent: number }}
+     */
+    _saveScrollPositions() {
+        const root = this._getSkillsRoot();
+        const panels = root?.querySelector?.('.skills-window-panels');
+        const details = root?.querySelector?.('.skills-details-content');
+        const windowContent = this.element?.closest?.('.window-content');
+        return {
+            panels: panels ? panels.scrollTop : 0,
+            details: details ? details.scrollTop : 0,
+            windowContent: windowContent ? windowContent.scrollTop : 0
+        };
+    }
+
+    /**
+     * Restore scroll positions after render. Call in requestAnimationFrame or after await render() so DOM is ready.
+     * @param {{ panels: number, details: number, windowContent: number }} saved
+     */
+    _restoreScrollPositions(saved) {
+        if (!saved) return;
+        const root = this._getSkillsRoot();
+        const panels = root?.querySelector?.('.skills-window-panels');
+        const details = root?.querySelector?.('.skills-details-content');
+        const windowContent = this.element?.closest?.('.window-content');
+        if (panels && saved.panels) panels.scrollTop = saved.panels;
+        if (details && saved.details) details.scrollTop = saved.details;
+        if (windowContent && saved.windowContent) windowContent.scrollTop = saved.windowContent;
+    }
+
+    async render(force = false) {
+        const scrolls = this._saveScrollPositions();
+        const result = await super.render(force);
+        requestAnimationFrame(() => this._restoreScrollPositions(scrolls));
+        return result;
+    }
+
     static _actionReset(event, target) {
         const w = _currentSkillsWindowRef;
         if (!w) return;

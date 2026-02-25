@@ -117,6 +117,81 @@ function getRecipeJournalUuid(recipe) {
 }
 
 /**
+ * Build journal dropdown options grouped by folder (world journals only for folder; compendium in "Compendiums").
+ * Only includes journals that have at least one recipe. Returns { allOption, groups } for template.
+ * @param {Array<{ id: string, source?: string }>} recipes - from api.recipes.getAll()
+ * @param {string} filterRecipeJournal - current filter (journal name or '')
+ * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>> }>}
+ */
+async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal) {
+    const uuidSet = new Set();
+    for (const r of recipes) {
+        const u = getRecipeJournalUuid(r);
+        if (u) uuidSet.add(u);
+    }
+    /** @type {Map<string, { name: string, folderId: string|null, isWorld: boolean }>} uuid -> info */
+    const journalInfo = new Map();
+    /** @type {Map<string, Set<string>>} journal name -> Set of UUIDs */
+    const nameToUuids = new Map();
+    /** @type {Map<string, string>} journal uuid -> name */
+    const journalByUuid = new Map();
+    for (const uuid of uuidSet) {
+        try {
+            const doc = await fromUuid(uuid);
+            if (!doc || doc.documentName !== 'JournalEntry') continue;
+            const name = (doc.name ?? '').trim();
+            if (!name) continue;
+            const folderId = doc.folder?.id ?? doc.folder ?? null;
+            const isWorld = !!game.journal?.get(doc.id);
+            journalInfo.set(uuid, { name, folderId, isWorld });
+            if (!nameToUuids.has(name)) nameToUuids.set(name, new Set());
+            nameToUuids.get(name).add(uuid);
+            journalByUuid.set(uuid, name);
+        } catch (_e) {
+            continue;
+        }
+    }
+    /** @type {Map<string, Array<{ value: string, label: string }>>} folderLabel -> options (value = journal name) */
+    const byFolder = new Map();
+    const seenNames = new Set();
+    for (const [, info] of journalInfo) {
+        if (seenNames.has(info.name)) continue;
+        seenNames.add(info.name);
+        const label = info.name;
+        const value = info.name;
+        let folderLabel;
+        if (info.isWorld && info.folderId && game.folders) {
+            const folder = game.folders.get(info.folderId);
+            folderLabel = folder?.name ?? 'Other';
+        } else if (!info.isWorld) {
+            folderLabel = 'Compendiums';
+        } else {
+            folderLabel = 'No folder';
+        }
+        if (!byFolder.has(folderLabel)) byFolder.set(folderLabel, []);
+        byFolder.get(folderLabel).push({ value, label });
+    }
+    const allOption = { value: '', label: 'All journals', selected: !filterRecipeJournal };
+    const groupOrder = ['No folder', 'Compendiums'];
+    const sortedFolderLabels = [...byFolder.keys()].sort((a, b) => {
+        const ai = groupOrder.indexOf(a);
+        const bi = groupOrder.indexOf(b);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return a.localeCompare(b, undefined, { sensitivity: 'base' });
+    });
+    const groups = sortedFolderLabels.map((folderLabel) => {
+        const opts = byFolder.get(folderLabel).slice().sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+        return {
+            label: folderLabel,
+            options: opts.map((o) => ({ ...o, selected: filterRecipeJournal === o.value }))
+        };
+    });
+    return { allOption, groups, nameToUuids, journalByUuid };
+}
+
+/**
  * Get list of recipe source journals (folder + compendiums) with uuid and name
  */
 async function getRecipeSourceJournals() {
@@ -515,20 +590,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const anyMissing = this.selectedSlots.some(s => s?.isMissing);
         const vesselMissing = apparatusSlot.isMissing || containerSlot.isMissing || toolSlot.isMissing;
         const canCraft = hasSlots && !anyMissing && !vesselMissing;
-        const sourceJournals = await getRecipeSourceJournals();
-        const journalByUuid = new Map(sourceJournals.map((j) => [j.uuid, j.name]));
+        const recipes = getAPI()?.recipes?.getAll?.() ?? [];
+        const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal);
+        const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
-        const seenNames = new Set();
-        const recipeJournalOptions = [
-            { value: '', label: 'All journals', selected: !this.filterRecipeJournal },
-            ...sourceJournals
-                .filter((j) => j.name && !seenNames.has(j.name) && seenNames.add(j.name))
-                .map((j) => ({ value: j.name, label: j.name, selected: this.filterRecipeJournal === j.name }))
-        ];
         if (this.filterRecipeJournal) {
             const selectedName = String(this.filterRecipeJournal).trim();
-            const matchingUuids = new Set(sourceJournals.filter((j) => (j.name ?? '').trim() === selectedName).map((j) => j.uuid));
-            knownCombinations = knownCombinations.filter((r) => matchingUuids.has(r.journalUuid ?? ''));
+            const matchingUuids = nameToUuids.get(selectedName);
+            if (matchingUuids?.size) {
+                knownCombinations = knownCombinations.filter((r) => matchingUuids.has(r.journalUuid ?? ''));
+            }
         }
         if (this.filterRecipeSearch?.trim()) {
             const q = this.filterRecipeSearch.trim().toLowerCase();
@@ -647,7 +718,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             lastCraftTags: this.lastCraftTags,
             lastCraftTagsStr: this.lastCraftTags.join(', '),
             knownCombinations,
-            recipeJournalOptions,
+            recipeJournalAllOption: recipeJournalAllOption,
+            recipeJournalOptionGroups: recipeJournalOptionGroups,
             combinedTags,
             selectedRecipeData,
             selectedRecipeTopFields,

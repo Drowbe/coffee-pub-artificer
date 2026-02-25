@@ -1,6 +1,7 @@
 /**
  * Artificer: Split Minor Potions by Skill
  *
+ * WORLD JOURNALS ONLY. Never reads or writes compendiums.
  * ONLY processes the world journal named exactly "Minor Potions".
  * Splits its pages into two new world journals:
  * - Pages with Skill: Alchemy  → "Minor Alchemy Potions" (alphabetical)
@@ -19,6 +20,9 @@ const MODULE_ID = 'coffee-pub-artificer';
 const SOURCE_JOURNAL_NAME = 'Minor Potions';
 const TARGET_ALCHEMY = 'Minor Alchemy Potions';
 const TARGET_HERBALISM = 'Minor Herbal Potions';
+
+/** Set true to preview without moving or creating anything. */
+const dryRun = false;
 
 /** Wait for Artificer API. */
 async function getArtificerAPI(maxWaitMs = 5000) {
@@ -86,8 +90,6 @@ async function sortJournalPagesByName(journal) {
 }
 
 (async () => {
-    const dryRun = false; // Set true to preview only
-
     if (!game.user?.isGM) {
         ui.notifications.warn('Only a GM can run the Split Minor Potions macro.');
         return;

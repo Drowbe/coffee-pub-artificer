@@ -262,29 +262,38 @@ export async function refreshCache(onProgress) {
         addToCache(item, translation);
     };
 
+    const yieldFrame = () => new Promise((r) => requestAnimationFrame(r));
+
     // 1. From compendia
     for (let i = 0; i < compendiumIds.length; i++) {
         const cid = compendiumIds[i];
-        if (onProgress) {
-            onProgress({
-                compendiumIndex: i + 1,
-                compendiumCount: compendiumIds.length,
-                itemCount: entries.length,
-                message: `Building Cache: ${i + 1}/${compendiumIds.length} Compendiums, ${entries.length} Items`
-            });
-        }
+        const state = {
+            compendiumIndex: i + 1,
+            compendiumCount: compendiumIds.length,
+            itemCount: entries.length,
+            message: `Scanning ${i + 1} of ${compendiumIds.length} compendiums, ${entries.length} items…`
+        };
+        _status.message = state.message;
+        if (onProgress) onProgress(state);
+        await yieldFrame();
         try {
             const pack = game.packs.get(cid);
             if (!pack || pack.documentName !== 'Item') continue;
             const index = await pack.getIndex();
             const itemIds = index && typeof index.keys === 'function' ? Array.from(index.keys()) : [];
             if (!itemIds.length) continue;
-            for (const itemId of itemIds) {
+            for (let ii = 0; ii < itemIds.length; ii++) {
+                const itemId = itemIds[ii];
                 try {
                     const item = await pack.getDocument(itemId);
                     if (item) addItem(item, cid);
                 } catch {
                     continue;
+                }
+                if (onProgress && ii > 0 && ii % 50 === 0) {
+                    _status.message = `Scanning ${i + 1} of ${compendiumIds.length}, ${entries.length} items…`;
+                    onProgress({ compendiumIndex: i + 1, compendiumCount: compendiumIds.length, itemCount: entries.length, message: _status.message });
+                    await yieldFrame();
                 }
             }
         } catch (err) {
@@ -324,6 +333,7 @@ export async function refreshCache(onProgress) {
             message: _status.message
         });
     }
+    await yieldFrame();
 
     return { compendiumCount: compendiumIds.length, itemCount: entries.length };
 }

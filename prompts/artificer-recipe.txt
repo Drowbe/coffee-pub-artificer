@@ -118,6 +118,7 @@ SKILL: (string) (Required) Default "Herbalism". Must be exactly one of:
 - "Gemcraft"
 - "Tailoring"
 - "Masonry"
+- "Healing"
 
 SKILLKIT: (string) (Required) Required kit for the SKILL. One of: 
 - Herbalism: "Herbalism Kit"
@@ -133,6 +134,7 @@ SKILLKIT: (string) (Required) Required kit for the SKILL. One of:
 - Gemcraft: "Jeweler's Tools"
 - Tailoring: "Weaver's Tools"
 - Masonry: "Mason's Tools"
+- Healing: "Healer's Kit"
 
 SKILLLEVEL: (integer) (Required) 0–20. 0 implies zero training needed. If not provided, use the recipe data to derive the appropriate skill level:
 - RARITY "common": 0-3: Common Rarity, basic crafting.

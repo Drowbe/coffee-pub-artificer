@@ -31,9 +31,14 @@
                     <button type="button" class="crafting-zone-section-input-clear" data-action="clearRecipeSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="crafting-zone-filters-row">
-                    <select id="{{appId}}-filter-recipe-journal" class="crafting-zone-select" title="Filter by journal">
-                        {{#each recipeJournalOptions}}
-                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                    <select id="{{appId}}-filter-recipe-journal" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by journal">
+                        <option value="{{recipeJournalAllOption.value}}" {{#if recipeJournalAllOption.selected}}selected{{/if}}>{{recipeJournalAllOption.label}}</option>
+                        {{#each recipeJournalOptionGroups}}
+                        <optgroup label="{{this.label}}" class="artificer-crafting-optgroup">
+                            {{#each this.options}}
+                            <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                            {{/each}}
+                        </optgroup>
                         {{/each}}
                     </select>
                 </div>
@@ -63,12 +68,12 @@
                     <button type="button" class="crafting-zone-section-input-clear" data-action="clearComponentSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="crafting-zone-filters-row">
-                    <select id="{{appId}}-filter-type" class="crafting-zone-select" title="Filter by type (Component, Creation, Tool)">
+                    <select id="{{appId}}-filter-type" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by type (Component, Creation, Tool)">
                         {{#each typeOptions}}
                         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
                         {{/each}}
                     </select>
-                    <select id="{{appId}}-filter-family" class="crafting-zone-select" title="Filter by family (options depend on type)">
+                    <select id="{{appId}}-filter-family" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by family (options depend on type)">
                         {{#each familyOptions}}
                         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
                         {{/each}}

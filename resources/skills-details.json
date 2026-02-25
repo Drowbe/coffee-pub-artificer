@@ -122,6 +122,29 @@
       ]
     },
 
+    {
+      "id": "Healing",
+      "name": "Healing",
+      "img": "modules/coffee-pub-artificer/images/skills/skill-healing-01.webp",
+      "description": "<p><strong>Healing</strong> is the disciplined craft of stabilizing the wounded, restoring vitality, and treating injury and illness through practical medical knowledge. It governs the use of bandages, poultices, tonics, salves, and field techniques to preserve life and support recovery.</p><p>It encompasses three primary areas:</p><ul><li><strong>Assessment &amp; Stabilization:</strong> Identifying wounds and conditions; stopping bleeding; setting fractures; cleaning injuries; preventing infection; and stabilizing a creature at the brink of death.</li><li><strong>Restoration &amp; Treatment:</strong> Applying poultices, salves, herbal remedies, and restorative draughts; treating poison exposure and disease symptoms; and accelerating natural recovery through proper care.</li><li><strong>Field Medicine &amp; Recovery:</strong> Managing limited supplies; tending multiple patients under pressure; preparing travel-ready medical kits; and overseeing rest and convalescence in harsh environments.</li></ul><p>Healing supports the creation and use of restorative items, medical supplies, and recovery-focused consumables. It emphasizes preservation of life and physical recovery rather than alchemical experimentation or magical spellcasting.</p>",
+      "skillEnabled": true,
+      "skillPanelColor": "rgba(0, 0, 0, 0.2)",
+      "skillBadgeColor": "rgba(0, 0, 0, 0.2)",
+      "skillKit": "Healer's Kit",
+      "slots": [
+        {
+          "slotID": "healing-basic-care",
+          "index": 1,
+          "value": 0,
+          "name": "Basic Care",
+          "description": "You possess a <strong>Healer's Kit</strong> and the knowledge to use it properly. You can stabilize wounds, clean injuries, and provide competent field treatment.",
+          "requirement": "Healer's Kit",
+          "cost": 0,
+          "slotSkillLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-kit-medical"
+        }
+      ]
+    },
 
     {
       "id": "Smithing",

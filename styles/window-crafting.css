@@ -15,8 +15,8 @@
     --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-06.webp'); 
     --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-05.webp'); 
     --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-04.webp');   
-    --craft-widget-image-heat: url('../images/backgrounds/background-widget-fire.webp');  
-    --craft-widget-image-grind: url('../images/backgrounds/background-widget-herbs.webp'); 
+    --craft-widget-image-heat: url('../images/backgrounds/background-widget-heat-coals.webp');  
+    --craft-widget-image-grind: url('../images/backgrounds/background-widget-grind-herbs.webp'); 
     background: var(--craft-background) !important;
     border: 0 solid var(--craft-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -447,6 +447,34 @@
     color: #e0e0e0;
     font-family: inherit;
     font-size: 0.85em;
+}
+
+/* Artificer namespaced dropdown formatting (only affects this module's crafting window) */
+.artificer-crafting-window .artificer-crafting-dropdown,
+.window-artificer-crafting .artificer-crafting-dropdown {
+    min-height: 28px;
+    padding: 6px 10px;
+    cursor: pointer;
+    appearance: auto;
+}
+.artificer-crafting-window .artificer-crafting-dropdown option,
+.window-artificer-crafting .artificer-crafting-dropdown option {
+    padding: 4px 8px;
+    background: var(--color-background-dark, #1a1a1a);
+    color: var(--color-text-light, #e0e0e0);
+}
+.artificer-crafting-window .artificer-crafting-dropdown optgroup,
+.window-artificer-crafting .artificer-crafting-dropdown optgroup {
+    padding: 6px 8px 2px 8px;
+    font-weight: 700;
+    font-size: 0.9em;
+    color: var(--color-text-heading, #c9c9c9);
+    background: var(--color-background-darker, #111);
+    border-bottom: 1px solid var(--craft-border-color, rgba(255,255,255,0.1));
+}
+.artificer-crafting-window .artificer-crafting-dropdown optgroup option,
+.window-artificer-crafting .artificer-crafting-dropdown optgroup option {
+    padding-left: 16px;
 }
 
 .crafting-zone-ingredients-list {

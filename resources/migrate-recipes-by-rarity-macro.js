@@ -1,24 +1,26 @@
 /**
  * Artificer: Migrate Recipes by Rarity
  *
- * Migrates recipe pages from the three skill journals into new journals by rarity:
+ * WORLD JOURNALS ONLY. Never reads or writes compendiums.
+ * Migrates recipe pages from the three skill journals (in the world) into new world journals by rarity:
  * - Herbalist Recipes  → Herbalist Recipes - Common, Herbalist Recipes - Uncommon, etc.
  * - Alchemist Recipes → Alchemist Recipes - Common, Alchemist Recipes - Uncommon, etc.
  * - Poisoncraft Recipes → Poisoncraft Recipes - Common, Poisoncraft Recipes - Uncommon, etc.
  *
- * Only processes journals that are in the module's recipe source (world journal folder
- * or configured compendiums). Target journals are created in the world. Pages from
- * world journals are moved (removed from source); pages from compendiums are copied
- * (compendium unchanged). Pages are then sorted alphabetically by name in each target.
+ * Only processes world journals in the module's recipe journal folder (or all world journals if no folder set).
+ * Target journals are created in the world. Source pages are moved (removed from source). Pages are sorted alphabetically.
  *
  * 1. Back up your world before running.
- * 2. Ensure Artificer has Recipe Journal / Recipe Journal Folder (or compendiums) set.
+ * 2. Ensure Artificer has Recipe Journal Folder set if you want to limit which world journals are used.
  * 3. Create a Macro (Script), paste this script, run as GM.
  *
  * Set dryRun: true to preview without moving or deleting anything.
  */
 
 const MODULE_ID = 'coffee-pub-artificer';
+
+/** Set true to preview without moving or deleting anything. */
+const dryRun = false;
 
 /** Artificer recipe journal base names we migrate (exact match). */
 const SOURCE_JOURNAL_NAMES = ['Herbalist Recipes', 'Alchemist Recipes', 'Poisoncraft Recipes'];
@@ -44,59 +46,33 @@ async function getArtificerAPI(maxWaitMs = 5000) {
     return game.modules.get(MODULE_ID)?.api ?? null;
 }
 
-/** Collect Artificer recipe source journals (world + compendiums) whose name is in SOURCE_JOURNAL_NAMES. */
+/** Collect world journals only whose name is in SOURCE_JOURNAL_NAMES. Never touches compendiums. */
 async function getSourceJournals() {
-    const source = game.settings.get(MODULE_ID, 'recipeStorageSource') ?? 'compendia-then-world';
-    const loadWorld = ['world-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
-    const loadCompendia = ['compendia-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
     const nameSet = new Set(SOURCE_JOURNAL_NAMES);
-    const list = [];
-
-    if (loadWorld && game.journal) {
-        const folderId = game.settings.get(MODULE_ID, 'recipeJournalFolder') ?? '';
-        let journals;
-        if (folderId && game.folders) {
-            const allowed = new Set([folderId]);
-            const folders = game.folders.filter((f) => f.type === 'JournalEntry');
-            let added;
-            do {
-                added = 0;
-                for (const f of folders) {
-                    if (f.folder?.id && allowed.has(f.folder.id) && !allowed.has(f.id)) {
-                        allowed.add(f.id);
-                        added++;
-                    }
+    const folderId = game.settings.get(MODULE_ID, 'recipeJournalFolder') ?? '';
+    let journals;
+    if (folderId && game.folders) {
+        const allowed = new Set([folderId]);
+        const folders = game.folders.filter((f) => f.type === 'JournalEntry');
+        let added;
+        do {
+            added = 0;
+            for (const f of folders) {
+                if (f.folder?.id && allowed.has(f.folder.id) && !allowed.has(f.id)) {
+                    allowed.add(f.id);
+                    added++;
                 }
-            } while (added > 0);
-            journals = game.journal.filter(
-                (j) => j.documentName === 'JournalEntry' && j.uuid && j.folder?.id && allowed.has(j.folder.id)
-            );
-        } else {
-            journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && j.uuid);
-        }
-        for (const j of journals) {
-            const name = (j.name || '').trim();
-            if (nameSet.has(name)) list.push({ uuid: j.uuid, name, isWorld: true, journal: j });
-        }
-    }
-
-    if (loadCompendia) {
-        const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE_ID, 'numRecipeCompendiums'), 10) || 0));
-        for (let i = 1; i <= num; i++) {
-            const cid = game.settings.get(MODULE_ID, `recipeCompendium${i}`) ?? 'none';
-            if (!cid || cid === 'none') continue;
-            const pack = game.packs.get(cid);
-            if (!pack || pack.documentName !== 'JournalEntry') continue;
-            const docs = await pack.getDocuments();
-            for (const doc of docs) {
-                if (!doc?.uuid) continue;
-                const name = (doc.name || '').trim();
-                if (nameSet.has(name)) list.push({ uuid: doc.uuid, name, isWorld: false, journal: doc });
             }
-        }
+        } while (added > 0);
+        journals = game.journal.filter(
+            (j) => j.documentName === 'JournalEntry' && j.uuid && j.folder?.id && allowed.has(j.folder.id)
+        );
+    } else {
+        journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && j.uuid);
     }
-
-    return list;
+    return journals
+        .filter((j) => nameSet.has((j.name || '').trim()))
+        .map((j) => ({ uuid: j.uuid, name: (j.name || '').trim(), isWorld: true, journal: j }));
 }
 
 /** Get or create a world journal by name (optionally in folder). */
@@ -124,8 +100,6 @@ async function sortJournalPagesByName(journal) {
 }
 
 (async () => {
-    const dryRun = false; // Set true to preview only
-
     if (!game.user?.isGM) {
         ui.notifications.warn('Only a GM can run the Migrate Recipes by Rarity macro.');
         return;
@@ -206,7 +180,7 @@ async function sortJournalPagesByName(journal) {
     let deleted = 0;
     const errors = [];
 
-    for (const { sourceJournal, page, targetJournalName, isWorld } of toMove) {
+    for (const { sourceJournal, page, targetJournalName } of toMove) {
         try {
             const targetJournal = await getOrCreateWorldJournal(targetJournalName, folderId);
             const content = page.text?.content ?? page.text?.markdown ?? '';
@@ -218,7 +192,7 @@ async function sortJournalPagesByName(journal) {
                 }
             ]);
             created++;
-            if (isWorld && sourceJournal.id) {
+            if (sourceJournal.id) {
                 try {
                     await sourceJournal.deleteEmbeddedDocuments('JournalEntryPage', [page.id]);
                     deleted++;
