@@ -57,6 +57,7 @@
     "scripts/data/models/model-essence.js",
     "scripts/data/models/model-recipe.js",
     "scripts/data/models/model-blueprint.js",
+    "scripts/data/potion-brewing-recipe-data.js",
     "scripts/data/storage/storage-ingredients.js",
     "scripts/data/storage/storage-recipes.js",
     "scripts/data/storage/storage-blueprints.js",

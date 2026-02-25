@@ -101,5 +101,15 @@ export class RecipeManager {
     async cleanRecipeJournalPages(options = {}) {
         return this._storage.cleanAndRewriteRecipePages(options);
     }
+
+    /**
+     * Apply Potion Brewing (GM Binder PDF) data to recipe journal pages: set RARITY, SKILLLEVEL, SUCCESSDC, and Skill.
+     * Only world journals in the configured recipe folder. Lookup by recipe/result name from embedded JSON.
+     * @param {Object} [options] - { dryRun: boolean }
+     * @returns {Promise<{ updated: number, skipped: number, notInData: number, errors: Array<{ name: string, error: string }> }>}
+     */
+    async applyPotionBrewingData(options = {}) {
+        return this._storage.applyPotionBrewingData(options);
+    }
 }
 
