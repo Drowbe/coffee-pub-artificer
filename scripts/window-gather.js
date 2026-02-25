@@ -93,7 +93,8 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return {
             biomeOptions: getBiomeOptionsForMultiselect(selectedBiomes),
             componentTypeOptions,
-            dc: saved.dc
+            dc: saved.dc,
+            isGM: game.user.isGM
         };
     }
 
@@ -156,6 +157,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _requestRoll() {
+        if (!game.user.isGM) return;
         BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const root = this._getGatherRoot();
         const dcEl = root?.querySelector('#gather-dc');

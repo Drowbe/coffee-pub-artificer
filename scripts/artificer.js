@@ -188,14 +188,15 @@ function registerMenubarIntegration() {
         }
     });
 
-    // Register secondary bar item for creating items
+    // Register secondary bar item for creating items (GM only)
     const createItemItemId = 'artificer-create-item';
     const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
         icon: 'fa-solid fa-plus-circle',
         title: 'Create Item',
         moduleId: MODULE.ID,
-        visible: true,
+        visible: game.user.isGM,
         onClick: function() {
+            if (!game.user.isGM) return;
             // Open the item creation form
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Create Item button clicked`, null, false, false);
             
@@ -214,14 +215,15 @@ function registerMenubarIntegration() {
         }
     });
     
-    // Register secondary bar item for importing recipes
+    // Register secondary bar item for importing recipes (GM only)
     const importRecipeItemId = 'artificer-import-recipes';
     const importRecipeRegistered = blacksmith.registerSecondaryBarItem(barType, importRecipeItemId, {
         icon: 'fa-solid fa-book-open',
         title: 'Import Recipes',
         moduleId: MODULE.ID,
-        visible: true,
+        visible: game.user.isGM,
         onClick: function() {
+            if (!game.user.isGM) return;
             const win = new ArtificerRecipeImportWindow();
             win.render(true);
         }
@@ -240,14 +242,15 @@ function registerMenubarIntegration() {
         }
     });
 
-    // Register secondary bar item for Roll for Components (gather)
+    // Register secondary bar item for Roll for Components (gather) — GM only
     const gatherItemId = 'artificer-roll-components';
     const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
         icon: 'fa-solid fa-leaf',
         title: 'Roll for Components',
         moduleId: MODULE.ID,
-        visible: true,
+        visible: game.user.isGM,
         onClick: function() {
+            if (!game.user.isGM) return;
             const win = new GatherWindow();
             win.render(true);
         }

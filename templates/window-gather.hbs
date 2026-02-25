@@ -42,9 +42,11 @@
         <div class="gather-window-action-bar">
             <div class="gather-window-action-left"></div>
             <div class="gather-window-action-right">
+                {{#if isGM}}
                 <button type="button" class="gather-window-btn-primary" data-action="requestRoll" title="Open Request a Roll for selected tokens">
                     <i class="fa-solid fa-dice-d20"></i> Request Roll
                 </button>
+                {{/if}}
             </div>
         </div>
     </section>
