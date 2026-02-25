@@ -64,6 +64,15 @@ async function getArtificerAPI(maxWaitMs = 5000) {
         : `Updated ${result.updated} page(s), ${result.skipped} skipped, ${result.notInData} not in PDF data, ${result.errors.length} error(s).`;
     ui.notifications.info(msg);
 
+    if (result.skippedNames?.length > 0) {
+        console.log(`${MODULE_ID} Apply Potion Brewing — skipped:`, result.skippedNames);
+    }
+    if (result.notInDataNames?.length > 0) {
+        console.log(`${MODULE_ID} Apply Potion Brewing — not in PDF data:`, result.notInDataNames);
+    }
+    if ((result.skippedNames?.length > 0 || result.notInDataNames?.length > 0)) {
+        ui.notifications.info('Skipped / not-in-data details in console (F12).');
+    }
     if (result.errors.length > 0) {
         console.warn(`${MODULE_ID} Apply Potion Brewing errors:`, result.errors);
         result.errors.forEach(({ name, error }) => {

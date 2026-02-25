@@ -344,11 +344,11 @@ export class RecipeStorage {
      * When no folder is set, uses the single recipe journal name. Lookup by recipe name or result name.
      * @param {Object} [options]
      * @param {boolean} [options.dryRun=false] - If true, do not write; only report what would be updated.
-     * @returns {Promise<{ updated: number, skipped: number, notInData: number, errors: Array<{ name: string, error: string }> }>}
+     * @returns {Promise<{ updated: number, skipped: number, notInData: number, skippedNames: string[], notInDataNames: string[], errors: Array<{ name: string, error: string }> }>}
      */
     async applyPotionBrewingData(options = {}) {
         const dryRun = !!options.dryRun;
-        const result = { updated: 0, skipped: 0, notInData: 0, errors: [] };
+        const result = { updated: 0, skipped: 0, notInData: 0, skippedNames: [], notInDataNames: [], errors: [] };
         const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
         const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
         if (!game.journal) {
@@ -370,22 +370,26 @@ export class RecipeStorage {
             for (const page of pages) {
                 if (page.type !== 'text') {
                     result.skipped++;
+                    result.skippedNames.push(`${page.name ?? page.id} (non-text page)`);
                     continue;
                 }
                 const rawContent = page.text?.content ?? page.text?.markdown ?? '';
                 if (!rawContent?.trim()) {
                     result.skipped++;
+                    result.skippedNames.push(`${page.name ?? page.id} (empty content)`);
                     continue;
                 }
                 try {
                     const recipe = await RecipeParser.parseSinglePage(page, rawContent, journal);
                     if (!recipe) {
                         result.skipped++;
+                        result.skippedNames.push(`${page.name ?? page.id} (unparseable recipe)`);
                         continue;
                     }
                     const pdfData = getPotionBrewingData(recipe.name ?? '', recipe.resultItemName ?? '');
                     if (!pdfData) {
                         result.notInData++;
+                        result.notInDataNames.push(recipe.name || recipe.resultItemName || page.name || page.id);
                         continue;
                     }
                     recipe.rarity = pdfData.rarity;
