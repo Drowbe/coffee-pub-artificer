@@ -5,10 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.0.7]
+## [13.0.7] - Skills window: perks, kit indicators, Hide Unavailable
+
+### Added
+- **Skills Window — Hide Unavailable:** Toggle in the header (next to Points) to hide skill panels where the actor doesn't have the required kit. Uses the same oval switch style as other module toggles. Points remain on the far right.
+- **Skills Window — craft icon on badge:** Hammer icon overlay on each skill badge (same style as perk cost badges). Green when the actor has the required kit (or skill has no kit); red when the kit is missing or no character is selected. Tooltip: "Has required kit" / "Missing required kit".
+- **Skills Window — kit-missing indicator:** When the actor doesn't have the required kit for a skill, the panel is dimmed, shows a toolbox icon next to the skill name, and has a hover title listing the missing kit. Skills without a required kit are unchanged.
 
 ### Changed
 - **Skills Window — slot → perk:** Renamed the skills UI concept from "slot" to "perk" everywhere (data: `slots`→`perks`, `slotID`→`perkID`, `slotSkillLearnedBackgroundColor`→`perkLearnedBackgroundColor` in `resources/skills-details.json`; code: `learnSlot`/`unlearnSlot`→`learnPerk`/`unlearnPerk`, CSS classes `.skills-slot-*`→`.skills-perk-*`, `.slot-applied`→`.perk-applied`). Actor flags now use `learnedPerks`; legacy `learnedSlots` is migrated automatically on first read.
+
+### Fixed
+- **Skills Window — kit state:** Craft icon and panel now correctly show red (missing kit) when no character is selected and the skill requires a kit; green only when the selected actor has the kit or the skill has no kit requirement.
+- **Skills Window — Hide Unavailable switch:** Change listener is re-attached after each render so the toggle continues to filter unavailable skills when the window re-renders (e.g. after selecting a skill or applying changes).
 
 ## [13.0.6] - Compendium updates
 
