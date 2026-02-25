@@ -222,9 +222,9 @@
                     </div>
                     {{#if selectedRecipeMetadata.length}}
                     <hr class="crafting-details-divider" />
-                    <div class="crafting-recipe-metadata">
+                    <div class="crafting-detail-rows">
                         {{#each selectedRecipeMetadata}}
-                        <div class="crafting-metadata-line">{{this}}</div>
+                        <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
                         {{/each}}
                     </div>
                     {{/if}}
@@ -241,7 +241,7 @@
                             <div class="crafting-ingredient-row-info">
                                 <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
                                 {{#if lastResult.item}}
-                                <span class="crafting-ingredient-row-qty">×1</span>
+                                <span class="crafting-ingredient-row-qty">x1</span>
                                 {{else}}
                                 <span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>
                                 {{/if}}
@@ -250,7 +250,7 @@
                     </div>
                     {{else}}
                     {{#unless selectedRecipeData}}
-                    <div class="crafting-zone-empty">Select a recipe or craft to see result.</div>
+                    <div class="crafting-zone-empty">Select a recipe or craft to see the details of the recipe.</div>
                     {{/unless}}
                     {{/if}}
                 </div>

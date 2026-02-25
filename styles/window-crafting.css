@@ -219,9 +219,10 @@
 }
 
 .crafting-recipe-name {
-    font-weight: 600;
-    font-size: 1em;
+    font-weight: 900;
+    font-size: 1.4em;
     color: var(--craft-accent-color);
+    text-transform: uppercase;
 }
 
 .crafting-recipe-result-name {
@@ -255,13 +256,36 @@
     padding-left: 1em;
 }
 
-.crafting-recipe-metadata {
-    font-size: 0.8em;
-    color: #999;
+/* Detail rows (label + value box, like Skills window) */
+.crafting-detail-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 8px 0;
 }
 
-.crafting-metadata-line {
-    line-height: 1.4;
+.crafting-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+}
+
+.crafting-detail-label {
+    flex: 0 0 70px;
+    font-weight: 600;
+    color: var(--craft-accent-color);
+    text-align: right;
+}
+
+.crafting-detail-value {
+    flex: 1;
+    min-width: 0;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(68, 68, 68, 0.05);
+    color: rgba(224, 224, 224, 0.95);
 }
 
 .crafting-zone-empty {

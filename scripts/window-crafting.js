@@ -554,17 +554,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             : null;
         const selectedRecipeMetadata = r
             ? [
-                r.skill ? `Skill: ${r.skill}` : null,
-                r.skillKit ? `Skill Kit: ${r.skillKit}` : null,
-                r.apparatusName ? `Apparatus: ${r.apparatusName}` : null,
-                r.containerName ? `Container: ${r.containerName}` : null,
-                r.processType ? `Process: ${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() : null,
-                r.time != null ? `Time: ${r.time}s` : null,
-                r.skillLevel != null ? `Skill Level: ${r.skillLevel}` : null,
-                r.successDC != null ? `DC: ${r.successDC}` : null,
-                r.goldCost != null ? `Gold Cost: ${r.goldCost}` : null,
-                r.workHours != null ? `Work Hours: ${r.workHours}` : null,
-                r.rarity ? `Rarity: ${r.rarity}` : null
+                r.skill ? { label: 'Skill', value: r.skill } : null,
+                r.skillKit ? { label: 'Skill Kit', value: r.skillKit } : null,
+                r.apparatusName ? { label: 'Apparatus', value: r.apparatusName } : null,
+                r.containerName ? { label: 'Container', value: r.containerName } : null,
+                r.processType ? { label: 'Process', value: `${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() } : null,
+                r.time != null ? { label: 'Time', value: `${r.time}s` } : null,
+                r.skillLevel != null ? { label: 'Skill Level', value: String(r.skillLevel) } : null,
+                r.successDC != null ? { label: 'DC', value: String(r.successDC) } : null,
+                r.goldCost != null ? { label: 'Gold Cost', value: String(r.goldCost) } : null,
+                r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null,
+                r.rarity ? { label: 'Rarity', value: r.rarity } : null
             ].filter(Boolean)
             : [];
 
