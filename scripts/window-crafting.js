@@ -847,52 +847,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             }
         }, true);
 
-        document.addEventListener('keydown', (e) => {
-            const w = _currentCraftingWindowRef;
-            if (!w) return;
-            const root = w._getCraftingRoot();
-            if (!root?.contains?.(e.target)) return;
-            if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-            const el = e.target;
-            if (el?.matches?.('input, textarea, select')) return;
-
-            const inRecipes = el.closest?.('.crafting-zone-recipes');
-            const inIngredients = el.closest?.('.crafting-zone-ingredients');
-
-            if (inRecipes) {
-                const list = inRecipes.querySelector('.crafting-zone-recipes-list');
-                const rows = list ? [...list.querySelectorAll('.crafting-recipe-row[data-recipe-id]')] : [];
-                if (rows.length === 0) return;
-                const selected = list?.querySelector('.crafting-recipe-row-selected');
-                let idx = selected ? rows.indexOf(selected) : -1;
-                if (e.key === 'ArrowDown') idx = idx < rows.length - 1 ? idx + 1 : idx < 0 ? 0 : idx;
-                else if (e.key === 'ArrowUp') idx = idx > 0 ? idx - 1 : idx < 0 ? rows.length - 1 : idx;
-                if (idx >= 0 && idx < rows.length && rows[idx]?.dataset?.recipeId) {
-                    e.preventDefault();
-                    w._selectRecipe(rows[idx].dataset.recipeId).then(() => {
-                        const newRow = root.querySelector('.crafting-recipe-row-selected');
-                        if (newRow && typeof newRow.focus === 'function') newRow.focus();
-                    }).catch(() => {});
-                }
-                return;
-            }
-
-            if (inIngredients) {
-                const list = inIngredients.querySelector('.crafting-zone-ingredients-list');
-                const rows = list ? [...list.querySelectorAll('.crafting-ingredient-row[data-item-id]')] : [];
-                if (rows.length === 0) return;
-                const current = el.closest?.('.crafting-ingredient-row');
-                let idx = current ? rows.indexOf(current) : -1;
-                if (e.key === 'ArrowDown') idx = idx < rows.length - 1 ? idx + 1 : idx < 0 ? 0 : idx;
-                else if (e.key === 'ArrowUp') idx = idx > 0 ? idx - 1 : idx < 0 ? rows.length - 1 : idx;
-                if (idx >= 0 && idx < rows.length) {
-                    e.preventDefault();
-                    const row = rows[idx];
-                    if (row && typeof row.focus === 'function') row.focus();
-                }
-            }
-        }, true);
-
         document.addEventListener('change', (e) => {
             const w = _currentCraftingWindowRef;
             if (!w) return;
@@ -998,6 +952,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return this._getCrafterActor();
     }
 
+    /** Call render() and restore the components list scroll position so it doesn't jump to top. */
+    async _renderPreservingIngredientsScroll() {
+        const el = this.element?.querySelector?.('.crafting-zone-ingredients-list');
+        const scrollTop = el ? el.scrollTop : 0;
+        await this.render();
+        if (scrollTop > 0 && this.element) {
+            const list = this.element.querySelector('.crafting-zone-ingredients-list');
+            if (list) list.scrollTop = scrollTop;
+        }
+    }
+
     _addToSlot(itemId) {
         const actor = this._getActor();
         if (!actor) return;
@@ -1017,7 +982,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (idx === -1) return;
             this.selectedSlots[idx] = { item, count: 1 };
         }
-        this.render();
+        this._renderPreservingIngredientsScroll();
     }
 
     _removeFromSlot(slotIndex) {
@@ -1037,7 +1002,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
         if (family !== 'apparatus' && f?.type !== 'apparatus') return;
         this.selectedApparatus = item;
-        this.render();
+        this._renderPreservingIngredientsScroll();
     }
 
     _addToContainer(itemId) {
@@ -1049,7 +1014,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
         if (family !== 'container' && f?.type !== 'resultContainer' && f?.type !== 'container') return;
         this.selectedContainer = item;
-        this.render();
+        this._renderPreservingIngredientsScroll();
     }
 
     _addToTool(itemId) {
@@ -1058,7 +1023,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const item = actor.items.get(itemId);
         if (!item) return;
         this.selectedTool = item;
-        this.render();
+        this._renderPreservingIngredientsScroll();
     }
 
     _removeApparatus() { this.selectedApparatus = null; this.render(); }
@@ -1270,6 +1235,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         if (this.lastResult?.success) {
             ui.notifications.info(`Created: ${this.lastResult.name}`);
+            if (typeof BlacksmithUtils?.playSound === 'function' && typeof BlacksmithConstants !== 'undefined' && BlacksmithConstants.SOUNDSUCCESS) {
+                BlacksmithUtils.playSound(BlacksmithConstants.SOUNDSUCCESS, BlacksmithConstants.SOUNDVOLUMENORMAL ?? 0.7);
+            }
         } else if (this.lastResult) {
             ui.notifications.warn(this.lastResult.name);
         }
