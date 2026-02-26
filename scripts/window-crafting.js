@@ -8,6 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
+import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -231,12 +232,14 @@ async function getRecipeSourceJournals() {
 async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new Map()) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];
+    const learnedPerkIds = actor ? await api?.skills?.getLearnedPerks?.(actor) ?? [] : [];
+
     const results = await Promise.all(recipes.map(async (r) => {
         const tags = (r.traits?.length ? r.traits : r.ingredients?.map((i) => i.name) ?? [])
             .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
         const resultName = (r.resultItemName || r.name || '').trim();
         const resultItem = resultName ? await resolveItemByName(resultName) : null;
-        const resultImg = resultItem?.img ?? 'icons/svg/item-bag.svg';
+        let resultImg = resultItem?.img ?? 'icons/svg/item-bag.svg';
         const journalUuid = getRecipeJournalUuid(r);
         let journalName = journalByUuid.get(journalUuid) ?? '';
         if (!journalName && journalUuid) {
@@ -247,6 +250,21 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
                 /* ignore */
             }
         }
+
+        let recipeHiddenByPerk = false;
+        let hiddenMessage = null;
+        if (r.skill && typeof r.skill === 'string') {
+            const learnedForSkill = getLearnedPerkIdsForSkill(learnedPerkIds, r.skill);
+            const rules = await getEffectiveCraftingRules(r.skill, learnedForSkill);
+            const skillLevel = r.skillLevel != null ? Number(r.skillLevel) : 0;
+            const canView = rules.canViewTier(skillLevel);
+            if (!canView) {
+                recipeHiddenByPerk = true;
+                hiddenMessage = 'You do not have the perk required to view this recipe.';
+                resultImg = 'icons/svg/item-bag.svg';
+            }
+        }
+
         return {
             recipeId: r.id,
             tags: tags.length ? tags : [r.name],
@@ -255,7 +273,9 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             journalName,
             journalUuid,
             selected: selectedRecipeId === r.id,
-            canCraft: recipeCanCraft(actor, r)
+            canCraft: recipeCanCraft(actor, r),
+            recipeHiddenByPerk,
+            hiddenMessage
         };
     }));
     return results;
@@ -624,13 +644,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const cacheStatus = getCacheStatus();
         const journalUuidForRecipe = r ? getRecipeJournalUuid(r) : '';
         const selectedRecipeJournalName = (r && journalByUuid.get(journalUuidForRecipe)) ?? '';
+        const selectedCombo = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
         const selectedRecipeData = r
             ? {
                 name: r.name ?? '',
                 resultName: r.resultItemName ?? r.name ?? '',
                 journalName: selectedRecipeJournalName,
                 traits: r.traits ?? [],
-                description: r.description ?? ''
+                description: r.description ?? '',
+                recipeHiddenByPerk: selectedCombo?.recipeHiddenByPerk ?? false,
+                hiddenMessage: selectedCombo?.hiddenMessage ?? null
             }
             : null;
         /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */

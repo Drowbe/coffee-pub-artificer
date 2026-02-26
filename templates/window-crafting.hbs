@@ -44,7 +44,7 @@
                 </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
-                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
+                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-row-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
                             <span class="crafting-recipe-result">{{this.result}}</span>
@@ -212,6 +212,9 @@
                     {{#if selectedRecipeData}}
                     
                     <div class="crafting-recipe-details">
+                        {{#if selectedRecipeData.recipeHiddenByPerk}}
+                        <div class="crafting-recipe-hidden-message">{{selectedRecipeData.hiddenMessage}}</div>
+                        {{else}}
                         <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
                         {{#if selectedRecipeData.journalName}}
                         <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
@@ -234,7 +237,9 @@
                         <hr class="crafting-details-divider" />
                         <div class="crafting-recipe-description">{{{selectedRecipeData.description}}}</div>
                         {{/if}}
+                        {{/if}}
                     </div>
+                    {{#unless selectedRecipeData.recipeHiddenByPerk}}
                     {{#if selectedRecipeMetadata.length}}
                     <hr class="crafting-details-divider" />
                     <div class="crafting-detail-rows">
@@ -243,6 +248,7 @@
                         {{/each}}
                     </div>
                     {{/if}}
+                    {{/unless}}
                     {{/if}}
                     {{#if lastResult}}
                     <hr class="crafting-details-divider" />

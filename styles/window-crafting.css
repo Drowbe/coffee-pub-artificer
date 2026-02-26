@@ -225,6 +225,12 @@
     text-transform: uppercase;
 }
 
+.crafting-recipe-hidden-message {
+    font-style: italic;
+    color: rgba(201, 201, 201, 0.85);
+    margin: 0;
+}
+
 .crafting-recipe-journal-name {
     font-size: 0.85em;
     color: rgba(201, 201, 201, 0.75);
@@ -335,6 +341,10 @@
 .crafting-recipe-row-selected {
     border-color: var(--craft-accent-color);
     background: rgba(172, 159, 129, 0.15);
+}
+
+.crafting-recipe-row-hidden .crafting-recipe-result-img {
+    opacity: 0.6;
 }
 
 .crafting-recipe-craftable-icon {

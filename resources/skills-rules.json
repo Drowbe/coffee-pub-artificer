@@ -1,0 +1,31 @@
+{
+    "schemaVersion": 1,
+    "skills": {
+        "Herbalism": {
+            "perks": {
+                "herbalism-field-forager": {
+                    "recipeTierAccess": [0, 1]
+                },
+                "herbalism-green-archive-initiate": {
+                    "recipeTierAccess": [0, 7]
+                },
+                "herbalism-keeper-hidden-remedies": {
+                    "recipeTierAccess": [8, 14]
+                },
+                "herbalism-archdruid-verdant-codex": {
+                    "recipeTierAccess": [15, 20]
+                },
+                "herbalism-conservator-green-codex": {
+                    "craftingDCModifier": -1,
+                    "ingredientLossOnFail": "half"
+                },
+                "herbalism-experimental-botanist": {
+                    "experimentalCrafting": {
+                        "allowed": true,
+                        "dcModifier": 3
+                    }
+                }
+            }
+        }
+    }
+}

@@ -2,7 +2,7 @@
   "id": "coffee-pub-artificer",
   "title": "Coffee Pub Artificer",
   "description": "<p>A crafting, recipe, and blueprint system.</p>",
-  "version": "13.0.6",
+  "version": "13.0.8",
   "manifest": "https://github.com/Drowbe/coffee-pub-artificer/releases/latest/download/module.json",
   "download": "https://github.com/Drowbe/coffee-pub-artificer/releases/latest/download/coffee-pub-artificer.zip",
   "url": "https://github.com/Drowbe/coffee-pub-artificer",
@@ -82,6 +82,7 @@
     "scripts/manager-skills.js",
     "scripts/manager-gather.js",
     "scripts/window-gather.js",
+    "scripts/skills-rules.js",
     "scripts/api-artificer.js",
     "scripts/migrations/migrate-artificer-flags.js",
     "scripts/artificer.js"

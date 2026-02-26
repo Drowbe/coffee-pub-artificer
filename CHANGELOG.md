@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.0.8] - Skills rules (Option A): recipe visibility by perk
+
+### Added
+- **skills-rules.json:** New `resources/skills-rules.json` (Option A) keyed by skill then perkID. Herbalism perks define `recipeTierAccess`, `craftingDCModifier`, `ingredientLossOnFail`, and `experimentalCrafting` for use by the crafting window.
+- **Skills rules loader:** New `scripts/skills-rules.js` loads and caches the rules file and exposes `getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)` (tier access union, DC modifier, experimental flag, ingredient loss on fail). API exposes `getEffectiveCraftingRules(skillId, learnedPerkIds)` for callers that pass all learned perk IDs.
+- **Crafting window — recipe visibility by perk:** For each recipe with a `skill` and `skillLevel`, the window uses the actor’s learned perks for that skill and the rules to determine if the recipe tier is visible. If not (and no Experimental Botanist bypass), the recipe row shows a generic icon, gets class `crafting-recipe-row-hidden`, and the Details pane shows: “You do not have the perk required to view this recipe.” Metadata (DC, skill kit, etc.) is hidden for locked recipes.
+
+### Changed
+- **module.json:** Added `scripts/skills-rules.js` to esmodules (before api-artificer).
+
 ## [13.0.7] - Skills window: perks, kit indicators, Hide Unavailable
 
 ### Added
