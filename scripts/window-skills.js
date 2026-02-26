@@ -343,6 +343,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             actorName,
             actorImg,
             availablePoints: effectivePoints,
+            canEditPoints: !!actor && !!game.user?.isGM,
             skillPaths: visibleSkillPaths,
             selectedDetail: finalSelectedDetail,
             skillChanges,
@@ -502,6 +503,46 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         w.render();
     }
 
+    static async _actionEditPoints(event, target) {
+        const w = _currentSkillsWindowRef;
+        if (!w || !w._actor || !game.user?.isGM) return;
+        event?.preventDefault?.();
+        const actor = w._actor;
+        const current = await _skillManager.getPointsRemaining(actor);
+        const inputId = `skills-edit-points-${foundry.utils.randomID()}`;
+        new Dialog({
+            title: 'Edit skill points',
+            content: `
+                <p class="skills-edit-points-desc">Points remaining for <strong>${actor.name ?? 'this character'}</strong>:</p>
+                <div class="form-group">
+                    <label for="${inputId}">Points</label>
+                    <input type="number" id="${inputId}" name="points" value="${current}" min="0" step="1" style="max-width:6em;" />
+                </div>
+            `,
+            buttons: {
+                set: {
+                    icon: '<i class="fas fa-check"></i>',
+                    label: 'Set',
+                    callback: async (html) => {
+                        const raw = (html?.jquery ? html.find(`#${inputId}`).val() : html?.querySelector?.(`#${inputId}`)?.value) ?? '';
+                        const value = parseInt(String(raw).trim(), 10);
+                        if (Number.isNaN(value) || value < 0) {
+                            ui.notifications?.warn?.('Enter a number 0 or greater.');
+                            return;
+                        }
+                        await _skillManager.setPointsRemaining(actor, value);
+                        w.render();
+                    }
+                },
+                cancel: {
+                    icon: '<i class="fas fa-times"></i>',
+                    label: 'Cancel'
+                }
+            },
+            default: 'set'
+        }, { width: 320 }).render(true);
+    }
+
     static _actionSelectSkillBadge(event, target) {
         const w = _currentSkillsWindowRef;
         if (!w) return;
@@ -588,6 +629,14 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (removeUnlearnBtn) {
                 e.preventDefault?.();
                 SkillsWindow._actionRemovePendingUnlearn.call(null, e, removeUnlearnBtn);
+                return;
+            }
+            const editPointsBtn = e.target?.closest?.('[data-action="editPoints"]');
+            if (editPointsBtn) {
+                e.preventDefault?.();
+                e.stopPropagation?.();
+                e.stopImmediatePropagation?.();
+                SkillsWindow._actionEditPoints.call(null, e, editPointsBtn);
                 return;
             }
         });

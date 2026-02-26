@@ -28,11 +28,11 @@ async function _loadSkillsDetails() {
     }
 }
 
-const DEFAULT_POINTS = 7;
+const DEFAULT_POINTS = 5;
 
 /**
  * Manager for actor skills stored in actor flags.
- * Tracks learned perks and points remaining (default 7).
+ * Tracks learned perks and points remaining (default 5).
  * Lazy-initializes data on first access; migrates legacy learnedSlots → learnedPerks.
  */
 export class SkillManager {
@@ -78,6 +78,24 @@ export class SkillManager {
     async getPointsRemaining(actor) {
         const data = await this._ensureActorSkills(actor);
         return data.pointsRemaining;
+    }
+
+    /**
+     * Set points remaining for an actor (GM override). Does not change learnedPerks.
+     * @param {Actor} actor - Actor document
+     * @param {number} value - New points remaining (clamped to >= 0)
+     * @returns {Promise<void>}
+     */
+    async setPointsRemaining(actor, value) {
+        if (!actor) return;
+        const data = await this._ensureActorSkills(actor);
+        const points = Math.max(0, Math.floor(Number(value)) || 0);
+        await actor.update({
+            [`flags.${MODULE.ID}.actorSkills`]: {
+                learnedPerks: data.learnedPerks ?? [],
+                pointsRemaining: points
+            }
+        });
     }
 
     /**

@@ -21,7 +21,11 @@
                 </div>
                 <div class="skills-window-header-points">
                     <span class="skills-window-points-label">Points</span>
+                    {{#if canEditPoints}}
+                    <button type="button" class="skills-window-points-value skills-window-points-edit" data-action="editPoints" title="Click to edit (GM)">{{availablePoints}}</button>
+                    {{else}}
                     <span class="skills-window-points-value">{{availablePoints}}</span>
+                    {{/if}}
                 </div>
             </div>
         </div>

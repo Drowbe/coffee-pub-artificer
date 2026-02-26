@@ -150,6 +150,19 @@
     color: var(--skills-accent-color);
 }
 
+.skills-window-points-edit {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+}
+
+.skills-window-points-edit:hover {
+    text-decoration: underline;
+}
+
 /* ----- Body: left panels | right details ----- */
 .skills-window-body {
     display: grid;
