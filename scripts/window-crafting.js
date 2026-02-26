@@ -8,7 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
-import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill } from './skills-rules.js';
+import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill, getRequiredPerkForTier } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -654,6 +654,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const journalUuidForRecipe = r ? getRecipeJournalUuid(r) : '';
         const selectedRecipeJournalName = (r && journalByUuid.get(journalUuidForRecipe)) ?? '';
         const selectedCombo = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
+        let requiredPerk = null;
+        if (r && selectedCombo?.recipeHiddenByPerk && r.skill && r.skillLevel != null) {
+            requiredPerk = await getRequiredPerkForTier(r.skill, Number(r.skillLevel));
+        }
         const selectedRecipeData = r
             ? {
                 name: r.name ?? '',
@@ -663,7 +667,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 description: r.description ?? '',
                 recipeHiddenByPerk: selectedCombo?.recipeHiddenByPerk ?? false,
                 hiddenMessage: selectedCombo?.hiddenMessage ?? null,
-                skillLevel: r.skillLevel != null ? String(r.skillLevel) : null
+                skillLevel: r.skillLevel != null ? String(r.skillLevel) : null,
+                requiredPerk
             }
             : null;
         /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */

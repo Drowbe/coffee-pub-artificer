@@ -227,10 +227,22 @@
                         {{#if selectedRecipeData.journalName}}
                         <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
                         {{/if}}
-                        <div class="crafting-recipe-hidden-message">{{selectedRecipeData.hiddenMessage}}</div>
                         {{#if selectedRecipeData.skillLevel}}
                         <div class="crafting-detail-rows crafting-detail-rows-top">
                             <div class="crafting-detail-row"><span class="crafting-detail-label">Skill Level:</span><span class="crafting-detail-value">{{selectedRecipeData.skillLevel}}</span></div>
+                        </div>
+                        {{/if}}
+                        {{#if selectedRecipeData.requiredPerk}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-required-perk">
+                            <i class="{{selectedRecipeData.requiredPerk.iconClass}} crafting-recipe-required-perk-icon" aria-hidden="true"></i>
+                            <span class="crafting-recipe-required-perk-message">You need the {{selectedRecipeData.requiredPerk.skillName}} {{selectedRecipeData.requiredPerk.perkName}} perk to view this recipe.</span>
+                        </div>
+                        {{else}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-required-perk">
+                            <i class="fa-solid fa-lock crafting-recipe-required-perk-icon" aria-hidden="true"></i>
+                            <span class="crafting-recipe-required-perk-message">{{selectedRecipeData.hiddenMessage}}</span>
                         </div>
                         {{/if}}
                         {{else}}

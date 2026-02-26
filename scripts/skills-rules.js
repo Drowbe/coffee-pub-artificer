@@ -5,9 +5,32 @@
 // rules for a skill + learned perk IDs (tier access, DC modifier, etc.).
 
 const SKILLS_RULES_URL = 'modules/coffee-pub-artificer/resources/skills-rules.json';
+const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
 let _skillsRulesCache = null;
+
+/** @type {{ skills: Array<{ id: string, name: string, perks: Array<{ perkID: string, name: string, icon?: string }> }> } | null } */
+let _skillsDetailsCache = null;
+
+/**
+ * Load skills-details.json. Caches result.
+ * @returns {Promise<{ skills: Array }>}
+ */
+async function loadSkillsDetails() {
+    if (_skillsDetailsCache) return _skillsDetailsCache;
+    try {
+        const res = await fetch(SKILLS_DETAILS_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        _skillsDetailsCache = data;
+        return data;
+    } catch (e) {
+        console.warn('skills-rules: Could not load skills-details.json', e);
+        _skillsDetailsCache = { schemaVersion: 1, skills: [] };
+        return _skillsDetailsCache;
+    }
+}
 
 /**
  * Load skills-rules.json. Caches result.
@@ -125,4 +148,43 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         ingredientLossOnFail,
         ingredientKeptOnSuccess
     };
+}
+
+/**
+ * Get the perk required to view a recipe at the given skill and tier (for locked-recipe message).
+ * Returns the lowest-tier perk that grants recipeTierAccess including the given level.
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {number} skillLevel - Recipe skill level
+ * @returns {Promise<{ skillName: string, perkName: string, iconClass: string } | null>}
+ */
+export async function getRequiredPerkForTier(skillId, skillLevel) {
+    const { skills: rulesSkills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, rulesSkills);
+    const skillRules = key ? rulesSkills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    const level = Number(skillLevel);
+    if (Number.isNaN(level)) return null;
+
+    /** @type {Array<{ perkID: string, min: number, max: number }>} */
+    const tierPerks = [];
+    for (const [perkId, rule] of Object.entries(perks)) {
+        if (!rule || typeof rule !== 'object' || !Array.isArray(rule.recipeTierAccess) || rule.recipeTierAccess.length < 2) continue;
+        const min = Number(rule.recipeTierAccess[0]);
+        const max = Number(rule.recipeTierAccess[1]);
+        if (Number.isNaN(min) || Number.isNaN(max) || level < min || level > max) continue;
+        tierPerks.push({ perkID: perkId, min, max });
+    }
+    if (tierPerks.length === 0) return null;
+    tierPerks.sort((a, b) => a.min - b.min || a.max - b.max);
+    const required = tierPerks[0];
+    const { skills: detailsSkills = [] } = await loadSkillsDetails();
+    const skillDetail = detailsSkills.find((s) => (s.id ?? '') === key || (s.id ?? '').toLowerCase() === (skillId || '').toLowerCase());
+    const perkDetail = skillDetail?.perks?.find((p) => (p.perkID ?? '') === required.perkID);
+    if (!perkDetail) return null;
+    const skillName = skillDetail.name ?? skillId ?? '';
+    const perkName = perkDetail.name ?? required.perkID ?? '';
+    let iconClass = (perkDetail.icon ?? 'fa-lock').toString().trim();
+    if (!iconClass.startsWith('fa-')) iconClass = `fa-${iconClass}`;
+    if (!iconClass.startsWith('fa-solid ') && !iconClass.startsWith('fa-brands ')) iconClass = `fa-solid ${iconClass}`;
+    return { skillName, perkName, iconClass };
 }
