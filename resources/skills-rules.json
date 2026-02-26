@@ -53,12 +53,21 @@
             }
           ]
         },
+
+
+
+
+
+
+
+
+
         "herbalism-gentle-hand-of-the-grove": {
           "title": "Gentle Hand of the Grove",
           "benefits": [
             {
               "title": "Reduced waste",
-              "description": "Reduced waste on failed gathering; no crafting rule effect.",
+              "description": "Reduced waste on failed gathering; You always get an Herb Bundle when gathering fails.",
               "rule": {}
             }
           ]

@@ -15,6 +15,7 @@ import {
     getComponentTypeOptions,
     setPendingGather,
     consumePendingGather,
+    getGatheringRollBonusForActor,
     processGatherRollResult,
     sendGatherFailureCard,
     sendGatherNoPoolCard,
@@ -196,11 +197,27 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             return;
         }
 
-        // Silent mode: pass actors explicitly so the request has challengers without opening the dialog.
-        // API should use options.actors when provided; initialFilter is a fallback for when dialog resolves selection.
-        const actorsForRequest = this._getSelectedCanvasActors();
-        if (!actorsForRequest.length) {
+        // Silent mode: pass token-centric actors with per-actor situationalBonus (from Herbalism perks).
+        const controlledTokens = canvas?.tokens?.controlled ?? [];
+        if (!controlledTokens.length) {
             ui.notifications?.warn('No tokens selected. Select at least one token on the canvas.');
+            return;
+        }
+
+        const actorsForRequest = [];
+        for (const token of controlledTokens) {
+            const actor = token?.actor;
+            if (!actor) continue;
+            const situationalBonus = await getGatheringRollBonusForActor(actor);
+            actorsForRequest.push({
+                id: token.id,
+                actorId: actor.id,
+                name: token.name || actor.name,
+                situationalBonus
+            });
+        }
+        if (!actorsForRequest.length) {
+            ui.notifications?.warn('No valid tokens selected.');
             return;
         }
 
@@ -212,6 +229,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             initialType: 'ability',
             initialValue: 'wis',
             actors: actorsForRequest,
+            groupRoll: false,
             onRollComplete: (payload) => this._onRollComplete(payload)
         });
         this.close();

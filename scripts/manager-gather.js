@@ -244,6 +244,19 @@ export async function sendGatherSuccessCard(actor = null, items = [], appliedPer
 }
 
 /**
+ * Get the gathering roll bonus (from Herbalism perks) for an actor. Used to pre-fill Blacksmith's Request Roll situational bonus.
+ * @param {Actor|null} actor
+ * @returns {Promise<number>}
+ */
+export async function getGatheringRollBonusForActor(actor) {
+    if (!actor) return 0;
+    const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+    const herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
+    const rules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
+    return Math.max(0, Number(rules.gatheringRollBonus) || 0);
+}
+
+/**
  * Process one gather roll: DC check (with perk roll bonus), pick item(s), add to actor. Does NOT send any chat card.
  * Uses Herbalism perks for gathering roll bonus and yield multiplier when the actor has learned perks.
  * @param {number} rollTotal - The roll total (d20 + modifier from sheet)

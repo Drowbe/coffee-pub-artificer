@@ -21,13 +21,15 @@
             <div class="gather-result-item">(none)</div>
             {{/each}}
         </div>
-        {{#if perks}}
         <div class="section-header">{{#if perkIcon}}<i class="fas fa-{{perkIcon}}"></i> {{/if}}{{perkTitle}}</div>
-        <ul>
-            {{#each perks}}
-                <li><strong>{{perkTitle}}{{#if benefitTitle}}{{benefitTitle}}{{/if}}:</strong> {{description}}</li>
-            {{/each}}
-        </ul>
+        {{#if perks}}
+            <ul>
+                {{#each perks}}
+                    <li><strong>{{perkTitle}}{{#if benefitTitle}}{{benefitTitle}}{{/if}}:</strong> {{description}}</li>
+                {{/each}}
+            </ul>
+        {{else}}
+            <p>No applicable perks were available to be applied. Consider invsesting in your gathering skills.</p>
         {{/if}}
     </div>
 </div>
