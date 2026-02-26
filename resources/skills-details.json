@@ -17,9 +17,9 @@
           "index": 1,
           "value": 0,
           "name": "Field Forager",
-          "description": "<p><strong>About the Perk</strong><br>You understand how to read the land. You know where plants prefer to grow, when they are at peak potency, and how to harvest without spoiling their strength. You are no longer guessing, you are gathering with intent.</p><p><strong>Benefits</strong></p><ul><li>You may make Herbalism gathering checks.</li><li>You can learn and craft common herbal recipes.</li><li>You gain access to basic ingredient tables.</li><li>You can harvest common materials without diminishing potency due to inexperience.</li></ul>",
+          "description": "<p><strong>About the Perk</strong><br>You understand how to read the land. You know where plants prefer to grow, when they are at peak potency, and how to harvest without spoiling their strength. You are no longer guessing, you are gathering with intent.</p><p><strong>Benefits</strong></p><ul><li>You may make Herbalism gathering checks.</li><li>You can learn and craft common herbal recipes levels 0-1.</li><li>You gain access to basic ingredient tables.</li><li>You can harvest common materials without diminishing potency due to inexperience.</li></ul>",
           "requirement": "Herbalism Kit",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         },
@@ -30,7 +30,7 @@
           "name": "Wildharvester",
           "description": "<p><strong>About the Perk</strong><br>You have moved beyond simple collection. You recognize microclimates, subtle soil changes, and hidden growth patterns. Where others see forest, you see opportunity.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Field Forager</strong>.</li><li>+2 bonus to Herbalism gathering rolls.</li><li>When you successfully harvest, you also gain <strong>1 Herb Bundle</strong>.</li><li>You may identify uncommon botanical specimens on sight (at the GM's discretion).</li><li>You reduce the impact of environmental penalties on gathering checks.</li></ul>",
           "requirement": "Field Forager",
-          "cost": 2,
+          "cost": 3,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-seedling"
         },
@@ -41,67 +41,53 @@
           "name": "Verdant Master",
           "description": "<p><strong>About the Perk</strong><br>The wild yields to you. You harvest efficiently, cleanly, and at peak potency. Your hands know exactly when to cut, when to uproot, and when to leave growth undisturbed.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Wildharvester</strong>.</li><li>+4 bonus to Herbalism gathering rolls.</li><li><strong>Double yield</strong> on successful harvests.</li><li>You may attempt to harvest rare botanicals (if the location supports them).</li><li>You never damage a harvested plant due to inexperience.</li></ul>",
           "requirement": "Wildharvester",
-          "cost": 2,
+          "cost": 4,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-mushroom"
         },
-
-
-
-
         {
-          "perkID": "",
+          "perkID": "herbalism-seasoned-pathfinder",
           "index": 4,
           "value": 0,
-          "name": "",
-          "description": "",
+          "name": "Seasoned Pathfinder",
+          "description": "<p><strong>About the Perk</strong><br>You do not wander blindly. You study soil, wind, moisture, and seasonal shifts. Where others see wilderness, you see patterns of growth and hidden opportunity.</p><p><strong>Benefits</strong></p><ul><li>Once per foraging session, you may roll twice on the rarity table and choose the result.</li><li>You may treat a biome as one rarity tier higher when determining available herbs.</li><li>“No result” outcomes are reduced by one step.</li><li>You may declare a specific herb category you are seeking (GM determines feasibility).</li></ul>",
           "requirement": "",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": ""
+          "icon": "fa-paw"
         },
         {
-          "perkID": "",
+          "perkID": "herbalism-gentle-hand-of-the-grove",
           "index": 5,
           "value": 0,
-          "name": "",
-          "description": "",
+          "name": "Gentle Hand of the Grove",
+          "description": "<p><strong>About the Perk</strong><br>Your harvesting is precise and deliberate. You preserve root systems, protect potency, and avoid wasting what the land provides.</p><p><strong>Benefits</strong></p><ul><li>On a failed gathering check, you gain half yield (minimum 1 bundle).</li><li>Harvested materials never lose potency due to poor extraction.</li><li>Environmental penalties to gathering are reduced by 2.</li><li>You may safely harvest delicate materials such as sap, pollen, resin, or spores.</li></ul>",
           "requirement": "",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": ""
+          "icon": "fa-wheat"
         },
-
-
-
-
-
-
-
-
-
-
         {
           "perkID": "herbalism-green-archive-initiate",
           "index": 6,
           "value": 0,
           "name": "Initiate of the Green Archive",
-          "description": "<p><strong>About the Perk</strong><br>You have studied beyond folk remedies. You understand preparation theory, preservation methods, and the deeper lessons hidden within traditional botanical texts.</p><p><strong>Benefits</strong></p><ul><li>Access to recipes <strong>0-7</strong>.</li><li>These include uncommon, intermediate herbal preparations.</li><li>Improved reliability when crafting recipes 0-7 (reduced failure risk, at the GMs discretion).</li><li>You can recognize when a recipe requires fresher materials or more careful preparation.</li></ul>",
+          "description": "<p><strong>About the Perk</strong><br>You have studied beyond folk remedies. You understand preparation theory, preservation methods, and the deeper lessons hidden within traditional botanical texts.</p><p><strong>Benefits</strong></p><ul><li>Access to recipes <strong>0-7</strong>.</li><li>These include uncommon, intermediate herbal preparations.</li><li>Improved reliability when crafting recipes levels 2-7 (reduced failure risk, at the GMs discretion).</li><li>You can recognize when a recipe requires fresher materials or more careful preparation.</li></ul>",
           "requirement": "Field Forager",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-book-blank"
+          "icon": "fa-book-open"
         },
         {
           "perkID": "herbalism-keeper-hidden-remedies",
           "index": 7,
           "value": 0,
           "name": "Keeper of Hidden Remedies",
-          "description": "<p><strong>About the Perk</strong><br>You now study the dangerous and the misunderstood. You understand why certain plants are avoided, and how to safely coax power from them.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Initiate of the Green Archive</strong>.</li><li>Access to recipes <strong>8-14</strong>.</li><li>These include advanced recipes and the rare lessons they have to teach.</li><li>Improved efficiency and stability when crafting recipes 8-14 (at the GM's discretion).</li></ul>",
+          "description": "<p><strong>About the Perk</strong><br>You now study the dangerous and the misunderstood. You understand why certain plants are avoided, and how to safely coax power from them.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Initiate of the Green Archive</strong>.</li><li>Access to recipes <strong>8-14</strong>.</li><li>These include advanced recipes and the rare lessons they have to teach.</li><li>Improved efficiency and stability when crafting recipes levels 8-14.</li></ul>",
           "requirement": "Initiate of the Green Archive",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-book-open"
+          "icon": "mortar-pestle"
         },
         {
           "perkID": "herbalism-archdruid-verdant-codex",
@@ -112,8 +98,33 @@
           "requirement": "Keeper of Hidden Remedies",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-scroll"
+          "icon": "fa-bowl-rice"
+        },
+
+        {
+          "perkID": "herbalism-experimental-botanist",
+          "index": 9,
+          "value": 0,
+          "name": "Experimental Botanist",
+          "description": "<p><strong>About the Perk</strong><br>You do not wait for perfect instruction. You test, infuse, adjust, and document. Some of your discoveries are breakthroughs. Others are cautionary tales.</p><p><strong>Benefits</strong></p><ul><li>You may attempt to craft any herbal recipe, even if you have not unlocked its tier access.</li><li>When you do, the recipe includes <strong>one hidden incorrect ingredient</strong> chosen by the GM. You do not know which ingredient is incorrect.</li><li>Crafting DC increases by <strong>+3</strong> for that attempt.</li><li>On success, the item functions normally.</li><li>On failure, the result may be unstable, partially functional, or produce a minor side effect (GM discretion).</li><li>On a critical success, you may treat that specific recipe as learned for future crafting (GM discretion).</li></ul>",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-cauldron"
+        },
+        {
+          "perkID": "herbalism-conservator-green-codex",
+          "index": 10,
+          "value": 0,
+          "name": "Conservator of the Green Codex",
+          "description": "<p><strong>About the Perk</strong><br>Your notes are meticulous and your process is measured. You preserve knowledge, reduce waste, and refine preparation until it is repeatable under real conditions.</p><p><strong>Benefits</strong></p><ul><li>When a crafting attempt fails, you lose only <strong>half</strong> the listed ingredients (round up), instead of all of them.</li><li>When crafting recipes within your unlocked tier access, reduce the crafting DC by <strong>1</strong>.</li><li>Once per crafting session, you may salvage <strong>one</strong> ingredient from a failed attempt that would otherwise be lost.</li><li>When crafting within your unlocked tier access, you may substitute one required ingredient with a similar ingredient of <strong>one quality tier lower</strong> (GM discretion).</li></ul>",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-leafy-green"
         }
+
+
       ]
     },
 
@@ -135,11 +146,44 @@
           "index": 1,
           "value": 0,
           "name": "Basic Alchemy",
-          "description": "You have the <strong>Alchemist's Supplies</strong> and the desire to brew potions. Nothing can stop you now.",
+          "description": "You have the <strong>Alchemist's Supplies</strong> and the desire to brew potions. Nothing can stop you now. You can learn and craft common herbal recipes levels 0-1.",
           "requirement": "Alchemist's Supplies",
-          "cost": 0,
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-vial"
+        },
+        {
+          "perkID": "alchemy-advanced-alchemy",
+          "index": 1,
+          "value": 0,
+          "name": "Advanced Alchemy",
+          "description": "You have a firm grasp on alchemy. You can learn and craft common herbal recipes levels 2-7.",
+          "requirement": "Basic Alchemy",
+          "cost": 3,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-flask"
+        },
+        {
+          "perkID": "alchemy-expert-alchemy",
+          "index": 1,
+          "value": 0,
+          "name": "Expert Alchemy",
+          "description": "You have a firm grasp on alchemy. You can learn and craft common herbal recipes levels 8-14.",
+          "requirement": "Advanced Alchemy",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask-vial"
+        },
+        {
+          "perkID": "alchemy-expert-alchemy",
+          "index": 1,
+          "value": 0,
+          "name": "Alchemy Mystic",
+          "description": "You have a firm grasp on alchemy. You can learn and craft common herbal recipes levels 14-20.",
+          "requirement": "Expert Alchemy",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask-round-potion"
         }
       ]
     },
@@ -162,7 +206,7 @@
           "name": "Basic Poisons",
           "description": "You have the <strong>Poisoner's Kit</strong>  and the desire to craft poisons. Nothing can stop you now.",
           "requirement": "Poisoner's Kit",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-skull"
         }
@@ -187,7 +231,7 @@
           "name": "Basic Cooking",
           "description": "You have the <strong>Cook's Utensils</strong> and the desire to cook. Nothing can stop you now.",
           "requirement": "Cook's Utensils",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-bowl-food"
         }
@@ -211,7 +255,7 @@
           "name": "Basic Care",
           "description": "You possess a <strong>Healer's Kit</strong> and the knowledge to use it properly. You can stabilize wounds, clean injuries, and provide competent field treatment.",
           "requirement": "Healer's Kit",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-kit-medical"
         }
@@ -235,7 +279,7 @@
           "name": "Basic Smithing",
           "description": "You have <strong>Smith's Tools</strong> and the foundational knowledge to heat, shape, and temper metal safely. You can produce reliable metal components, fittings, and basic forged items suitable for practical use.",
           "requirement": "Smith's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-hammer"
         }
@@ -260,7 +304,7 @@
           "name": "Basic Leatherworking",
           "description": "You have <strong>Leatherworker's Tools</strong> and the foundational knowledge to cure hides, cut clean patterns, and stitch durable leather goods. You can produce functional straps, sheaths, pouches, and fitted components suitable for everyday use.",
           "requirement": "Leatherworker's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-scissors"
         }
@@ -285,7 +329,7 @@
           "name": "Basic Tinkering",
           "description": "You have <strong>Tinker's Tools</strong> and the foundational understanding to assemble, repair, and adjust small mechanical devices. You can produce simple mechanisms and maintain precision components with dependable accuracy.",
           "requirement": "Tinker's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-gears"
         }
@@ -310,7 +354,7 @@
           "name": "Basic Cartography",
           "description": "You have <strong>Cartographer's Tools</strong> and the instincts to turn travel into something legible. You can sketch reliable maps, mark routes, and capture landmarks with a consistent scale and clear legend.",
           "requirement": "Cartographer's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-map"
         }
@@ -336,7 +380,7 @@
           "name": "Basic Inscription",
           "description": "You possess <strong>Calligrapher's Supplies</strong> and the steady hand required to record language and symbols with clarity. You can produce clean script, consistent markings, and durable written records suitable for study, labeling, or formal documentation.",
           "requirement": "Calligrapher's Supplies",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-feather-pointed"
         }
@@ -361,7 +405,7 @@
           "name": "Basic Enchanting",
           "description": "You have access to <strong>Enchanter's Tools</strong> and the foundational knowledge to bind minor magical properties to prepared objects. You can safely perform basic infusions and stabilize simple enchantments.",
           "requirement": "Enchanter's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-wand-magic-sparkles"
         }
@@ -386,7 +430,7 @@
           "name": "Basic Gemcraft",
           "description": "You have <strong>Jeweler's Tools</strong> and the steady precision required to cut, polish, and set gemstones. You can assess quality, shape stones safely, and prepare gems for mounting or crafting.",
           "requirement": "Jeweler's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-gem"
         }
@@ -411,7 +455,7 @@
           "name": "Basic Tailoring",
           "description": "You have <strong>Weaver's Tools</strong> and the foundational skill to measure, cut, and stitch textiles into reliable garments and fabric components. You can produce fitted clothing, simple padded layers, and reinforced cloth items suitable for everyday use.",
           "requirement": "Weaver's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-scissors"
         }
@@ -436,7 +480,7 @@
           "name": "Basic Masonry",
           "description": "You have <strong>Mason's Tools</strong> and the foundational knowledge to cut, shape, and set stone with reliable precision. You can produce fitted blocks, simple carvings, and structurally sound stonework suitable for practical construction.",
           "requirement": "Mason's Tools",
-          "cost": 0,
+          "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-hammer"
         }

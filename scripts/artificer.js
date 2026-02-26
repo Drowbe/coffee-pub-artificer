@@ -232,7 +232,7 @@ function registerMenubarIntegration() {
     // Register secondary bar item for skills window
     const skillsItemId = 'artificer-skills';
     const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
-        icon: 'fa-solid fa-star',
+        icon: 'fa-solid fa-seedling',
         title: 'Skills',
         moduleId: MODULE.ID,
         visible: true,
