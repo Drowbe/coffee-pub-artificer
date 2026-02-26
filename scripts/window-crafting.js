@@ -261,7 +261,6 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             if (!canView) {
                 recipeHiddenByPerk = true;
                 hiddenMessage = 'You do not have the perk required to view this recipe.';
-                resultImg = 'icons/svg/item-bag.svg';
             }
         }
 
@@ -653,7 +652,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 traits: r.traits ?? [],
                 description: r.description ?? '',
                 recipeHiddenByPerk: selectedCombo?.recipeHiddenByPerk ?? false,
-                hiddenMessage: selectedCombo?.hiddenMessage ?? null
+                hiddenMessage: selectedCombo?.hiddenMessage ?? null,
+                skillLevel: r.skillLevel != null ? String(r.skillLevel) : null
             }
             : null;
         /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */
@@ -747,6 +747,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             selectedRecipeData,
             selectedRecipeTopFields,
             selectedRecipeMetadata,
+            selectedRecipeHiddenByPerk: selectedRecipeData?.recipeHiddenByPerk ?? false,
+            craftingHiddenSlotImg: `modules/${MODULE.ID}/images/system/crafting-hidden-01.webp`,
             familyOptions,
             typeOptions,
             filterSearch: this.filterSearch,

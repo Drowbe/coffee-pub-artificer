@@ -50,7 +50,7 @@
                             <span class="crafting-recipe-result">{{this.result}}</span>
                             <span class="crafting-recipe-tags">{{#each this.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
                         </div>
-                        {{#if this.canCraft}}<i class="crafting-recipe-craftable-icon fa-solid fa-hammer" title="All ingredients available"></i>{{/if}}
+                        {{#if this.recipeHiddenByPerk}}<i class="crafting-recipe-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if this.canCraft}}<i class="crafting-recipe-craftable-icon fa-solid fa-hammer" title="All ingredients available"></i>{{/if}}{{/if}}
                     </div>
                     {{else}}
                     <div class="crafting-zone-empty">No recipes loaded. Configure the recipe journal in module settings.</div>
@@ -105,7 +105,7 @@
                     <div class="crafting-bench-slot {{#if this.isMissing}}crafting-bench-slot-missing{{/if}}" data-slot-index="{{@index}}">
                         {{#if this.item}}
                         <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="{{this.tooltip}}">
-                            <img src="{{this.item.img}}" alt="" class="crafting-slot-img" />
+                            <img src="{{#if ../selectedRecipeHiddenByPerk}}{{../craftingHiddenSlotImg}}{{else}}{{this.item.img}}{{/if}}" alt="" class="crafting-slot-img" />
                         </div>
                         <span class="crafting-bench-slot-count {{#if this.isMissing}}missing{{/if}}">{{this.count}}</span>
                         {{else}}
@@ -213,7 +213,16 @@
                     
                     <div class="crafting-recipe-details">
                         {{#if selectedRecipeData.recipeHiddenByPerk}}
+                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
+                        {{#if selectedRecipeData.journalName}}
+                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
+                        {{/if}}
                         <div class="crafting-recipe-hidden-message">{{selectedRecipeData.hiddenMessage}}</div>
+                        {{#if selectedRecipeData.skillLevel}}
+                        <div class="crafting-detail-rows crafting-detail-rows-top">
+                            <div class="crafting-detail-row"><span class="crafting-detail-label">Skill Level:</span><span class="crafting-detail-value">{{selectedRecipeData.skillLevel}}</span></div>
+                        </div>
+                        {{/if}}
                         {{else}}
                         <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
                         {{#if selectedRecipeData.journalName}}

@@ -343,15 +343,18 @@
     background: rgba(172, 159, 129, 0.15);
 }
 
-.crafting-recipe-row-hidden .crafting-recipe-result-img {
-    opacity: 0.6;
-}
-
 .crafting-recipe-craftable-icon {
     flex-shrink: 0;
     margin-left: auto;
     font-size: 0.85em;
     color: rgba(105, 213, 104, 0.9);
+}
+
+.crafting-recipe-locked-icon {
+    flex-shrink: 0;
+    margin-left: auto;
+    font-size: 0.85em;
+    color: rgba(180, 160, 120, 0.85);
 }
 
 .crafting-recipe-result-img {
