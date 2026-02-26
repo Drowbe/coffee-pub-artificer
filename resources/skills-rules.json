@@ -1,31 +1,129 @@
 {
-    "schemaVersion": 1,
-    "skills": {
-        "Herbalism": {
-            "perks": {
-                "herbalism-field-forager": {
-                    "recipeTierAccess": [0, 1]
-                },
-                "herbalism-green-archive-initiate": {
-                    "recipeTierAccess": [0, 7]
-                },
-                "herbalism-keeper-hidden-remedies": {
-                    "recipeTierAccess": [8, 14]
-                },
-                "herbalism-archdruid-verdant-codex": {
-                    "recipeTierAccess": [15, 20]
-                },
-                "herbalism-conservator-green-codex": {
-                    "craftingDCModifier": -1,
-                    "ingredientLossOnFail": "half"
-                },
-                "herbalism-experimental-botanist": {
-                    "experimentalCrafting": {
-                        "allowed": true,
-                        "dcModifier": 3
-                    }
-                }
+  "schemaVersion": 1,
+  "skills": {
+    "Herbalism": {
+      "perks": {
+        "herbalism-field-forager": {
+          "title": "Field Forager",
+          "benefits": [
+            {
+              "title": "Recipe access",
+              "description": "Unlocks recipe tiers 0 to 1.",
+              "rule": { "recipeTierAccess": [0, 1] }
             }
+          ]
+        },
+        "herbalism-wildharvester": {
+          "title": "Wildharvester",
+          "benefits": [
+            {
+              "title": "Gathering Bonus",
+              "description": "You get a +2 bonus to your gathering rolls.",
+              "rule": { "gatheringRollBonus": 2 }
+            },
+            {
+              "title": "Yield Goodness",
+              "description": "If you successfully gather, you gather 2 bundles instead of 1.",
+              "rule": { "gatheringYieldMultiplier": 2 }
+            }
+          ]
+        },
+        "herbalism-verdant-master": {
+          "title": "Verdant Master",
+          "benefits": [
+            {
+              "title": "Gathering bonus",
+              "description": "+4 bonus to Herbalism gathering rolls.",
+              "rule": { "gatheringRollBonus": 4 }
+            },
+            {
+              "title": "Double yield",
+              "description": "Double yield on successful harvests.",
+              "rule": { "gatheringYieldMultiplier": 2 }
+            }
+          ]
+        },
+        "herbalism-seasoned-pathfinder": {
+          "title": "Seasoned Pathfinder",
+          "benefits": [
+            {
+              "title": "Foraging",
+              "description": "Foraging benefits; no crafting rule effect.",
+              "rule": {}
+            }
+          ]
+        },
+        "herbalism-gentle-hand-of-the-grove": {
+          "title": "Gentle Hand of the Grove",
+          "benefits": [
+            {
+              "title": "Reduced waste",
+              "description": "Reduced waste on failed gathering; no crafting rule effect.",
+              "rule": {}
+            }
+          ]
+        },
+        "herbalism-green-archive-initiate": {
+          "title": "Initiate of the Green Archive",
+          "benefits": [
+            {
+              "title": "Recipe access",
+              "description": "Unlocks recipe tiers 0 to 7.",
+              "rule": { "recipeTierAccess": [0, 7] }
+            },
+            {
+              "title": "Improved reliability",
+              "description": "+1 to crafting DC when crafting within tier.",
+              "rule": { "craftingDCModifier": 1 }
+            }
+          ]
+        },
+        "herbalism-keeper-hidden-remedies": {
+          "title": "Keeper of Hidden Remedies",
+          "benefits": [
+            {
+              "title": "Recipe access",
+              "description": "Unlocks recipe tiers 8 to 14.",
+              "rule": { "recipeTierAccess": [8, 14] }
+            }
+          ]
+        },
+        "herbalism-archdruid-verdant-codex": {
+          "title": "Archdruid of the Verdant Codex",
+          "benefits": [
+            {
+              "title": "Recipe access",
+              "description": "Unlocks recipe tiers 15 to 20.",
+              "rule": { "recipeTierAccess": [15, 20] }
+            }
+          ]
+        },
+        "herbalism-conservator-green-codex": {
+          "title": "Conservator of the Green Codex",
+          "benefits": [
+            {
+              "title": "Reduced DC",
+              "description": "-1 crafting DC when within tier.",
+              "rule": { "craftingDCModifier": -1 }
+            },
+            {
+              "title": "Preserved ingredients",
+              "description": "On failure lose only half the ingredients.",
+              "rule": { "ingredientLossOnFail": "half" }
+            }
+          ]
+        },
+        "herbalism-experimental-botanist": {
+          "title": "Experimental Botanist",
+          "benefits": [
+            {
+              "title": "Experimental crafting",
+              "description": "May attempt any recipe above tier; +3 DC and one hidden incorrect ingredient.",
+              "rule": { "experimentalCrafting": { "allowed": true, "dcModifier": 3 } }
+            }
+          ]
         }
+      }
     }
+  }
 }

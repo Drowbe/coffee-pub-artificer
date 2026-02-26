@@ -304,6 +304,44 @@
     line-height: 1.35;
 }
 
+.crafting-applied-perks {
+    margin-top: 4px;
+}
+
+.crafting-applied-perks-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--craft-accent-color);
+    margin-bottom: 6px;
+}
+
+.crafting-applied-perks-list {
+    margin: 0;
+    padding-left: 1.2em;
+    font-size: 0.9em;
+    color: rgba(201, 201, 201, 0.9);
+    line-height: 1.4;
+}
+
+.crafting-applied-perks-item {
+    margin-bottom: 2px;
+}
+
+.crafting-applied-perks-name {
+    font-weight: 600;
+}
+
+.crafting-applied-perks-effect {
+    font-style: italic;
+}
+
+.crafting-applied-perks-none {
+    margin: 0;
+    font-size: 0.9em;
+    color: rgba(201, 201, 201, 0.7);
+    font-style: italic;
+}
+
 .crafting-recipe-journal-name {
     font-size: 0.85em;
     color: rgba(201, 201, 201, 0.75);

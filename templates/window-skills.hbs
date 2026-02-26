@@ -109,6 +109,21 @@
                             <div class="skills-detail-row"><span class="skills-detail-label">Required Kit:</span><span class="skills-detail-value">{{selectedDetail.skill.skillKit}} <span class="skills-detail-kit-status {{#if selectedDetail.skill.hasKit}}skills-detail-kit-present{{else}}skills-detail-kit-missing{{/if}}">({{#if selectedDetail.skill.hasKit}}Owned{{else}}Missing{{/if}})</span></span></div>
                         </div>
                         {{/if}}
+                        {{#if selectedDetail.skill.perks}}
+                        <h4 class="skills-detail-perks-title">Perks</h4>
+                        <div class="skills-detail-perks-list">
+                            {{#each selectedDetail.skill.perks}}
+                            {{#unless this.empty}}
+                            <div class="skills-detail-perk-entry">
+                                <div class="skills-detail-perk-name">{{#if this.iconClass}}<i class="{{this.iconClass}} skills-detail-perk-icon"></i> {{/if}}{{this.name}}</div>
+                                {{#if this.description}}
+                                <div class="skills-detail-perk-description">{{{this.description}}}</div>
+                                {{/if}}
+                            </div>
+                            {{/unless}}
+                            {{/each}}
+                        </div>
+                        {{/if}}
                         {{/if}}
                     {{else}}
                     <div class="skills-zone-empty">Select a skill or perk to see details.</div>

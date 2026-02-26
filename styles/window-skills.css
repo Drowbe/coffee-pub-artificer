@@ -654,6 +654,59 @@
     color: rgba(201, 201, 201, 0.9);
 }
 
+/* ----- Perks section (when viewing a skill) ----- */
+.skills-detail-perks-title {
+    margin: 1em 0 0.5em 0;
+    font-size: 0.95em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--skills-accent-color);
+    border-bottom: 1px solid var(--skills-border-color);
+    padding-bottom: 4px;
+}
+
+.skills-detail-perks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+    margin-top: 4px;
+}
+
+.skills-detail-perk-entry {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.skills-detail-perk-entry:last-child {
+    border-bottom: none;
+}
+
+.skills-detail-perk-name {
+    font-weight: 600;
+    font-size: 0.9em;
+    color: rgba(224, 224, 224, 0.95);
+    margin-bottom: 2px;
+}
+
+.skills-detail-perk-description {
+    font-size: 0.8em;
+    line-height: 1.35;
+    color: rgba(201, 201, 201, 0.85);
+}
+
+.skills-detail-perk-description p {
+    margin: 0.25em 0;
+}
+
+.skills-detail-perk-description p:first-child {
+    margin-top: 0;
+}
+
+.skills-detail-perk-description ul {
+    margin: 0.25em 0 0 1em;
+    padding-left: 0.5em;
+}
+
 .skills-zone-empty {
     font-size: 0.9em;
     color: #999;

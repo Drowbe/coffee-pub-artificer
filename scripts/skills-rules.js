@@ -67,6 +67,43 @@ function skillKey(skillId, skills) {
 }
 
 /**
+ * Get the benefits array for a perk (each benefit has title, description, rule).
+ * Supports legacy shape: single { title, description, rule } treated as one benefit.
+ * @param {Record<string, object>} perks - perks map for a skill
+ * @param {string} perkId - perk ID
+ * @returns {Array<{ title?: string, description?: string, rule: object }>}
+ */
+function getPerkBenefits(perks, perkId) {
+    const entry = perks[perkId];
+    if (!entry || typeof entry !== 'object') return [];
+    if (Array.isArray(entry.benefits) && entry.benefits.length > 0) {
+        return entry.benefits.map((b) => ({
+            title: b.title,
+            description: b.description,
+            rule: b.rule != null && typeof b.rule === 'object' ? b.rule : {}
+        }));
+    }
+    if (entry.rule !== undefined) {
+        return [{ title: entry.title, description: entry.description, rule: entry.rule }];
+    }
+    return [];
+}
+
+/**
+ * Yield each rule object from all benefits of the given learned perks (for accumulation).
+ * @param {Record<string, object>} perks - perks map for a skill
+ * @param {string[]} learnedPerkIdsForSkill - learned perk IDs
+ * @returns {IterableIterator<object>}
+ */
+function* iterateRulesFromPerks(perks, learnedPerkIdsForSkill) {
+    for (const perkId of learnedPerkIdsForSkill) {
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            if (benefit.rule && typeof benefit.rule === 'object') yield benefit.rule;
+        }
+    }
+}
+
+/**
  * Get learned perk IDs for a given skill (perkID must start with skillId lowercase + '-').
  * @param {string[]} learnedPerkIds - All learned perk IDs for the actor
  * @param {string} skillId - Skill id (e.g. "Herbalism")
@@ -76,6 +113,63 @@ export function getLearnedPerkIdsForSkill(learnedPerkIds, skillId) {
     if (!skillId || !Array.isArray(learnedPerkIds)) return [];
     const prefix = skillId.toLowerCase() + '-';
     return learnedPerkIds.filter((id) => typeof id === 'string' && id.startsWith(prefix));
+}
+
+/**
+ * Effective gathering/harvesting rules for a skill and set of learned perk IDs.
+ * Used by Roll for Components: roll bonus (summed) and yield multiplier (max).
+ *
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Learned perk IDs that belong to this skill
+ * @returns {Promise<{ gatheringRollBonus: number, gatheringYieldMultiplier: number }>}
+ */
+export async function getEffectiveGatheringRules(skillId, learnedPerkIdsForSkill) {
+    const { skills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, skills);
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    let gatheringRollBonus = 0;
+    let gatheringYieldMultiplier = 1;
+    for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
+        if (typeof rule.gatheringRollBonus === 'number') gatheringRollBonus += rule.gatheringRollBonus;
+        if (typeof rule.gatheringYieldMultiplier === 'number' && rule.gatheringYieldMultiplier > gatheringYieldMultiplier) {
+            gatheringYieldMultiplier = rule.gatheringYieldMultiplier;
+        }
+    }
+    return { gatheringRollBonus, gatheringYieldMultiplier };
+}
+
+/**
+ * Get human-readable list of perks (and benefits) that apply to gathering for chat display.
+ * Only includes benefits whose rule has gatheringRollBonus or gatheringYieldMultiplier.
+ *
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Learned perk IDs that belong to this skill
+ * @returns {Promise<Array<{ perkTitle: string, benefitTitle: string, description: string }>>}
+ */
+export async function getAppliedGatheringPerksForDisplay(skillId, learnedPerkIdsForSkill) {
+    const { skills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, skills);
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    const out = [];
+    for (const perkId of learnedPerkIdsForSkill) {
+        const entry = perks[perkId];
+        if (!entry || typeof entry !== 'object') continue;
+        const perkTitle = entry.title ?? perkId;
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            const rule = benefit.rule;
+            if (!rule || typeof rule !== 'object') continue;
+            const hasGathering = typeof rule.gatheringRollBonus === 'number' || typeof rule.gatheringYieldMultiplier === 'number';
+            if (!hasGathering) continue;
+            out.push({
+                perkTitle: String(perkTitle ?? ''),
+                benefitTitle: String(benefit.title ?? ''),
+                description: String(benefit.description ?? '')
+            });
+        }
+    }
+    return out;
 }
 
 /**
@@ -107,10 +201,7 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     let ingredientLossOnFail = 'all';
     let ingredientKeptOnSuccess = undefined;
 
-    for (const perkId of learnedPerkIdsForSkill) {
-        const rule = perks[perkId];
-        if (!rule || typeof rule !== 'object') continue;
-
+    for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
         if (Array.isArray(rule.recipeTierAccess) && rule.recipeTierAccess.length >= 2) {
             const min = Number(rule.recipeTierAccess[0]);
             const max = Number(rule.recipeTierAccess[1]);
@@ -167,12 +258,15 @@ export async function getRequiredPerkForTier(skillId, skillLevel) {
 
     /** @type {Array<{ perkID: string, min: number, max: number }>} */
     const tierPerks = [];
-    for (const [perkId, rule] of Object.entries(perks)) {
-        if (!rule || typeof rule !== 'object' || !Array.isArray(rule.recipeTierAccess) || rule.recipeTierAccess.length < 2) continue;
-        const min = Number(rule.recipeTierAccess[0]);
-        const max = Number(rule.recipeTierAccess[1]);
-        if (Number.isNaN(min) || Number.isNaN(max) || level < min || level > max) continue;
-        tierPerks.push({ perkID: perkId, min, max });
+    for (const perkId of Object.keys(perks)) {
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            const rule = benefit.rule;
+            if (!rule || typeof rule !== 'object' || !Array.isArray(rule.recipeTierAccess) || rule.recipeTierAccess.length < 2) continue;
+            const min = Number(rule.recipeTierAccess[0]);
+            const max = Number(rule.recipeTierAccess[1]);
+            if (Number.isNaN(min) || Number.isNaN(max) || level < min || level > max) continue;
+            tierPerks.push({ perkID: perkId, min, max });
+        }
     }
     if (tierPerks.length === 0) return null;
     tierPerks.sort((a, b) => a.min - b.min || a.max - b.max);
@@ -187,4 +281,68 @@ export async function getRequiredPerkForTier(skillId, skillLevel) {
     if (!iconClass.startsWith('fa-')) iconClass = `fa-${iconClass}`;
     if (!iconClass.startsWith('fa-solid ') && !iconClass.startsWith('fa-brands ')) iconClass = `fa-solid ${iconClass}`;
     return { skillName, perkName, iconClass };
+}
+
+/**
+ * Get human-readable list of perks that will apply when crafting this recipe (for Details pane).
+ * @param {string} skillId - Recipe skill (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Actor's learned perk IDs for this skill
+ * @param {number} recipeSkillLevel - Recipe's skillLevel
+ * @returns {Promise<Array<{ perkName: string, effect: string }>>}
+ */
+export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, recipeSkillLevel) {
+    const rules = await getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill);
+    const level = Number(recipeSkillLevel);
+    const withinTier = !Number.isNaN(level) && rules.canViewTier(level);
+    const isExperimental = rules.hasExperimental && !withinTier;
+
+    const { skills: detailsSkills = [] } = await loadSkillsDetails();
+    const key = skillKey(skillId, (await loadSkillsRules()).skills ?? {});
+    const skillDetail = detailsSkills.find((s) => (s.id ?? '') === key || (s.id ?? '').toLowerCase() === (skillId || '').toLowerCase());
+    const perkNameById = /** @type {Map<string, string>} */ (new Map());
+    if (skillDetail?.perks) {
+        for (const p of skillDetail.perks) {
+            const id = p.perkID ?? '';
+            if (id) perkNameById.set(id, p.name ?? id);
+        }
+    }
+
+    /** @type {Array<{ perkName: string, effect: string }>} */
+    const out = [];
+    const { skills = {} } = await loadSkillsRules();
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+
+    /** @type {Map<string, string[]>} */
+    const effectsByPerk = new Map();
+
+    for (const perkId of learnedPerkIdsForSkill) {
+        const perkName = perkNameById.get(perkId) ?? perkId;
+        if (!effectsByPerk.has(perkName)) effectsByPerk.set(perkName, []);
+
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            const rule = benefit.rule;
+            if (!rule || typeof rule !== 'object') continue;
+
+            if (typeof rule.craftingDCModifier === 'number' && rule.craftingDCModifier !== 0 && withinTier) {
+                const sign = rule.craftingDCModifier >= 0 ? '+' : '';
+                effectsByPerk.get(perkName).push(`${sign}${rule.craftingDCModifier} DC when within tier`);
+            }
+            if (rule.ingredientLossOnFail === 'half') {
+                effectsByPerk.get(perkName).push('On failure: lose only half the ingredients');
+            }
+            if (rule.ingredientKeptOnSuccess === 'half') {
+                effectsByPerk.get(perkName).push('On success: keep half the ingredients');
+            }
+            if (rule.experimentalCrafting?.allowed && typeof rule.experimentalCrafting.dcModifier === 'number' && rule.experimentalCrafting.dcModifier !== 0 && isExperimental) {
+                const sign = rule.experimentalCrafting.dcModifier >= 0 ? '+' : '';
+                effectsByPerk.get(perkName).push(`${sign}${rule.experimentalCrafting.dcModifier} DC (experimental attempt)`);
+            }
+        }
+    }
+
+    for (const [name, effects] of effectsByPerk) {
+        if (effects.length) out.push({ perkName: name, effect: effects.join('; ') });
+    }
+    return out;
 }

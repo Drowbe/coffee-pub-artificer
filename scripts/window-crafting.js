@@ -8,7 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache } from './cache/cache-items.js';
-import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill, getRequiredPerkForTier } from './skills-rules.js';
+import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -693,6 +693,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             ].filter(Boolean)
             : [];
 
+        let selectedRecipeAppliedPerks = [];
+        if (r?.skill && actor) {
+            const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+            const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, r.skill);
+            selectedRecipeAppliedPerks = await getAppliedPerksForCraft(r.skill, forSkill, r.skillLevel ?? 0);
+        }
+
         return {
             appId: this.id,
             crafterName: actor?.name ?? null,
@@ -762,6 +769,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             selectedRecipeData,
             selectedRecipeTopFields,
             selectedRecipeMetadata,
+            selectedRecipeAppliedPerks,
             selectedRecipeHiddenByPerk: selectedRecipeData?.recipeHiddenByPerk ?? false,
             craftingHiddenSlotImg: `modules/${MODULE.ID}/images/system/crafting-hidden-01.webp`,
             familyOptions,
@@ -1405,7 +1413,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Craft from recipe: use recipe's result item (100% success when ingredients present)
+     * Craft from recipe: resolve DC from rules, roll, then create item and consume ingredients per success/failure rules.
      * @param {Actor} actor
      * @param {Item[]} items - Items to consume
      * @returns {Promise<{success: boolean, item: Item|null, name: string, quality: string}>}
@@ -1425,20 +1433,58 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             };
         }
 
+        let resolvedDC = recipe.successDC != null ? Number(recipe.successDC) : 10;
+        let ingredientLossOnFail = 'all';
+        let ingredientKeptOnSuccess = undefined;
+        let rollTotal = null;
+
+        if (recipe.skill && typeof recipe.skill === 'string') {
+            const api = getAPI();
+            const learnedPerkIds = await api?.skills?.getLearnedPerks?.(actor) ?? [];
+            const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
+            const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
+            const withinTier = !Number.isNaN(skillLevel) && rules.canViewTier(skillLevel);
+            const isExperimental = rules.hasExperimental && !withinTier;
+
+            resolvedDC += rules.dcModifier;
+            if (isExperimental) resolvedDC += rules.experimentalDcModifier;
+            ingredientLossOnFail = rules.ingredientLossOnFail;
+            ingredientKeptOnSuccess = rules.ingredientKeptOnSuccess;
+
+            const roll = new Roll('1d20');
+            await roll.evaluate();
+            rollTotal = roll.total;
+        }
+
+        const success = rollTotal === null ? true : rollTotal >= resolvedDC;
+
         try {
-            const obj = resultItem.toObject();
-            const createdItem = await addCraftedItemToActor(actor, obj);
-            if (!createdItem) {
-                return { success: false, item: null, name: 'Creation failed', quality: 'Failed' };
+            if (success) {
+                const obj = resultItem.toObject();
+                const createdItem = await addCraftedItemToActor(actor, obj);
+                if (!createdItem) {
+                    return { success: false, item: null, name: 'Creation failed', quality: 'Failed' };
+                }
+                const consumeCount = ingredientKeptOnSuccess === 'half' ? Math.floor(items.length / 2) : items.length;
+                await this._consumeIngredients(actor, items, consumeCount);
+                this.lastCraftTags = [recipe.name];
+                return {
+                    success: true,
+                    item: createdItem,
+                    name: recipe.name,
+                    quality: 'Basic'
+                };
             }
 
-            await this._consumeIngredients(actor, items);
+            const consumeCount = ingredientLossOnFail === 'half' ? Math.ceil(items.length / 2) : items.length;
+            await this._consumeIngredients(actor, items, consumeCount);
             this.lastCraftTags = [recipe.name];
             return {
-                success: true,
-                item: createdItem,
-                name: recipe.name,
-                quality: 'Basic'
+                success: false,
+                item: null,
+                name: rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.',
+                quality: 'Failed'
             };
         } catch (err) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Recipe craft error', err?.message ?? String(err), true, false);
@@ -1447,12 +1493,22 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Consume ingredients from actor inventory
+     * Consume ingredients from actor inventory.
      * @param {Actor} actor
-     * @param {Item[]} items
+     * @param {Item[]} items - Full list of items used in the craft
+     * @param {number} [countToConsume] - If set, only consume this many (randomly chosen). Used for "half" rules.
      */
-    async _consumeIngredients(actor, items) {
-        for (const item of items) {
+    async _consumeIngredients(actor, items, countToConsume = undefined) {
+        let toConsume = items;
+        if (countToConsume != null && countToConsume < items.length) {
+            const arr = [...items];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            toConsume = arr.slice(0, countToConsume);
+        }
+        for (const item of toConsume) {
             const actorItem = actor.items.get(item.id);
             if (!actorItem) continue;
 

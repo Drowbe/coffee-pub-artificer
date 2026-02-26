@@ -281,6 +281,25 @@
                     </div>
                     {{/if}}
                     {{/unless}}
+                    {{#if selectedRecipeAppliedPerks.length}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-applied-perks">
+                        <div class="crafting-applied-perks-title">Perks applied when crafting</div>
+                        <ul class="crafting-applied-perks-list">
+                            {{#each selectedRecipeAppliedPerks}}
+                            <li class="crafting-applied-perks-item"><span class="crafting-applied-perks-name">{{this.perkName}}:</span> <span class="crafting-applied-perks-effect">{{this.effect}}</span></li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                    {{else}}
+                    {{#if selectedRecipeData}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-applied-perks">
+                        <div class="crafting-applied-perks-title">Perks applied when crafting</div>
+                        <p class="crafting-applied-perks-none">None</p>
+                    </div>
+                    {{/if}}
+                    {{/if}}
                     {{/if}}
                     {{#if lastResult}}
                     <hr class="crafting-details-divider" />

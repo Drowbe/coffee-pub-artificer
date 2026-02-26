@@ -11,6 +11,8 @@ import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS }
 import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
+import { getAPI } from './api-artificer.js';
+import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getAppliedGatheringPerksForDisplay } from './skills-rules.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[] }} PendingGather */
 
@@ -194,10 +196,12 @@ export function sendGatherNoPoolCard(actor = null) {
 /**
  * Send "You found ... Added to your inventory." chat card.
  * Formats each item like the investigation tool: image + UUID document link.
+ * Optionally shows a "Perks applied" section when gathering perks contributed.
  * @param {Actor} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
+ * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied to this gather (for success card)
  */
-export function sendGatherSuccessCard(actor = null, items = []) {
+export function sendGatherSuccessCard(actor = null, items = [], appliedPerks = []) {
     const title = 'Forage for components';
     const escapeHtml = (s) => {
         if (s == null) return '';
@@ -211,7 +215,15 @@ export function sendGatherSuccessCard(actor = null, items = []) {
             return `<div class="gather-result-item">${img} ${link}</div>`;
         }).join('')
         : '<div class="gather-result-item">(none)</div>';
-    const body = `<p>Foraging has paid off.</p><div class="gather-result-list">${itemRows}</div><p>Items added to your inventory.</p>`;
+    let body = `<p>Foraging has paid off.</p><div class="gather-result-list">${itemRows}</div><p>Items added to your inventory.</p>`;
+    if (appliedPerks?.length) {
+        const perkItems = appliedPerks.map((p) => {
+            const label = p.benefitTitle ? `${escapeHtml(p.perkTitle)}: ${escapeHtml(p.benefitTitle)}` : escapeHtml(p.perkTitle);
+            const desc = p.description ? ` ${escapeHtml(p.description)}` : '';
+            return `<li><strong>${label}</strong>${desc}</li>`;
+        }).join('');
+        body += `<p><strong>Perks applied</strong></p><ul>${perkItems}</ul>`;
+    }
     const html = buildChatCardHtml(title, body, 'card');
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
@@ -222,32 +234,50 @@ export function sendGatherSuccessCard(actor = null, items = []) {
 }
 
 /**
- * Process one gather roll: DC check, pick item, add to actor. Does NOT send any chat card.
- * Use this when buffering results; send cards separately when all rolls are complete.
- * @param {number} rollTotal - The roll total
+ * Process one gather roll: DC check (with perk roll bonus), pick item(s), add to actor. Does NOT send any chat card.
+ * Uses Herbalism perks for gathering roll bonus and yield multiplier when the actor has learned perks.
+ * @param {number} rollTotal - The roll total (d20 + modifier from sheet)
  * @param {Actor|null} actor - Actor who rolled
  * @param {PendingGather} pending - Gather context (dc, biomes, componentTypes)
- * @returns {Promise<{ success: boolean, noPool?: boolean, itemRecord?: { name: string, uuid: string, img?: string } }>}
+ * @returns {Promise<{ success: boolean, noPool?: boolean, itemRecords?: Array<{ name: string, uuid: string, img?: string }> }>}
  */
 export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!pending) return { success: false };
     const { dc, biomes, componentTypes } = pending;
-    if (rollTotal < dc) return { success: false };
+    let effectiveTotal = rollTotal;
+    let yieldMultiplier = 1;
+    let appliedPerks = [];
+    if (actor) {
+        const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+        const herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
+        const gatheringRules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
+        effectiveTotal = rollTotal + (gatheringRules.gatheringRollBonus ?? 0);
+        yieldMultiplier = Math.max(1, Math.floor(gatheringRules.gatheringYieldMultiplier ?? 1));
+        appliedPerks = await getAppliedGatheringPerksForDisplay('Herbalism', herbalismPerks);
+    }
+    if (effectiveTotal < dc) return { success: false };
     if (!actor) return { success: false };
     const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
-    const record = pickOneGatherRecord(eligibleRecords);
-    if (!record) return { success: true, noPool: true };
-    let item = null;
-    try {
-        item = await fromUuid(record.uuid);
-    } catch {
-        return { success: false };
+    if (!eligibleRecords.length) return { success: true, noPool: true };
+    const itemRecords = [];
+    for (let i = 0; i < yieldMultiplier; i++) {
+        const record = pickOneGatherRecord(eligibleRecords);
+        if (!record) continue;
+        let item = null;
+        try {
+            item = await fromUuid(record.uuid);
+        } catch {
+            continue;
+        }
+        if (!item) continue;
+        await addGatherItemToActor(actor, item);
+        itemRecords.push({ name: record.name ?? item.name, uuid: record.uuid, img: record.img ?? item.img });
     }
-    if (!item) return { success: false };
-    await addGatherItemToActor(actor, item);
+    if (!itemRecords.length) return { success: false };
     return {
         success: true,
-        itemRecord: { name: record.name ?? item.name, uuid: record.uuid, img: record.img ?? item.img }
+        itemRecords,
+        appliedPerks
     };
 }
 
@@ -272,8 +302,8 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         sendGatherFailureCard(actor);
         return;
     }
-    if (outcome.itemRecord) {
-        sendGatherSuccessCard(actor, [outcome.itemRecord]);
+    if (outcome.itemRecords?.length) {
+        sendGatherSuccessCard(actor, outcome.itemRecords, outcome.appliedPerks);
     } else {
         sendGatherFailureCard(actor);
     }
