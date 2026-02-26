@@ -31,7 +31,7 @@
                         <button type="button" class="crafting-recipe-filter-btn {{#if showLockedRecipes}}active{{/if}}" data-action="toggleShowLockedRecipes" title="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}" aria-label="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}">
                             <i class="fa-solid fa-lock"></i>
                         </button>
-                        <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable{{/if}}">
+                        <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}">
                             <i class="fa-solid fa-hammer"></i>
                         </button>
                     </div>
@@ -54,6 +54,7 @@
                 </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each knownCombinations}}
+                    {{!-- In both "show all" and "show only craftable" views, recipes that can be crafted show the hammer icon --}}
                     <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-row-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
