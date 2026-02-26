@@ -10,6 +10,11 @@
               "title": "Recipe access",
               "description": "Unlocks recipe tiers 0 to 1.",
               "rule": { "recipeTierAccess": [0, 1] }
+            },
+            {
+                "title": "Common Components",
+                "description": "Unlocks components with skill requirements 0 to 3.",
+                "rule": { "componentSkillAccess": [0, 3] }
             }
           ]
         },
@@ -25,6 +30,11 @@
               "title": "Yield Goodness",
               "description": "If you successfully gather, you gather 2 bundles instead of 1.",
               "rule": { "gatheringYieldMultiplier": 2 }
+            },
+            {
+                "title": "Uncommon Components",
+                "description": "Unlocks components with skill requirements 4 to 9.",
+                "rule": { "componentSkillAccess": [4, 9] }
             }
           ]
         },
@@ -40,6 +50,11 @@
               "title": "Double yield",
               "description": "Double yield on successful harvests.",
               "rule": { "gatheringYieldMultiplier": 2 }
+            },
+            {
+                "title": "Rare Components",
+                "description": "Unlocks components with skill requirements 10 to 14.",
+                "rule": { "componentSkillAccess": [10, 14] }
             }
           ]
         },
@@ -50,6 +65,11 @@
               "title": "Foraging",
               "description": "Foraging benefits; no crafting rule effect.",
               "rule": {}
+            },
+            {
+                "title": "Very Rare and Legendary Components",
+                "description": "Unlocks components with skill requirements 15 to 20.",
+                "rule": { "componentSkillAccess": [15, 20] }
             }
           ]
         },
