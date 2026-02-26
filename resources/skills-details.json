@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "skills": [
+
     {
       "id": "Herbalism",
       "name": "Herbalism",
@@ -12,40 +13,111 @@
       "skillKit": "Herbalism Kit",
       "perks": [
         {
-          "perkID": "herbalism-basic-foraging",
+          "perkID": "herbalism-field-forager",
           "index": 1,
           "value": 0,
-          "name": "Basic Foraging",
-          "description": "You have the <strong>Herbalism Kit</strong> and the desire to forage for herbs. Nothing can stop you now.",
+          "name": "Field Forager",
+          "description": "<p><strong>About the Perk</strong><br>You understand how to read the land. You know where plants prefer to grow, when they are at peak potency, and how to harvest without spoiling their strength. You are no longer guessing, you are gathering with intent.</p><p><strong>Benefits</strong></p><ul><li>You may make Herbalism gathering checks.</li><li>You can learn and craft common herbal recipes.</li><li>You gain access to basic ingredient tables.</li><li>You can harvest common materials without diminishing potency due to inexperience.</li></ul>",
           "requirement": "Herbalism Kit",
           "cost": 0,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-leaf"
         },
         {
-          "perkID": "herbalism-advanced-foraging",
+          "perkID": "herbalism-wildharvester",
           "index": 2,
           "value": 0,
-          "name": "Advanced Foraging",
-          "description": "You have the <strong>Herbalism Kit</strong> and deep experience gathering herbs. You can now gather more herbs and more rare herbs.",
-          "requirement": "Basic Foraging",
+          "name": "Wildharvester",
+          "description": "<p><strong>About the Perk</strong><br>You have moved beyond simple collection. You recognize microclimates, subtle soil changes, and hidden growth patterns. Where others see forest, you see opportunity.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Field Forager</strong>.</li><li>+2 bonus to Herbalism gathering rolls.</li><li>When you successfully harvest, you also gain <strong>1 Herb Bundle</strong>.</li><li>You may identify uncommon botanical specimens on sight (at the GM's discretion).</li><li>You reduce the impact of environmental penalties on gathering checks.</li></ul>",
+          "requirement": "Field Forager",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-leaf"
+          "icon": "fa-seedling"
         },
         {
-          "perkID": "herbalism-expert-foraging",
+          "perkID": "herbalism-verdant-master",
           "index": 3,
           "value": 0,
-          "name": "Expert Foraging",
-          "description": "You have the <strong>Herbalism Kit</strong> and are an expert at gathering herbs. You can now gather more herbs and more rare herbs.",
-          "requirement": "Advanced Foraging",
+          "name": "Verdant Master",
+          "description": "<p><strong>About the Perk</strong><br>The wild yields to you. You harvest efficiently, cleanly, and at peak potency. Your hands know exactly when to cut, when to uproot, and when to leave growth undisturbed.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Wildharvester</strong>.</li><li>+4 bonus to Herbalism gathering rolls.</li><li><strong>Double yield</strong> on successful harvests.</li><li>You may attempt to harvest rare botanicals (if the location supports them).</li><li>You never damage a harvested plant due to inexperience.</li></ul>",
+          "requirement": "Wildharvester",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-leaf"
+          "icon": "fa-mushroom"
+        },
+
+
+
+
+        {
+          "perkID": "",
+          "index": 4,
+          "value": 0,
+          "name": "",
+          "description": "",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": ""
+        },
+        {
+          "perkID": "",
+          "index": 5,
+          "value": 0,
+          "name": "",
+          "description": "",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": ""
+        },
+
+
+
+
+
+
+
+
+
+
+        {
+          "perkID": "herbalism-green-archive-initiate",
+          "index": 6,
+          "value": 0,
+          "name": "Initiate of the Green Archive",
+          "description": "<p><strong>About the Perk</strong><br>You have studied beyond folk remedies. You understand preparation theory, preservation methods, and the deeper lessons hidden within traditional botanical texts.</p><p><strong>Benefits</strong></p><ul><li>Access to recipes <strong>0-7</strong>.</li><li>These include uncommon, intermediate herbal preparations.</li><li>Improved reliability when crafting recipes 0-7 (reduced failure risk, at the GMs discretion).</li><li>You can recognize when a recipe requires fresher materials or more careful preparation.</li></ul>",
+          "requirement": "Field Forager",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-book-blank"
+        },
+        {
+          "perkID": "herbalism-keeper-hidden-remedies",
+          "index": 7,
+          "value": 0,
+          "name": "Keeper of Hidden Remedies",
+          "description": "<p><strong>About the Perk</strong><br>You now study the dangerous and the misunderstood. You understand why certain plants are avoided, and how to safely coax power from them.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Initiate of the Green Archive</strong>.</li><li>Access to recipes <strong>8-14</strong>.</li><li>These include advanced recipes and the rare lessons they have to teach.</li><li>Improved efficiency and stability when crafting recipes 8-14 (at the GM's discretion).</li></ul>",
+          "requirement": "Initiate of the Green Archive",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-book-open"
+        },
+        {
+          "perkID": "herbalism-archdruid-verdant-codex",
+          "index": 8,
+          "value": 0,
+          "name": "Archdruid of the Verdant Codex",
+          "description": "<p><strong>About the Perk</strong><br>You no longer follow recipes. You interpret them. You understand the philosophy of growth, decay, and potency. Your preparations approach masterwork quality.</p><p><strong>Benefits</strong></p><ul><li>Requires <strong>Keeper of Hidden Remedies</strong>.</li><li>Access to recipes <strong>15-20</strong>.</li><li>These include the very rare side of herbalism and masterwork recipes.</li><li>Reduced catastrophic failure risk when crafting high-tier herbal recipes (at the GM's discretion).</li><li>Unlocks masterwork enhancements where applicable.</li></ul>",
+          "requirement": "Keeper of Hidden Remedies",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-scroll"
         }
       ]
     },
+
+
 
 
     {
