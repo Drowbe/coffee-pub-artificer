@@ -346,6 +346,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.filterSearch = options.filterSearch ?? '';
         this.filterRecipeSearch = options.filterRecipeSearch ?? '';
         this.filterRecipeJournal = options.filterRecipeJournal ?? '';
+        /** Show recipes that are locked (hidden by perk). When false, hide locked recipes from the list. */
+        this.showLockedRecipes = options.showLockedRecipes ?? true;
+        /** When true, show only recipes the actor can craft (all ingredients available). When false, show all. */
+        this.showOnlyCraftable = options.showOnlyCraftable ?? false;
         /** @type {ReturnType<typeof setTimeout>|null} */
         this._searchDebounceTimer = null;
         /** @type {number|null} - seconds remaining during craft countdown */
@@ -628,6 +632,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     (r.tags ?? []).some((t) => String(t).toLowerCase().includes(q))
             );
         }
+        if (!this.showLockedRecipes) {
+            knownCombinations = knownCombinations.filter((r) => !r.recipeHiddenByPerk);
+        }
+        if (this.showOnlyCraftable) {
+            knownCombinations = knownCombinations.filter((r) => r.canCraft);
+        }
         knownCombinations.sort((a, b) =>
             (a.result ?? '').localeCompare(b.result ?? '', undefined, { sensitivity: 'base' })
         );
@@ -753,6 +763,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             typeOptions,
             filterSearch: this.filterSearch,
             filterRecipeSearch: this.filterRecipeSearch,
+            showLockedRecipes: this.showLockedRecipes,
+            showOnlyCraftable: this.showOnlyCraftable,
             activeTab: this.activeTab ?? 'experimentation',
             hasRecipes
         };
@@ -857,6 +869,24 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 w.filterRecipeSearch = '';
+                w.render();
+                return;
+            }
+            const toggleLockedBtn = e.target?.closest?.('[data-action="toggleShowLockedRecipes"]');
+            if (toggleLockedBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w.showLockedRecipes = !w.showLockedRecipes;
+                w.render();
+                return;
+            }
+            const toggleCraftableBtn = e.target?.closest?.('[data-action="toggleShowOnlyCraftable"]');
+            if (toggleCraftableBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w.showOnlyCraftable = !w.showOnlyCraftable;
                 w.render();
                 return;
             }

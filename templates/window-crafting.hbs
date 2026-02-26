@@ -25,7 +25,17 @@
         {{!-- Zone 1: Recipes --}}
         <aside class="crafting-zone crafting-zone-recipes">
             <section class="crafting-zone-section">
-                <h3 class="crafting-zone-section-title">Recipes</h3>
+                <div class="crafting-zone-recipes-header">
+                    <h3 class="crafting-zone-section-title">Recipes</h3>
+                    <div class="crafting-recipe-filter-buttons">
+                        <button type="button" class="crafting-recipe-filter-btn {{#if showLockedRecipes}}active{{/if}}" data-action="toggleShowLockedRecipes" title="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}" aria-label="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}">
+                            <i class="fa-solid fa-lock"></i>
+                        </button>
+                        <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable{{/if}}">
+                            <i class="fa-solid fa-hammer"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="crafting-zone-section-input-wrap">
                     <input type="text" id="{{appId}}-filter-recipes" class="crafting-zone-section-input" placeholder="Search recipes..." value="{{filterRecipeSearch}}" dir="ltr" />
                     <button type="button" class="crafting-zone-section-input-clear" data-action="clearRecipeSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
