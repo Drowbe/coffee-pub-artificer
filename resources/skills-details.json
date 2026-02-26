@@ -37,7 +37,7 @@
           "perkID": "herbalism-expert-foraging",
           "index": 3,
           "value": 0,
-          "name": "Advanced Foraging",
+          "name": "Expert Foraging",
           "description": "You have the <strong>Herbalism Kit</strong> and are an expert at gathering herbs. You can now gather more herbs and more rare herbs.",
           "requirement": "Advanced Foraging",
           "cost": 2,
