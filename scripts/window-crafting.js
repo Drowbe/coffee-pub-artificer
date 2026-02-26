@@ -48,6 +48,63 @@ function isCraftValidItem(item) {
 }
 
 /**
+ * Send craft result chat card (Blacksmith Chat Cards API + section-header).
+ * @param {Actor} [actor]
+ * @param {{ success: boolean, item: Item|null, name: string, quality: string }} lastResult
+ * @param {Array<{ perkName: string, effect: string }>} [appliedPerks]
+ */
+async function sendCraftResultCard(actor, lastResult, appliedPerks = []) {
+    if (!lastResult) return;
+    const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
+    const cardTheme = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
+
+    const escapeHtml = (s) => {
+        if (s == null) return '';
+        const str = String(s);
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
+    let resultContents;
+    if (lastResult.success && lastResult.item) {
+        const it = lastResult.item;
+        const img = it.img ? `<img src="${escapeHtml(it.img)}" alt="" class="gather-result-img" />` : '';
+        const uuid = it.uuid ?? '';
+        const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? lastResult.name)}}` : escapeHtml(it.name ?? lastResult.name);
+        resultContents = `<p>Created: ${escapeHtml(lastResult.name)}</p><div class="gather-result-list"><div class="gather-result-item">${img} ${link}</div></div><p>Added to your inventory.</p>`;
+    } else {
+        resultContents = `<p>${escapeHtml(lastResult.name)}</p>`;
+    }
+
+    let perkContents = '';
+    if (appliedPerks?.length) {
+        perkContents = appliedPerks.map((p) => {
+            const name = escapeHtml(p.perkName ?? '');
+            const effect = escapeHtml(p.effect ?? '');
+            return `<li><strong>${name}</strong> ${effect}</li>`;
+        }).join('');
+    }
+
+    const html = await renderTemplate('modules/coffee-pub-artificer/templates/card-results-craft.hbs', {
+        cardTheme,
+        title: 'Crafting result',
+        icon: 'hammer',
+        resultTitle: 'Results',
+        resultIcon: 'wand-magic-sparkles',
+        resultContents,
+        perkTitle: 'Perks applied',
+        perkIcon: 'star',
+        perkContents: perkContents || null
+    });
+
+    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
+    ChatMessage.create({
+        content: html,
+        speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+}
+
+/**
  * Check if actor has item matching name (for tool, apparatus, container)
  * @param {Actor|null} actor
  * @param {string} name - Item name to match
@@ -1390,6 +1447,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         } else if (this.lastResult) {
             ui.notifications.warn(this.lastResult.name);
             BlacksmithUtils.playSound(BlacksmithConstants.SOUNDERROR05, 0.5, false, true);
+        }
+        if (this.lastResult) {
+            let appliedPerks = [];
+            if (this.selectedRecipe?.skill) {
+                const api = getAPI();
+                const learnedPerkIds = await api?.skills?.getLearnedPerks?.(actor) ?? [];
+                const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, this.selectedRecipe.skill);
+                appliedPerks = await getAppliedPerksForCraft(this.selectedRecipe.skill, forSkill, this.selectedRecipe.skillLevel ?? 0);
+            }
+            await sendCraftResultCard(actor, this.lastResult, appliedPerks);
         }
     }
 

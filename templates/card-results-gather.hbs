@@ -1,0 +1,33 @@
+{{!-- Gather success chat card – Blacksmith Chat Cards API. Template owns HTML/layout; JS passes data only. --}}
+<span style="visibility: hidden">coffeepub-hide-header</span>
+<div class="blacksmith-card {{cardTheme}}">
+    <div class="card-header">
+        <i class="fas fa-{{icon}}"></i> {{title}}
+    </div>
+    <div class="section-content">
+        <div class="section-header">{{#if resultIcon}}<i class="fas fa-{{resultIcon}}"></i> {{/if}}{{resultTitle}}</div>
+        <p>Foraging has paid off. These items have been added to <strong>{{actorPossessive}}</strong> inventory:</p>
+        <div class="gather-result-list">
+            {{#each items}}
+            <div class="gather-result-item">
+ 
+                {{#if img}}<img src="{{img}}" alt="" class="gather-result-img" />{{/if}}
+                <div class="gather-result-content">
+                    {{{link}}}
+                </div>
+
+            </div>
+            {{else}}
+            <div class="gather-result-item">(none)</div>
+            {{/each}}
+        </div>
+        {{#if perks}}
+        <div class="section-header">{{#if perkIcon}}<i class="fas fa-{{perkIcon}}"></i> {{/if}}{{perkTitle}}</div>
+        <ul>
+            {{#each perks}}
+                <li><strong>{{perkTitle}}{{#if benefitTitle}}{{benefitTitle}}{{/if}}:</strong> {{description}}</li>
+            {{/each}}
+        </ul>
+        {{/if}}
+    </div>
+</div>

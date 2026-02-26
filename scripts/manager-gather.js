@@ -195,36 +195,46 @@ export function sendGatherNoPoolCard(actor = null) {
 
 /**
  * Send "You found ... Added to your inventory." chat card.
- * Formats each item like the investigation tool: image + UUID document link.
- * Optionally shows a "Perks applied" section when gathering perks contributed.
+ * Uses card-results-gather.hbs and Blacksmith Chat Cards API (cardTheme).
  * @param {Actor} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
  * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied to this gather (for success card)
  */
-export function sendGatherSuccessCard(actor = null, items = [], appliedPerks = []) {
-    const title = 'Forage for components';
+export async function sendGatherSuccessCard(actor = null, items = [], appliedPerks = []) {
+    const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
+    const cardTheme = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
+
     const escapeHtml = (s) => {
         if (s == null) return '';
         const str = String(s);
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
-    const itemRows = items.length
+
+    const itemsData = items?.length
         ? items.map((it) => {
-            const img = it.img ? `<img src="${escapeHtml(it.img)}" alt="" class="gather-result-img" />` : '';
-            const link = it.uuid ? `@UUID[${escapeHtml(it.uuid)}]{${escapeHtml(it.name)}}` : escapeHtml(it.name);
-            return `<div class="gather-result-item">${img} ${link}</div>`;
-        }).join('')
-        : '<div class="gather-result-item">(none)</div>';
-    let body = `<p>Foraging has paid off.</p><div class="gather-result-list">${itemRows}</div><p>Items added to your inventory.</p>`;
-    if (appliedPerks?.length) {
-        const perkItems = appliedPerks.map((p) => {
-            const label = p.benefitTitle ? `${escapeHtml(p.perkTitle)}: ${escapeHtml(p.benefitTitle)}` : escapeHtml(p.perkTitle);
-            const desc = p.description ? ` ${escapeHtml(p.description)}` : '';
-            return `<li><strong>${label}</strong>${desc}</li>`;
-        }).join('');
-        body += `<p><strong>Perks applied</strong></p><ul>${perkItems}</ul>`;
-    }
-    const html = buildChatCardHtml(title, body, 'card');
+            const name = it.name ?? '';
+            const uuid = it.uuid ?? '';
+            const img = it.img ?? '';
+            const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(name)}}` : escapeHtml(name);
+            return { img: img || null, link };
+        })
+        : [];
+
+    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
+
+    const html = await renderTemplate('modules/coffee-pub-artificer/templates/card-results-gather.hbs', {
+        cardTheme,
+        title: 'Forage for components',
+        icon: 'leaf',
+        resultTitle: 'Results',
+        resultIcon: 'leafy-green',
+        actorPossessive,
+        items: itemsData,
+        perkTitle: 'Perks applied',
+        perkIcon: 'seedling',
+        perks: appliedPerks?.length ? appliedPerks : null
+    });
+
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
         content: html,
@@ -303,7 +313,7 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         return;
     }
     if (outcome.itemRecords?.length) {
-        sendGatherSuccessCard(actor, outcome.itemRecords, outcome.appliedPerks);
+        await sendGatherSuccessCard(actor, outcome.itemRecords, outcome.appliedPerks);
     } else {
         sendGatherFailureCard(actor);
     }

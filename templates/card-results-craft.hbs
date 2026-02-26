@@ -1,0 +1,15 @@
+{{!-- Craft result chat card – Blacksmith Chat Cards API (blacksmith-card + theme + section-header) --}}
+<span style="visibility: hidden">coffeepub-hide-header</span>
+<div class="blacksmith-card {{cardTheme}}">
+    <div class="card-header">
+        <i class="fas fa-{{icon}}"></i> {{title}}
+    </div>
+    <div class="section-content">
+        <div class="section-header">{{#if resultIcon}}<i class="fas fa-{{resultIcon}}"></i> {{/if}}{{resultTitle}}</div>
+        {{{resultContents}}}
+        {{#if perkContents}}
+        <div class="section-header">{{#if perkIcon}}<i class="fas fa-{{perkIcon}}"></i> {{/if}}{{perkTitle}}</div>
+        <ul>{{{perkContents}}}</ul>
+        {{/if}}
+    </div>
+</div>

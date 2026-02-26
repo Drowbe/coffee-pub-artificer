@@ -396,6 +396,16 @@ export const registerSettings = () => {
         type: Object
     });
 
+    // -- Skills window: Hide Unavailable toggle (remember across sessions) --
+    game.settings.register(MODULE.ID, 'skillsWindowHideUnavailable', {
+        name: 'Skills window: Hide Unavailable (remembered)',
+        hint: 'Stores the Hide Unavailable toggle state for the Artificer Skills window.',
+        scope: 'world',
+        config: false,
+        default: false,
+        type: Boolean
+    });
+
     // Add more settings here as needed
     
 

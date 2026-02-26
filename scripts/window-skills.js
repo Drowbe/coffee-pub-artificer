@@ -7,6 +7,7 @@
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
+import { MODULE } from './const.js';
 import { SkillManager } from './manager-skills.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
@@ -133,7 +134,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         /** @type {string[]} pending unlearn perkIDs */
         this._pendingUnlearn = [];
         /** @type {boolean} when true, hide skills whose required kit is missing */
-        this._hideUnavailable = false;
+        this._hideUnavailable = game.settings.get(MODULE.ID, 'skillsWindowHideUnavailable') ?? false;
     }
 
     _getActor() {
@@ -415,6 +416,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             this._hideUnavailableChangeBound = (e) => {
                 if (e.target?.id === `${this.id}-hide-unavailable`) {
                     this._hideUnavailable = !!e.target.checked;
+                    game.settings.set(MODULE.ID, 'skillsWindowHideUnavailable', this._hideUnavailable);
                     this.render();
                 }
             };

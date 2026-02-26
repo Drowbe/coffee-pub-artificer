@@ -33,6 +33,8 @@ Hooks.once('init', async () => {
         'modules/coffee-pub-artificer/templates/window-crafting.hbs',
         'modules/coffee-pub-artificer/templates/window-skills.hbs',
         'modules/coffee-pub-artificer/templates/window-gather.hbs',
+        'modules/coffee-pub-artificer/templates/card-results-gather.hbs',
+        'modules/coffee-pub-artificer/templates/card-results-craft.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
     ]);

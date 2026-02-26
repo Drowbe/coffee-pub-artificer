@@ -281,7 +281,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 continue;
             }
             if (o.itemRecords?.length) {
-                sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
+                await sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
             } else {
                 sendGatherFailureCard(a);
             }
