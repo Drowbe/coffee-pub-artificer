@@ -221,12 +221,18 @@
 
 .crafting-recipe-filter-btn:hover {
     opacity: 0.7;
+    color: rgba(231, 90, 0, 0.9);
 }
 
 .crafting-recipe-filter-btn.active {
     opacity: 1;
     color: var(--craft-accent-color);
+    border: none;
+    outline: none;
+    box-shadow: none;
 }
+
+
 
 .crafting-recipe-filter-btn i {
     font-size: 0.9em;
@@ -273,21 +279,26 @@
     margin: 0;
 }
 
+
 .crafting-recipe-required-perk {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    margin-top: 4px;
+    margin: 20px 12px 12px 12px;
+    padding: 12px 12px 12px 12px;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.5);
 }
 
 .crafting-recipe-required-perk-icon {
     flex-shrink: 0;
     font-size: 1.25em;
+    line-height: 1.35;
     color: var(--craft-accent-color);
 }
 
 .crafting-recipe-required-perk-message {
-    font-style: italic;
+    font-style: inherit;
     color: rgba(201, 201, 201, 0.9);
     margin: 0;
     line-height: 1.35;
