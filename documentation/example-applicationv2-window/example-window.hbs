@@ -1,0 +1,43 @@
+{{!-- Minimal Application V2 window - header + body + action bar. Framework only; replace placeholders with your content. --}}
+<div class="example-window-root" id="{{appId}}">
+    <header class="example-window-header">
+        <div class="example-window-header-content">
+            <div class="example-window-header-icon">
+                <i class="fa-solid fa-window-maximize"></i>
+            </div>
+            <div class="example-window-header-title-block">
+                <div class="example-window-header-title">{{windowTitle}}</div>
+                <div class="example-window-header-subtitle">{{subtitle}}</div>
+            </div>
+            <div class="example-window-header-right">
+                {{!-- Add toggles, points, etc. --}}
+            </div>
+        </div>
+    </header>
+
+    <div class="example-window-body">
+        <div class="example-window-main">
+            {{!-- Main content area (e.g. list or form) --}}
+            <p class="example-window-placeholder">Content goes here.</p>
+        </div>
+        <aside class="example-window-details">
+            <section class="example-window-details-section">
+                <h3 class="example-window-details-title">Details</h3>
+                <div class="example-window-details-content">
+                    {{!-- Side panel content --}}
+                    <p class="example-window-placeholder">Details go here.</p>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <section class="example-window-buttons">
+        <div class="example-window-action-bar">
+            <div class="example-window-action-left"></div>
+            <div class="example-window-action-right">
+                <button type="button" class="example-window-btn-secondary" data-action="reset">Reset</button>
+                <button type="button" class="example-window-btn-primary" data-action="apply">Apply</button>
+            </div>
+        </div>
+    </section>
+</div>
