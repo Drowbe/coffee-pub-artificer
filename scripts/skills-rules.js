@@ -116,6 +116,31 @@ export function getLearnedPerkIdsForSkill(learnedPerkIds, skillId) {
 }
 
 /**
+ * Get component skill level ranges the actor can gather (from componentSkillAccess in perks).
+ * Used when picking components on a successful gather: only components whose skill level
+ * is 0 or within one of these ranges are eligible. Actors can always get level 0 components.
+ *
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Learned perk IDs that belong to this skill
+ * @returns {Promise<Array<[number, number]>>} Array of [min, max] inclusive ranges (e.g. [[0, 3], [4, 9]])
+ */
+export async function getEffectiveComponentSkillAccess(skillId, learnedPerkIdsForSkill) {
+    const { skills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, skills);
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    const ranges = [];
+    for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
+        if (Array.isArray(rule.componentSkillAccess) && rule.componentSkillAccess.length >= 2) {
+            const min = Number(rule.componentSkillAccess[0]);
+            const max = Number(rule.componentSkillAccess[1]);
+            if (!Number.isNaN(min) && !Number.isNaN(max)) ranges.push([min, max]);
+        }
+    }
+    return ranges;
+}
+
+/**
  * Effective gathering/harvesting rules for a skill and set of learned perk IDs.
  * Used by Roll for Components: roll bonus (summed) and yield multiplier (max).
  *

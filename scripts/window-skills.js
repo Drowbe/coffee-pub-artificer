@@ -12,6 +12,7 @@ import { SkillManager } from './manager-skills.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
 const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
+const SKILLS_RULES_URL = 'modules/coffee-pub-artificer/resources/skills-rules.json';
 
 const _skillManager = new SkillManager();
 
@@ -29,6 +30,26 @@ function actorHasItemNamed(actor, name) {
 
 /** Cached skills data from JSON */
 let _skillsDetailsCache = null;
+let _skillsRulesCache = null;
+
+/**
+ * Load skills rules from JSON. Caches result.
+ * @returns {Promise<{ skills: Record<string, { perks: Record<string, { benefits?: Array<{ title?: string, description?: string }> }> } }>}
+ */
+async function loadSkillsRules() {
+    if (_skillsRulesCache) return _skillsRulesCache;
+    try {
+        const res = await fetch(SKILLS_RULES_URL);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        _skillsRulesCache = data;
+        return data;
+    } catch (e) {
+        console.warn('Artificer Skills: Could not load skills-rules.json', e);
+        _skillsRulesCache = { schemaVersion: 1, skills: {} };
+        return _skillsRulesCache;
+    }
+}
 
 /**
  * Load skills details from JSON. Caches result.
@@ -298,6 +319,12 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                             canUnlearn = true;
                         }
                     }
+                    const rulesData = await loadSkillsRules();
+                    const skillRules = rulesData?.skills?.[selSkill.id];
+                    const perkRules = skillRules?.perks?.[perkID];
+                    const benefits = Array.isArray(perkRules?.benefits)
+                        ? perkRules.benefits.map((b) => ({ title: b.title ?? '', description: b.description ?? '' }))
+                        : [];
                     selectedDetail = {
                         type: 'perk',
                         skill: selSkill,
@@ -308,7 +335,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                         canLearn,
                         showUnlearn: isEffectiveLearned,
                         canUnlearn,
-                        unlearnBlockedReason
+                        unlearnBlockedReason,
+                        benefits
                     };
                 } else {
                     selectedDetail = { type: 'skill', skill: selSkill, perk: null };

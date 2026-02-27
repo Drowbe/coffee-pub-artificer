@@ -654,6 +654,42 @@
     color: rgba(201, 201, 201, 0.9);
 }
 
+/* ----- Benefits (from skills-rules, when viewing a perk) ----- */
+.skills-detail-benefits-title {
+    margin: 1em 0 0.5em 0;
+    font-size: 0.95em;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--skills-accent-color);
+    border-bottom: 1px solid var(--skills-border-color);
+    padding-bottom: 4px;
+}
+
+.skills-detail-benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5em 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.skills-detail-benefit {
+    font-size: 0.85em;
+    line-height: 1.35;
+    color: rgba(201, 201, 201, 0.9);
+}
+
+.skills-detail-benefit-title {
+    display: inline;
+    font-weight: 600;
+    color: rgba(224, 224, 224, 0.95);
+}
+
+.skills-detail-benefit-desc {
+    margin-left: 0.25em;
+}
+
 /* ----- Perks section (when viewing a skill) ----- */
 .skills-detail-perks-title {
     margin: 1em 0 0.5em 0;

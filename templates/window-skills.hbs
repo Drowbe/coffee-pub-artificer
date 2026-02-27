@@ -86,6 +86,19 @@
                         {{#if selectedDetail.perk.description}}
                         <div class="skills-detail-description">{{{selectedDetail.perk.description}}}</div>
                         {{/if}}
+                        {{#if selectedDetail.benefits}}
+                        {{#if selectedDetail.benefits.length}}
+                        <h4 class="skills-detail-benefits-title">Benefits</h4>
+                        <ul class="skills-detail-benefits-list">
+                            {{#each selectedDetail.benefits}}
+                            <li class="skills-detail-benefit">
+                                <strong class="skills-detail-benefit-title">{{this.title}}</strong>
+                                {{#if this.description}}<span class="skills-detail-benefit-desc">{{this.description}}</span>{{/if}}
+                            </li>
+                            {{/each}}
+                        </ul>
+                        {{/if}}
+                        {{/if}}
                         {{#if selectedDetail.canLearn}}
                         <button type="button" class="skills-detail-btn-learn" data-action="learnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="Queue to learn">
                             <i class="fa-solid fa-plus"></i> Learn

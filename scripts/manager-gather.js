@@ -12,7 +12,7 @@ import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
 import { getAPI } from './api-artificer.js';
-import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getAppliedGatheringPerksForDisplay } from './skills-rules.js';
+import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay } from './skills-rules.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[] }} PendingGather */
 
@@ -67,9 +67,10 @@ export function consumePendingGather() {
 /**
  * Get cache records that match selected biomes and component families (no fromUuid).
  * Only returns items that are Artificer type Component. Item eligible if it has no biomes or its biomes intersect selected.
+ * Records include a tier (skill level) from the item flags.
  * @param {string[]} biomes - Selected biomes (e.g. ['FOREST', 'HILL'])
  * @param {string[]} families - Selected component families (e.g. ['Plant', 'Mineral'])
- * @returns {Array<{ name: string, uuid: string, family: string, img?: string, biomes?: string[] }>}
+ * @returns {Array<{ name: string, uuid: string, family: string, img?: string, biomes?: string[], tier?: number }>}
  */
 export function getEligibleGatherRecords(biomes, families) {
     if (!biomes?.length || !families?.length) return [];
@@ -270,9 +271,10 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
     let effectiveTotal = rollTotal;
     let yieldMultiplier = 1;
     let appliedPerks = [];
+    let herbalismPerks = [];
     if (actor) {
         const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
-        const herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
+        herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
         const gatheringRules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
         effectiveTotal = rollTotal + (gatheringRules.gatheringRollBonus ?? 0);
         yieldMultiplier = Math.max(1, Math.floor(gatheringRules.gatheringYieldMultiplier ?? 1));
@@ -282,9 +284,21 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!actor) return { success: false };
     const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
     if (!eligibleRecords.length) return { success: true, noPool: true };
+
+    const componentSkillRanges = await getEffectiveComponentSkillAccess('Herbalism', herbalismPerks);
+
+    const recordsAllowedByPerks = eligibleRecords.filter((rec) => {
+        const tier = rec.tier ?? 0;
+        if (tier === 0) return true;
+        if (!componentSkillRanges.length) return false;
+        return componentSkillRanges.some(([min, max]) => tier >= min && tier <= max);
+    });
+
+    if (!recordsAllowedByPerks.length) return { success: true, noPool: true };
+
     const itemRecords = [];
     for (let i = 0; i < yieldMultiplier; i++) {
-        const record = pickOneGatherRecord(eligibleRecords);
+        const record = pickOneGatherRecord(recordsAllowedByPerks);
         if (!record) continue;
         let item = null;
         try {
