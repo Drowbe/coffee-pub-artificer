@@ -5,15 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [13.0.8] - Skills rules (Option A): recipe visibility by perk
+## [13.0.8] - Skills rules, gather enhancements, Request Roll API integration
 
 ### Added
-- **skills-rules.json:** New `resources/skills-rules.json` (Option A) keyed by skill then perkID. Herbalism perks define `recipeTierAccess`, `craftingDCModifier`, `ingredientLossOnFail`, and `experimentalCrafting` for use by the crafting window.
-- **Skills rules loader:** New `scripts/skills-rules.js` loads and caches the rules file and exposes `getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)` (tier access union, DC modifier, experimental flag, ingredient loss on fail). API exposes `getEffectiveCraftingRules(skillId, learnedPerkIds)` for callers that pass all learned perk IDs.
+- **skills-rules.json:** New `resources/skills-rules.json` (Option A) keyed by skill then perkID. Herbalism perks define `recipeTierAccess`, `craftingDCModifier`, `ingredientLossOnFail`, `experimentalCrafting`, and `componentSkillAccess` for use by the crafting window and gather logic.
+- **Skills rules loader:** New `scripts/skills-rules.js` loads and caches the rules file and exposes `getEffectiveCraftingRules`, `getEffectiveComponentSkillAccess`, and `getEffectiveGatheringRules`. API exposes `getEffectiveCraftingRules(skillId, learnedPerkIds)` for callers that pass all learned perk IDs.
 - **Crafting window — recipe visibility by perk:** For each recipe with a `skill` and `skillLevel`, the window uses the actor’s learned perks for that skill and the rules to determine if the recipe tier is visible. If not (and no Experimental Botanist bypass), the recipe row shows a generic icon, gets class `crafting-recipe-row-hidden`, and the Details pane shows: “You do not have the perk required to view this recipe.” Metadata (DC, skill kit, etc.) is hidden for locked recipes.
+- **Gather — component skill access:** On a successful gather roll, only components whose skill level is 0 or within the actor's Herbalism `componentSkillAccess` ranges (from perks) are eligible. Actors can always receive level 0 components.
+- **Skills window — Benefits display:** Perk details pane now loads `skills-rules.json` and displays each perk's benefits (title + description) in a structured list below "About the Perk."
+- **Request Roll — per-actor situational bonus:** When opening Blacksmith Request Roll for forage, passes token-centric actors with per-actor `situationalBonus` from Herbalism perks and `groupRoll: false`.
+- **Macro — Set component skill by rarity:** New `macros/set-component-skill-by-rarity-macro.js` crawls the "Artificer items" folder and sets each item's skill level from its D&D rarity (Common 0-3, Uncommon 4-9, Rare 10-14, Very rare 15-19, Legendary 20). Exception: if skill is already 0 and rarity is common, leaves 0. Supports dry run.
 
 ### Changed
 - **module.json:** Added `scripts/skills-rules.js` to esmodules (before api-artificer).
+- **Gather success card — template-driven layout:** All HTML moved from JavaScript into `templates/card-results-gather.hbs`; JS passes data only (items array with `img`/`link`, perks array, `actorPossessive`).
+- **Gather success card — actor name:** Replaced placeholder "NAME" with the actual character name (e.g. "Nik Melok's") or "their" when no actor.
 
 ## [13.0.7] - Skills window: perks, kit indicators, Hide Unavailable
 
