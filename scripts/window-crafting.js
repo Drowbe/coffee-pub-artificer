@@ -8,7 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
-import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft } from './skills-rules.js';
+import { getEffectiveCraftingRules, getExperimentalPerkIconClass, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -386,6 +386,7 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
 
         let recipeHiddenByPerk = false;
         let hiddenMessage = null;
+        let craftableIconClass = null;
         if (r.skill && typeof r.skill === 'string') {
             const learnedForSkill = getLearnedPerkIdsForSkill(learnedPerkIds, r.skill);
             const rules = await getEffectiveCraftingRules(r.skill, learnedForSkill);
@@ -394,8 +395,21 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             if (!canView) {
                 recipeHiddenByPerk = true;
                 hiddenMessage = 'You do not have the perk required to view this recipe.';
+            } else {
+                const canCraftHere = recipeCanCraft(actor, r);
+                if (canCraftHere) {
+                    const isExperimentalOnly = rules.hasExperimental && !rules.inTier(skillLevel);
+                    if (isExperimentalOnly) {
+                        const experimentalIcon = await getExperimentalPerkIconClass(r.skill, learnedForSkill);
+                        craftableIconClass = experimentalIcon ?? 'fa-solid fa-hammer';
+                    } else {
+                        craftableIconClass = 'fa-solid fa-hammer';
+                    }
+                }
             }
         }
+        const canCraft = recipeCanCraft(actor, r);
+        if (canCraft && !craftableIconClass) craftableIconClass = 'fa-solid fa-hammer';
 
         return {
             recipeId: r.id,
@@ -405,7 +419,8 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             journalName,
             journalUuid,
             selected: selectedRecipeId === r.id,
-            canCraft: recipeCanCraft(actor, r),
+            canCraft,
+            craftableIconClass,
             recipeHiddenByPerk,
             hiddenMessage
         };

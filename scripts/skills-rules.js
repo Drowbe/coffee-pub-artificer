@@ -299,8 +299,15 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         return tierRanges.some(([min, max]) => l >= min && l <= max);
     };
 
+    const inTier = (level) => {
+        const l = Number(level);
+        if (Number.isNaN(l)) return false;
+        return tierRanges.some(([min, max]) => l >= min && l <= max);
+    };
+
     return {
         canViewTier,
+        inTier,
         hasExperimental,
         experimentalCraftingTypes,
         experimentalRandomComponents,
@@ -309,6 +316,38 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         ingredientLossOnFail,
         ingredientKeptOnSuccess
     };
+}
+
+/**
+ * Get the icon class for a learned perk that grants experimental crafting for this skill.
+ * Used to show that perk's icon on recipe rows that are attemptable only via experimental (e.g. Experimental Botanist).
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Actor's learned perk IDs for this skill
+ * @returns {Promise<string|null>} iconClass (e.g. "fa-solid fa-flask") or null
+ */
+export async function getExperimentalPerkIconClass(skillId, learnedPerkIdsForSkill) {
+    const { skills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, skills);
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    const skillLower = (skillId ?? '').toString().trim().toLowerCase();
+    for (const perkId of learnedPerkIdsForSkill) {
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            const rule = benefit.rule;
+            if (!rule?.experimentalCrafting || rule.experimentalCrafting.allowed !== true) continue;
+            const ct = (rule.experimentalCrafting.craftingType ?? '').toString().trim().toLowerCase();
+            if (ct && ct !== skillLower) continue;
+            const { skills: detailsSkills = [] } = await loadSkillsDetails();
+            const skillDetail = detailsSkills.find((s) => (s.id ?? '').toLowerCase() === (key ?? '').toLowerCase() || (s.id ?? '').toLowerCase() === skillLower);
+            const perkDetail = skillDetail?.perks?.find((p) => (p.perkID ?? '') === perkId);
+            if (!perkDetail?.icon) return null;
+            let iconClass = (perkDetail.icon ?? '').toString().trim();
+            if (!iconClass.startsWith('fa-')) iconClass = `fa-${iconClass}`;
+            if (!iconClass.startsWith('fa-solid ') && !iconClass.startsWith('fa-brands ')) iconClass = `fa-solid ${iconClass}`;
+            return iconClass;
+        }
+    }
+    return null;
 }
 
 /**
