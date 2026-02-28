@@ -73,7 +73,7 @@
           "value": 0,
           "name": "Initiate of the Green Archive",
           "description": "<p><strong>About the Perk</strong><br>You have studied beyond folk remedies. You understand preparation theory, preservation methods, and the deeper lessons hidden within traditional botanical texts.</p>",
-          "requirement": "Field Forager",
+          "requirement": "",
           "cost": 2,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
           "icon": "fa-book-open"

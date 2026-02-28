@@ -496,6 +496,26 @@
     font-size: 0.75em;
 }
 
+/* Chain step index: small circle in lower-right (1, 2, 3 for requirement chains) */
+.skills-perk-chain {
+    position: absolute;
+    bottom: 0px;
+    right: 42px;
+    width: 1.2em;
+    height: 1.2em;
+    font-size: 0.20em;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    border: 0px solid rgba(0, 0, 0, 0.3);
+    border-radius: 1px 6px 1px 0px;
+    color: rgba(255, 255, 255, 0.8);
+    z-index: 100;
+    pointer-events: none;
+}
+
 
 
 

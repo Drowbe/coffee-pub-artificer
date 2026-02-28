@@ -243,6 +243,23 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const MAX_PERKS = 10;
             const skillKit = skill.skillKit ?? '';
             const hasKit = skillKit ? (actor ? actorHasItemNamed(actor, skillKit) : false) : true;
+            /* Chain index: 1,2,3 for perks that form a requirement chain (each requires the previous). */
+            const chainIndices = [];
+            for (let idx = 0; idx < rawPerks.length; idx++) {
+                const p = rawPerks[idx];
+                const req = p.requirement ?? '';
+                const prevName = idx > 0 ? (rawPerks[idx - 1].name ?? '') : '';
+                if (!req || req !== prevName) chainIndices.push(1);
+                else chainIndices.push((chainIndices[idx - 1] ?? 1) + 1);
+            }
+            const chainLengths = rawPerks.map((_, idx) => {
+                let start = idx;
+                while (start > 0 && chainIndices[start - 1] === chainIndices[start] - 1) start--;
+                let end = idx;
+                while (end + 1 < rawPerks.length && chainIndices[end + 1] === chainIndices[end] + 1) end++;
+                const len = end - start + 1;
+                return len >= 2 ? len : 0;
+            });
             const filledPerks = rawPerks.map((p, idx) => {
                 const perkID = p.perkID ?? '';
                 const applied = effectiveLearned(perkID);
@@ -255,6 +272,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     else prereqMet = actor ? actorHasItemNamed(actor, req) : false;
                 }
                 const requirementBlocked = !applied && !!req && !prereqMet;
+                const chainIndex = chainLengths[idx] >= 2 ? chainIndices[idx] : 0;
                 return {
                     ...p,
                     perkIndex: idx,
@@ -262,6 +280,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     displayValue: p.cost ?? 0,
                     perkApplied: applied,
                     requirementBlocked,
+                    chainIndex,
+                    chainLength: chainLengths[idx],
                     perkMinSkillLevel: p.perkMinSkillLevel ?? 0,
                     perkMaxSkillLevel: p.perkMaxSkillLevel ?? 0,
                     perkLearnedBackgroundColor: p.perkLearnedBackgroundColor ?? 'rgba(47, 63, 56, 0.4)',
