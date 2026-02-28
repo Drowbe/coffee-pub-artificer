@@ -142,11 +142,11 @@ export async function getEffectiveComponentSkillAccess(skillId, learnedPerkIdsFo
 
 /**
  * Effective gathering/harvesting rules for a skill and set of learned perk IDs.
- * Used by Roll for Components: roll bonus (summed) and yield multiplier (max).
+ * Used by Roll for Components: roll bonus (summed), yield multiplier (max), and on-fail consolation (componentAutoGather).
  *
  * @param {string} skillId - Skill id (e.g. "Herbalism")
  * @param {string[]} learnedPerkIdsForSkill - Learned perk IDs that belong to this skill
- * @returns {Promise<{ gatheringRollBonus: number, gatheringYieldMultiplier: number }>}
+ * @returns {Promise<{ gatheringRollBonus: number, gatheringYieldMultiplier: number, componentAutoGather?: string }>}
  */
 export async function getEffectiveGatheringRules(skillId, learnedPerkIdsForSkill) {
     const { skills = {} } = await loadSkillsRules();
@@ -155,13 +155,44 @@ export async function getEffectiveGatheringRules(skillId, learnedPerkIdsForSkill
     const perks = skillRules?.perks ?? {};
     let gatheringRollBonus = 0;
     let gatheringYieldMultiplier = 1;
+    /** @type {string|undefined} */
+    let componentAutoGather = undefined;
     for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
         if (typeof rule.gatheringRollBonus === 'number') gatheringRollBonus += rule.gatheringRollBonus;
         if (typeof rule.gatheringYieldMultiplier === 'number' && rule.gatheringYieldMultiplier > gatheringYieldMultiplier) {
             gatheringYieldMultiplier = rule.gatheringYieldMultiplier;
         }
+        if (typeof rule.componentAutoGather === 'string' && rule.componentAutoGather.trim()) {
+            componentAutoGather = rule.componentAutoGather.trim();
+        }
     }
-    return { gatheringRollBonus, gatheringYieldMultiplier };
+    return { gatheringRollBonus, gatheringYieldMultiplier, componentAutoGather };
+}
+
+/**
+ * Get human-readable perk title(s) that grant componentAutoGather (for consolation card when gather fails).
+ * @param {string} skillId - Skill id (e.g. "Herbalism")
+ * @param {string[]} learnedPerkIdsForSkill - Learned perk IDs that belong to this skill
+ * @returns {Promise<string[]>} Perk titles (e.g. ["Gentle Hand of the Grove"])
+ */
+export async function getComponentAutoGatherPerkNames(skillId, learnedPerkIdsForSkill) {
+    const { skills = {} } = await loadSkillsRules();
+    const key = skillKey(skillId, skills);
+    const skillRules = key ? skills[key] : null;
+    const perks = skillRules?.perks ?? {};
+    const names = [];
+    for (const perkId of learnedPerkIdsForSkill) {
+        const entry = perks[perkId];
+        if (!entry || typeof entry !== 'object') continue;
+        for (const benefit of getPerkBenefits(perks, perkId)) {
+            if (typeof benefit.rule?.componentAutoGather === 'string' && benefit.rule.componentAutoGather.trim()) {
+                const title = (entry.title ?? perkId).trim();
+                if (title && !names.includes(title)) names.push(title);
+                break;
+            }
+        }
+    }
+    return names;
 }
 
 /**
@@ -206,8 +237,10 @@ export async function getAppliedGatheringPerksForDisplay(skillId, learnedPerkIds
  * @returns {Promise<{
  *   canViewTier: (level: number) => boolean,
  *   hasExperimental: boolean,
+ *   experimentalCraftingTypes: string[],
+ *   experimentalRandomComponents: number,
  *   dcModifier: number,
- *   experimentalDcModifier: number,
+ *   experimentalRollBonus: number,
  *   ingredientLossOnFail: 'all' | 'half',
  *   ingredientKeptOnSuccess: undefined | 'half'
  * }>}
@@ -222,7 +255,10 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     const tierRanges = [];
     let dcModifier = 0;
     let hasExperimental = false;
-    let experimentalDcModifier = 0;
+    /** @type {Set<string>} */
+    const experimentalCraftingTypesSet = new Set();
+    let experimentalRandomComponents = 0;
+    let experimentalRollBonus = 0;
     let ingredientLossOnFail = 'all';
     let ingredientKeptOnSuccess = undefined;
 
@@ -237,9 +273,14 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         }
         if (rule.experimentalCrafting && rule.experimentalCrafting.allowed === true) {
             hasExperimental = true;
-            if (typeof rule.experimentalCrafting.dcModifier === 'number') {
-                experimentalDcModifier = rule.experimentalCrafting.dcModifier;
-            }
+            const ct = rule.experimentalCrafting.craftingType;
+            if (typeof ct === 'string' && ct.trim()) experimentalCraftingTypesSet.add(ct.trim().toLowerCase());
+        }
+        if (typeof rule.experimentalCraftingRandomComponents === 'number' && rule.experimentalCraftingRandomComponents > experimentalRandomComponents) {
+            experimentalRandomComponents = rule.experimentalCraftingRandomComponents;
+        }
+        if (typeof rule.experimentalCraftingDCModifier === 'number') {
+            experimentalRollBonus += rule.experimentalCraftingDCModifier;
         }
         if (rule.ingredientLossOnFail === 'half') {
             ingredientLossOnFail = 'half';
@@ -248,6 +289,8 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
             ingredientKeptOnSuccess = 'half';
         }
     }
+
+    const experimentalCraftingTypes = Array.from(experimentalCraftingTypesSet);
 
     const canViewTier = (level) => {
         if (hasExperimental) return true;
@@ -259,8 +302,10 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     return {
         canViewTier,
         hasExperimental,
+        experimentalCraftingTypes,
+        experimentalRandomComponents,
         dcModifier,
-        experimentalDcModifier,
+        experimentalRollBonus,
         ingredientLossOnFail,
         ingredientKeptOnSuccess
     };
@@ -359,9 +404,9 @@ export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, r
             if (rule.ingredientKeptOnSuccess === 'half') {
                 effectsByPerk.get(perkName).push('On success: keep half the ingredients');
             }
-            if (rule.experimentalCrafting?.allowed && typeof rule.experimentalCrafting.dcModifier === 'number' && rule.experimentalCrafting.dcModifier !== 0 && isExperimental) {
-                const sign = rule.experimentalCrafting.dcModifier >= 0 ? '+' : '';
-                effectsByPerk.get(perkName).push(`${sign}${rule.experimentalCrafting.dcModifier} DC (experimental attempt)`);
+            if (typeof rule.experimentalCraftingDCModifier === 'number' && rule.experimentalCraftingDCModifier !== 0 && isExperimental) {
+                const sign = rule.experimentalCraftingDCModifier >= 0 ? '+' : '';
+                effectsByPerk.get(perkName).push(`${sign}${rule.experimentalCraftingDCModifier} roll bonus (experimental attempt)`);
             }
         }
     }

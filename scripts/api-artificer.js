@@ -71,7 +71,7 @@ export class ArtificerAPI {
      * Used by the crafting window for recipe visibility, DC, and ingredient consumption.
      * @param {string} skillId - Skill id (e.g. "Herbalism")
      * @param {string[]} learnedPerkIds - All learned perk IDs for the actor
-     * @returns {Promise<{ canViewTier: (level: number) => boolean, hasExperimental: boolean, dcModifier: number, experimentalDcModifier: number, ingredientLossOnFail: 'all'|'half', ingredientKeptOnSuccess: undefined|'half' }>}
+     * @returns {Promise<{ canViewTier: (level: number) => boolean, hasExperimental: boolean, experimentalCraftingTypes: string[], experimentalRandomComponents: number, dcModifier: number, experimentalRollBonus: number, ingredientLossOnFail: 'all'|'half', ingredientKeptOnSuccess: undefined|'half' }>}
      */
     async getEffectiveCraftingRules(skillId, learnedPerkIds) {
         const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], skillId);

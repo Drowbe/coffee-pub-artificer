@@ -7,7 +7,7 @@ import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
-import { getCacheStatus, refreshCache } from './cache/cache-items.js';
+import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import { getEffectiveCraftingRules, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
@@ -45,6 +45,41 @@ function isCraftValidItem(item) {
     if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
     const cc = asCraftableConsumable(item);
     return cc.ok;
+}
+
+/**
+ * For experimental crafting: inject N wrong components into the recipe at random slot positions.
+ * Uses component records from cache that are not already in the recipe; picks random positions (not just at end).
+ * @param {Array<{ name: string, type?: string, family?: string, quantity?: number }>} recipeIngredients
+ * @param {string} _skillId - Recipe skill (reserved for future filtering by skill)
+ * @param {number} count - Number of wrong components to add
+ * @returns {Array<{ name: string, type: string, family?: string, quantity: number }>}
+ */
+function injectWrongComponents(recipeIngredients, _skillId, count) {
+    if (count <= 0) return [...(recipeIngredients ?? [])];
+    const records = getAllRecordsFromCache();
+    const recipeNames = new Set((recipeIngredients ?? []).map((ing) => normalizeItemNameForMatch(ing.name)).filter(Boolean));
+    const componentRecords = records.filter((rec) => {
+        if ((rec.artificerType ?? null) !== ARTIFICER_TYPES.COMPONENT) return false;
+        const name = (rec.name ?? '').trim();
+        if (!name) return false;
+        return !recipeNames.has(normalizeItemNameForMatch(name));
+    });
+    if (!componentRecords.length) return [...(recipeIngredients ?? [])];
+    const wrongCount = Math.min(count, componentRecords.length);
+    const shuffled = [...componentRecords].sort(() => Math.random() - 0.5);
+    const wrongIngredients = shuffled.slice(0, wrongCount).map((rec) => ({
+        type: ARTIFICER_TYPES.COMPONENT,
+        name: rec.name ?? '?',
+        family: rec.family,
+        quantity: 1
+    }));
+    const result = [...(recipeIngredients ?? [])];
+    for (const wrong of wrongIngredients) {
+        const idx = Math.floor(Math.random() * (result.length + 1));
+        result.splice(idx, 0, wrong);
+    }
+    return result;
 }
 
 /**
@@ -1260,9 +1295,25 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedRecipe = recipe;
         BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON03, 0.5, false, false);
 
+        /** Build effective ingredient list: add wrong components at random slots when experimental. */
+        let effectiveIngredients = recipe.ingredients ?? [];
+        if (recipe.skill && actor) {
+            const learnedPerkIds = await getAPI()?.skills?.getLearnedPerks?.(actor) ?? [];
+            const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
+            const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
+            const withinTier = !Number.isNaN(skillLevel) && rules.canViewTier(skillLevel);
+            const skillLower = (recipe.skill || '').toLowerCase();
+            const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
+            const isExperimental = rules.hasExperimental && !withinTier && canAttemptExperimental;
+            if (isExperimental && rules.experimentalRandomComponents > 0) {
+                effectiveIngredients = injectWrongComponents(recipe.ingredients ?? [], recipe.skill, rules.experimentalRandomComponents);
+            }
+        }
+
         /** @type {Array<{item: Item|null, name?: string, img?: string, count: number, have?: number, isMissing?: boolean}|null>} */
         const newSlots = Array(6).fill(null);
-        const ingredients = recipe.ingredients ?? [];
+        const ingredients = effectiveIngredients;
         const placeholderImg = 'icons/skills/melee/weapons-crossed-swords-yellow.webp';
 
         for (let i = 0; i < Math.min(6, ingredients.length); i++) {
@@ -1512,16 +1563,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
             const withinTier = !Number.isNaN(skillLevel) && rules.canViewTier(skillLevel);
-            const isExperimental = rules.hasExperimental && !withinTier;
+            const skillLower = (recipe.skill || '').toLowerCase();
+            const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
+            const isExperimental = rules.hasExperimental && !withinTier && canAttemptExperimental;
 
             resolvedDC += rules.dcModifier;
-            if (isExperimental) resolvedDC += rules.experimentalDcModifier;
             ingredientLossOnFail = rules.ingredientLossOnFail;
             ingredientKeptOnSuccess = rules.ingredientKeptOnSuccess;
 
             const roll = new Roll('1d20');
             await roll.evaluate();
             rollTotal = roll.total;
+            if (isExperimental && rules.experimentalRollBonus) {
+                rollTotal += rules.experimentalRollBonus;
+            }
         }
 
         const success = rollTotal === null ? true : rollTotal >= resolvedDC;

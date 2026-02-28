@@ -62,11 +62,6 @@
           "title": "Seasoned Pathfinder",
           "benefits": [
             {
-              "title": "Foraging",
-              "description": "Foraging benefits; no crafting rule effect.",
-              "rule": {}
-            },
-            {
                 "title": "Very Rare and Legendary Components",
                 "description": "Unlocks components with skill requirements 15 to 20.",
                 "rule": { "componentSkillAccess": [15, 20] }
@@ -74,21 +69,13 @@
           ]
         },
 
-
-
-
-
-
-
-
-
         "herbalism-gentle-hand-of-the-grove": {
           "title": "Gentle Hand of the Grove",
           "benefits": [
             {
-              "title": "Reduced waste",
-              "description": "Reduced waste on failed gathering; You always get an Herb Bundle when gathering fails.",
-              "rule": {}
+              "title": "Reduced Waste",
+              "description": "You waste nothing. When gathering fails, you always get an Herb Bundle.",
+              "rule": { "componentAutoGather": "Herb Bundle" }
             }
           ]
         },
@@ -147,9 +134,20 @@
           "benefits": [
             {
               "title": "Experimental crafting",
-              "description": "May attempt any recipe above tier; +3 DC and one hidden incorrect ingredient.",
-              "rule": { "experimentalCrafting": { "allowed": true, "dcModifier": 3 } }
+              "description": "May attempt any herbalis recipe... with a few catches.",
+              "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "herbalism" } }
+            },
+            {
+              "title": "Ingredient Wildcard",
+              "description": "You can read the recipe, but one of the components shouldn't be there. Remove it. good luck.",
+              "rule": { "experimentalCraftingRandomComponents": 1 }
+            },
+            {
+              "title": "Experimental Crafting Bonus",
+              "description": "Sure one is missing, but you get a +3 bonus to your crafting roll.",
+              "rule": { "experimentalCraftingDCModifier": 3 }
             }
+
           ]
         }
       }

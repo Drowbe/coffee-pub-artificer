@@ -12,7 +12,8 @@ import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
 import { getAPI } from './api-artificer.js';
-import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay } from './skills-rules.js';
+import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay, getComponentAutoGatherPerkNames } from './skills-rules.js';
+import { getFromCache } from './cache/cache-items.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[] }} PendingGather */
 
@@ -163,6 +164,33 @@ function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
 }
 
 /**
+ * Send "Roll failed, but thanks to [perk] you still get ..." chat card (failed roll with componentAutoGather consolation).
+ * @param {Actor} [actor] - Optional actor (for speaker)
+ * @param {Array<{ name: string, uuid: string, img?: string }>} items - Consolation item(s) granted
+ * @param {string[]} [perkNames] - Perk title(s) that granted the consolation (e.g. ["Gentle Hand of the Grove"])
+ */
+export function sendGatherConsolationCard(actor = null, items = [], perkNames = []) {
+    const title = 'Forage for components';
+    const escapeHtml = (s) => {
+        if (s == null) return '';
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+    const itemLinks = items?.map((it) => it.uuid ? `@UUID[${escapeHtml(it.uuid)}]{${escapeHtml(it.name ?? '')}}` : escapeHtml(it.name ?? '')).filter(Boolean) ?? [];
+    const itemText = itemLinks.length ? itemLinks.join(' and ') : 'something';
+    const perkText = perkNames?.length ? perkNames.join(', ') : 'your perk';
+    const body = itemLinks.length
+        ? `<p><strong>The roll failed</strong>, but thanks to <em>${escapeHtml(perkText)}</em> you still receive at least ${itemText}.</p>`
+        : '<p>You didn\'t find anything.</p>';
+    const html = buildChatCardHtml(title, body, 'card');
+    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
+    ChatMessage.create({
+        content: html,
+        speaker,
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
+}
+
+/**
  * Send "You didn't find anything" chat card (failed roll or no actor).
  * @param {Actor} [actor] - Optional actor (for speaker)
  */
@@ -280,7 +308,29 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
         yieldMultiplier = Math.max(1, Math.floor(gatheringRules.gatheringYieldMultiplier ?? 1));
         appliedPerks = await getAppliedGatheringPerksForDisplay('Herbalism', herbalismPerks);
     }
-    if (effectiveTotal < dc) return { success: false };
+    if (effectiveTotal < dc) {
+        if (actor && herbalismPerks.length) {
+            const gatheringRules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
+            const autoGatherName = gatheringRules.componentAutoGather;
+            if (autoGatherName) {
+                const item = await getFromCache(autoGatherName);
+                if (item) {
+                    await addGatherItemToActor(actor, item);
+                    const name = item.name ?? autoGatherName;
+                    const uuid = item.uuid ?? '';
+                    const img = item.img ?? '';
+                    const perkNames = await getComponentAutoGatherPerkNames('Herbalism', herbalismPerks);
+                    return {
+                        success: false,
+                        componentAutoGatherGranted: true,
+                        itemRecords: [{ name, uuid, img }],
+                        perkNames
+                    };
+                }
+            }
+        }
+        return { success: false };
+    }
     if (!actor) return { success: false };
     const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
     if (!eligibleRecords.length) return { success: true, noPool: true };
@@ -336,7 +386,11 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         return;
     }
     if (!outcome.success) {
-        sendGatherFailureCard(actor);
+        if (outcome.componentAutoGatherGranted && outcome.itemRecords?.length) {
+            sendGatherConsolationCard(actor, outcome.itemRecords, outcome.perkNames ?? []);
+        } else {
+            sendGatherFailureCard(actor);
+        }
         return;
     }
     if (outcome.itemRecords?.length) {

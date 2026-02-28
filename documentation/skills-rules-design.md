@@ -1,96 +1,160 @@
-# Skills Rules Design — Crafting Window Integration
+# Skills Rules Design — Crafting & Gathering Integration
 
-**Purpose:** Define how `resources/skills-rules.json` (and per-skill/per-perk rules) drive the crafting experience so the window can adapt visibility, DC, and outcomes from learned perks. **No code in this document; design only.**
+**Purpose:** Define how `resources/skills-rules.json` drives the crafting window and gathering logic. This doc describes the **actual implementation**: structure, rule keys, aggregation, and how the window/gather use them.
 
 ---
 
-## 1. Review of Herbalism skill JSON (skills-details.json)
+## 1. Relationship to skills-details.json
 
-- **Structure:** One skill object with `id`, `name`, `perks[]`. Each perk has `perkID`, `name`, `description`, `requirement`, `cost`, `icon`, `perkLearnedBackgroundColor`. Good for UI and prerequisite resolution.
-- **Recipe-tier language:** Perk descriptions use “recipes 0–1”, “0–7”, “8–14”, “15–20”. These align with recipe `skillLevel` (0–20): Field Forager → 0–1; Initiate of the Green Archive → 0–7; Keeper of Hidden Remedies → 8–14; Archdruid of the Verdant Codex → 15–20.
-- **Minor:** One perk has `"icon": "mortar-pestle"`; Font Awesome usually expects `fa-mortar-pestle` or `fa-solid fa-mortar-pestle` for consistent rendering. Worth normalizing in data or in the code that builds `iconClass`.
-
-The prose in `description` is perfect for the Details pane; for the **crafting engine** we need machine-readable rules that the window can look up by `skill` + learned perks.
+- **skills-details.json:** One skill object with `id`, `name`, `perks[]`. Each perk has `perkID`, `name`, `description`, `requirement`, `cost`, `icon`. Used for Skills UI (names, prerequisites, icons) and for human-readable perk names in messages.
+- **skills-rules.json:** Machine-readable rules keyed by skill and perk. Each perk entry has a **title** and a **benefits** array; each benefit has **title**, **description**, and **rule**. The **description** is shown in the Skills window benefits list; the **rule** object is what the crafting and gathering code consumes. So one file drives both UI copy and engine behavior.
 
 ---
 
 ## 2. Goals for rules
 
-- **Recipe visibility:** If the actor does not have a perk that grants access to the recipe’s tier (by `skillLevel` or explicit range), show `?` instead of the recipe image and in details show: “You do not have the perk required to view this recipe.”
-- **DC roll after process:** After the recipe process runs, roll vs recipe `successDC`. Perks can modify the DC or add a bonus to the roll (e.g. Conservator −1 DC when within tier; Experimental Botanist +3 DC when attempting above tier).
-- **Ingredient consumption on success/failure:** e.g. “on failure lose only half (round up)” → after the DC roll, if failed, consume only half the ingredients (randomly keep half). Other perks might “on success consume half” (randomly keep some).
-- **Extensibility:** One rules structure that can support Herbalism now and other skills (Alchemy, Poisoncraft, etc.) later, keyed by skill and perk.
+- **Recipe visibility:** If the actor has no perk granting access to the recipe’s tier (by `skillLevel`), show `?` and “You do not have the perk required to view this recipe.” Experimental perks can allow attempting any recipe with extra rules.
+- **DC and roll:** Recipe `successDC` plus summed `craftingDCModifier` (within tier); when attempting above tier (experimental), add `experimentalCraftingDCModifier` to the **roll** as a bonus.
+- **Ingredient consumption:** On success/failure, apply `ingredientLossOnFail` (e.g. `"half"`) and optionally `ingredientKeptOnSuccess`.
+- **Gathering:** Roll bonus (summed), yield multiplier (max), component tier ranges (union), and on failed gather optionally grant a fixed component via `componentAutoGather`.
+- **Extensibility:** Same structure supports multiple skills (Herbalism, Alchemy, etc.) and multiple benefits per perk.
 
 ---
 
-## 3. Proposed structure for skills-rules.json
+## 3. Actual structure of skills-rules.json
 
-**Option A — Single file, keyed by skill then perkID**
+We use **Option A — single file**, keyed by skill then perkID:
 
-- Top level: `{ "schemaVersion": 1, "skills": { "Herbalism": { "perks": { "perkID": { ... rules ... } } } } }`.
-- Each perk’s value is an object of **rule blocks** (see below). The crafting window loads the file once, then for a given `skill` and list of `learnedPerkIDs` can merge/apply all rules for that skill whose perkIDs are learned.
+```json
+{
+  "schemaVersion": 1,
+  "skills": {
+    "Herbalism": {
+      "perks": {
+        "herbalism-field-forager": {
+          "title": "Field Forager",
+          "benefits": [
+            { "title": "Recipe access", "description": "...", "rule": { "recipeTierAccess": [0, 1] } },
+            { "title": "Common Components", "description": "...", "rule": { "componentSkillAccess": [0, 3] } }
+          ]
+        }
+      }
+    }
+  }
+}
+```
 
-**Option B — One file per skill**
+- **Top level:** `schemaVersion`, `skills`.
+- **Per skill:** `skills[skillId]` is an object with a **perks** map: `perks[perkID]` → `{ title, benefits[] }`.
+- **Per perk:** `title` (display name for this perk in rules-derived UI). `benefits` is an array of `{ title, description, rule }`. Each **rule** is a plain object; one benefit can contribute one or more logical effects via a single rule object (e.g. `recipeTierAccess` only, or `experimentalCrafting` + separate benefits for wildcard and DC bonus).
+- **Loader behavior:** The code loads the file once, then for a given `skillId` and list of `learnedPerkIds` for that skill, iterates over **all benefits** of those perks and collects every **rule** object. Aggregation is done over that stream of rule objects (see §5).
 
-- e.g. `resources/skills-rules/herbalism-rules.json` keyed by perkID. Slightly more modular but more files and loader logic; can be introduced later if needed.
-
-**Recommendation:** Start with **Option A** in `resources/skills-rules.json`: one JSON with a `skills` map, each skill containing a `perks` map from `perkID` to a rules object. Easy to load next to `skills-details.json` and keeps one place to look per skill.
-
----
-
-## 4. Rule blocks per perk (machine-readable)
-
-Each perk in the rules file should describe **what** the perk does in terms the crafting window can execute, not replace the prose in `skills-details.json` (that stays for the Skills UI Details pane).
-
-Suggested rule categories:
-
-| Rule key | Meaning | Example (Herbalism) |
-|----------|---------|---------------------|
-| `recipeTierAccess` | Min/max recipe `skillLevel` (inclusive) this perk unlocks for **viewing** and **attempting** (unless overridden by experimental). | Field Forager: `[0, 1]`; Initiate: `[0, 7]`; Keeper: `[8, 14]`; Archdruid: `[15, 20]`. |
-| `craftingDCModifier` | Additive modifier to the recipe’s `successDC` when this perk applies (e.g. only when within tier). | Conservator: `-1` when within tier. |
-| `craftingRollBonus` | Bonus added to the player’s roll vs DC (stack with DC modifier as needed). | Could be used for future perks or other skills. |
-| `ingredientLossOnFail` | On a failed DC roll, how many ingredients to consume. | Conservator: `"half"` (round up lost); default (no rule): lose all. |
-| `ingredientKeptOnSuccess` | On success, optionally consume less than full (e.g. “keep half”). | Could be `"half"` or `{ "keep": 2 }` for “randomly keep 2”. |
-| `experimentalCrafting` | Allow attempting recipes outside tier with special rules. | Experimental Botanist: `{ "allowed": true, "dcModifier": 3, "hiddenWrongIngredient": true }` (implementation detail: GM picks one wrong ingredient, etc.). |
-
-**Aggregation:** For a given actor and skill, collect all learned perkIDs for that skill, then for each perkID look up its rules and **merge** (e.g. take max tier range that covers a level, sum DC modifiers and roll bonuses, and pick the most favorable ingredient-loss rule if multiple apply). So “effective recipe tier access” = union of all `recipeTierAccess` ranges; “effective DC modifier” = sum of applicable `craftingDCModifier`; etc.
+So we do **not** use a single flat rule block per perk; we use **multiple benefits per perk**, each with its own rule. That allows one perk to contribute e.g. recipe access, component access, and gathering bonus in separate, mergeable rules.
 
 ---
 
-## 5. Herbalism example rules (to put in skills-rules.json)
+## 4. Rule keys (implementation)
 
-Conceptually, something like:
+What the crafting window and gather logic actually read. Each rule object may contain any of these keys; the loader aggregates across all rules from learned perks (see §5).
 
-- **herbalism-field-forager:** `recipeTierAccess: [0, 1]`.
-- **herbalism-green-archive-initiate:** `recipeTierAccess: [0, 7]` (replaces/extends 0–1).
-- **herbalism-keeper-hidden-remedies:** `recipeTierAccess: [8, 14]`.
-- **herbalism-archdruid-verdant-codex:** `recipeTierAccess: [15, 20]`.
-- **herbalism-conservator-green-codex:** `craftingDCModifier: -1` (when recipe within actor’s tier access), `ingredientLossOnFail: "half"`, plus optional “salvage one once per session” (could be a separate rule or tracked in actor flags).
-- **herbalism-experimental-botanist:** `experimentalCrafting: { "allowed": true, "dcModifier": 3 }` (and narrative/hidden ingredient handled in flow; critical success “learn recipe” can be a flag or GM discretion).
+### 4.1 Crafting (recipe visibility, DC, ingredients)
 
-Gathering-only perks (Wildharvester, Verdant Master, Seasoned Pathfinder, Gentle Hand) don’t need crafting-window rules in this file unless we later add gathering UI that consumes the same rules.
+| Rule key | Meaning | Value | Example |
+|----------|---------|--------|---------|
+| `recipeTierAccess` | Recipe `skillLevel` range (inclusive) this benefit unlocks for viewing and attempting. | `[min, max]` | `[0, 7]` |
+| `craftingDCModifier` | Additive modifier to recipe DC when crafting **within** tier. | number | `-1`, `1` |
+| `ingredientLossOnFail` | On failed DC roll, how much to consume. | `"all"` (default) or `"half"` | `"half"` |
+| `ingredientKeptOnSuccess` | On success, optionally keep some ingredients. | `"half"` or undefined | `"half"` |
+| `experimentalCrafting` | Allows attempting recipes **above** tier with extra rules. | `{ "allowed": true, "craftingType"?: "herbalism" }` | See §6.2 |
+| `experimentalCraftingRandomComponents` | Number of **wrong** components to add to the recipe; slots randomized. | number | `1` |
+| `experimentalCraftingDCModifier` | Bonus added to the **crafting roll** when attempting experimentally. | number | `3` |
+
+- **experimentalCrafting.craftingType:** Identifies which crafting type(s) this experimental permission applies to (e.g. `"herbalism"`). Used to allow experimental attempts only for that type; other types still require normal tier access.
+- **experimentalCraftingRandomComponents:** When the user attempts a recipe above tier (experimental), we add this many extra components to the recipe. Each extra is a “wrong” ingredient; the player must figure out which to remove. **Slot placement:** we randomize which slots the extras go into (e.g. if the recipe has 3 components, we insert 1 extra into one of the 4 possible positions, not always at the end).
+- **experimentalCraftingDCModifier:** Because of the risk (wrong ingredients), we give a roll bonus when the attempt is experimental. This is added to the **roll**, not subtracted from the DC.
+
+### 4.2 Gathering (roll, yield, components, fail consolation)
+
+| Rule key | Meaning | Value | Example |
+|----------|---------|--------|---------|
+| `gatheringRollBonus` | Bonus added to the gathering roll. | number | `2`, `4` |
+| `gatheringYieldMultiplier` | On success, multiply bundles by this (take **max** if multiple perks). | number | `2` |
+| `componentSkillAccess` | Skill-level range for components that can drop from this gather. | `[min, max]` | `[0, 3]`, `[4, 9]` |
+| `componentAutoGather` | When gathering **fails**, still grant this fixed component (e.g. one bundle). | string (component name) | `"Herb Bundle"` |
+
+- **componentAutoGather:** “You waste nothing. When gathering fails, you always get an Herb Bundle.” The gather logic, on a failed roll, should grant the specified component (e.g. one Herb Bundle) in addition to or instead of nothing.
+
+### 4.3 Reserved / future
+
+| Rule key | Meaning | Notes |
+|----------|---------|--------|
+| `craftingRollBonus` | Bonus to the crafting **roll** (within tier). | Design supports it; can be wired when needed. |
 
 ---
 
-## 6. How the crafting window would use the rules (flow)
+## 5. Aggregation (what we actually do)
 
-1. **Load:** On init or when opening the crafting window, load `skills-details.json` (for display names / prerequisites) and `skills-rules.json` (for rule blocks).
-2. **Actor context:** Get the current crafter’s learned perks (e.g. from SkillManager / actor flags) for the skill(s) relevant to the recipe journal (e.g. Herbalism).
-3. **Visibility:** For each recipe (skill + skillLevel):
-   - Compute effective tier access from rules: union of `recipeTierAccess` for all learned perks (and optionally Experimental Botanist “can attempt any”).
-   - If recipe’s `skillLevel` is outside that range and no “experimental” bypass: show `?` for image and in details show “You do not have the perk required to view this recipe.” (Optionally still show name/tier so they know something is there.)
-4. **Before craft:** When the user selects a recipe and starts the process, resolve DC: base = recipe `successDC`; add all applicable `craftingDCModifier` and (if implemented) `craftingRollBonus` for the roll. If Experimental and above tier, add +3 (or the value from rules).
-5. **After process / DC roll:** Roll vs the resolved DC. On **success:** apply `ingredientKeptOnSuccess` if present (e.g. randomly keep half). On **failure:** apply `ingredientLossOnFail` (e.g. “half” = consume half, randomly keep the rest). Default: success = consume all listed; failure = consume all listed (or as you decide).
-6. **Experimental / hidden ingredient:** If the attempt is experimental (above tier), the flow can inject “one hidden wrong ingredient” (GM choice or random) and adjust DC; critical success can set a flag so that recipe counts as “learned” for future sessions (GM discretion).
+For a given **skill** and **learned perk IDs** for that skill, the loader:
 
-No code change in this doc — the above is the intended contract between `skills-rules.json` and the crafting window logic.
+1. Collects every **rule** from every **benefit** of those perks (no deduplication by perk).
+2. **Recipe tier access:** Union of all `recipeTierAccess` ranges. A recipe with `skillLevel` in any range (or allowed by experimental) is viewable/attemptable.
+3. **Crafting DC (within tier):** Sum of all `craftingDCModifier` values.
+4. **Experimental:** If any rule has `experimentalCrafting.allowed === true` and (if present) `craftingType` matches the recipe’s skill/type, the actor can attempt above-tier recipes. For that attempt:
+   - **Random wrong components:** Max of all `experimentalCraftingRandomComponents` (e.g. 1) — that many extra components are inserted into the recipe; **slot positions are randomized** (not just appended at the end).
+   - **Roll bonus:** Sum of all `experimentalCraftingDCModifier` values (e.g. +3) added to the crafting roll.
+5. **Ingredient loss on fail:** If any rule has `ingredientLossOnFail: "half"`, use “half”; else “all”.
+6. **Ingredient kept on success:** If any rule has `ingredientKeptOnSuccess: "half"`, use “half”; else consume all.
+7. **Gathering roll bonus:** Sum of all `gatheringRollBonus`.
+8. **Gathering yield multiplier:** Max of all `gatheringYieldMultiplier`.
+9. **Component skill access (gathering):** Union of all `componentSkillAccess` ranges for which components can drop.
+10. **Component auto-gather on fail:** If any rule has `componentAutoGather`, the gather logic uses it (e.g. grant one “Herb Bundle” on failed gather). If multiple perks grant different values, implementation may pick one (e.g. first or a designated priority).
 
 ---
 
-## 7. Summary
+## 6. New rules in detail
 
-- **skills-details.json:** Stays as-is for Skills UI (names, descriptions, prerequisites, icons). Optional: normalize `icon` to `fa-*` where needed.
-- **skills-rules.json:** New structure: `skills[skillId].perks[perkID]` → rule blocks (`recipeTierAccess`, `craftingDCModifier`, `craftingRollBonus`, `ingredientLossOnFail`, `ingredientKeptOnSuccess`, `experimentalCrafting`). Herbalism perks mapped as above.
-- **Crafting window:** Uses rules to (1) show `?` and “no perk to view” when recipe tier not unlocked, (2) resolve DC and roll bonus after recipe process, (3) roll DC after process, (4) apply ingredient consumption on success/fail from rules. Experimental and “salvage one” can be implemented in the same flow with flags/session state.
+### 6.1 componentAutoGather (gathering fail consolation)
 
-This gives you a single place to define and extend crafting behavior per perk while keeping the narrative text in skills-details and the existing recipe schema (`skillLevel`, `successDC`) unchanged.
+- **Intent:** When a gathering roll **fails**, the actor still receives a fixed component (e.g. one Herb Bundle) so they “waste nothing.”
+- **Value:** String naming the component to grant (e.g. `"Herb Bundle"`). The gather module must resolve this to the actual item/compendium entry and grant one unit on failed gather.
+- **Example:** Gentle Hand of the Grove: `{ "componentAutoGather": "Herb Bundle" }`.
+
+### 6.2 experimentalCrafting (type-scoped)
+
+- **Intent:** Allow attempting recipes above the actor’s tier for **specific** crafting types (e.g. herbalism only).
+- **Value:** `{ "allowed": true, "craftingType": "herbalism" }`. `craftingType` identifies which skill/type this experimental permission applies to.
+- **Use:** When deciding if an actor can attempt a recipe above their tier, check that they have a benefit with `experimentalCrafting.allowed === true` and (if `craftingType` is present) that it matches the recipe’s skill/type.
+
+### 6.3 experimentalCraftingRandomComponents (ingredient wildcard)
+
+- **Intent:** When attempting a recipe above tier, add **wrong** components to the recipe so the player must figure out which to remove. The number of extras is from this rule; **which slots they go into is randomized** (not always at the end).
+- **Value:** Number (e.g. `1`). Number of extra components to insert. Each extra is a “wildcard” wrong ingredient; slots are randomized among the possible positions (e.g. for 3 real components + 1 wildcard, the wildcard can appear in position 1, 2, 3, or 4).
+- **Example:** Experimental Botanist: `{ "experimentalCraftingRandomComponents": 1 }` — “one of the components shouldn’t be there; remove it.”
+
+### 6.4 experimentalCraftingDCModifier (roll bonus for risk)
+
+- **Intent:** Because experimental attempts are riskier (wrong ingredients), give a **bonus to the crafting roll** when the attempt is experimental.
+- **Value:** Number (e.g. `3`). Added to the player’s roll when the recipe is being attempted above tier under experimental rules.
+- **Example:** Experimental Botanist: `{ "experimentalCraftingDCModifier": 3 }` — “you get a +3 bonus to your crafting roll.”
+
+---
+
+## 7. How the crafting window and gather use the rules (flow)
+
+1. **Load:** On init or when opening the crafting/gather UI, load `skills-rules.json` (and `skills-details.json` for names/icons). Cached for the session.
+2. **Actor context:** Get the crafter’s learned perk IDs for the relevant skill (e.g. from SkillManager / actor flags). Filter to that skill via prefix (e.g. `herbalism-*`).
+3. **Visibility:** Effective tier access = union of `recipeTierAccess`; if recipe’s `skillLevel` is outside that union and not allowed by `experimentalCrafting` (with matching `craftingType`), show `?` and “You do not have the perk required to view this recipe.”
+4. **Before craft (within tier):** DC = recipe `successDC` + sum of `craftingDCModifier`. Roll vs DC; apply `ingredientLossOnFail` / `ingredientKeptOnSuccess` after roll.
+5. **Before craft (experimental):** If recipe is above tier and actor has `experimentalCrafting` (and matching `craftingType`): (a) Add `experimentalCraftingRandomComponents` wrong components to the recipe, **randomizing which slots** they occupy; (b) add `experimentalCraftingDCModifier` to the **roll**; then roll vs DC and apply ingredient rules as above.
+6. **Gathering:** Roll + sum of `gatheringRollBonus`; on success, yield multiplier = max of `gatheringYieldMultiplier`, and component eligibility = union of `componentSkillAccess`. On **failure**, if any rule has `componentAutoGather`, grant that component (e.g. one Herb Bundle).
+
+---
+
+## 8. Summary
+
+- **skills-details.json:** Unchanged for Skills UI (names, prerequisites, icons). Used alongside rules for human-readable perk names.
+- **skills-rules.json:** Actual structure is `skills[skillId].perks[perkID]` → `{ title, benefits: [{ title, description, rule }] }`. Each benefit’s **rule** object can contain any of the keys in §4. The loader iterates all benefits of learned perks and aggregates as in §5.
+- **Crafting window:** Uses rules for recipe visibility (tier + experimental with `craftingType`), DC and roll modifiers (within-tier and `experimentalCraftingDCModifier`), random wrong components (`experimentalCraftingRandomComponents`, randomized slots), and ingredient consumption.
+- **Gathering:** Uses rules for roll bonus, yield multiplier, component tier ranges, and `componentAutoGather` on failed gather.
+
+This matches the current implementation and the new rules you added: `componentAutoGather`, `experimentalCrafting.craftingType`, `experimentalCraftingRandomComponents` (randomized slot insertion), and `experimentalCraftingDCModifier`.
