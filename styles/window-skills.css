@@ -388,8 +388,9 @@
     aspect-ratio: 1 / 1;
     font-size: var(--skills-perk-size);
 
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
     position: relative;
 
@@ -418,11 +419,20 @@
 .skills-perk-icon {
     width: 60%;
     height: 60%;
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
     font-size: 60%;
     line-height: 1;
     color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+}
+/* Center Font Awesome glyph (rendered in ::before) inside the icon box */
+.skills-perk-icon::before {
+    margin: 0;
+    padding: 0;
 }
 
 
