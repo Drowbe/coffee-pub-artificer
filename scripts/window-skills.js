@@ -241,18 +241,34 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             .map((skill) => {
             const rawPerks = (skill.perks ?? []).slice(0, 10);
             const MAX_PERKS = 10;
-            const filledPerks = rawPerks.map((p, idx) => ({
-                ...p,
-                perkIndex: idx,
-                empty: false,
-                displayValue: p.cost ?? 0,
-                perkApplied: effectiveLearned(p.perkID ?? ''),
-                perkMinSkillLevel: p.perkMinSkillLevel ?? 0,
-                perkMaxSkillLevel: p.perkMaxSkillLevel ?? 0,
-                perkLearnedBackgroundColor: p.perkLearnedBackgroundColor ?? 'rgba(47, 63, 56, 0.4)',
-                iconClass: p.icon ? (p.icon.startsWith('fa-') ? `fa-solid ${p.icon}` : `fa-solid fa-${p.icon}`) : null,
-                selected: this._selectedSkillId === skill.id && this._selectedPerkIndex === idx
-            }));
+            const skillKit = skill.skillKit ?? '';
+            const hasKit = skillKit ? (actor ? actorHasItemNamed(actor, skillKit) : false) : true;
+            const filledPerks = rawPerks.map((p, idx) => {
+                const perkID = p.perkID ?? '';
+                const applied = effectiveLearned(perkID);
+                const req = p.requirement ?? '';
+                const prereqPerkId = req && req !== skillKit ? (rawPerks.find((pr) => pr.name === req)?.perkID ?? '') : '';
+                let prereqMet = !req;
+                if (!prereqMet) {
+                    if (req === skillKit) prereqMet = hasKit;
+                    else if (prereqPerkId) prereqMet = effectiveLearned(prereqPerkId);
+                    else prereqMet = actor ? actorHasItemNamed(actor, req) : false;
+                }
+                const requirementBlocked = !applied && !!req && !prereqMet;
+                return {
+                    ...p,
+                    perkIndex: idx,
+                    empty: false,
+                    displayValue: p.cost ?? 0,
+                    perkApplied: applied,
+                    requirementBlocked,
+                    perkMinSkillLevel: p.perkMinSkillLevel ?? 0,
+                    perkMaxSkillLevel: p.perkMaxSkillLevel ?? 0,
+                    perkLearnedBackgroundColor: p.perkLearnedBackgroundColor ?? 'rgba(47, 63, 56, 0.4)',
+                    iconClass: p.icon ? (p.icon.startsWith('fa-') ? `fa-solid ${p.icon}` : `fa-solid fa-${p.icon}`) : null,
+                    selected: this._selectedSkillId === skill.id && this._selectedPerkIndex === idx
+                };
+            });
             const emptyCount = MAX_PERKS - filledPerks.length;
             const emptyPerks = Array.from({ length: emptyCount }, (_, i) => ({
                 empty: true,
@@ -265,10 +281,6 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 .filter((p) => effectiveLearned(p.perkID ?? ''))
                 .reduce((sum, p) => sum + (p.cost ?? 0), 0);
 
-            const skillKit = skill.skillKit ?? '';
-            const hasKit = skillKit
-                ? (actor ? actorHasItemNamed(actor, skillKit) : false)
-                : true;
             return {
                 id: skill.id,
                 name: skill.name,

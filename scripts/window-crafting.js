@@ -210,7 +210,7 @@ function getRecipeJournalUuid(recipe) {
 }
 
 /**
- * Build journal dropdown options grouped by folder (world journals only for folder; compendium in "Compendiums").
+ * Build journal dropdown options grouped by folder (world) or by compendium pack (compendium).
  * Only includes journals that have at least one recipe. Returns { allOption, groups } for template.
  * @param {Array<{ id: string, source?: string }>} recipes - from api.recipes.getAll()
  * @param {string} filterRecipeJournal - current filter (journal name or '')
@@ -222,21 +222,68 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal) {
         const u = getRecipeJournalUuid(r);
         if (u) uuidSet.add(u);
     }
-    /** @type {Map<string, { name: string, folderId: string|null, isWorld: boolean }>} uuid -> info */
+    /** @type {Map<string, { name: string, folderLabel: string }>} uuid -> info */
     const journalInfo = new Map();
     /** @type {Map<string, Set<string>>} journal name -> Set of UUIDs */
     const nameToUuids = new Map();
     /** @type {Map<string, string>} journal uuid -> name */
     const journalByUuid = new Map();
+
+    /** Build folderId -> folderName for a compendium pack (v13: folder collection may be pack.folderCollection or pack.folders). */
+    function getPackFolderNames(pack) {
+        const map = new Map();
+        const folderCollection = pack.folderCollection ?? pack.folders;
+        if (folderCollection && typeof folderCollection.get === 'function') {
+            const contents = folderCollection.contents ?? folderCollection.values?.() ?? [];
+            const list = Array.isArray(contents) ? contents : [...contents];
+            for (const folder of list) {
+                if (folder && (folder.documentName === 'Folder' || folder.name !== undefined)) {
+                    const id = folder.id ?? folder._id;
+                    if (id) map.set(id, (folder.name ?? '').trim() || 'Unnamed');
+                }
+            }
+        }
+        if (map.size === 0 && folderCollection && typeof folderCollection.forEach === 'function') {
+            folderCollection.forEach((folder) => {
+                if (folder && (folder.documentName === 'Folder' || folder.name !== undefined)) {
+                    const id = folder.id ?? folder._id;
+                    if (id) map.set(id, (folder.name ?? '').trim() || 'Unnamed');
+                }
+            });
+        }
+        return map;
+    }
+
     for (const uuid of uuidSet) {
         try {
             const doc = await fromUuid(uuid);
             if (!doc || doc.documentName !== 'JournalEntry') continue;
             const name = (doc.name ?? '').trim();
             if (!name) continue;
-            const folderId = doc.folder?.id ?? doc.folder ?? null;
             const isWorld = !!game.journal?.get(doc.id);
-            journalInfo.set(uuid, { name, folderId, isWorld });
+            let folderLabel;
+            if (isWorld) {
+                const folderId = doc.folder?.id ?? doc.folder ?? null;
+                if (folderId && game.folders) {
+                    const folder = game.folders.get(folderId);
+                    folderLabel = folder?.name ?? 'Other';
+                } else {
+                    folderLabel = 'No folder';
+                }
+            } else {
+                const parts = String(uuid).split('.');
+                const packId = parts[1];
+                const pack = packId ? game.packs?.get(packId) : null;
+                const folderId = doc.folder?.id ?? doc.folder ?? null;
+                folderLabel = doc.folder?.name ?? null;
+                if (!folderLabel && pack) {
+                    const folderNames = getPackFolderNames(pack);
+                    if (folderId) folderLabel = folderNames.get(folderId) ?? null;
+                    if (!folderLabel) folderLabel = folderId ? 'No folder' : (pack.title ?? pack.metadata?.label ?? packId);
+                }
+                if (!folderLabel) folderLabel = 'No folder';
+            }
+            journalInfo.set(uuid, { name, folderLabel });
             if (!nameToUuids.has(name)) nameToUuids.set(name, new Set());
             nameToUuids.get(name).add(uuid);
             journalByUuid.set(uuid, name);
@@ -246,26 +293,14 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal) {
     }
     /** @type {Map<string, Array<{ value: string, label: string }>>} folderLabel -> options (value = journal name) */
     const byFolder = new Map();
-    const seenNames = new Set();
     for (const [, info] of journalInfo) {
-        if (seenNames.has(info.name)) continue;
-        seenNames.add(info.name);
         const label = info.name;
         const value = info.name;
-        let folderLabel;
-        if (info.isWorld && info.folderId && game.folders) {
-            const folder = game.folders.get(info.folderId);
-            folderLabel = folder?.name ?? 'Other';
-        } else if (!info.isWorld) {
-            folderLabel = 'Compendiums';
-        } else {
-            folderLabel = 'No folder';
-        }
-        if (!byFolder.has(folderLabel)) byFolder.set(folderLabel, []);
-        byFolder.get(folderLabel).push({ value, label });
+        if (!byFolder.has(info.folderLabel)) byFolder.set(info.folderLabel, []);
+        byFolder.get(info.folderLabel).push({ value, label });
     }
     const allOption = { value: '', label: 'All journals', selected: !filterRecipeJournal };
-    const groupOrder = ['No folder', 'Compendiums'];
+    const groupOrder = ['No folder', 'Other'];
     const sortedFolderLabels = [...byFolder.keys()].sort((a, b) => {
         const ai = groupOrder.indexOf(a);
         const bi = groupOrder.indexOf(b);
@@ -276,9 +311,15 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal) {
     });
     const groups = sortedFolderLabels.map((folderLabel) => {
         const opts = byFolder.get(folderLabel).slice().sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }));
+        const seen = new Set();
+        const uniqueOpts = opts.filter((o) => {
+            if (seen.has(o.value)) return false;
+            seen.add(o.value);
+            return true;
+        });
         return {
             label: folderLabel,
-            options: opts.map((o) => ({ ...o, selected: filterRecipeJournal === o.value }))
+            options: uniqueOpts.map((o) => ({ ...o, selected: filterRecipeJournal === o.value }))
         };
     });
     return { allOption, groups, nameToUuids, journalByUuid };

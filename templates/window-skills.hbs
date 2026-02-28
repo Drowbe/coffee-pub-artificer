@@ -56,9 +56,11 @@
                     {{#if this.empty}}
                     <div class="skills-perk skills-perk-empty"></div>
                     {{else}}
-                    <div class="skills-perk {{#if this.selected}}skills-perk-selected{{/if}}{{#if this.perkApplied}} skills-perk-learned{{/if}}" data-skill="{{../this.id}}" data-perk-index="{{this.perkIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.perkApplied}} style="background-color: {{this.perkLearnedBackgroundColor}};"{{/if}}>
+                    <div class="skills-perk {{#if this.selected}}skills-perk-selected{{/if}}{{#if this.perkApplied}} skills-perk-learned{{/if}}{{#if this.requirementBlocked}} skills-perk-locked{{/if}}" data-skill="{{../this.id}}" data-perk-index="{{this.perkIndex}}" title="{{this.name}}{{#if this.requirement}} — {{this.requirement}}{{/if}}"{{#if this.perkApplied}} style="background-color: {{this.perkLearnedBackgroundColor}};"{{/if}}>
                         {{#if this.iconClass}}<i class="{{this.iconClass}} skills-perk-icon"></i>{{/if}}
-                        <span class="skills-perk-number{{#if this.perkApplied}} perk-applied{{/if}}">{{this.displayValue}}</span>
+                        <span class="skills-perk-number{{#if this.perkApplied}} perk-applied{{/if}}{{#if this.requirementBlocked}} perk-locked{{/if}}">
+                            {{#if this.perkApplied}}<i class="fa-solid fa-check" aria-hidden="true"></i>{{else}}{{#if this.requirementBlocked}}<i class="fa-solid fa-lock" aria-hidden="true"></i>{{else}}{{this.displayValue}}{{/if}}{{/if}}
+                        </span>
                     </div>
                     {{/if}}
                     {{/each}}
@@ -76,6 +78,11 @@
                     {{#if selectedDetail}}
                         {{#if selectedDetail.perk}}
                         <div class="skills-detail-name">{{#if selectedDetail.perk.iconClass}}<i class="{{selectedDetail.perk.iconClass}} skills-detail-perk-icon"></i> {{/if}}{{selectedDetail.perk.name}}{{#unless selectedDetail.perk.name}}Perk {{selectedDetail.perk.index}}{{/unless}}</div>
+                        {{#if selectedDetail.canLearn}}
+                        <button type="button" class="skills-detail-btn-learn" data-action="learnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="Queue to learn">
+                            <i class="fa-solid fa-plus"></i> Learn
+                        </button>
+                        {{/if}}
                         <div class="skills-detail-rows">
                             <div class="skills-detail-row"><span class="skills-detail-label">Requirements:</span><span class="skills-detail-value">{{selectedDetail.requirementLabel}}</span></div>
                             <div class="skills-detail-row"><span class="skills-detail-label">Cost:</span><span class="skills-detail-value">{{selectedDetail.costDisplay}} point(s)</span></div>
@@ -98,11 +105,6 @@
                             {{/each}}
                         </ul>
                         {{/if}}
-                        {{/if}}
-                        {{#if selectedDetail.canLearn}}
-                        <button type="button" class="skills-detail-btn-learn" data-action="learnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="Queue to learn">
-                            <i class="fa-solid fa-plus"></i> Learn
-                        </button>
                         {{/if}}
                         {{#if selectedDetail.showUnlearn}}
                         <button type="button" class="skills-detail-btn-unlearn" data-action="unlearnPerk" data-perk-id="{{selectedDetail.perk.perkID}}" title="{{#if selectedDetail.canUnlearn}}Queue to unlearn{{else}}{{selectedDetail.unlearnBlockedReason}}{{/if}}"{{#unless selectedDetail.canUnlearn}} disabled{{/unless}}>

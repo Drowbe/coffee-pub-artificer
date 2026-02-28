@@ -74,7 +74,7 @@
           "benefits": [
             {
               "title": "Reduced Waste",
-              "description": "You waste nothing. When gathering fails, you always get an Herb Bundle.",
+              "description": "You waste nothing. Even when gathering fails you bundles all the scraps into an Herb Bundle, which is all you need for minor herbalism recipes.",
               "rule": { "componentAutoGather": "Herb Bundle" }
             }
           ]

@@ -485,10 +485,17 @@
     pointer-events: none;
 }
 
-/* Perk number when learned - fixed background */
+/* Perk number when learned - green box with checkmark */
 .skills-perk-number.perk-applied {
     background: rgba(59, 132, 66, 0.8);
 }
+
+/* Checkmark / lock icon in the box - scale to fill */
+.skills-perk-number.perk-applied i,
+.skills-perk-number.perk-locked i {
+    font-size: 2.2em;
+}
+
 
 
 
