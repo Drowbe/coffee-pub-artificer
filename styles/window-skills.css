@@ -493,7 +493,7 @@
 /* Checkmark / lock icon in the box - scale to fill */
 .skills-perk-number.perk-applied i,
 .skills-perk-number.perk-locked i {
-    font-size: 2.2em;
+    font-size: 0.75em;
 }
 
 
