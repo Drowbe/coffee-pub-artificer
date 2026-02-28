@@ -164,30 +164,26 @@ function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
 }
 
 /**
- * Send "Roll failed, but thanks to [perk] you still get ..." chat card (failed roll with componentAutoGather consolation).
- * @param {Actor} [actor] - Optional actor (for speaker)
+ * Send gather result when the roll failed but a perk granted consolation item(s).
+ * Uses the same card-results-gather.hbs template with a custom intro paragraph.
+ * @param {Actor|null} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Consolation item(s) granted
  * @param {string[]} [perkNames] - Perk title(s) that granted the consolation (e.g. ["Gentle Hand of the Grove"])
  */
-export function sendGatherConsolationCard(actor = null, items = [], perkNames = []) {
-    const title = 'Forage for components';
+export async function sendGatherConsolationCard(actor = null, items = [], perkNames = []) {
+    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
     const escapeHtml = (s) => {
         if (s == null) return '';
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
-    const itemLinks = items?.map((it) => it.uuid ? `@UUID[${escapeHtml(it.uuid)}]{${escapeHtml(it.name ?? '')}}` : escapeHtml(it.name ?? '')).filter(Boolean) ?? [];
-    const itemText = itemLinks.length ? itemLinks.join(' and ') : 'something';
     const perkText = perkNames?.length ? perkNames.join(', ') : 'your perk';
-    const body = itemLinks.length
-        ? `<p><strong>The roll failed</strong>, but thanks to <em>${escapeHtml(perkText)}</em> you still receive at least ${itemText}.</p>`
-        : '<p>You didn\'t find anything.</p>';
-    const html = buildChatCardHtml(title, body, 'card');
-    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-    ChatMessage.create({
-        content: html,
-        speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
-    });
+    const introParagraph = `Your roll <strong>failed</strong>, but thanks to <strong>${escapeHtml(perkText)}</strong> you still got something. These items have been added to <strong>${escapeHtml(actorPossessive)}</strong> inventory:`;
+    const consolationPerks = perkNames.map((p) => ({
+        perkTitle: p,
+        benefitTitle: '',
+        description: 'Granted at least one item even on a failed roll.'
+    }));
+    await sendGatherSuccessCard(actor, items, consolationPerks, { introParagraph });
 }
 
 /**
@@ -223,13 +219,14 @@ export function sendGatherNoPoolCard(actor = null) {
 }
 
 /**
- * Send "You found ... Added to your inventory." chat card.
- * Uses card-results-gather.hbs and Blacksmith Chat Cards API (cardTheme).
- * @param {Actor} [actor]
+ * Send gather result chat card using card-results-gather.hbs (success or consolation).
+ * Same template and layout; only the intro paragraph and optional perks list differ.
+ * @param {Actor|null} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
- * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied to this gather (for success card)
+ * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied (for success) or consolation perk(s) for display
+ * @param {{ introParagraph?: string }} [options] - Optional intro HTML. When set (e.g. consolation), used instead of default "Foraging has paid off..."
  */
-export async function sendGatherSuccessCard(actor = null, items = [], appliedPerks = []) {
+export async function sendGatherSuccessCard(actor = null, items = [], appliedPerks = [], options = {}) {
     const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
     const cardTheme = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
 
@@ -258,6 +255,7 @@ export async function sendGatherSuccessCard(actor = null, items = [], appliedPer
         resultTitle: 'Results',
         resultIcon: 'leafy-green',
         actorPossessive,
+        introParagraph: options.introParagraph ?? null,
         items: itemsData,
         perkTitle: 'Perks applied',
         perkIcon: 'seedling',

@@ -18,6 +18,7 @@ import {
     getGatheringRollBonusForActor,
     processGatherRollResult,
     sendGatherFailureCard,
+    sendGatherConsolationCard,
     sendGatherNoPoolCard,
     sendGatherSuccessCard
 } from './manager-gather.js';
@@ -295,7 +296,11 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 continue;
             }
             if (!o.success) {
-                sendGatherFailureCard(a);
+                if (o.componentAutoGatherGranted && o.itemRecords?.length) {
+                    sendGatherConsolationCard(a, o.itemRecords, o.perkNames ?? []);
+                } else {
+                    sendGatherFailureCard(a);
+                }
                 continue;
             }
             if (o.itemRecords?.length) {
