@@ -396,24 +396,33 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
         let recipeHiddenByPerk = false;
         let hiddenMessage = null;
         let craftableIconClass = null;
+        let experimentalIconBeforeTitle = null;
+        let showDimLock = false;
         if (r.skill && typeof r.skill === 'string') {
             const learnedForSkill = getLearnedPerkIdsForSkill(learnedPerkIds, r.skill);
             const rules = await getEffectiveCraftingRules(r.skill, learnedForSkill);
             const skillLevel = r.skillLevel != null ? Number(r.skillLevel) : 0;
+            const skillLower = (r.skill ?? '').toString().trim().toLowerCase();
+            const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
+            const isAboveTierWithExperimental = rules.hasExperimental && !rules.inTier(skillLevel) && canAttemptExperimental;
             const canView = rules.canViewTier(skillLevel);
             if (!canView) {
                 recipeHiddenByPerk = true;
                 hiddenMessage = 'You do not have the perk required to view this recipe.';
             } else {
+                if (isAboveTierWithExperimental) {
+                    const experimentalIcon = await getExperimentalPerkIconClass(r.skill, learnedForSkill);
+                    experimentalIconBeforeTitle = experimentalIcon ?? 'fa-solid fa-flask';
+                }
                 const canCraftHere = recipeCanCraft(actor, r);
                 if (canCraftHere) {
-                    const isExperimentalOnly = rules.hasExperimental && !rules.inTier(skillLevel);
-                    if (isExperimentalOnly) {
-                        const experimentalIcon = await getExperimentalPerkIconClass(r.skill, learnedForSkill);
-                        craftableIconClass = experimentalIcon ?? 'fa-solid fa-hammer';
+                    if (isAboveTierWithExperimental) {
+                        craftableIconClass = experimentalIconBeforeTitle ?? 'fa-solid fa-hammer';
                     } else {
                         craftableIconClass = 'fa-solid fa-hammer';
                     }
+                } else if (isAboveTierWithExperimental) {
+                    showDimLock = true;
                 }
             }
         }
@@ -431,7 +440,9 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             canCraft,
             craftableIconClass,
             recipeHiddenByPerk,
-            hiddenMessage
+            hiddenMessage,
+            experimentalIconBeforeTitle,
+            showDimLock
         };
     }));
     return results;
@@ -1399,7 +1410,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
-            const withinTier = !Number.isNaN(skillLevel) && rules.canViewTier(skillLevel);
+            const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
             const skillLower = (recipe.skill || '').toLowerCase();
             const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
             const isExperimental = rules.hasExperimental && !withinTier && canAttemptExperimental;
@@ -1659,7 +1670,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
-            const withinTier = !Number.isNaN(skillLevel) && rules.canViewTier(skillLevel);
+            const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
             const skillLower = (recipe.skill || '').toLowerCase();
             const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
             const isExperimental = rules.hasExperimental && !withinTier && canAttemptExperimental;

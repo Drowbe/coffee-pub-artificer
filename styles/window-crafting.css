@@ -265,6 +265,9 @@
 }
 
 .crafting-recipe-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     padding: 4px 8px;
     background: transparent;
     border: none;
@@ -292,6 +295,11 @@
 
 .crafting-recipe-filter-btn i {
     font-size: 0.9em;
+}
+
+.crafting-recipe-filter-btn-label {
+    font-size: 0.8em;
+    white-space: nowrap;
 }
 
 .crafting-zone-desc {
@@ -524,6 +532,11 @@
     color: rgba(180, 160, 120, 0.85);
 }
 
+.crafting-recipe-locked-icon-dimmed {
+    opacity: 0.5;
+    color: rgba(180, 160, 120, 0.6);
+}
+
 .crafting-recipe-result-img {
     width: 36px;
     height: 36px;
@@ -539,6 +552,19 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+}
+
+.crafting-recipe-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.crafting-recipe-experimental-prefix {
+    flex-shrink: 0;
+    font-size: 0.85em;
+    color: var(--craft-accent-color);
 }
 
 .crafting-recipe-result {

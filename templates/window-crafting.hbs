@@ -45,9 +45,11 @@
                     <div class="crafting-recipe-filter-buttons">
                         <button type="button" class="crafting-recipe-filter-btn {{#if showLockedRecipes}}active{{/if}}" data-action="toggleShowLockedRecipes" title="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}" aria-label="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}">
                             <i class="fa-solid fa-lock"></i>
+                            <span class="crafting-recipe-filter-btn-label">{{#if showLockedRecipes}}Hide locked{{else}}Show locked{{/if}}</span>
                         </button>
                         <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}">
                             <i class="fa-solid fa-hammer"></i>
+                            <span class="crafting-recipe-filter-btn-label">{{#if showOnlyCraftable}}All recipes{{else}}Craftable only{{/if}}</span>
                         </button>
                     </div>
                 </div>
@@ -73,10 +75,16 @@
                     <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-row-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
-                            <span class="crafting-recipe-result">{{this.result}}</span>
+                            <div class="crafting-recipe-title-row">
+                                
+                                <span class="crafting-recipe-result">
+                                    {{#if this.experimentalIconBeforeTitle}}<i class="{{this.experimentalIconBeforeTitle}} crafting-recipe-experimental-prefix" title="Experimental crafting (above your tier)"></i>{{/if}}
+                                    {{this.result}}
+                                </span>
+                            </div>
                             <span class="crafting-recipe-tags">{{#each this.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
                         </div>
-                        {{#if this.recipeHiddenByPerk}}<i class="crafting-recipe-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if this.canCraft}}<i class="crafting-recipe-craftable-icon {{this.craftableIconClass}}" title="All ingredients available"></i>{{/if}}{{/if}}
+                        {{#if this.recipeHiddenByPerk}}<i class="crafting-recipe-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if this.showDimLock}}<i class="crafting-recipe-locked-icon crafting-recipe-locked-icon-dimmed fa-solid fa-lock" title="Above your tier — viewable via experimental; recipe is still locked"></i>{{else}}{{#if this.canCraft}}<i class="crafting-recipe-craftable-icon {{this.craftableIconClass}}" title="All ingredients available"></i>{{/if}}{{/if}}{{/if}}
                     </div>
                     {{else}}
                     <div class="crafting-zone-empty">No recipes loaded. Configure the recipe journal in module settings.</div>
