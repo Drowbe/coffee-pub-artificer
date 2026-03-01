@@ -8,7 +8,7 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
-import { getEffectiveCraftingRules, getExperimentalPerkIconClass, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft } from './skills-rules.js';
+import { getEffectiveCraftingRules, getExperimentalPerkIconClass, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft, loadSkillsDetails } from './skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -214,11 +214,20 @@ function getRecipeJournalUuid(recipe) {
  * Only includes journals that have at least one recipe. Returns { allOption, groups } for template.
  * @param {Array<{ id: string, source?: string }>} recipes - from api.recipes.getAll()
  * @param {string} filterRecipeJournal - current filter (journal name or '')
+ * @param {Set<string>|string[]|null} [enabledSkillIds] - optional set/array of skill ids (lowercased) the actor has enabled (e.g. has kit); when provided, only journals containing recipes for these skills are included
  * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>> }>}
  */
-async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal) {
+async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, enabledSkillIds = null) {
+    let recipesToUse = recipes;
+    if (enabledSkillIds != null && enabledSkillIds.length > 0) {
+        const set = enabledSkillIds instanceof Set ? enabledSkillIds : new Set(enabledSkillIds);
+        recipesToUse = recipes.filter((r) => {
+            const skill = (r.skill ?? '').toString().trim().toLowerCase();
+            return !skill || set.has(skill);
+        });
+    }
     const uuidSet = new Set();
-    for (const r of recipes) {
+    for (const r of recipesToUse) {
         const u = getRecipeJournalUuid(r);
         if (u) uuidSet.add(u);
     }
@@ -762,7 +771,25 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const vesselMissing = apparatusSlot.isMissing || containerSlot.isMissing || toolSlot.isMissing;
         const canCraft = hasSlots && !anyMissing && !vesselMissing;
         const recipes = getAPI()?.recipes?.getAll?.() ?? [];
-        const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal);
+        let enabledSkillIds = null;
+        let enabledSkillsBadges = [];
+        if (actor) {
+            const details = await loadSkillsDetails();
+            const set = new Set();
+            const badges = [];
+            for (const s of details.skills ?? []) {
+                const id = (s.id ?? '').toString().trim().toLowerCase();
+                if (!id) continue;
+                const kit = (s.skillKit ?? '').toString().trim();
+                if (!kit || actorHasItemNamed(actor, kit)) {
+                    set.add(id);
+                    badges.push({ id: s.id ?? id, name: s.name ?? s.id ?? id, img: s.img ?? '' });
+                }
+            }
+            if (set.size > 0) enabledSkillIds = set;
+            enabledSkillsBadges = badges;
+        }
+        const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, enabledSkillIds);
         const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
         if (this.filterRecipeJournal) {
@@ -842,17 +869,24 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             : [];
 
         let selectedRecipeAppliedPerks = [];
+        let isExperimentalCrafting = false;
         if (r?.skill && actor) {
             const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, r.skill);
             selectedRecipeAppliedPerks = await getAppliedPerksForCraft(r.skill, forSkill, r.skillLevel ?? 0);
+            const rules = await getEffectiveCraftingRules(r.skill, forSkill);
+            const level = Number(r.skillLevel);
+            const withinTier = !Number.isNaN(level) && rules.inTier(level);
+            isExperimentalCrafting = rules.hasExperimental && !withinTier;
         }
+        const craftingBenchTitle = isExperimentalCrafting ? 'Crafting Bench: Experimental Crafting' : 'Crafting Bench';
 
         return {
             appId: this.id,
             crafterName: actor?.name ?? null,
             crafterImg: actor?.img ?? null,
             cacheStatus: { hasCache: cacheStatus.hasCache, building: cacheStatus.building, message: cacheStatus.message },
+            enabledSkillsBadges,
             slots,
             apparatusSlot,
             containerSlot,
@@ -913,6 +947,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             knownCombinations,
             recipeJournalAllOption: recipeJournalAllOption,
             recipeJournalOptionGroups: recipeJournalOptionGroups,
+            craftingBenchTitle,
             combinedTags,
             selectedRecipeData,
             selectedRecipeTopFields,

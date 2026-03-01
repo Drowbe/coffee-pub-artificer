@@ -17,6 +17,21 @@
                 <div class="crafting-window-header-title">Artificer Crafting Station</div>
                 <div class="crafting-window-header-crafter">{{#if crafterName}}{{crafterName}}{{else}}Select a crafter{{/if}}</div>
             </div>
+            {{#if enabledSkillsBadges.length}}
+            <div class="crafting-window-header-right">
+                <div class="crafting-window-skill-badges" data-tooltip="Enabled skills (you have the required kit)">
+                    {{#each enabledSkillsBadges}}
+                    <div class="crafting-window-skill-badge" data-tooltip="{{this.name}}">
+                        {{#if this.img}}
+                        <img src="{{this.img}}" alt="{{this.name}}" class="crafting-window-skill-badge-img" />
+                        {{else}}
+                        <i class="fa-solid fa-toolbox crafting-window-skill-badge-fallback"></i>
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
         </div>
     </header>
 
@@ -109,7 +124,7 @@
         {{!-- Zone 3: Crafting area --}}
         <main class="crafting-zone crafting-zone-bench">
             <section class="crafting-zone-section">
-                <h3 class="crafting-zone-section-title">Crafting Bench</h3>
+                <h3 class="crafting-zone-section-title">{{craftingBenchTitle}}</h3>
                 {{!-- 6 ingredient slots (2 rows x 3) --}}
                 <div class="crafting-bench-ingredient-slots">
                     {{#each slots}}

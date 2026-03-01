@@ -17,7 +17,7 @@ let _skillsDetailsCache = null;
  * Load skills-details.json. Caches result.
  * @returns {Promise<{ skills: Array }>}
  */
-async function loadSkillsDetails() {
+export async function loadSkillsDetails() {
     if (_skillsDetailsCache) return _skillsDetailsCache;
     try {
         const res = await fetch(SKILLS_DETAILS_URL);
@@ -402,7 +402,7 @@ export async function getRequiredPerkForTier(skillId, skillLevel) {
 export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, recipeSkillLevel) {
     const rules = await getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill);
     const level = Number(recipeSkillLevel);
-    const withinTier = !Number.isNaN(level) && rules.canViewTier(level);
+    const withinTier = !Number.isNaN(level) && rules.inTier(level);
     const isExperimental = rules.hasExperimental && !withinTier;
 
     const { skills: detailsSkills = [] } = await loadSkillsDetails();
@@ -442,6 +442,17 @@ export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, r
             }
             if (rule.ingredientKeptOnSuccess === 'half') {
                 effectsByPerk.get(perkName).push('On success: keep half the ingredients');
+            }
+            if (rule.experimentalCrafting && rule.experimentalCrafting.allowed === true && isExperimental) {
+                const ct = (rule.experimentalCrafting.craftingType ?? '').toString().trim().toLowerCase();
+                const skillLower = (skillId ?? '').toString().trim().toLowerCase();
+                if (!ct || ct === skillLower) {
+                    effectsByPerk.get(perkName).push('Experimental crafting (above tier)');
+                }
+            }
+            if (typeof rule.experimentalCraftingRandomComponents === 'number' && rule.experimentalCraftingRandomComponents > 0 && isExperimental) {
+                const n = rule.experimentalCraftingRandomComponents;
+                effectsByPerk.get(perkName).push(n === 1 ? '1 wrong component (remove to succeed)' : `${n} wrong components (remove to succeed)`);
             }
             if (typeof rule.experimentalCraftingDCModifier === 'number' && rule.experimentalCraftingDCModifier !== 0 && isExperimental) {
                 const sign = rule.experimentalCraftingDCModifier >= 0 ? '+' : '';
