@@ -125,6 +125,9 @@
         <main class="crafting-zone crafting-zone-bench">
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">{{craftingBenchTitle}}</h3>
+                {{#if craftingBenchMessage}}
+                <div class="crafting-bench-message">{{craftingBenchMessage}}</div>
+                {{/if}}
                 {{!-- 6 ingredient slots (2 rows x 3) --}}
                 <div class="crafting-bench-ingredient-slots">
                     {{#each slots}}

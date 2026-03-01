@@ -507,6 +507,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.showLockedRecipes = options.showLockedRecipes ?? true;
         /** When true, show only recipes the actor can craft (all ingredients available). When false, show all. */
         this.showOnlyCraftable = options.showOnlyCraftable ?? false;
+        /** Optional message shown below the Crafting Bench title. Set to a string to display; empty to hide. */
+        this.craftingBenchMessage = options.craftingBenchMessage ?? '';
         /** @type {ReturnType<typeof setTimeout>|null} */
         this._searchDebounceTimer = null;
         /** @type {number|null} - seconds remaining during craft countdown */
@@ -849,6 +851,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */
         const selectedRecipeTopFields = r
             ? [
+                r.skillLevel != null ? { label: 'Level', value: String(r.skillLevel) } : null,
                 (r.resultItemName ?? r.name) ? { label: 'Result', value: (r.resultItemName ?? r.name ?? '').trim() } : null,
                 r.skill ? { label: 'Skill', value: r.skill } : null,
                 r.rarity ? { label: 'Rarity', value: r.rarity } : null
@@ -861,7 +864,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 r.containerName ? { label: 'Container', value: r.containerName } : null,
                 r.processType ? { label: 'Process', value: `${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() } : null,
                 r.time != null ? { label: 'Time', value: `${r.time}s` } : null,
-                r.skillLevel != null ? { label: 'Skill Level', value: String(r.skillLevel) } : null,
                 r.successDC != null ? { label: 'DC', value: String(r.successDC) } : null,
                 r.goldCost != null ? { label: 'Gold Cost', value: String(r.goldCost) } : null,
                 r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null
@@ -880,6 +882,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             isExperimentalCrafting = rules.hasExperimental && !withinTier;
         }
         const craftingBenchTitle = isExperimentalCrafting ? 'Crafting Bench: Experimental Crafting' : 'Crafting Bench';
+        const craftingBenchMessage = isExperimentalCrafting
+            ? 'One of these ingredients is not quite right. Remove it.'
+            : (this.craftingBenchMessage ?? '');
 
         return {
             appId: this.id,
@@ -948,6 +953,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             recipeJournalAllOption: recipeJournalAllOption,
             recipeJournalOptionGroups: recipeJournalOptionGroups,
             craftingBenchTitle,
+            craftingBenchMessage,
             combinedTags,
             selectedRecipeData,
             selectedRecipeTopFields,
