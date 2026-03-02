@@ -112,10 +112,10 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(172, 159, 129, 0.4);
+    background: rgba(0, 0, 0, 0.0);
+    border: 0px solid rgba(172, 159, 129, 0.4);
     border-radius: 6px;
-    padding: 2px 6px 2px 6px;
+    padding: 0px 0px 0px 0px;
 }
 
 .crafting-window-skill-badge {
@@ -403,6 +403,31 @@
     color: rgba(201, 201, 201, 0.75);
     margin-top: 2px;
     margin-bottom: 0;
+}
+
+.crafting-recipe-journal-cover {
+    margin-top: 6px;
+    padding: 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.crafting-recipe-journal-cover-img {
+    max-width: 80px;
+    max-height: 100px;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+    margin-bottom: 4px;
+}
+.crafting-recipe-journal-cover-author {
+    font-size: 0.8em;
+    color: rgba(201, 201, 201, 0.7);
+    font-style: italic;
+}
+.crafting-recipe-journal-cover-description {
+    font-size: 0.8em;
+    color: rgba(201, 201, 201, 0.65);
+    margin-top: 2px;
+    line-height: 1.3;
 }
 
 .crafting-detail-rows-top {

@@ -406,6 +406,16 @@ export const registerSettings = () => {
         type: Boolean
     });
 
+    // -- Crafting window: Show only recipes for skills where you have the kit (like Skills "Hide Unavailable") --
+    game.settings.register(MODULE.ID, 'craftingWindowShowOnlyWithKit', {
+        name: 'Crafting window: Show only recipes I have kit for (remembered)',
+        hint: 'When on, hides recipes for skills whose required kit you do not have (e.g. no Poisoner\'s Kit = no poison recipes). Stored per player.',
+        scope: 'client',
+        config: false,
+        default: false,
+        type: Boolean
+    });
+
     // -- Window bounds (size/position) per app – client-scoped so GM and players remember their own layout --
     const windowBoundsDefaults = [
         { key: 'windowBoundsCrafting', default: { width: 1100, height: 750 } },

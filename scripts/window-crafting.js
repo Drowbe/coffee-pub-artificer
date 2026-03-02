@@ -10,6 +10,7 @@ import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCr
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import { getEffectiveCraftingRules, getExperimentalPerkIconClass, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft, loadSkillsDetails } from './skills-rules.js';
+import { getJournalCoverData } from './parsers/parser-journal-cover.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
 
@@ -230,7 +231,7 @@ function getRecipeJournalUuid(recipe) {
  * @param {Array<{ id: string, source?: string }>} recipes - from api.recipes.getAll()
  * @param {string} filterRecipeJournal - current filter (journal name or '')
  * @param {Set<string>|string[]|null} [enabledSkillIds] - optional set/array of skill ids (lowercased) the actor has enabled (e.g. has kit); when provided, only journals containing recipes for these skills are included
- * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>> }>}
+ * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>>, journalByUuid: Map<string, string>, journalCoverByUuid: Map<string, { author: string, description: string, coverImage: string }> }>}
  */
 async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, enabledSkillIds = null) {
     let recipesToUse = recipes;
@@ -252,6 +253,8 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
     const nameToUuids = new Map();
     /** @type {Map<string, string>} journal uuid -> name */
     const journalByUuid = new Map();
+    /** @type {Map<string, { author: string, description: string, coverImage: string, skillIds: string[] }>} journal uuid -> cover data */
+    const journalCoverByUuid = new Map();
 
     /** Build folderId -> folderName for a compendium pack (v13: folder collection may be pack.folderCollection or pack.folders). */
     function getPackFolderNames(pack) {
@@ -315,6 +318,49 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
             continue;
         }
     }
+
+    // Load cover data for every journal (for display and for skill filtering).
+    for (const uuid of journalInfo.keys()) {
+        try {
+            const doc = await fromUuid(uuid);
+            const cover = await getJournalCoverData(doc);
+            journalCoverByUuid.set(uuid, {
+                author: cover.author ?? '',
+                description: cover.description ?? '',
+                coverImage: cover.coverImage ?? '',
+                skillIds: cover.skillIds ?? []
+            });
+        } catch (_e) {
+            journalCoverByUuid.set(uuid, { author: '', description: '', coverImage: '', skillIds: [] });
+        }
+    }
+
+    // When filtering by enabled skills (e.g. "show only with kit"), exclude journals whose Cover page
+    // lists only skills the actor doesn't have. Journals with no Cover page or no Skills on Cover are kept.
+    if (enabledSkillIds != null && (enabledSkillIds instanceof Set ? enabledSkillIds.size : enabledSkillIds.length) > 0) {
+        const enabledSet = enabledSkillIds instanceof Set ? enabledSkillIds : new Set(enabledSkillIds);
+        const uuidsToExclude = new Set();
+        for (const uuid of journalInfo.keys()) {
+            const cover = journalCoverByUuid.get(uuid);
+            const coverSkillIds = cover?.skillIds ?? [];
+            if (coverSkillIds.length > 0) {
+                const hasAnyEnabled = coverSkillIds.some((id) => enabledSet.has(id));
+                if (!hasAnyEnabled) uuidsToExclude.add(uuid);
+            }
+        }
+        for (const uuid of uuidsToExclude) {
+            const info = journalInfo.get(uuid);
+            journalInfo.delete(uuid);
+            journalByUuid.delete(uuid);
+            journalCoverByUuid.delete(uuid);
+            if (info?.name && nameToUuids.has(info.name)) {
+                const set = nameToUuids.get(info.name);
+                set.delete(uuid);
+                if (set.size === 0) nameToUuids.delete(info.name);
+            }
+        }
+    }
+
     /** @type {Map<string, Array<{ value: string, label: string }>>} folderLabel -> options (value = journal name) */
     const byFolder = new Map();
     for (const [, info] of journalInfo) {
@@ -346,7 +392,7 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
             options: uniqueOpts.map((o) => ({ ...o, selected: filterRecipeJournal === o.value }))
         };
     });
-    return { allOption, groups, nameToUuids, journalByUuid };
+    return { allOption, groups, nameToUuids, journalByUuid, journalCoverByUuid };
 }
 
 /**
@@ -538,6 +584,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.showLockedRecipes = options.showLockedRecipes ?? true;
         /** When true, show only recipes the actor can craft (all ingredients available). When false, show all. */
         this.showOnlyCraftable = options.showOnlyCraftable ?? false;
+        /** When true, show only recipes for skills whose required kit the actor has (hide e.g. poison recipes if no Poisoner's Kit). */
+        this.showOnlyWithKit = options.showOnlyWithKit ?? game.settings.get(MODULE.ID, 'craftingWindowShowOnlyWithKit') ?? false;
         /** Optional message shown below the Crafting Bench title. Set to a string to display; empty to hide. */
         this.craftingBenchMessage = options.craftingBenchMessage ?? '';
         /** @type {ReturnType<typeof setTimeout>|null} */
@@ -835,7 +883,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             enabledSkillsBadges = badges;
         }
         const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, enabledSkillIds);
-        const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid } = journalOptionsResult;
+        const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid, journalCoverByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
         if (this.filterRecipeJournal) {
             const selectedName = String(this.filterRecipeJournal).trim();
@@ -855,6 +903,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         if (!this.showLockedRecipes) {
             knownCombinations = knownCombinations.filter((r) => !r.recipeHiddenByPerk);
         }
+        if (this.showOnlyWithKit && actor) {
+            knownCombinations = knownCombinations.filter((combo) => {
+                const recipe = recipes.find((rec) => rec.id === combo.recipeId);
+                if (!recipe) return true;
+                const kit = recipe.skillKit?.trim();
+                if (!kit) return true;
+                return actorHasItemNamed(actor, kit);
+            });
+        }
         if (this.showOnlyCraftable) {
             knownCombinations = knownCombinations.filter((r) => r.canCraft);
         }
@@ -873,6 +930,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const cacheStatus = getCacheStatus();
         const journalUuidForRecipe = r ? getRecipeJournalUuid(r) : '';
         const selectedRecipeJournalName = (r && journalByUuid.get(journalUuidForRecipe)) ?? '';
+        const coverForJournal = journalUuidForRecipe ? journalCoverByUuid?.get(journalUuidForRecipe) : null;
+        const selectedRecipeJournalCover = coverForJournal && (coverForJournal.coverImage || coverForJournal.author || coverForJournal.description)
+            ? { author: coverForJournal.author, description: coverForJournal.description, coverImage: coverForJournal.coverImage }
+            : null;
         const selectedCombo = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
         let requiredPerk = null;
         if (r && selectedCombo?.recipeHiddenByPerk && r.skill && r.skillLevel != null) {
@@ -883,6 +944,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 name: r.name ?? '',
                 resultName: r.resultItemName ?? r.name ?? '',
                 journalName: selectedRecipeJournalName,
+                journalCover: selectedRecipeJournalCover,
                 traits: r.traits ?? [],
                 description: r.description ?? '',
                 recipeHiddenByPerk: selectedCombo?.recipeHiddenByPerk ?? false,
@@ -1018,6 +1080,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             filterRecipeSearch: this.filterRecipeSearch,
             showLockedRecipes: this.showLockedRecipes,
             showOnlyCraftable: this.showOnlyCraftable,
+            showOnlyWithKit: this.showOnlyWithKit,
             activeTab: this.activeTab ?? 'experimentation',
             hasRecipes
         };
@@ -1151,6 +1214,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 w.showOnlyCraftable = !w.showOnlyCraftable;
+                w.render();
+                return;
+            }
+            const toggleWithKitBtn = e.target?.closest?.('[data-action="toggleShowOnlyWithKit"]');
+            if (toggleWithKitBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w.showOnlyWithKit = !w.showOnlyWithKit;
+                game.settings.set(MODULE.ID, 'craftingWindowShowOnlyWithKit', w.showOnlyWithKit);
                 w.render();
                 return;
             }

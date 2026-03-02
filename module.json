@@ -63,6 +63,7 @@
     "scripts/data/storage/storage-blueprints.js",
     "scripts/parsers/parser-recipe.js",
     "scripts/parsers/parser-blueprint.js",
+    "scripts/parsers/parser-journal-cover.js",
     "scripts/systems/tag-manager.js",
     "scripts/systems/experimentation-engine.js",
     "scripts/utility-artificer-item.js",
