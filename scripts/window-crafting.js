@@ -3,6 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
@@ -99,25 +100,34 @@ async function sendCraftResultCard(actor, lastResult, appliedPerks = []) {
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     };
 
-    let resultContents;
-    if (lastResult.success && lastResult.item) {
+    const success = !!lastResult.success && !!lastResult.item;
+    let resultName = '';
+    let resultItems = [];
+    let failureMessage = '';
+    let issues = Array.isArray(lastResult.issues) ? lastResult.issues : (lastResult.name ? [lastResult.name] : []);
+    const ingredientsKept = Array.isArray(lastResult.ingredientsKept) ? lastResult.ingredientsKept : [];
+
+    if (success) {
         const it = lastResult.item;
-        const img = it.img ? `<img src="${escapeHtml(it.img)}" alt="" class="gather-result-img" />` : '';
+        resultName = lastResult.name ?? it.name ?? '';
         const uuid = it.uuid ?? '';
-        const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? lastResult.name)}}` : escapeHtml(it.name ?? lastResult.name);
-        resultContents = `<p>Created: ${escapeHtml(lastResult.name)}</p><div class="gather-result-list"><div class="gather-result-item">${img} ${link}</div></div><p>Added to your inventory.</p>`;
+        const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? resultName)}}` : escapeHtml(it.name ?? resultName);
+        resultItems = [{ img: it.img ?? '', link }];
     } else {
-        resultContents = `<p>${escapeHtml(lastResult.name)}</p>`;
+        failureMessage = lastResult.name ?? 'Craft failed.';
+        // When they received sludge, show it as the "result" item so they see what they got
+        if (lastResult.item && lastResult.sludgeCreated) {
+            const it = lastResult.item;
+            const uuid = it.uuid ?? '';
+            const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? '')}}` : escapeHtml(it.name ?? '');
+            resultItems = [{ img: it.img ?? '', link }];
+        }
     }
 
-    let perkContents = '';
-    if (appliedPerks?.length) {
-        perkContents = appliedPerks.map((p) => {
-            const name = escapeHtml(p.perkName ?? '');
-            const effect = escapeHtml(p.effect ?? '');
-            return `<li><strong>${name}</strong> ${effect}</li>`;
-        }).join('');
-    }
+    const perks = (appliedPerks ?? []).map((p) => ({
+        perkName: p.perkName ?? '',
+        effect: p.effect ?? ''
+    }));
 
     const html = await renderTemplate('modules/coffee-pub-artificer/templates/card-results-craft.hbs', {
         cardTheme,
@@ -125,10 +135,15 @@ async function sendCraftResultCard(actor, lastResult, appliedPerks = []) {
         icon: 'hammer',
         resultTitle: 'Results',
         resultIcon: 'wand-magic-sparkles',
-        resultContents,
+        success,
+        resultName,
+        resultItems,
+        failureMessage,
+        issues,
+        ingredientsKept,
         perkTitle: 'Perks applied',
         perkIcon: 'star',
-        perkContents: perkContents || null
+        perks
     });
 
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
@@ -453,6 +468,9 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 /** App ID prefix for unique element IDs */
 const CRAFTING_APP_ID = 'artificer-crafting';
 
+/** Setting key for client-scoped window bounds (size/position) */
+const CRAFTING_BOUNDS_SETTING = 'windowBoundsCrafting';
+
 /** Module-level ref for delegation (like Quick Encounter) */
 let _currentCraftingWindowRef = null;
 let _craftingDelegationAttached = false;
@@ -493,6 +511,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${CRAFTING_APP_ID}-${foundry.utils.randomID().slice(0, 8)}`;
+        const defaultPos = CraftingWindow.DEFAULT_OPTIONS?.position ?? { width: 1100, height: 750 };
+        opts.position = getPositionWithSavedBounds(defaultPos, CRAFTING_BOUNDS_SETTING);
         super(opts);
         /** @type {Array<{item: Item, count: number}|null>} */
         this.selectedSlots = Array(6).fill(null);
@@ -528,6 +548,18 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._craftCountdownInterval = null;
         /** @type {{actor: Actor, items: Item[], anyMissing: boolean}|null} - stored during countdown */
         this._craftPending = null;
+    }
+
+    /** Save window bounds to client setting when position changes (move/resize). */
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(CRAFTING_BOUNDS_SETTING, position);
+    }
+
+    /** Save window bounds when closing so we remember size/position next time. */
+    async _preClose() {
+        if (this.position) saveWindowBounds(CRAFTING_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     /**
@@ -957,7 +989,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 : 0,
             ingredients,
             canCraft,
-            lastResult: this.lastResult,
+            lastResult: this.lastResult
+                ? {
+                    ...this.lastResult,
+                    appliedPerks: this.lastResult.appliedPerks ?? [],
+                    ingredientsKept: this.lastResult.ingredientsKept ?? [],
+                    ingredientsKeptStr: (this.lastResult.ingredientsKept ?? []).map((x) => (typeof x === 'object' && x?.name != null ? x.name : String(x))).join(', '),
+                    issues: Array.isArray(this.lastResult.issues) ? this.lastResult.issues : []
+                }
+                : null,
             lastCraftTags: this.lastCraftTags,
             lastCraftTagsStr: this.lastCraftTags.join(', '),
             knownCombinations,
@@ -1002,6 +1042,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = null;
         this.selectedTool = null;
         this.selectedRecipe = null;
+        this.lastResult = null;
+        this.lastCraftTags = [];
         this.heatValue = 0;
         this.grindValue = 0;
         this.processType = 'heat';
@@ -1043,17 +1085,26 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
     static _actionSetTimeFromRoundTimer(event, target) {
         if (this._craftingCountdownRemaining != null) return;
+        if (event.target?.closest?.('.crafting-bench-round-timer-input')) return;
         const wrap = target?.closest?.('.crafting-bench-round-timer');
         if (!wrap) return;
-        const rect = wrap.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const x = event.clientX - cx;
-        const y = event.clientY - cy;
+        const el = event.target?.closest?.('.crafting-bench-round-timer-ring') || wrap;
+        const rect = el.getBoundingClientRect();
+        const cx = rect.width / 2;
+        const cy = rect.height / 2;
+        let x, y;
+        if (event.target === el && event.offsetX != null && event.offsetY != null) {
+            x = event.offsetX - cx;
+            y = event.offsetY - cy;
+        } else {
+            x = event.clientX - rect.left - cx;
+            y = event.clientY - rect.top - cy;
+        }
+        // Angle: 0 at top (12 o'clock), clockwise positive; map to 0-120 seconds
         let angle = Math.atan2(x, -y);
         if (angle < 0) angle += 2 * Math.PI;
         const pct = angle / (2 * Math.PI);
-        const time = Math.round((pct * 120) / 5) * 5;
+        const time = Math.round(pct * 120);
         this.timeValue = Math.max(0, Math.min(120, time));
         this.render();
     }
@@ -1195,6 +1246,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const appId = w.id;
             const el = e.target;
             const id = el.id ?? '';
+            if (id === `${appId}-time-value`) {
+                const raw = parseInt(el.value, 10);
+                const val = Number.isNaN(raw) ? 0 : Math.max(0, Math.min(120, raw));
+                w.timeValue = val;
+                w.render();
+                return;
+            }
             if (id === `${appId}-filter-recipe-journal`) {
                 w.filterRecipeJournal = el.value ?? '';
                 w.render();
@@ -1608,13 +1666,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             BlacksmithUtils.playSound(BlacksmithConstants.SOUNDERROR05, 0.5, false, true);
         }
         if (this.lastResult) {
-            let appliedPerks = [];
-            if (this.selectedRecipe?.skill) {
-                const api = getAPI();
-                const learnedPerkIds = await api?.skills?.getLearnedPerks?.(actor) ?? [];
-                const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, this.selectedRecipe.skill);
-                appliedPerks = await getAppliedPerksForCraft(this.selectedRecipe.skill, forSkill, this.selectedRecipe.skillLevel ?? 0);
-            }
+            const appliedPerks = this.lastResult.appliedPerks ?? [];
             await sendCraftResultCard(actor, this.lastResult, appliedPerks);
         }
     }
@@ -1639,6 +1691,107 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
+     * Validate that the current bench state exactly matches the selected recipe (ingredients, apparatus, container, time, heat/grind).
+     * Returns a list of all issues found (so we can show them in details).
+     * @returns {Promise<{ valid: boolean, issues: string[] }>}
+     */
+    async _validateRecipeCraft() {
+        const recipe = this.selectedRecipe;
+        if (!recipe) return { valid: false, issues: ['No recipe selected.'] };
+
+        const actor = this._getCrafterActor();
+        const trimName = (x) => (x ?? '').toString().trim();
+        /** @type {string[]} */
+        const issues = [];
+
+        /** Build effective ingredient list (recipe + wrong components if experimental). */
+        let effectiveIngredients = recipe.ingredients ?? [];
+        if (recipe.skill && actor) {
+            const learnedPerkIds = await getAPI()?.skills?.getLearnedPerks?.(actor) ?? [];
+            const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
+            const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
+            const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
+            const skillLower = (recipe.skill || '').toLowerCase();
+            const canAttemptExperimental = !rules.experimentalCraftingTypes?.length || rules.experimentalCraftingTypes.includes(skillLower);
+            const isExperimental = rules.hasExperimental && !withinTier && canAttemptExperimental;
+            if (isExperimental && rules.experimentalRandomComponents > 0) {
+                effectiveIngredients = injectWrongComponents(recipe.ingredients ?? [], recipe.skill, rules.experimentalRandomComponents);
+            }
+        }
+
+        /** Expected ingredient counts by normalized name. */
+        const expectedCounts = new Map();
+        for (const ing of effectiveIngredients) {
+            const name = normalizeItemNameForMatch(ing.name);
+            if (!name) continue;
+            const qty = ing.quantity ?? 1;
+            expectedCounts.set(name, (expectedCounts.get(name) ?? 0) + qty);
+        }
+
+        /** Actual ingredient counts from slots (only non-missing slots with item). */
+        const actualCounts = new Map();
+        for (const slot of this.selectedSlots) {
+            if (!slot?.item || slot.isMissing) continue;
+            const name = normalizeItemNameForMatch(slot.item.name);
+            if (!name) continue;
+            const count = slot.count ?? 1;
+            actualCounts.set(name, (actualCounts.get(name) ?? 0) + count);
+        }
+
+        /** Must have exactly the same multiset (no extra, no missing). */
+        for (const [name, qty] of expectedCounts) {
+            const actual = actualCounts.get(name) ?? 0;
+            if (actual !== qty) {
+                if (actual > qty) issues.push('Too many ingredients or wrong ingredients in the bench. Use only the exact ingredients required by the recipe.');
+                else issues.push('Missing or wrong ingredients. Check the recipe and fill every slot with the correct item.');
+                break;
+            }
+        }
+        for (const name of actualCounts.keys()) {
+            if (!expectedCounts.has(name)) {
+                issues.push('Too many ingredients or wrong ingredients in the bench. Use only the exact ingredients required by the recipe.');
+                break;
+            }
+        }
+
+        /** Apparatus must match. */
+        if (recipe.apparatusName?.trim()) {
+            if (!this.selectedApparatus) issues.push('Wrong or missing apparatus. Use the apparatus required by the recipe.');
+            else if (trimName(this.selectedApparatus.name) !== trimName(recipe.apparatusName)) issues.push('Wrong apparatus. Use the apparatus required by the recipe.');
+        }
+
+        /** Container must match. */
+        if (recipe.containerName?.trim()) {
+            if (!this.selectedContainer) issues.push('Wrong or missing container. Use the container required by the recipe.');
+            else if (trimName(this.selectedContainer.name) !== trimName(recipe.containerName)) issues.push('Wrong container. Use the container required by the recipe.');
+        }
+
+        /** Time must match recipe time. */
+        if (recipe.time != null && recipe.time >= 0) {
+            const wantTime = Math.max(0, Math.min(120, Math.ceil(Number(recipe.time))));
+            const actualTime = Math.max(0, Math.min(120, Math.ceil(this.timeValue)));
+            if (actualTime !== wantTime) issues.push(`Wrong process time. This recipe requires ${wantTime}s.`);
+        }
+
+        /** Process type (heat vs grind) must match. */
+        if (recipe.processType === 'grind' && this.processType !== 'grind') issues.push('Wrong process. This recipe requires grinding.');
+        if (recipe.processType === 'heat' && this.processType !== 'heat') issues.push('Wrong process. This recipe requires heat.');
+
+        /** Process level (heat/grind 0–3) must match. */
+        if (recipe.processLevel != null) {
+            const wantLevel = Math.max(0, Math.min(HEAT_MAX, Math.round(Number(recipe.processLevel))));
+            const actualLevel = this.processType === 'heat' ? this.heatValue : this.grindValue;
+            if (actualLevel !== wantLevel) {
+                const label = this.processType === 'heat' ? (HEAT_LEVELS[wantLevel] ?? `level ${wantLevel}`) : (GRIND_LEVELS[wantLevel] ?? `level ${wantLevel}`);
+                issues.push(`Wrong ${this.processType} level. This recipe requires ${label}.`);
+            }
+        }
+
+        return { valid: issues.length === 0, issues };
+    }
+
+    /**
      * Craft from recipe: resolve DC from rules, roll, then create item and consume ingredients per success/failure rules.
      * @param {Actor} actor
      * @param {Item[]} items - Items to consume
@@ -1647,6 +1800,54 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async _craftFromRecipe(actor, items) {
         const recipe = this.selectedRecipe;
         if (!recipe) return { success: false, item: null, name: 'No recipe', quality: 'Failed' };
+
+        /** At the end: validate bench vs recipe. If invalid, fail with issues and give sludge (no roll, no ingredient consumption). */
+        const validation = await this._validateRecipeCraft();
+        if (!validation.valid) {
+            let appliedPerks = [];
+            let ingredientLossOnFail = 'all';
+            if (recipe.skill && typeof recipe.skill === 'string') {
+                const api = getAPI();
+                const learnedPerkIds = await api?.skills?.getLearnedPerks?.(actor) ?? [];
+                const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
+                appliedPerks = await getAppliedPerksForCraft(recipe.skill, forSkill, recipe.skillLevel ?? 0);
+                const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+                ingredientLossOnFail = rules.ingredientLossOnFail ?? 'all';
+            }
+            let ingredientsKept = [];
+            if (ingredientLossOnFail === 'half' && items.length > 0) {
+                const consumeCount = Math.floor(items.length / 2);
+                const { kept } = await this._consumeIngredients(actor, items, consumeCount);
+                ingredientsKept = kept.map((i) => ({ name: i.name ?? '?', img: i.img ?? '' }));
+            }
+            let sludgeCreated = false;
+            let sludgeName = '';
+            let sludgeItem = null;
+            const sludgeResolved = await resolveItemByName("Experimenter's Sludge");
+            if (sludgeResolved) {
+                const sludgeObj = sludgeResolved.toObject();
+                const added = await addCraftedItemToActor(actor, sludgeObj);
+                if (added) {
+                    sludgeCreated = true;
+                    sludgeName = added.name ?? sludgeResolved.name ?? "Experimenter's Sludge";
+                    sludgeItem = added;
+                }
+            }
+            this.lastCraftTags = [recipe.name];
+            return {
+                success: false,
+                item: sludgeItem,
+                name: validation.issues.length ? validation.issues[0] : 'Craft failed.',
+                quality: 'Failed',
+                rollTotal: null,
+                dc: null,
+                appliedPerks,
+                issues: validation.issues,
+                ingredientsKept: ingredientsKept.length ? ingredientsKept : undefined,
+                sludgeCreated,
+                sludgeName: sludgeCreated ? sludgeName : undefined
+            };
+        }
 
         const resultName = (recipe.resultItemName || recipe.name || '').trim();
         const resultItem = resultName ? await resolveItemByName(resultName) : null;
@@ -1663,12 +1864,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let ingredientLossOnFail = 'all';
         let ingredientKeptOnSuccess = undefined;
         let rollTotal = null;
+        /** @type {Array<{ perkName: string, effect: string }>} */
+        let appliedPerks = [];
 
         if (recipe.skill && typeof recipe.skill === 'string') {
             const api = getAPI();
             const learnedPerkIds = await api?.skills?.getLearnedPerks?.(actor) ?? [];
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            appliedPerks = await getAppliedPerksForCraft(recipe.skill, forSkill, recipe.skillLevel ?? 0);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
             const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
             const skillLower = (recipe.skill || '').toLowerCase();
@@ -1694,7 +1898,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const obj = resultItem.toObject();
                 const createdItem = await addCraftedItemToActor(actor, obj);
                 if (!createdItem) {
-                    return { success: false, item: null, name: 'Creation failed', quality: 'Failed' };
+                    return { success: false, item: null, name: 'Creation failed', quality: 'Failed', rollTotal, dc: resolvedDC, appliedPerks };
                 }
                 const consumeCount = ingredientKeptOnSuccess === 'half' ? Math.floor(items.length / 2) : items.length;
                 await this._consumeIngredients(actor, items, consumeCount);
@@ -1703,22 +1907,49 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     success: true,
                     item: createdItem,
                     name: recipe.name,
-                    quality: 'Basic'
+                    quality: 'Basic',
+                    rollTotal,
+                    dc: resolvedDC,
+                    appliedPerks
                 };
             }
 
-            const consumeCount = ingredientLossOnFail === 'half' ? Math.ceil(items.length / 2) : items.length;
-            await this._consumeIngredients(actor, items, consumeCount);
+            const consumeCount = ingredientLossOnFail === 'half' ? Math.floor(items.length / 2) : items.length;
+            const { kept } = await this._consumeIngredients(actor, items, consumeCount);
+            const ingredientsKept = kept.map((i) => ({ name: i.name ?? '?', img: i.img ?? '' }));
+
+            let sludgeCreated = false;
+            let sludgeName = '';
+            let sludgeItemAdded = null;
+            const sludgeResolved = await resolveItemByName("Experimenter's Sludge");
+            if (sludgeResolved) {
+                const sludgeObj = sludgeResolved.toObject();
+                const added = await addCraftedItemToActor(actor, sludgeObj);
+                if (added) {
+                    sludgeCreated = true;
+                    sludgeName = added.name ?? sludgeResolved.name ?? "Experimenter's Sludge";
+                    sludgeItemAdded = added;
+                }
+            }
+
+            const rollFailIssue = rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.';
             this.lastCraftTags = [recipe.name];
             return {
                 success: false,
-                item: null,
-                name: rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.',
-                quality: 'Failed'
+                item: sludgeItemAdded,
+                name: rollFailIssue,
+                quality: 'Failed',
+                rollTotal,
+                dc: resolvedDC,
+                appliedPerks,
+                ingredientsKept: ingredientsKept.length ? ingredientsKept : undefined,
+                issues: [rollFailIssue],
+                sludgeCreated,
+                sludgeName: sludgeCreated ? sludgeName : undefined
             };
         } catch (err) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Recipe craft error', err?.message ?? String(err), true, false);
-            return { success: false, item: null, name: err?.message ?? 'Craft failed', quality: 'Failed' };
+            return { success: false, item: null, name: err?.message ?? 'Craft failed', quality: 'Failed', appliedPerks: [] };
         }
     }
 
@@ -1727,9 +1958,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
      * @param {Actor} actor
      * @param {Item[]} items - Full list of items used in the craft
      * @param {number} [countToConsume] - If set, only consume this many (randomly chosen). Used for "half" rules.
+     * @returns {Promise<{ kept: Item[] }>} Items that were not consumed (when countToConsume < items.length).
      */
     async _consumeIngredients(actor, items, countToConsume = undefined) {
         let toConsume = items;
+        let kept = [];
         if (countToConsume != null && countToConsume < items.length) {
             const arr = [...items];
             for (let i = arr.length - 1; i > 0; i--) {
@@ -1737,6 +1970,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 [arr[i], arr[j]] = [arr[j], arr[i]];
             }
             toConsume = arr.slice(0, countToConsume);
+            kept = arr.slice(countToConsume);
+        } else if (countToConsume == null || countToConsume >= items.length) {
+            kept = [];
         }
         for (const item of toConsume) {
             const actorItem = actor.items.get(item.id);
@@ -1751,5 +1987,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 await actorItem.delete();
             }
         }
+        return { kept };
     }
 }

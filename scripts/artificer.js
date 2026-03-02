@@ -132,7 +132,7 @@ function registerMenubarIntegration() {
         name: 'Artificer Crafting',
         title: 'Artificer Crafting Station',
         icon: 'fa-solid fa-hammer',
-        height: 40, // height
+        height: 30, // height
         persistence: 'manual', // Stay open until user closes
         moduleId: MODULE.ID
     });
@@ -181,6 +181,7 @@ function registerMenubarIntegration() {
     const craftingItemId = 'artificer-crafting';
     const craftingRegistered = blacksmith.registerSecondaryBarItem(barType, craftingItemId, {
         icon: 'fa-solid fa-hammer',
+        label: 'Craft',
         title: 'Craft',
         moduleId: MODULE.ID,
         visible: true,
@@ -194,6 +195,7 @@ function registerMenubarIntegration() {
     const createItemItemId = 'artificer-create-item';
     const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
         icon: 'fa-solid fa-plus-circle',
+        label: 'Create Item',
         title: 'Create Item',
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -221,6 +223,7 @@ function registerMenubarIntegration() {
     const importRecipeItemId = 'artificer-import-recipes';
     const importRecipeRegistered = blacksmith.registerSecondaryBarItem(barType, importRecipeItemId, {
         icon: 'fa-solid fa-book-open',
+        label: 'Import Recipes',
         title: 'Import Recipes',
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -235,6 +238,7 @@ function registerMenubarIntegration() {
     const skillsItemId = 'artificer-skills';
     const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
         icon: 'fa-solid fa-seedling',
+        label: 'Skills',
         title: 'Skills',
         moduleId: MODULE.ID,
         visible: true,
@@ -248,6 +252,7 @@ function registerMenubarIntegration() {
     const gatherItemId = 'artificer-roll-components';
     const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
         icon: 'fa-solid fa-leaf',
+        label: 'Roll for Components',
         title: 'Roll for Components',
         moduleId: MODULE.ID,
         visible: game.user.isGM,

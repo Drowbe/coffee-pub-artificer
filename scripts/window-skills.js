@@ -8,9 +8,11 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { SkillManager } from './manager-skills.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
+const SKILLS_BOUNDS_SETTING = 'windowBoundsSkills';
 const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
 const SKILLS_RULES_URL = 'modules/coffee-pub-artificer/resources/skills-rules.json';
 
@@ -143,6 +145,8 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${SKILLS_APP_ID}-${foundry.utils.randomID().slice(0, 8)}`;
+        const defaultPos = SkillsWindow.DEFAULT_OPTIONS?.position ?? { width: 900, height: 600 };
+        opts.position = getPositionWithSavedBounds(defaultPos, SKILLS_BOUNDS_SETTING);
         super(opts);
         /** @type {Actor|null} */
         this._actor = null;
@@ -156,6 +160,16 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._pendingUnlearn = [];
         /** @type {boolean} when true, hide skills whose required kit is missing */
         this._hideUnavailable = game.settings.get(MODULE.ID, 'skillsWindowHideUnavailable') ?? false;
+    }
+
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(SKILLS_BOUNDS_SETTING, position);
+    }
+
+    async _preClose() {
+        if (this.position) saveWindowBounds(SKILLS_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     _getActor() {

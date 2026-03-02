@@ -3,9 +3,12 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+const EXPERIMENT_PANEL_BOUNDS_SETTING = 'windowBoundsExperimentPanel';
 
 /**
  * Crafting Experiment Panel - Minimal prototype UI
@@ -33,10 +36,22 @@ export class CraftingExperimentPanel extends HandlebarsApplicationMixin(Applicat
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${CraftingExperimentPanel.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        const defaultPos = CraftingExperimentPanel.DEFAULT_OPTIONS?.position ?? { width: 480, height: 400 };
+        opts.position = getPositionWithSavedBounds(defaultPos, EXPERIMENT_PANEL_BOUNDS_SETTING);
         super(opts);
         this.selectedActorId = options.actorId || null;
         this.selectedSlots = [null, null, null];
         this.lastResult = null;
+    }
+
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(EXPERIMENT_PANEL_BOUNDS_SETTING, position);
+    }
+
+    async _preClose() {
+        if (this.position) saveWindowBounds(EXPERIMENT_PANEL_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     async getData() {

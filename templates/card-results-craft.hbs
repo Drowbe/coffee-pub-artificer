@@ -1,4 +1,4 @@
-{{!-- Craft result chat card – Blacksmith Chat Cards API (blacksmith-card + theme + section-header) --}}
+{{!-- Craft result chat card – same structure and styling as gather card (Blacksmith Chat Cards API). --}}
 <span style="visibility: hidden">coffeepub-hide-header</span>
 <div class="blacksmith-card {{cardTheme}}">
     <div class="card-header">
@@ -6,10 +6,58 @@
     </div>
     <div class="section-content">
         <div class="section-header">{{#if resultIcon}}<i class="fas fa-{{resultIcon}}"></i> {{/if}}{{resultTitle}}</div>
-        {{{resultContents}}}
-        {{#if perkContents}}
+        {{#if success}}
+        <p>Created: <strong>{{resultName}}</strong></p>
+        <div class="gather-result-list">
+            {{#each resultItems}}
+            <div class="gather-result-item">
+                {{#if img}}<img src="{{img}}" alt="" class="gather-result-img" />{{/if}}
+                <div class="gather-result-content">
+                    {{{link}}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        <p>Added to your inventory.</p>
+        {{else}}
+        {{#if resultItems.length}}
+        <p>Received:</p>
+        <div class="gather-result-list">
+            {{#each resultItems}}
+            <div class="gather-result-item">
+                {{#if img}}<img src="{{img}}" alt="" class="gather-result-img" />{{/if}}
+                <div class="gather-result-content">
+                    {{{link}}}
+                </div>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p>{{failureMessage}}</p>
+        {{/if}}
+        {{#if issues.length}}
+        <div class="craft-card-issues">
+            <strong>Issues:</strong>
+            <ul>
+                {{#each issues}}
+                <li>{{this}}</li>
+                {{/each}}
+            </ul>
+        </div>
+        {{/if}}
+        {{#if ingredientsKept.length}}
+        <p><strong>Not lost (half-loss perk):</strong> {{#each ingredientsKept}}{{#if this.name}}{{this.name}}{{else}}{{this}}{{/if}}{{#unless @last}}, {{/unless}}{{/each}}</p>
+        {{/if}}
+        {{/if}}
         <div class="section-header">{{#if perkIcon}}<i class="fas fa-{{perkIcon}}"></i> {{/if}}{{perkTitle}}</div>
-        <ul>{{{perkContents}}}</ul>
+        {{#if perks}}
+        <ul>
+            {{#each perks}}
+            <li><strong>{{perkName}}:</strong> {{effect}}</li>
+            {{/each}}
+        </ul>
+        {{else}}
+        <p>None</p>
         {{/if}}
     </div>
 </div>

@@ -45,11 +45,9 @@
                     <div class="crafting-recipe-filter-buttons">
                         <button type="button" class="crafting-recipe-filter-btn {{#if showLockedRecipes}}active{{/if}}" data-action="toggleShowLockedRecipes" title="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}" aria-label="{{#if showLockedRecipes}}Hide locked recipes{{else}}Show locked recipes{{/if}}">
                             <i class="fa-solid fa-lock"></i>
-                            <span class="crafting-recipe-filter-btn-label">{{#if showLockedRecipes}}Hide locked{{else}}Show locked{{/if}}</span>
                         </button>
                         <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}">
                             <i class="fa-solid fa-hammer"></i>
-                            <span class="crafting-recipe-filter-btn-label">{{#if showOnlyCraftable}}All recipes{{else}}Craftable only{{/if}}</span>
                         </button>
                     </div>
                 </div>
@@ -186,7 +184,11 @@
                             <div class="crafting-bench-round-timer" data-action="setTimeFromRoundTimer">
                                 <div class="crafting-bench-round-timer-ring" style="--time-fill: {{timeFillPercent}}%;"></div>
                                 <div class="crafting-bench-round-timer-center">
+                                    {{#if isCrafting}}
                                     <span class="crafting-bench-round-timer-value">{{timeDisplayText}}</span>
+                                    {{else}}
+                                    <input type="number" class="crafting-bench-round-timer-input" id="{{appId}}-time-value" min="0" max="120" value="{{timeDisplayText}}" title="Time in seconds (0–120)" aria-label="Time in seconds" />
+                                    {{/if}}
                                 </div>
                             </div>
                         </div>
@@ -330,21 +332,64 @@
                     {{#if lastResult}}
                     <hr class="crafting-details-divider" />
                     <div class="crafting-result-box {{#if lastResult.success}}crafting-result-success{{else}}crafting-result-fail{{/if}}">
-                        <div class="crafting-result-row crafting-ingredient-row">
-                            {{#if lastResult.item}}
-                            <img src="{{lastResult.item.img}}" alt="" class="crafting-ingredient-row-img" />
-                            {{else}}
-                            <i class="fa-solid {{#if lastResult.success}}fa-check{{else}}fa-times{{/if}} crafting-result-fallback-icon"></i>
-                            {{/if}}
-                            <div class="crafting-ingredient-row-info">
-                                <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
+                        {{#if lastResult.sludgeCreated}}
+                        <div class="crafting-result-sludge crafting-result-sludge-first">
+                            <i class="fa-solid fa-flask"></i> {{lastResult.sludgeName}} was created and added to your inventory.
+                        </div>
+                        {{/if}}
+                        <div class="crafting-result-main">
+                            <div class="crafting-result-row crafting-ingredient-row">
                                 {{#if lastResult.item}}
-                                <span class="crafting-ingredient-row-qty">x1</span>
+                                <img src="{{lastResult.item.img}}" alt="" class="crafting-ingredient-row-img" />
                                 {{else}}
-                                <span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>
+                                <i class="fa-solid {{#if lastResult.success}}fa-check{{else}}fa-times{{/if}} crafting-result-fallback-icon"></i>
                                 {{/if}}
+                                <div class="crafting-ingredient-row-info">
+                                    {{#if lastResult.item}}
+                                    <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.item.name}}</span>
+                                    <span class="crafting-ingredient-row-qty">x1</span>
+                                    {{else}}
+                                    <span class="crafting-result-name crafting-ingredient-row-name">{{lastResult.name}}</span>
+                                    {{#if lastCraftTagsStr}}<span class="crafting-result-detail crafting-ingredient-row-qty">Tags: {{lastCraftTagsStr}}</span>{{/if}}
+                                    {{/if}}
+                                </div>
                             </div>
                         </div>
+                        {{#if lastResult.issues.length}}
+                        <div class="crafting-result-issues">
+                            <div class="crafting-result-issues-title">Issues</div>
+                            <ul class="crafting-result-issues-list">
+                                {{#each lastResult.issues}}
+                                <li>{{this}}</li>
+                                {{/each}}
+                            </ul>
+                        </div>
+                        {{/if}}
+                        {{#if lastResult.appliedPerks.length}}
+                        <div class="crafting-result-perks">
+                            <div class="crafting-result-perks-title">Perks applied</div>
+                            <ul class="crafting-result-perks-list">
+                                {{#each lastResult.appliedPerks}}
+                                <li><strong>{{this.perkName}}:</strong> {{this.effect}}</li>
+                                {{/each}}
+                            </ul>
+                        </div>
+                        {{/if}}
+                        {{#if lastResult.ingredientsKept.length}}
+                        <div class="crafting-result-ingredients-kept">
+                            <div class="crafting-result-ingredients-kept-title">Not lost (half-loss perk)</div>
+                            <div class="crafting-result-ingredients-kept-blocks">
+                                {{#each lastResult.ingredientsKept}}
+                                <div class="crafting-result-kept-block crafting-ingredient-row">
+                                    <img src="{{this.img}}" alt="" class="crafting-ingredient-row-img" />
+                                    <div class="crafting-ingredient-row-info">
+                                        <span class="crafting-ingredient-row-name">{{this.name}}</span>
+                                    </div>
+                                </div>
+                                {{/each}}
+                            </div>
+                        </div>
+                        {{/if}}
                     </div>
                     {{else}}
                     {{#unless selectedRecipeData}}

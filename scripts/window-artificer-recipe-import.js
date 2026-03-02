@@ -3,12 +3,14 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { importRecipesFromText, showRecipeImportResult } from './utility-artificer-recipe-import.js';
 import { copyToClipboard } from './utils/helpers.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 const PROMPT_URL = 'modules/coffee-pub-artificer/prompts/artificer-recipe.txt';
+const RECIPE_IMPORT_BOUNDS_SETTING = 'windowBoundsRecipeImport';
 
 /**
  * Import Recipes Modal - Paste JSON or load file
@@ -36,7 +38,19 @@ export class ArtificerRecipeImportWindow extends HandlebarsApplicationMixin(Appl
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${ArtificerRecipeImportWindow.DEFAULT_OPTIONS.id}-${foundry.utils.randomID().slice(0, 8)}`;
+        const defaultPos = ArtificerRecipeImportWindow.DEFAULT_OPTIONS?.position ?? { width: 560, height: 520 };
+        opts.position = getPositionWithSavedBounds(defaultPos, RECIPE_IMPORT_BOUNDS_SETTING);
         super(opts);
+    }
+
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(RECIPE_IMPORT_BOUNDS_SETTING, position);
+    }
+
+    async _preClose() {
+        if (this.position) saveWindowBounds(RECIPE_IMPORT_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     activateListeners(html) {

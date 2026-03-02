@@ -9,6 +9,7 @@
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import {
     getBiomeOptionsForMultiselect,
@@ -24,6 +25,7 @@ import {
 } from './manager-gather.js';
 
 const GATHER_APP_ID = 'artificer-gather';
+const GATHER_BOUNDS_SETTING = 'windowBoundsGather';
 const GATHER_SETTINGS_KEY = 'gatherWindowSettings';
 const DEFAULT_GATHER_SETTINGS = { biomes: [], componentTypes: [], dc: 10 };
 
@@ -77,7 +79,19 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     constructor(options = {}) {
         const opts = foundry.utils.mergeObject({}, options);
         opts.id = opts.id ?? `${GATHER_APP_ID}-${foundry.utils.randomID().slice(0, 8)}`;
+        const defaultPos = GatherWindow.DEFAULT_OPTIONS?.position ?? { width: 650, height: 400 };
+        opts.position = getPositionWithSavedBounds(defaultPos, GATHER_BOUNDS_SETTING);
         super(opts);
+    }
+
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(GATHER_BOUNDS_SETTING, position);
+    }
+
+    async _preClose() {
+        if (this.position) saveWindowBounds(GATHER_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     async _prepareContext(options = {}) {

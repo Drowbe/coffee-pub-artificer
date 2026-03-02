@@ -406,6 +406,26 @@ export const registerSettings = () => {
         type: Boolean
     });
 
+    // -- Window bounds (size/position) per app – client-scoped so GM and players remember their own layout --
+    const windowBoundsDefaults = [
+        { key: 'windowBoundsCrafting', default: { width: 1100, height: 750 } },
+        { key: 'windowBoundsSkills', default: { width: 900, height: 600 } },
+        { key: 'windowBoundsGather', default: { width: 650, height: 400 } },
+        { key: 'windowBoundsRecipeImport', default: { width: 560, height: 520 } },
+        { key: 'windowBoundsItemForm', default: { width: 600, height: 560 } },
+        { key: 'windowBoundsExperimentPanel', default: { width: 480, height: 400 } }
+    ];
+    for (const { key, default: def } of windowBoundsDefaults) {
+        game.settings.register(MODULE.ID, key, {
+            name: `${key} (internal)`,
+            hint: 'Stores last size and position of this window. Client-scoped.',
+            scope: 'client',
+            config: false,
+            default: {},
+            type: Object
+        });
+    }
+
     // Add more settings here as needed
     
 

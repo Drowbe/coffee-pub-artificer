@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from './const.js';
+import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
@@ -11,6 +12,8 @@ import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+const ITEM_FORM_BOUNDS_SETTING = 'windowBoundsItemForm';
 
 /** Module-level ref for document delegation (activateListeners may not run with PARTS) */
 let _currentItemFormRef = null;
@@ -50,11 +53,23 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         opts.window = foundry.utils.mergeObject(opts.window ?? {}, {
             title: isEdit ? 'Edit Artificer Item' : 'Create Artificer Item'
         });
+        const defaultPos = ArtificerItemForm.DEFAULT_OPTIONS?.position ?? { width: 600, height: 560 };
+        opts.position = getPositionWithSavedBounds(defaultPos, ITEM_FORM_BOUNDS_SETTING);
         super(opts);
         this.itemType = options.itemType || ARTIFICER_TYPES.COMPONENT;
         this.itemData = options.itemData || null;
         this.existingItem = options.item || null;
         this.mode = options.mode || 'create';
+    }
+
+    _onPosition(position) {
+        super._onPosition?.(position);
+        saveWindowBounds(ITEM_FORM_BOUNDS_SETTING, position);
+    }
+
+    async _preClose() {
+        if (this.position) saveWindowBounds(ITEM_FORM_BOUNDS_SETTING, this.position);
+        return super._preClose?.();
     }
 
     get isEditMode() {
