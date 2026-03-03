@@ -35,6 +35,15 @@ export class SceneManager {
             callback: (app, html) => this._injectArtificerTab(app, html)
         });
         this._log('SceneManager: hook registered (renderSceneConfig)');
+        this._hookManager.registerHook({
+            name: 'renderApplicationV2',
+            description: 'Inject Artificer tab into Scene Configuration (V2)',
+            context: SCENE_CONTEXT,
+            key: `${SCENE_CONTEXT}-render-application-v2-scene-config`,
+            priority: 3,
+            callback: (app, html) => this._injectArtificerTabV2(app, html)
+        });
+        this._log('SceneManager: hook registered (renderApplicationV2)');
 
         this._hookManager.registerHook({
             name: 'updateScene',
@@ -53,29 +62,50 @@ export class SceneManager {
     static _resolveRoot(html) {
         if (!html) return null;
         if (html instanceof HTMLElement) return html;
+        if (html instanceof DocumentFragment) return html;
         if (html[0] instanceof HTMLElement) return html[0];
+        if (typeof html.querySelector === 'function') return html;
         return null;
     }
 
+    static _injectArtificerTabV2(app, html) {
+        // Foundry v13+ emits renderApplicationV2 for all apps; only target SceneConfig.
+        const appName = app?.constructor?.name ?? '';
+        const isSceneConfig = appName === 'SceneConfig' || app?.documentName === 'Scene' || app?.document?.documentName === 'Scene';
+        if (!isSceneConfig) return;
+        this._injectArtificerTab(app, html);
+    }
+
     static _injectArtificerTab(app, html) {
-        const root = this._resolveRoot(html);
-        if (!root) return;
+        const root = this._resolveRoot(html) || this._resolveRoot(app?.element) || this._resolveRoot(app?._element);
+        if (!root) {
+            this._log('SceneManager: tab inject skipped (no render root)');
+            return;
+        }
 
         const form = root.matches?.('form') ? root : (root.querySelector?.('form') ?? root);
-        const tabsNav = form.querySelector?.('.sheet-tabs[data-group], .tabs[data-group]');
-        if (!tabsNav) return;
+        const tabsNav = form.querySelector?.('.sheet-tabs[data-group], .tabs[data-group], .sheet-tabs, .tabs, nav.tabs');
+        if (!tabsNav) {
+            this._log('SceneManager: tab inject skipped (no tabs nav found)');
+            return;
+        }
         if (tabsNav.querySelector('[data-tab="artificer"]')) return;
 
-        const dataGroup = tabsNav.dataset.group || 'main';
+        const firstTabWithGroup = tabsNav.querySelector?.('[data-group]');
+        const dataGroup = firstTabWithGroup?.dataset?.group || tabsNav.dataset.group || 'sheet';
 
-        const tabButton = document.createElement('a');
+        const useButton = tabsNav.firstElementChild?.tagName?.toLowerCase() === 'button';
+        const tabButton = document.createElement(useButton ? 'button' : 'a');
         tabButton.className = 'item';
+        if (useButton) tabButton.type = 'button';
+        tabButton.dataset.action = 'tab';
         tabButton.dataset.tab = 'artificer';
         tabButton.dataset.group = dataGroup;
         tabButton.innerHTML = '<i class="fa-solid fa-hammer"></i> Artificer';
         tabsNav.appendChild(tabButton);
 
-        const tabBodyHost = form.querySelector('.sheet-body') ?? form;
+        const existingTabPanel = form.querySelector('.tab[data-tab]');
+        const tabBodyHost = existingTabPanel?.parentElement ?? form.querySelector('.sheet-body') ?? form;
         const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
