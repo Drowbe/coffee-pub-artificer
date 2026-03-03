@@ -31,6 +31,9 @@
 /* --- Item Sheet Integration ------ */
 @import "item-sheet.css";
 
+/* --- Scene Config Integration ---- */
+@import "scene-config.css";
+
 
 
 

@@ -111,17 +111,17 @@ export class SceneManager {
         const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
-        const notes = (sceneFlags.notes ?? '').toString();
         const selectedHabitats = new Set(Array.isArray(sceneFlags.habitats) ? sceneFlags.habitats : []);
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
         const selectedComponentTypes = new Set(Array.isArray(sceneFlags.componentTypes) ? sceneFlags.componentTypes : []);
+        const defaultDC = Number.isFinite(Number(sceneFlags.defaultDC)) ? Math.max(1, Math.min(30, Number(sceneFlags.defaultDC))) : 5;
         const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Number(sceneFlags.gatherSpots)) : 0;
         const habitatOptionsHtml = OFFICIAL_BIOMES.map((biome) => {
             const checked = selectedHabitats.has(biome) ? 'checked' : '';
             return `
-                <label class="checkbox">
+                <label class="checkbox artificer-scene-checkbox">
                     <input type="checkbox" name="flags.${MODULE.ID}.scene.habitats" value="${foundry.utils.escapeHTML(biome)}" ${checked} />
-                    ${foundry.utils.escapeHTML(biome)}
+                    <span>${foundry.utils.escapeHTML(biome)}</span>
                 </label>
             `;
         }).join('');
@@ -129,50 +129,53 @@ export class SceneManager {
             const checked = selectedComponentTypes.has(family) ? 'checked' : '';
             const label = FAMILY_LABELS[family] ?? family;
             return `
-                <label class="checkbox">
+                <label class="checkbox artificer-scene-checkbox">
                     <input type="checkbox" name="flags.${MODULE.ID}.scene.componentTypes" value="${foundry.utils.escapeHTML(family)}" ${checked} />
-                    ${foundry.utils.escapeHTML(label)}
+                    <span>${foundry.utils.escapeHTML(label)}</span>
                 </label>
             `;
         }).join('');
 
         const tabPanel = document.createElement('div');
-        tabPanel.className = 'tab';
+        tabPanel.className = 'tab artificer-scene-tab';
         tabPanel.dataset.tab = 'artificer';
         tabPanel.dataset.group = dataGroup;
         tabPanel.innerHTML = `
             <div class="form-group">
                 <label>Enable Artificer Features</label>
-                <input type="checkbox" name="flags.${MODULE.ID}.scene.enabled" ${enabled ? 'checked' : ''} />
-                <p class="notes">Enable scene-scoped Artificer controls and data.</p>
+                <div class="form-fields">
+                    <input type="checkbox" name="flags.${MODULE.ID}.scene.enabled" ${enabled ? 'checked' : ''} />
+                </div>
             </div>
             <div class="form-group">
                 <label>Artificer Profile</label>
-                <input type="text" name="flags.${MODULE.ID}.scene.profile" value="${foundry.utils.escapeHTML(profile)}" placeholder="Default" />
-                <p class="notes">Optional scene profile id for future Artificer scene behaviors.</p>
+                <div class="form-fields">
+                    <input type="text" name="flags.${MODULE.ID}.scene.profile" value="${foundry.utils.escapeHTML(profile)}" placeholder="Default" />
+                </div>
             </div>
-            <div class="form-group stacked">
-                <label>Artificer Notes</label>
-                <textarea name="flags.${MODULE.ID}.scene.notes" rows="4" placeholder="Notes for this scene's Artificer setup">${foundry.utils.escapeHTML(notes)}</textarea>
-            </div>
-            <div class="form-group stacked">
-                <label>Habitats</label>
-                <div class="form-fields" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;">
+            <fieldset class="form-group artificer-scene-fieldset">
+                <legend>Habitats</legend>
+                <div class="form-fields artificer-scene-checkbox-grid">
                     ${habitatOptionsHtml}
                 </div>
-                <p class="notes">Habitat filters for scene-based gathering.</p>
-            </div>
-            <div class="form-group stacked">
-                <label>Component Types</label>
-                <div class="form-fields" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;">
+            </fieldset>
+            <fieldset class="form-group artificer-scene-fieldset">
+                <legend>Component Types</legend>
+                <div class="form-fields artificer-scene-checkbox-grid">
                     ${componentTypeOptionsHtml}
                 </div>
-                <p class="notes">Allowed component families for scene-based gathering.</p>
+            </fieldset>
+            <div class="form-group">
+                <label>Default DC</label>
+                <div class="form-fields">
+                    <input type="number" min="1" max="30" step="1" name="flags.${MODULE.ID}.scene.defaultDC" value="${defaultDC}" />
+                </div>
             </div>
             <div class="form-group">
                 <label>Gather Spots</label>
-                <input type="number" min="0" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" />
-                <p class="notes">Number of gather spots to add to this scene.</p>
+                <div class="form-fields">
+                    <input type="number" min="0" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" />
+                </div>
             </div>
         `;
         tabBodyHost.appendChild(tabPanel);

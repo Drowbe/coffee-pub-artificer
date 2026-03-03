@@ -397,3 +397,158 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         sendGatherFailureCard(actor);
     }
 }
+
+function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
+    const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
+    const biomes = Array.isArray(flags.habitats) ? flags.habitats.map((b) => String(b).trim()).filter(Boolean) : [];
+    const componentTypes = Array.isArray(flags.componentTypes) ? flags.componentTypes.map((f) => String(f).trim()).filter(Boolean) : [];
+    const rawDC = Number(flags.defaultDC);
+    const dc = Number.isFinite(rawDC) ? Math.max(1, Math.min(30, Math.floor(rawDC))) : 5;
+    return { dc, biomes, componentTypes };
+}
+
+async function _notifyGMSceneGatherNotConfigured(scene) {
+    const sceneName = scene?.name ?? 'Current Scene';
+    const gmMessage = `Artificer Gather and Harvest is not configured for "${sceneName}". Configure Artificer Scene settings (Habitats and Component Types).`;
+    if (game.user?.isGM) {
+        ui.notifications?.warn(gmMessage);
+        return;
+    }
+
+    ui.notifications?.warn('Gather and Harvest is not configured for this scene. A GM has been notified.');
+    const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
+    if (!gmRecipients.length) return;
+    try {
+        await ChatMessage.create({
+            content: gmMessage,
+            whisper: gmRecipients,
+            speaker: ChatMessage.getSpeaker()
+        });
+    } catch {
+        // ignore chat delivery errors; user already received a warning
+    }
+}
+
+function _getControlledTokenActorsForRequest() {
+    const controlledTokens = canvas?.tokens?.controlled ?? [];
+    if (!controlledTokens.length) return [];
+    return controlledTokens
+        .map((token) => ({ token, actor: token?.actor ?? null }))
+        .filter((entry) => !!entry.actor);
+}
+
+async function _resolveActorFromRollPayload(payload) {
+    const { tokenId, message } = payload ?? {};
+    if (tokenId && canvas?.scene) {
+        const tokenDoc = canvas.scene.tokens.get(tokenId);
+        if (tokenDoc) {
+            return tokenDoc.actor ?? (tokenDoc.actorId ? game.actors.get(tokenDoc.actorId) : null) ?? null;
+        }
+    }
+    if (message?.speaker?.actor) {
+        return game.actors.get(message.speaker.actor) ?? null;
+    }
+    return null;
+}
+
+/**
+ * Request a Gather and Harvest roll directly from current scene configuration.
+ * Works for both GM and players, using selected tokens on the canvas.
+ */
+export async function requestGatherAndHarvestFromScene() {
+    if (!canvas?.ready || !canvas?.scene) {
+        ui.notifications?.warn('Canvas is not ready.');
+        return;
+    }
+
+    const scene = canvas.scene;
+    const { dc, biomes, componentTypes } = _getSceneGatherSettings(scene);
+    if (!biomes.length || !componentTypes.length) {
+        await _notifyGMSceneGatherNotConfigured(scene);
+        return;
+    }
+
+    const api = game.modules.get('coffee-pub-blacksmith')?.api;
+    if (!api?.openRequestRollDialog) {
+        ui.notifications?.warn('Blacksmith Request a Roll API not available.');
+        return;
+    }
+
+    const selected = _getControlledTokenActorsForRequest();
+    if (!selected.length) {
+        ui.notifications?.warn('Select at least one token you can control on the canvas.');
+        return;
+    }
+
+    const actorsForRequest = [];
+    for (const { token, actor } of selected) {
+        const situationalBonus = await getGatheringRollBonusForActor(actor);
+        actorsForRequest.push({
+            id: token.id,
+            actorId: actor.id,
+            name: token.name || actor.name,
+            situationalBonus
+        });
+    }
+    if (!actorsForRequest.length) {
+        ui.notifications?.warn('No valid tokens selected.');
+        return;
+    }
+
+    const pendingContext = { dc, biomes, componentTypes };
+    setPendingGather(pendingContext);
+    const rollBuffer = [];
+
+    await api.openRequestRollDialog({
+        silent: true,
+        title: 'Gather and Harvest',
+        dc,
+        initialFilter: 'selected',
+        initialType: 'ability',
+        initialValue: 'wis',
+        actors: actorsForRequest,
+        groupRoll: false,
+        onRollComplete: async (payload) => {
+            const rollTotal = payload?.result?.total != null ? payload.result.total : null;
+            if (rollTotal == null) {
+                ui.notifications?.warn('Could not read roll result.');
+                return;
+            }
+
+            const actor = await _resolveActorFromRollPayload(payload);
+            const pending = pendingContext ?? consumePendingGather();
+            if (!pending) return;
+
+            const outcome = await processGatherRollResult(rollTotal, actor ?? null, pending);
+            rollBuffer.push({ actor: actor ?? null, outcome });
+
+            if (!payload?.allComplete) return;
+
+            for (const { actor: a, outcome: o } of rollBuffer) {
+                if (!a) {
+                    sendGatherFailureCard(a);
+                    continue;
+                }
+                if (o.noPool) {
+                    sendGatherNoPoolCard(a);
+                    continue;
+                }
+                if (!o.success) {
+                    if (o.componentAutoGatherGranted && o.itemRecords?.length) {
+                        await sendGatherConsolationCard(a, o.itemRecords, o.perkNames ?? []);
+                    } else {
+                        sendGatherFailureCard(a);
+                    }
+                    continue;
+                }
+                if (o.itemRecords?.length) {
+                    await sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
+                } else {
+                    sendGatherFailureCard(a);
+                }
+            }
+
+            consumePendingGather();
+        }
+    });
+}

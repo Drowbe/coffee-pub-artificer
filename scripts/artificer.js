@@ -12,6 +12,7 @@ import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js
 import { CraftingWindow } from './window-crafting.js';
 import { SkillsWindow } from './window-skills.js';
 import { GatherWindow } from './window-gather.js';
+import { requestGatherAndHarvestFromScene } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 
 // ================================================================== 
@@ -266,14 +267,27 @@ function registerMenubarIntegration() {
             win.render(true);
         }
     });
+
+    // Register secondary bar item for Gather and Harvest (uses Scene Artificer settings) - available to all users
+    const gatherHarvestItemId = 'artificer-gather-harvest';
+    const gatherHarvestRegistered = blacksmith.registerSecondaryBarItem(barType, gatherHarvestItemId, {
+        icon: 'fa-solid fa-seedling',
+        label: 'Gather and Harvest',
+        title: 'Gather and Harvest',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: async function() {
+            await requestGatherAndHarvestFromScene();
+        }
+    });
     
-    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered) {
+    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered) {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
         }
     } else {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}`, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}`, true, false);
         }
     }
 }
