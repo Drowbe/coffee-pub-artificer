@@ -1,17 +1,51 @@
 // ==================================================================
 // ===== SKILLS RULES (crafting window integration) ================
 // ==================================================================
-// Loads resources/skills-rules.json and exposes effective crafting
-// rules for a skill + learned perk IDs (tier access, DC modifier, etc.).
+// Loads resources/skills-details.json and derives crafting/gathering
+// rules from each perk's optional rules.benefits (tier access, DC modifier, etc.).
 
-const SKILLS_RULES_URL = 'modules/coffee-pub-artificer/resources/skills-rules.json';
 const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
 let _skillsRulesCache = null;
 
-/** @type {{ skills: Array<{ id: string, name: string, perks: Array<{ perkID: string, name: string, icon?: string }> }> } | null } */
+/** @type {{ skills: Array<{ id: string, name: string, perks: Array<{ perkID: string, name: string, icon?: string, rules?: { benefits: Array } }> }> } | null } */
 let _skillsDetailsCache = null;
+
+/**
+ * Build the rules lookup (skillId -> perks -> perkID -> { title, benefits }) from skills-details.
+ * Used so existing code that expects loadSkillsRules() to return that shape continues to work.
+ * @param {{ skills: Array }} details
+ * @returns {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> }}
+ */
+function buildRulesFromDetails(details) {
+    const skills = details?.skills ?? [];
+    const out = { schemaVersion: 1, skills: {} };
+    for (const skill of skills) {
+        const skillId = skill?.id;
+        if (!skillId || !skill.perks) continue;
+        const perksMap = {};
+        for (const perk of skill.perks) {
+            const perkID = perk?.perkID;
+            const benefits = perk?.rules?.benefits;
+            if (!perkID) continue;
+            if (!Array.isArray(benefits) || benefits.length === 0) {
+                perksMap[perkID] = { title: perk.name ?? perkID, benefits: [] };
+                continue;
+            }
+            perksMap[perkID] = {
+                title: perk.name ?? perkID,
+                benefits: benefits.map((b) => ({
+                    title: b.title,
+                    description: b.description,
+                    rule: b.rule != null && typeof b.rule === 'object' ? b.rule : {}
+                }))
+            };
+        }
+        if (Object.keys(perksMap).length) out.skills[skillId] = { perks: perksMap };
+    }
+    return out;
+}
 
 /**
  * Load skills-details.json. Caches result.
@@ -33,22 +67,15 @@ export async function loadSkillsDetails() {
 }
 
 /**
- * Load skills-rules.json. Caches result.
+ * Load rules derived from skills-details.json. Caches result.
+ * Rules come from each perk's optional rules.benefits in the details file.
  * @returns {Promise<{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> }>}
  */
 export async function loadSkillsRules() {
     if (_skillsRulesCache) return _skillsRulesCache;
-    try {
-        const res = await fetch(SKILLS_RULES_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        _skillsRulesCache = data;
-        return data;
-    } catch (e) {
-        console.warn('skills-rules: Could not load skills-rules.json', e);
-        _skillsRulesCache = { schemaVersion: 1, skills: {} };
-        return _skillsRulesCache;
-    }
+    const details = await loadSkillsDetails();
+    _skillsRulesCache = buildRulesFromDetails(details);
+    return _skillsRulesCache;
 }
 
 /**

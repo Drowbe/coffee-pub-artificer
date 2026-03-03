@@ -12,6 +12,7 @@ import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js
 import { CraftingWindow } from './window-crafting.js';
 import { SkillsWindow } from './window-skills.js';
 import { GatherWindow } from './window-gather.js';
+import { SceneManager } from './manager-scene.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -106,6 +107,9 @@ Hooks.once('ready', async () => {
  * Initialize module features
  */
 function initializeModule() {
+    SceneManager.initialize().catch((error) => {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Scene manager failed to initialize`, error?.message ?? String(error), true, false);
+    });
     // Register menubar tool and secondary bar
     registerMenubarIntegration();
     // Inject Artificer section into item sheets + Edit button

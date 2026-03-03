@@ -691,7 +691,7 @@
     color: rgba(201, 201, 201, 0.9);
 }
 
-/* ----- Benefits (from skills-rules, when viewing a perk) ----- */
+/* ----- Benefits (from skills-details perk.rules.benefits, when viewing a perk) ----- */
 .skills-detail-benefits-title {
     margin: 1em 0 0.5em 0;
     font-size: 0.95em;

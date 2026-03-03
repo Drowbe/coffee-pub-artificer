@@ -1,13 +1,14 @@
 # Skills Rules Design — Crafting & Gathering Integration
 
-**Purpose:** Define how `resources/skills-rules.json` drives the crafting window and gathering logic. This doc describes the **actual implementation**: structure, rule keys, aggregation, and how the window/gather use them.
+**Purpose:** Define how perk rules drive the crafting window and gathering logic. Rules are stored in **skills-details.json** under each perk’s optional `rules.benefits` array. This doc describes the **actual implementation**: structure, rule keys, aggregation, and how the window/gather use them.
 
 ---
 
 ## 1. Relationship to skills-details.json
 
-- **skills-details.json:** One skill object with `id`, `name`, `perks[]`. Each perk has `perkID`, `name`, `description`, `requirement`, `cost`, `icon`. Used for Skills UI (names, prerequisites, icons) and for human-readable perk names in messages.
-- **skills-rules.json:** Machine-readable rules keyed by skill and perk. Each perk entry has a **title** and a **benefits** array; each benefit has **title**, **description**, and **rule**. The **description** is shown in the Skills window benefits list; the **rule** object is what the crafting and gathering code consumes. So one file drives both UI copy and engine behavior.
+- **skills-details.json** is the single source of truth. Each skill has `id`, `name`, `perks[]`. Each perk has `perkID`, `name`, `description`, `requirement`, `cost`, `icon`, and optionally **rules** with a **benefits** array.
+- **rules.benefits:** Optional. Each entry has **title**, **description**, and **rule**. The **description** is shown in the Skills window benefits list; the **rule** object is what the crafting and gathering code consumes.
+- **scripts/skills-rules.js** loads only skills-details.json and derives a rules lookup (by skill and perkID) from each perk’s `rules.benefits` for use by the crafting window and gather logic.
 
 ---
 
@@ -21,33 +22,29 @@
 
 ---
 
-## 3. Actual structure of skills-rules.json
+## 3. Where rules live: skills-details.json (perk.rules.benefits)
 
-We use **Option A — single file**, keyed by skill then perkID:
+Rules are defined **per perk** in `resources/skills-details.json`. Each perk may include an optional `rules` object with a `benefits` array:
 
 ```json
 {
-  "schemaVersion": 1,
-  "skills": {
-    "Herbalism": {
-      "perks": {
-        "herbalism-field-forager": {
-          "title": "Field Forager",
-          "benefits": [
-            { "title": "Recipe access", "description": "...", "rule": { "recipeTierAccess": [0, 1] } },
-            { "title": "Common Components", "description": "...", "rule": { "componentSkillAccess": [0, 3] } }
-          ]
-        }
-      }
-    }
+  "perkID": "herbalism-field-forager",
+  "name": "Field Forager",
+  "description": "...",
+  "requirement": "Herbalism Kit",
+  "cost": 1,
+  "icon": "fa-leaf",
+  "rules": {
+    "benefits": [
+      { "title": "Recipe access", "description": "Unlocks recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+      { "title": "Common Components", "description": "Unlocks components with skill requirements 0 to 3.", "rule": { "componentSkillAccess": [0, 3] } }
+    ]
   }
 }
 ```
 
-- **Top level:** `schemaVersion`, `skills`.
-- **Per skill:** `skills[skillId]` is an object with a **perks** map: `perks[perkID]` → `{ title, benefits[] }`.
-- **Per perk:** `title` (display name for this perk in rules-derived UI). `benefits` is an array of `{ title, description, rule }`. Each **rule** is a plain object; one benefit can contribute one or more logical effects via a single rule object (e.g. `recipeTierAccess` only, or `experimentalCrafting` + separate benefits for wildcard and DC bonus).
-- **Loader behavior:** The code loads the file once, then for a given `skillId` and list of `learnedPerkIds` for that skill, iterates over **all benefits** of those perks and collects every **rule** object. Aggregation is done over that stream of rule objects (see §5).
+- **Per perk:** `rules.benefits` is an array of `{ title, description, rule }`. Each **rule** is a plain object; one benefit can contribute one or more logical effects via a single rule object.
+- **Loader behavior:** `skills-rules.js` loads skills-details.json once, builds an in-memory map `skills[skillId].perks[perkID]` → `{ title, benefits }` from each perk’s `rules.benefits`, then for a given `skillId` and list of `learnedPerkIds` iterates over all benefits of those perks and collects every **rule** object. Aggregation is done over that stream of rule objects (see §5).
 
 So we do **not** use a single flat rule block per perk; we use **multiple benefits per perk**, each with its own rule. That allows one perk to contribute e.g. recipe access, component access, and gathering bonus in separate, mergeable rules.
 
@@ -141,7 +138,7 @@ For a given **skill** and **learned perk IDs** for that skill, the loader:
 
 ## 7. How the crafting window and gather use the rules (flow)
 
-1. **Load:** On init or when opening the crafting/gather UI, load `skills-rules.json` (and `skills-details.json` for names/icons). Cached for the session.
+1. **Load:** On init or when opening the crafting/gather UI, load `skills-details.json`. `skills-rules.js` derives the rules lookup from each perk’s `rules.benefits`. Cached for the session.
 2. **Actor context:** Get the crafter’s learned perk IDs for the relevant skill (e.g. from SkillManager / actor flags). Filter to that skill via prefix (e.g. `herbalism-*`).
 3. **Visibility:** Effective tier access = union of `recipeTierAccess`; if recipe’s `skillLevel` is outside that union and not allowed by `experimentalCrafting` (with matching `craftingType`), show `?` and “You do not have the perk required to view this recipe.”
 4. **Before craft (within tier):** DC = recipe `successDC` + sum of `craftingDCModifier`. Roll vs DC; apply `ingredientLossOnFail` / `ingredientKeptOnSuccess` after roll.
@@ -152,8 +149,8 @@ For a given **skill** and **learned perk IDs** for that skill, the loader:
 
 ## 8. Summary
 
-- **skills-details.json:** Unchanged for Skills UI (names, prerequisites, icons). Used alongside rules for human-readable perk names.
-- **skills-rules.json:** Actual structure is `skills[skillId].perks[perkID]` → `{ title, benefits: [{ title, description, rule }] }`. Each benefit’s **rule** object can contain any of the keys in §4. The loader iterates all benefits of learned perks and aggregates as in §5.
+- **skills-details.json:** Single source. Skills UI uses names, prerequisites, icons; perks may define `rules.benefits` for crafting/gathering. The loader builds an in-memory map `skills[skillId].perks[perkID]` → `{ title, benefits }` from those entries.
+- **Rule keys:** Each benefit’s **rule** object can contain any of the keys in §4. The loader iterates all benefits of learned perks and aggregates as in §5.
 - **Crafting window:** Uses rules for recipe visibility (tier + experimental with `craftingType`), DC and roll modifiers (within-tier and `experimentalCraftingDCModifier`), random wrong components (`experimentalCraftingRandomComponents`, randomized slots), and ingredient consumption.
 - **Gathering:** Uses rules for roll bonus, yield multiplier, component tier ranges, and `componentAutoGather` on failed gather.
 
