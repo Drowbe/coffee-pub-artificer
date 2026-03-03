@@ -474,11 +474,6 @@
     margin-top: 8px;
 }
 
-.crafting-recipe-result-name {
-    font-size: 0.9em;
-    color: rgba(201, 201, 201, 0.9);
-}
-
 .crafting-recipe-traits {
     display: flex;
     flex-wrap: wrap;
@@ -544,6 +539,7 @@
 }
 
 /* ----- Zone 1: Recipes ----- */
+
 .crafting-zone-recipes .crafting-zone-recipes-list {
     flex: 1;
     overflow-y: auto;
@@ -559,19 +555,102 @@
 
 
 
+/* ---- BOOKS ---- */
 
-
-
-
-
-
-
-
-
-
-
-.crafting-recipe-page,
 .crafting-recipe-book {
+    font-size: 0.8em;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 6px 6px 6px;
+    background: rgba(166, 126, 65, 0.6);
+    
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    margin: 6px 0px 6px 0px ;
+    border: 1px solid rgba(89, 67, 35, 0.9);
+    border-top: 8px solid rgba(89, 67, 35, 0.9);
+}
+
+.crafting-recipe-book:first-child {
+    margin-top: 0;
+}
+
+/* thumbnail */
+
+.crafting-recipe-book-img {
+    width: 60px;
+    height: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.8);
+}
+
+
+
+/* Content */
+
+.crafting-recipe-book-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+
+.crafting-recipe-book-title-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: inherit;
+}
+
+
+.crafting-recipe-book-title {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 1.2em;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: inherit;
+    white-space: inherit;
+}
+
+
+.crafting-recipe-book-tags {
+    font-size: 0.65em;
+    color: rgba(201, 201, 201, 0.85);
+    line-height: 1.3;
+}
+
+.crafting-recipe-book-icon {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    color: rgba(172, 159, 129, 0.7);
+}
+
+
+
+
+
+
+
+/* ---- PAGES ---- */
+
+.crafting-recipe-page {
     font-size: 0.8em;
     display: flex;
     align-items: flex-start;
@@ -590,40 +669,31 @@
     background: rgba(255, 100, 0, 0.1);
 }
 
-.crafting-recipe-row-selected {
+.crafting-recipe-book-selected,
+.crafting-recipe-page-selected {
     border: 2px solid rgba(41, 96, 46, 0.9);
     background: rgba(41, 96, 46, 0.15);
 }
 
-/* Recipe books (journal cover entries) */
-.crafting-recipe-book {
-    margin-top: 6px;
-    border-left: 3px solid var(--craft-accent-color, rgba(172, 159, 129, 0.8));
-}
-.crafting-recipe-book:first-child {
-    margin-top: 0;
-}
-
-
 
 /* Icons */
 
-.crafting-recipe-locked-icon-dimmed,
-.crafting-recipe-locked-icon,
-.crafting-recipe-craftable-icon {
+.crafting-recipe-page-locked-icon-dimmed,
+.crafting-recipe-page-locked-icon,
+.crafting-recipe-page-craftable-icon {
     flex-shrink: 0;
     margin-left: auto;
     font-size: 0.85em;
     margin-top: 4px;
 }
-.crafting-recipe-craftable-icon {
+.crafting-recipe-page-craftable-icon {
     color: rgba(105, 213, 104, 0.9);
 }
 
-.crafting-recipe-locked-icon {
+.crafting-recipe-page-locked-icon {
     color: rgba(180, 160, 120, 0.85);
 }
-.crafting-recipe-locked-icon-dimmed {
+.crafting-recipe-page-locked-icon-dimmed {
     opacity: 0.5;
     color: rgba(180, 160, 120, 0.6);
 }
@@ -631,7 +701,7 @@
 
 /* thumbnail */
 
-.crafting-recipe-result-img {
+.crafting-recipe-page-img {
     width: 48px;
     height: auto;
     object-fit: contain;
@@ -644,7 +714,7 @@
 
 /* Content */
 
-.crafting-recipe-content {
+.crafting-recipe-page-content {
     flex: 1;
     min-width: 0;
     display: flex;
@@ -653,7 +723,7 @@
     margin-top: 4px;
 }
 
-.crafting-recipe-title-row {
+.crafting-recipe-page-title-row {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -663,14 +733,15 @@
 }
 
 
-.crafting-recipe-experimental-prefix {
+
+.crafting-recipe-page-experimental-prefix {
     flex-shrink: 0;
     font-size: 0.85em;
     color: var(--craft-accent-color);
 }
 
 
-.crafting-recipe-result {
+.crafting-recipe-page-title {
     font-weight: 600;
     color: rgba(105, 213, 104, 0.95);
     font-size: 1.0em;
@@ -681,11 +752,12 @@
 }
 
 
-.crafting-recipe-tags {
+.crafting-recipe-page-tags {
     font-size: 0.85em;
     color: rgba(201, 201, 201, 0.85);
     line-height: 1.3;
 }
+
 
 
 
