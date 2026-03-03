@@ -4,6 +4,8 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 
 const SCENE_SOCKET_EVENT = `${MODULE.ID}.sceneArtificerUpdated`;
 const SCENE_CONTEXT = `${MODULE.ID}-scene-manager`;
@@ -110,6 +112,29 @@ export class SceneManager {
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
         const notes = (sceneFlags.notes ?? '').toString();
+        const selectedHabitats = new Set(Array.isArray(sceneFlags.habitats) ? sceneFlags.habitats : []);
+        const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
+        const selectedComponentTypes = new Set(Array.isArray(sceneFlags.componentTypes) ? sceneFlags.componentTypes : []);
+        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Number(sceneFlags.gatherSpots)) : 0;
+        const habitatOptionsHtml = OFFICIAL_BIOMES.map((biome) => {
+            const checked = selectedHabitats.has(biome) ? 'checked' : '';
+            return `
+                <label class="checkbox">
+                    <input type="checkbox" name="flags.${MODULE.ID}.scene.habitats" value="${foundry.utils.escapeHTML(biome)}" ${checked} />
+                    ${foundry.utils.escapeHTML(biome)}
+                </label>
+            `;
+        }).join('');
+        const componentTypeOptionsHtml = componentFamilies.map((family) => {
+            const checked = selectedComponentTypes.has(family) ? 'checked' : '';
+            const label = FAMILY_LABELS[family] ?? family;
+            return `
+                <label class="checkbox">
+                    <input type="checkbox" name="flags.${MODULE.ID}.scene.componentTypes" value="${foundry.utils.escapeHTML(family)}" ${checked} />
+                    ${foundry.utils.escapeHTML(label)}
+                </label>
+            `;
+        }).join('');
 
         const tabPanel = document.createElement('div');
         tabPanel.className = 'tab';
@@ -130,8 +155,34 @@ export class SceneManager {
                 <label>Artificer Notes</label>
                 <textarea name="flags.${MODULE.ID}.scene.notes" rows="4" placeholder="Notes for this scene's Artificer setup">${foundry.utils.escapeHTML(notes)}</textarea>
             </div>
+            <div class="form-group stacked">
+                <label>Habitats</label>
+                <div class="form-fields" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;">
+                    ${habitatOptionsHtml}
+                </div>
+                <p class="notes">Habitat filters for scene-based gathering.</p>
+            </div>
+            <div class="form-group stacked">
+                <label>Component Types</label>
+                <div class="form-fields" style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;">
+                    ${componentTypeOptionsHtml}
+                </div>
+                <p class="notes">Allowed component families for scene-based gathering.</p>
+            </div>
+            <div class="form-group">
+                <label>Gather Spots</label>
+                <input type="number" min="0" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" />
+                <p class="notes">Number of gather spots to add to this scene.</p>
+            </div>
         `;
         tabBodyHost.appendChild(tabPanel);
+
+        // Keep Save Changes last in the form flow.
+        const footer = form.querySelector('.form-footer, footer.application-footer');
+        if (footer?.parentElement) {
+            footer.parentElement.appendChild(footer);
+        }
+
         this._log(`SceneManager: Artificer tab injected for scene "${app?.document?.name ?? 'Unknown'}"`);
     }
 
