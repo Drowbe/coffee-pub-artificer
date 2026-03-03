@@ -83,6 +83,7 @@
     "scripts/manager-workstations.js",
     "scripts/manager-skills.js",
     "scripts/manager-scene.js",
+    "scripts/manager-pins.js",
     "scripts/manager-gather.js",
     "scripts/window-gather.js",
     "scripts/skills-rules.js",

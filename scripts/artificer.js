@@ -14,6 +14,7 @@ import { SkillsWindow } from './window-skills.js';
 import { GatherWindow } from './window-gather.js';
 import { requestGatherAndHarvestFromScene } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
+import { PinsManager } from './manager-pins.js';
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
@@ -110,6 +111,9 @@ Hooks.once('ready', async () => {
 function initializeModule() {
     SceneManager.initialize().catch((error) => {
         BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Scene manager failed to initialize`, error?.message ?? String(error), true, false);
+    });
+    PinsManager.initialize().catch((error) => {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Pins manager failed to initialize`, error?.message ?? String(error), true, false);
     });
     // Register menubar tool and secondary bar
     registerMenubarIntegration();
