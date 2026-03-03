@@ -1058,7 +1058,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (set.size > 0) enabledSkillIds = set;
             enabledSkillsBadges = badges;
         }
-        const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, enabledSkillIds);
+        // Apply journal/book skill filtering only when the kit filter toggle is active.
+        const journalFilterSkillIds = this.showOnlyWithKit ? enabledSkillIds : null;
+        const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, journalFilterSkillIds);
         const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid, journalCoverByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
         if (this.filterRecipeJournal) {
