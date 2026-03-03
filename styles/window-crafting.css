@@ -259,40 +259,80 @@
     flex-shrink: 0;
 }
 
-.crafting-recipe-filter-buttons {
-    display: flex;
-    gap: 6px;
-}
 
-.crafting-recipe-filter-btn {
-    padding: 4px 8px;
-    background: transparent;
-    border: none;
-    border-radius: 4px;
+
+
+
+
+
+
+
+
+
+
+/* Header row should size to content, not foundry button defaults */
+.crafting-zone-recipes-header {
+    align-items: center; /* fine once buttons are constrained */
+  }
+  
+  /* Kill Foundry's button baseline/min-height/padding/line-height */
+  .crafting-recipe-filter-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .crafting-recipe-filter-btn {
+    all: unset;                 /* nukes Foundry button styles */
+    display: inline-flex;       /* so we can center icon */
+    align-items: center;
+    justify-content: center;
+  
     cursor: pointer;
+    border-radius: 4px;
+  
     color: var(--craft-accent-color);
     opacity: 0.4;
     transition: opacity 0.15s, color 0.15s;
-}
-
-.crafting-recipe-filter-btn:hover {
-    opacity: 0.7;
-    color: rgba(231, 90, 0, 0.9);
-}
-
-.crafting-recipe-filter-btn.active {
+  }
+  
+  .crafting-recipe-filter-btn.active {
     opacity: 1;
-    color: var(--craft-accent-color);
-    border: none;
-    outline: none;
-    box-shadow: none;
-}
+  }
+  
+  .crafting-recipe-filter-btn:hover {
+    opacity: 1;
+    color: rgba(255, 100, 0, 0.9);
+  }
+  
+  .crafting-recipe-filter-btn i {
+    font-size: 0.75em;
+    line-height: 1;
+    display: block;
+  }
 
 
 
-.crafting-recipe-filter-btn i {
-    font-size: 0.9em;
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 .crafting-zone-desc {
     margin: 0 0 10px 0;
@@ -512,12 +552,31 @@
     gap: 6px;
 }
 
-.crafting-recipe-row {
+/* recipe item */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.crafting-recipe-page,
+.crafting-recipe-book {
     font-size: 0.8em;
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    padding: 8px 10px;
+    padding: 2px 6px 2px 2px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid var(--craft-border-color);
     border-radius: 4px;
@@ -525,43 +584,65 @@
     transition: border-color 0.15s, background 0.15s;
 }
 
-.crafting-recipe-row:hover {
+.crafting-recipe-page:hover,
+.crafting-recipe-book:hover {
     border-color: rgba(255, 100, 0, 0.6);
     background: rgba(255, 100, 0, 0.1);
 }
 
 .crafting-recipe-row-selected {
-    border-color: var(--craft-accent-color);
-    background: rgba(172, 159, 129, 0.15);
+    border: 2px solid rgba(41, 96, 46, 0.9);
+    background: rgba(41, 96, 46, 0.15);
 }
 
+/* Recipe books (journal cover entries) */
+.crafting-recipe-book {
+    margin-top: 6px;
+    border-left: 3px solid var(--craft-accent-color, rgba(172, 159, 129, 0.8));
+}
+.crafting-recipe-book:first-child {
+    margin-top: 0;
+}
+
+
+
+/* Icons */
+
+.crafting-recipe-locked-icon-dimmed,
+.crafting-recipe-locked-icon,
 .crafting-recipe-craftable-icon {
     flex-shrink: 0;
     margin-left: auto;
     font-size: 0.85em;
+    margin-top: 4px;
+}
+.crafting-recipe-craftable-icon {
     color: rgba(105, 213, 104, 0.9);
 }
 
 .crafting-recipe-locked-icon {
-    flex-shrink: 0;
-    margin-left: auto;
-    font-size: 0.85em;
     color: rgba(180, 160, 120, 0.85);
 }
-
 .crafting-recipe-locked-icon-dimmed {
     opacity: 0.5;
     color: rgba(180, 160, 120, 0.6);
 }
 
+
+/* thumbnail */
+
 .crafting-recipe-result-img {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: auto;
     object-fit: contain;
     flex-shrink: 0;
     border-radius: 4px;
-    border: 1px solid var(--craft-border-color);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.8);
 }
+
+
+/* Content */
 
 .crafting-recipe-content {
     flex: 1;
@@ -569,14 +650,18 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+    margin-top: 4px;
 }
 
 .crafting-recipe-title-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
 
 .crafting-recipe-experimental-prefix {
     flex-shrink: 0;
@@ -584,18 +669,50 @@
     color: var(--craft-accent-color);
 }
 
+
 .crafting-recipe-result {
     font-weight: 600;
     color: rgba(105, 213, 104, 0.95);
-    font-size: 0.95em;
+    font-size: 1.0em;
     line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+
 
 .crafting-recipe-tags {
     font-size: 0.85em;
     color: rgba(201, 201, 201, 0.85);
     line-height: 1.3;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* ----- Zone 2: Ingredients ----- */
 .crafting-zone-section-input-wrap {
@@ -660,6 +777,40 @@
     margin-bottom: 10px;
 }
 
+/* Selected journal cover block (above recipe list when a journal with a Cover page is selected) */
+.crafting-zone-selected-journal-cover {
+    margin-bottom: 10px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+}
+.crafting-selected-journal-cover-title {
+    font-size: 0.9em;
+    font-weight: 700;
+    color: var(--color-text-heading, #c9c9c9);
+    margin-bottom: 6px;
+}
+.crafting-selected-journal-cover-img {
+    max-width: 100%;
+    max-height: 120px;
+    object-fit: contain;
+    border-radius: 4px;
+    display: block;
+    margin-bottom: 4px;
+}
+.crafting-selected-journal-cover-author {
+    font-size: 0.8em;
+    color: rgba(201, 201, 201, 0.75);
+    font-style: italic;
+}
+.crafting-selected-journal-cover-description {
+    font-size: 0.8em;
+    color: rgba(201, 201, 201, 0.65);
+    margin-top: 2px;
+    line-height: 1.35;
+}
+
 .crafting-zone-select {
     flex: 1;
     min-width: 0;
@@ -708,16 +859,28 @@
     gap: 4px;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
 .crafting-ingredient-row {
+    font-size: 0.85em;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 6px 8px;
+    padding: 2px 6px 2px 2px;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--craft-border-color);
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.85em;
 }
 
 .crafting-ingredient-row:hover {
@@ -725,11 +888,18 @@
     background: rgba(255, 100, 0, 0.15);
 }
 
+
+/* thumbnail */
+
 .crafting-ingredient-row-img {
-    width: 28px;
-    height: 28px;
+    width: 48px;
+    height: auto;
     object-fit: contain;
     flex-shrink: 0;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.8);
+    
 }
 
 .crafting-ingredient-row-info {
@@ -749,6 +919,11 @@
     font-size: 0.85em;
     color: #b0b0b0;
 }
+
+
+
+
+
 
 /* ----- Zone 3: Crafting bench ----- */
 .crafting-bench-tags {

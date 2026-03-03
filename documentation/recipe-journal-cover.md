@@ -4,7 +4,7 @@ Recipe journals can include a **Cover** page with metadata: which skill(s) the b
 
 ## Page name
 
-- Add a journal page whose **name** is exactly **Cover** (case-insensitive).
+- Add a journal page whose **name** is exactly **Cover Page** (case-insensitive). Using "Cover Page" (not "Cover") avoids conflicting with a recipe that might be named "Cover".
 
 ## Format (same as recipes)
 
@@ -47,7 +47,7 @@ If you need to paste HTML into the journal page (e.g. via "Edit HTML" or similar
 <p><em>Herbalism &amp; Alchemy — Collected recipes for the aspiring crafter.</em></p>
 ```
 
-Remember to name the journal page **Cover** (page title/name), not the journal itself.
+Remember to name the journal page **Cover Page** (page title/name), not the journal itself.
 
 The rest of the Cover page can be normal text; only the labels above and the first image are read.
 

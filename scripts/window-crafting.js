@@ -231,7 +231,7 @@ function getRecipeJournalUuid(recipe) {
  * @param {Array<{ id: string, source?: string }>} recipes - from api.recipes.getAll()
  * @param {string} filterRecipeJournal - current filter (journal name or '')
  * @param {Set<string>|string[]|null} [enabledSkillIds] - optional set/array of skill ids (lowercased) the actor has enabled (e.g. has kit); when provided, only journals containing recipes for these skills are included
- * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>>, journalByUuid: Map<string, string>, journalCoverByUuid: Map<string, { author: string, description: string, coverImage: string }> }>}
+ * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>>, journalByUuid: Map<string, string>, journalCoverByUuid: Map<string, { author: string, description: string, coverImage: string, skillIds: string[], hasCoverPage: boolean }> }>}
  */
 async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, enabledSkillIds = null) {
     let recipesToUse = recipes;
@@ -255,6 +255,123 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
     const journalByUuid = new Map();
     /** @type {Map<string, { author: string, description: string, coverImage: string, skillIds: string[] }>} journal uuid -> cover data */
     const journalCoverByUuid = new Map();
+    /** @type {Map<string, JournalEntry>} journal uuid -> document */
+    const journalDocByUuid = new Map();
+    /** @type {Map<string, JournalEntry[]>} pack id -> docs */
+    const packDocsCache = new Map();
+
+    /**
+     * Ensure we have a fully loaded JournalEntry (especially for compendium UUIDs).
+     * @param {string} uuid
+     * @param {JournalEntry|null} [seedDoc]
+     * @returns {Promise<JournalEntry|null>}
+     */
+    async function getFullJournalDoc(uuid, seedDoc = null) {
+        const hasPages = (doc) => {
+            const pages = doc?.pages?.contents;
+            return Array.isArray(pages) ? pages.length >= 0 : !!pages;
+        };
+        if (seedDoc?.documentName === 'JournalEntry' && hasPages(seedDoc)) return seedDoc;
+
+        // Try world collection first when possible.
+        if (seedDoc?.id && game.journal?.get(seedDoc.id)) {
+            const worldDoc = game.journal.get(seedDoc.id);
+            if (worldDoc?.documentName === 'JournalEntry' && hasPages(worldDoc)) return worldDoc;
+        }
+
+        // For compendium UUIDs, load the concrete document from the pack.
+        const m = /^Compendium\.([^.]+\.[^.]+)\.JournalEntry\.([^.]+)$/.exec(String(uuid));
+        if (m) {
+            const [, packId, docId] = m;
+            const pack = game.packs?.get(packId);
+            if (pack?.documentName === 'JournalEntry' && docId) {
+                try {
+                    const packDoc = await pack.getDocument(docId);
+                    if (packDoc?.documentName === 'JournalEntry' && hasPages(packDoc)) return packDoc;
+                } catch (_e) {
+                    /* ignore and fall through */
+                }
+            }
+        }
+
+        // Final fallback.
+        try {
+            const doc = await fromUuid(uuid);
+            if (doc?.documentName === 'JournalEntry') return doc;
+        } catch (_e) {
+            /* ignore */
+        }
+        return null;
+    }
+
+    async function getConfiguredRecipePackIds() {
+        const ids = [];
+        const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
+        for (let i = 1; i <= num; i++) {
+            const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
+            if (!cid || cid === 'none') continue;
+            ids.push(cid);
+        }
+        return ids;
+    }
+
+    async function getPackDocs(packId) {
+        if (packDocsCache.has(packId)) return packDocsCache.get(packId);
+        const pack = game.packs?.get(packId);
+        if (!pack || pack.documentName !== 'JournalEntry') {
+            packDocsCache.set(packId, []);
+            return [];
+        }
+        try {
+            const docs = await pack.getDocuments();
+            const list = Array.isArray(docs) ? docs : [];
+            packDocsCache.set(packId, list);
+            return list;
+        } catch (_e) {
+            packDocsCache.set(packId, []);
+            return [];
+        }
+    }
+
+    /**
+     * Try to find a valid cover from same-name journals across world + configured compendiums.
+     * @param {string} journalName
+     * @param {string} excludeUuid
+     * @returns {Promise<{ cover: { author: string, description: string, coverImage: string, skillIds: string[], hasCoverPage: boolean }, doc: JournalEntry|null, source: string }|null>}
+     */
+    async function findCoverByNameFallback(journalName, excludeUuid) {
+        const name = (journalName ?? '').trim();
+        if (!name) return null;
+
+        // World first.
+        for (const j of (game.journal ?? [])) {
+            if ((j?.name ?? '').trim() !== name) continue;
+            if (j?.uuid === excludeUuid) continue;
+            try {
+                const cover = await getJournalCoverData(j);
+                if (cover?.hasCoverPage) return { cover, doc: j, source: `world:${j.uuid}` };
+            } catch (_e) {
+                /* ignore */
+            }
+        }
+
+        // Then configured compendiums.
+        const packIds = await getConfiguredRecipePackIds();
+        for (const packId of packIds) {
+            const docs = await getPackDocs(packId);
+            for (const d of docs) {
+                if ((d?.name ?? '').trim() !== name) continue;
+                if (d?.uuid === excludeUuid) continue;
+                try {
+                    const cover = await getJournalCoverData(d);
+                    if (cover?.hasCoverPage) return { cover, doc: d, source: `compendium:${d.uuid}` };
+                } catch (_e) {
+                    /* ignore */
+                }
+            }
+        }
+        return null;
+    }
 
     /** Build folderId -> folderName for a compendium pack (v13: folder collection may be pack.folderCollection or pack.folders). */
     function getPackFolderNames(pack) {
@@ -311,6 +428,7 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
                 if (!folderLabel) folderLabel = 'No folder';
             }
             journalInfo.set(uuid, { name, folderLabel });
+            journalDocByUuid.set(uuid, doc);
             if (!nameToUuids.has(name)) nameToUuids.set(name, new Set());
             nameToUuids.get(name).add(uuid);
             journalByUuid.set(uuid, name);
@@ -322,16 +440,70 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
     // Load cover data for every journal (for display and for skill filtering).
     for (const uuid of journalInfo.keys()) {
         try {
-            const doc = await fromUuid(uuid);
-            const cover = await getJournalCoverData(doc);
+            const doc = await getFullJournalDoc(uuid, journalDocByUuid.get(uuid) ?? null);
+            let cover = await getJournalCoverData(doc);
+            let coverSource = `primary:${uuid}`;
+            if (!cover?.hasCoverPage) {
+                const fallback = await findCoverByNameFallback(journalByUuid.get(uuid) ?? '', uuid);
+                if (fallback?.cover?.hasCoverPage) {
+                    cover = fallback.cover;
+                    coverSource = fallback.source;
+                }
+            }
+            const pages = doc?.pages?.contents ?? [];
+            const pageList = [...pages]
+                .slice()
+                .sort((a, b) => (a?.sort ?? 0) - (b?.sort ?? 0))
+                .map((p) => `${String(p?.name ?? p?.title ?? p?.text?.title ?? '(untitled)')}<${p?.type ?? '?'}>`)
+                .slice(0, 6)
+                .join(', ');
+            const matched = [...pages]
+                .slice()
+                .sort((a, b) => (a?.sort ?? 0) - (b?.sort ?? 0))
+                .find((p) => {
+                    const n = String(p?.name ?? p?.title ?? p?.text?.title ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+                    return /^\d*\s*cover page$/.test(n);
+                });
+            const matchedByContent = [...pages]
+                .slice()
+                .sort((a, b) => (a?.sort ?? 0) - (b?.sort ?? 0))
+                .find((p) => {
+                    if (p?.type !== 'text') return false;
+                    const raw = String(p?.text?.content ?? p?.text?.markdown ?? '');
+                    if (!raw) return false;
+                    try {
+                        const parser = new DOMParser();
+                        const html = parser.parseFromString(raw, 'text/html');
+                        const txt = (html.body?.textContent ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+                        return /\bcover\s*page\b/i.test(txt);
+                    } catch (_e) {
+                        const txt = raw.replace(/\s+/g, ' ').trim().toLowerCase();
+                        return /\bcover\s*page\b/i.test(txt);
+                    }
+                });
             journalCoverByUuid.set(uuid, {
                 author: cover.author ?? '',
                 description: cover.description ?? '',
                 coverImage: cover.coverImage ?? '',
-                skillIds: cover.skillIds ?? []
+                skillIds: cover.skillIds ?? [],
+                hasCoverPage: !!cover.hasCoverPage
             });
+            BlacksmithUtils.postConsoleAndNotification(
+                MODULE.NAME,
+                'Cover scan',
+                `journal="${journalByUuid.get(uuid) ?? ''}" uuid="${uuid}" hasCoverPage=${!!cover.hasCoverPage} coverImage=${!!(cover.coverImage ?? '').trim()} author=${!!(cover.author ?? '').trim()} description=${!!(cover.description ?? '').trim()} pages=${pages.length} coverSource="${coverSource}" matchedCoverTitle="${String(matched?.name ?? matched?.title ?? matched?.text?.title ?? '')}" matchedCoverByContent="${String(matchedByContent?.name ?? matchedByContent?.title ?? matchedByContent?.text?.title ?? '')}" samplePages="${pageList}"`,
+                false,
+                false
+            );
         } catch (_e) {
-            journalCoverByUuid.set(uuid, { author: '', description: '', coverImage: '', skillIds: [] });
+            journalCoverByUuid.set(uuid, { author: '', description: '', coverImage: '', skillIds: [], hasCoverPage: false });
+            BlacksmithUtils.postConsoleAndNotification(
+                MODULE.NAME,
+                'Cover scan failed',
+                `uuid="${uuid}" error="${_e?.message ?? String(_e)}"`,
+                true,
+                false
+            );
         }
     }
 
@@ -574,6 +746,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.lastCraftTags = [];
         /** @type {ArtificerRecipe|null} */
         this.selectedRecipe = null;
+        /** When true, Details panel shows the selected journal's Cover page instead of a recipe. */
+        this.viewingCoverPage = options.viewingCoverPage ?? false;
+        /** Journal UUID whose cover is shown in Details when viewingCoverPage is true. */
+        this.viewingCoverJournalUuid = options.viewingCoverJournalUuid ?? null;
         this.filterFamily = options.filterFamily ?? '';
         /** Artificer TYPE (Component | Creation | Tool) for left dropdown; '' = All types */
         this.filterArtificerType = options.filterArtificerType ?? '';
@@ -918,7 +1094,51 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         knownCombinations.sort((a, b) =>
             (a.result ?? '').localeCompare(b.result ?? '', undefined, { sensitivity: 'base' })
         );
+        const journalDebugRows = [...new Set(knownCombinations.map((k) => k.journalUuid ?? '').filter(Boolean))]
+            .map((uuid) => {
+                const cover = journalCoverByUuid.get(uuid);
+                const name = journalByUuid.get(uuid) ?? '';
+                return `${name} | ${uuid} | hasCoverPage=${!!cover?.hasCoverPage}`;
+            })
+            .join(' || ');
+        BlacksmithUtils.postConsoleAndNotification(
+            MODULE.NAME,
+            'Cover list state',
+            `filterJournal="${this.filterRecipeJournal ?? ''}" journalsInRecipes=${journalDebugRows || '(none)'}`,
+            false,
+            false
+        );
         const hasRecipes = knownCombinations.length > 0;
+
+        // Build list with cover divider above each journal's recipes (All view and single-journal view).
+        const recipeListWithDividers = (() => {
+            const out = [];
+            const byJournal = new Map();
+            for (const combo of knownCombinations) {
+                const uuid = combo.journalUuid ?? '';
+                if (!byJournal.has(uuid)) byJournal.set(uuid, []);
+                byJournal.get(uuid).push(combo);
+            }
+            const journalUuids = [...byJournal.keys()];
+            journalUuids.sort((a, b) => (journalByUuid.get(a) ?? '').localeCompare(journalByUuid.get(b) ?? '', undefined, { sensitivity: 'base' }));
+            for (const journalUuid of journalUuids) {
+                const cover = journalCoverByUuid?.get(journalUuid);
+                const journalName = journalByUuid.get(journalUuid) ?? '';
+                if (cover?.hasCoverPage) {
+                    out.push({
+                        isCoverDivider: true,
+                        journalUuid,
+                        journalName,
+                        coverImage: (cover.coverImage ?? '').trim() || null,
+                        selected: !!(this.viewingCoverPage && this.viewingCoverJournalUuid === journalUuid)
+                    });
+                }
+                for (const combo of byJournal.get(journalUuid)) {
+                    out.push(combo);
+                }
+            }
+            return out;
+        })();
 
         // Tags in slots for feedback
         const slotTags = this.selectedSlots
@@ -1063,8 +1283,27 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             lastCraftTags: this.lastCraftTags,
             lastCraftTagsStr: this.lastCraftTags.join(', '),
             knownCombinations,
+            recipeListWithDividers,
             recipeJournalAllOption: recipeJournalAllOption,
             recipeJournalOptionGroups: recipeJournalOptionGroups,
+            /** When viewing a cover (clicked a divider), show that journal's cover in Details. */
+            selectedJournalCoverBlock: (() => {
+                if (!this.viewingCoverPage || !this.viewingCoverJournalUuid) return null;
+                const cover = journalCoverByUuid?.get(this.viewingCoverJournalUuid);
+                if (!cover?.hasCoverPage) return null;
+                const journalName = journalByUuid.get(this.viewingCoverJournalUuid) ?? '';
+                const coverImage = (cover.coverImage ?? '').trim() || null;
+                const author = (cover.author ?? '').trim() || null;
+                const description = (cover.description ?? '').trim() || null;
+                return {
+                    journalName,
+                    coverImage,
+                    author,
+                    description,
+                    hasAnyContent: !!(coverImage || author || description)
+                };
+            })(),
+            viewingCoverPage: !!(this.viewingCoverPage ?? false),
             craftingBenchTitle,
             craftingBenchMessage,
             combinedTags,
@@ -1139,7 +1378,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     static _actionRemoveContainer(event, target) { this._removeContainer(); }
     static _actionRemoveTool(event, target) { this._removeTool(); }
     static _actionSelectRecipe(event, target) {
-        const row = target?.closest?.('.crafting-recipe-row');
+        const row = target?.closest?.('.crafting-recipe-page');
         const recipeId = row?.dataset?.recipeId;
         if (recipeId) this._selectRecipe(recipeId).catch(() => {});
     }
@@ -1236,12 +1475,25 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 w.render();
                 return;
             }
-            const recipeRow = e.target?.closest?.('.crafting-recipe-row');
-            if (recipeRow?.dataset?.recipeId) {
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-                w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});
-                return;
+            const recipeRow = e.target?.closest?.('.crafting-recipe-book, .crafting-recipe-page');
+            if (recipeRow) {
+                const action = recipeRow.dataset?.action;
+                if (action === 'selectCoverPage') {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    const journalUuid = recipeRow.dataset?.journalUuid ?? '';
+                    w.viewingCoverJournalUuid = journalUuid || null;
+                    w.viewingCoverPage = !!journalUuid;
+                    w.selectedRecipe = null;
+                    w.render();
+                    return;
+                }
+                if (recipeRow.dataset?.recipeId) {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    w._selectRecipe(recipeRow.dataset.recipeId).catch(() => {});
+                    return;
+                }
             }
             const row = e.target?.closest?.('.crafting-ingredient-row');
             if (row?.dataset?.itemId) {
@@ -1328,6 +1580,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             }
             if (id === `${appId}-filter-recipe-journal`) {
                 w.filterRecipeJournal = el.value ?? '';
+                w.viewingCoverPage = false;
+                w.viewingCoverJournalUuid = null;
                 w.render();
             } else if (id === `${appId}-filter-type`) {
                 w.filterArtificerType = el.value ?? '';
@@ -1531,6 +1785,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const actor = this._getCrafterActor();
         if (!recipe) return;
 
+        this.viewingCoverPage = false;
+        this.viewingCoverJournalUuid = null;
         this.selectedRecipe = recipe;
         BlacksmithUtils.playSound(BlacksmithConstants.SOUNDBUTTON03, 0.5, false, false);
 

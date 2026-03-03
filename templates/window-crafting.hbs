@@ -71,13 +71,26 @@
                     </select>
                 </div>
                 <div class="crafting-zone-recipes-list">
-                    {{#each knownCombinations}}
-                    {{!-- In both "show all" and "show only craftable" views, recipes that can be crafted show an icon: hammer for in-tier, or the experimental perk's icon when attemptable via that perk --}}
-                    <div class="crafting-recipe-row {{#if this.selected}}crafting-recipe-row-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-row-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
+                    {{#each recipeListWithDividers}}
+                    {{#if this.isCoverDivider}}
+                    <div class="crafting-recipe-book {{#if this.selected}}crafting-recipe-row-selected{{/if}}" data-action="selectCoverPage" data-journal-uuid="{{this.journalUuid}}" title="View cover page">
+                        {{#if this.coverImage}}
+                        <img src="{{this.coverImage}}" alt="" class="crafting-recipe-result-img" />
+                        {{else}}
+                        <i class="fa-solid fa-book crafting-recipe-cover-divider-icon" aria-hidden="true"></i>
+                        {{/if}}
+                        <div class="crafting-recipe-content">
+                            <div class="crafting-recipe-title-row">
+                                <span class="crafting-recipe-result">{{this.journalName}}</span>
+                            </div>
+                            <span class="crafting-recipe-tags">Cover Page</span>
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="crafting-recipe-page {{#if this.selected}}crafting-recipe-row-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-row-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to load recipe into crafting bench">
                         <img src="{{this.resultImg}}" alt="" class="crafting-recipe-result-img" />
                         <div class="crafting-recipe-content">
                             <div class="crafting-recipe-title-row">
-                                
                                 <span class="crafting-recipe-result">
                                     {{#if this.experimentalIconBeforeTitle}}<i class="{{this.experimentalIconBeforeTitle}} crafting-recipe-experimental-prefix" title="Experimental crafting (above your tier)"></i>{{/if}}
                                     {{this.result}}
@@ -87,6 +100,7 @@
                         </div>
                         {{#if this.recipeHiddenByPerk}}<i class="crafting-recipe-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if this.showDimLock}}<i class="crafting-recipe-locked-icon crafting-recipe-locked-icon-dimmed fa-solid fa-lock" title="Above your tier — viewable via experimental; recipe is still locked"></i>{{else}}{{#if this.canCraft}}<i class="crafting-recipe-craftable-icon {{this.craftableIconClass}}" title="All ingredients available"></i>{{/if}}{{/if}}{{/if}}
                     </div>
+                    {{/if}}
                     {{else}}
                     <div class="crafting-zone-empty">There are no recipes to show. Do you have the right kit to view these type of recipes?</div>
                     {{/each}}
@@ -251,6 +265,30 @@
                         {{/each}}
                     </div>
                     {{/if}}
+                    {{#if viewingCoverPage}}
+                    {{#if selectedJournalCoverBlock}}
+                    <div class="crafting-recipe-details">
+                        <div class="crafting-recipe-name">Cover Page</div>
+                        <div class="crafting-recipe-journal-name">{{selectedJournalCoverBlock.journalName}}</div>
+                        <div class="crafting-recipe-journal-cover">
+                            {{#if selectedJournalCoverBlock.coverImage}}
+                            <img src="{{selectedJournalCoverBlock.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
+                            {{/if}}
+                            {{#if selectedJournalCoverBlock.author}}
+                            <div class="crafting-recipe-journal-cover-author">{{selectedJournalCoverBlock.author}}</div>
+                            {{/if}}
+                            {{#if selectedJournalCoverBlock.description}}
+                            <div class="crafting-recipe-journal-cover-description">{{selectedJournalCoverBlock.description}}</div>
+                            {{/if}}
+                            {{#unless selectedJournalCoverBlock.hasAnyContent}}
+                            <div class="crafting-recipe-journal-cover-description">This journal has a Cover Page, but it has no image, author, or description.</div>
+                            {{/unless}}
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="crafting-zone-empty">Cover Page details are unavailable for the selected journal.</div>
+                    {{/if}}
+                    {{else}}
                     {{#if selectedRecipeData}}
                     
                     <div class="crafting-recipe-details">
@@ -356,6 +394,7 @@
                             <p class="crafting-applied-perks-none">None</p>
                         </div>
                         {{/if}}
+                    {{/if}}
                     {{/if}}
                     {{/if}}
                     {{#if lastResult}}
