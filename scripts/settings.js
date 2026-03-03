@@ -386,13 +386,13 @@ export const registerSettings = () => {
         type: Object
     });
 
-    // -- Gather window last-used settings (Roll for Components: biomes, component types, DC) --
+    // -- Gather window last-used settings (Roll for Components: biomes, component types, harvesting skills, DC) --
     game.settings.register(MODULE.ID, 'gatherWindowSettings', {
         name: 'Gather window settings (last used)',
-        hint: 'Stores last used Habitat, component types, and DC for Roll for Components.',
+        hint: 'Stores last used Habitat, component types, harvesting skills, and DC for Roll for Components.',
         scope: 'world',
         config: false,
-        default: { biomes: [], componentTypes: [], dc: 10 },
+        default: { biomes: [], componentTypes: [], skillIds: ['Herbalism', 'Cooking'], dc: 10 },
         type: Object
     });
 

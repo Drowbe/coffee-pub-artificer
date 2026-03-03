@@ -6,6 +6,7 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
+import { CRAFTING_SKILLS } from './schema-recipes.js';
 
 const SCENE_SOCKET_EVENT = `${MODULE.ID}.sceneArtificerUpdated`;
 const SCENE_CONTEXT = `${MODULE.ID}-scene-manager`;
@@ -109,11 +110,22 @@ export class SceneManager {
         const existingTabPanel = form.querySelector('.tab[data-tab]');
         const tabBodyHost = existingTabPanel?.parentElement ?? form.querySelector('.sheet-body') ?? form;
         const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
+        const normalizeList = (value) => {
+            if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+            if (typeof value === 'string' && value.trim()) return [value.trim()];
+            return [];
+        };
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
-        const selectedHabitats = new Set(Array.isArray(sceneFlags.habitats) ? sceneFlags.habitats : []);
+        const selectedHabitats = new Set(normalizeList(sceneFlags.habitats));
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
-        const selectedComponentTypes = new Set(Array.isArray(sceneFlags.componentTypes) ? sceneFlags.componentTypes : []);
+        const selectedComponentTypes = new Set(normalizeList(sceneFlags.componentTypes));
+        const defaultHarvestingSkills = [CRAFTING_SKILLS.HERBALISM, CRAFTING_SKILLS.COOKING];
+        const currentHarvestingSkills = normalizeList(sceneFlags.harvestingSkills);
+        const rawHarvestingSkills = currentHarvestingSkills.length
+            ? currentHarvestingSkills
+            : defaultHarvestingSkills;
+        const selectedHarvestingSkills = new Set(rawHarvestingSkills.map((s) => String(s).trim()).filter(Boolean));
         const defaultDC = Number.isFinite(Number(sceneFlags.defaultDC)) ? Math.max(1, Math.min(30, Number(sceneFlags.defaultDC))) : 5;
         const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Number(sceneFlags.gatherSpots)) : 0;
         const habitatOptionsHtml = OFFICIAL_BIOMES.map((biome) => {
@@ -132,6 +144,15 @@ export class SceneManager {
                 <label class="checkbox artificer-scene-checkbox">
                     <input type="checkbox" name="flags.${MODULE.ID}.scene.componentTypes" value="${foundry.utils.escapeHTML(family)}" ${checked} />
                     <span>${foundry.utils.escapeHTML(label)}</span>
+                </label>
+            `;
+        }).join('');
+        const harvestingSkillOptionsHtml = Object.values(CRAFTING_SKILLS).map((skillId) => {
+            const checked = selectedHarvestingSkills.has(skillId) ? 'checked' : '';
+            return `
+                <label class="checkbox artificer-scene-checkbox">
+                    <input type="checkbox" name="flags.${MODULE.ID}.scene.harvestingSkills" value="${foundry.utils.escapeHTML(skillId)}" ${checked} />
+                    <span>${foundry.utils.escapeHTML(skillId)}</span>
                 </label>
             `;
         }).join('');
@@ -163,6 +184,12 @@ export class SceneManager {
                 <legend>Component Types</legend>
                 <div class="form-fields artificer-scene-checkbox-grid">
                     ${componentTypeOptionsHtml}
+                </div>
+            </fieldset>
+            <fieldset class="form-group artificer-scene-fieldset">
+                <legend>Harvesting Skills</legend>
+                <div class="form-fields artificer-scene-checkbox-grid">
+                    ${harvestingSkillOptionsHtml}
                 </div>
             </fieldset>
             <div class="form-group">

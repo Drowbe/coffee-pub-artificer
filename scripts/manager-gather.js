@@ -15,9 +15,10 @@ import { getAPI } from './api-artificer.js';
 import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay, getComponentAutoGatherPerkNames } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 
-/** @typedef {{ dc: number, biomes: string[], componentTypes: string[] }} PendingGather */
+/** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[] }} PendingGather */
 
 let _pendingGather = null;
+const DEFAULT_GATHER_SKILLS = ['Herbalism'];
 
 /**
  * Get biome options for multiselect (create-window style: name + selected).
@@ -63,6 +64,80 @@ export function consumePendingGather() {
     const p = _pendingGather;
     _pendingGather = null;
     return p;
+}
+
+function _normalizeGatherSkillIds(skillIds) {
+    const raw = Array.isArray(skillIds) ? skillIds : DEFAULT_GATHER_SKILLS;
+    const cleaned = raw.map((s) => String(s).trim()).filter(Boolean);
+    return [...new Set(cleaned)];
+}
+
+async function _getGatheringSkillContext(actor, skillIds = DEFAULT_GATHER_SKILLS) {
+    const enabledSkillIds = _normalizeGatherSkillIds(skillIds);
+    if (!enabledSkillIds.length) {
+        return {
+            enabledSkillIds,
+            hasEnabledSceneSkills: false,
+            hasActorHarvestingSkill: false,
+            gatheringRollBonus: 0,
+            gatheringYieldMultiplier: 1,
+            appliedPerks: [],
+            componentSkillRanges: [],
+            componentAutoGatherBySkill: {},
+            activeSkillIds: []
+        };
+    }
+
+    if (!actor) {
+        return {
+            enabledSkillIds,
+            hasEnabledSceneSkills: true,
+            hasActorHarvestingSkill: false,
+            gatheringRollBonus: 0,
+            gatheringYieldMultiplier: 1,
+            appliedPerks: [],
+            componentSkillRanges: [],
+            componentAutoGatherBySkill: {},
+            activeSkillIds: []
+        };
+    }
+
+    const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+    const combinedAppliedPerks = [];
+    const combinedRanges = [];
+    const componentAutoGatherBySkill = {};
+    const activeSkillIds = [];
+    let gatheringRollBonus = 0;
+    let gatheringYieldMultiplier = 1;
+
+    for (const skillId of enabledSkillIds) {
+        const skillPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], skillId);
+        if (!skillPerks.length) continue;
+        activeSkillIds.push(skillId);
+
+        const rules = await getEffectiveGatheringRules(skillId, skillPerks);
+        gatheringRollBonus += Number(rules.gatheringRollBonus) || 0;
+        gatheringYieldMultiplier = Math.max(gatheringYieldMultiplier, Math.floor(Number(rules.gatheringYieldMultiplier) || 1));
+        if (rules.componentAutoGather) componentAutoGatherBySkill[skillId] = rules.componentAutoGather;
+
+        const ranges = await getEffectiveComponentSkillAccess(skillId, skillPerks);
+        for (const range of ranges ?? []) combinedRanges.push(range);
+
+        const applied = await getAppliedGatheringPerksForDisplay(skillId, skillPerks);
+        for (const perk of applied ?? []) combinedAppliedPerks.push(perk);
+    }
+
+    return {
+        enabledSkillIds,
+        hasEnabledSceneSkills: true,
+        hasActorHarvestingSkill: activeSkillIds.length > 0,
+        gatheringRollBonus,
+        gatheringYieldMultiplier: Math.max(1, gatheringYieldMultiplier),
+        appliedPerks: combinedAppliedPerks,
+        componentSkillRanges: combinedRanges,
+        componentAutoGatherBySkill,
+        activeSkillIds
+    };
 }
 
 /**
@@ -190,9 +265,9 @@ export async function sendGatherConsolationCard(actor = null, items = [], perkNa
  * Send "You didn't find anything" chat card (failed roll or no actor).
  * @param {Actor} [actor] - Optional actor (for speaker)
  */
-export function sendGatherFailureCard(actor = null) {
+export function sendGatherFailureCard(actor = null, reason = null) {
     const title = 'Forage for components';
-    const body = '<p>You didn\'t find anything.</p>';
+    const body = `<p>${reason || 'You didn\'t find anything.'}</p>`;
     const html = buildChatCardHtml(title, body, 'card');
     const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
     ChatMessage.create({
@@ -275,12 +350,10 @@ export async function sendGatherSuccessCard(actor = null, items = [], appliedPer
  * @param {Actor|null} actor
  * @returns {Promise<number>}
  */
-export async function getGatheringRollBonusForActor(actor) {
+export async function getGatheringRollBonusForActor(actor, skillIds = DEFAULT_GATHER_SKILLS) {
     if (!actor) return 0;
-    const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
-    const herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
-    const rules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
-    return Math.max(0, Number(rules.gatheringRollBonus) || 0);
+    const ctx = await _getGatheringSkillContext(actor, skillIds);
+    return Math.max(0, Number(ctx.gatheringRollBonus) || 0);
 }
 
 /**
@@ -293,23 +366,40 @@ export async function getGatheringRollBonusForActor(actor) {
  */
 export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!pending) return { success: false };
-    const { dc, biomes, componentTypes } = pending;
+    const { dc, biomes, componentTypes, skillIds } = pending;
+    const enabledSkillIds = _normalizeGatherSkillIds(skillIds);
+    if (!enabledSkillIds.length) {
+        return {
+            success: false,
+            reason: `No harvesting skills are enabled for this area.`
+        };
+    }
+
     let effectiveTotal = rollTotal;
     let yieldMultiplier = 1;
     let appliedPerks = [];
-    let herbalismPerks = [];
+    let componentSkillRanges = [];
+    let componentAutoGatherBySkill = {};
+
     if (actor) {
-        const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
-        herbalismPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], 'Herbalism');
-        const gatheringRules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
-        effectiveTotal = rollTotal + (gatheringRules.gatheringRollBonus ?? 0);
-        yieldMultiplier = Math.max(1, Math.floor(gatheringRules.gatheringYieldMultiplier ?? 1));
-        appliedPerks = await getAppliedGatheringPerksForDisplay('Herbalism', herbalismPerks);
+        const skillContext = await _getGatheringSkillContext(actor, enabledSkillIds);
+        if (!skillContext.hasActorHarvestingSkill) {
+            return {
+                success: false,
+                reason: `Your roll was high, but none of your enabled harvesting skills apply in this area (${enabledSkillIds.join(', ')}).`
+            };
+        }
+
+        effectiveTotal = rollTotal + (skillContext.gatheringRollBonus ?? 0);
+        yieldMultiplier = Math.max(1, Math.floor(skillContext.gatheringYieldMultiplier ?? 1));
+        appliedPerks = skillContext.appliedPerks ?? [];
+        componentSkillRanges = skillContext.componentSkillRanges ?? [];
+        componentAutoGatherBySkill = skillContext.componentAutoGatherBySkill ?? {};
     }
+
     if (effectiveTotal < dc) {
-        if (actor && herbalismPerks.length) {
-            const gatheringRules = await getEffectiveGatheringRules('Herbalism', herbalismPerks);
-            const autoGatherName = gatheringRules.componentAutoGather;
+        if (actor) {
+            const autoGatherName = Object.values(componentAutoGatherBySkill)[0] ?? null;
             if (autoGatherName) {
                 const item = await getFromCache(autoGatherName);
                 if (item) {
@@ -317,7 +407,13 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
                     const name = item.name ?? autoGatherName;
                     const uuid = item.uuid ?? '';
                     const img = item.img ?? '';
-                    const perkNames = await getComponentAutoGatherPerkNames('Herbalism', herbalismPerks);
+                    const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+                    const perkNames = [];
+                    for (const sid of Object.keys(componentAutoGatherBySkill)) {
+                        const skillPerks = getLearnedPerkIdsForSkill(learnedPerkIds ?? [], sid);
+                        const names = await getComponentAutoGatherPerkNames(sid, skillPerks);
+                        for (const n of names ?? []) perkNames.push(n);
+                    }
                     return {
                         success: false,
                         componentAutoGatherGranted: true,
@@ -332,8 +428,6 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!actor) return { success: false };
     const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
     if (!eligibleRecords.length) return { success: true, noPool: true };
-
-    const componentSkillRanges = await getEffectiveComponentSkillAccess('Herbalism', herbalismPerks);
 
     const recordsAllowedByPerks = eligibleRecords.filter((rec) => {
         const tier = rec.tier ?? 0;
@@ -376,7 +470,7 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
     const ctx = pending ?? consumePendingGather();
     const outcome = await processGatherRollResult(rollTotal, actor ?? null, ctx);
     if (!actor) {
-        sendGatherFailureCard(actor);
+        sendGatherFailureCard(actor, outcome?.reason ?? null);
         return;
     }
     if (outcome.noPool) {
@@ -387,24 +481,32 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
         if (outcome.componentAutoGatherGranted && outcome.itemRecords?.length) {
             sendGatherConsolationCard(actor, outcome.itemRecords, outcome.perkNames ?? []);
         } else {
-            sendGatherFailureCard(actor);
+            sendGatherFailureCard(actor, outcome?.reason ?? null);
         }
         return;
     }
     if (outcome.itemRecords?.length) {
         await sendGatherSuccessCard(actor, outcome.itemRecords, outcome.appliedPerks);
     } else {
-        sendGatherFailureCard(actor);
+        sendGatherFailureCard(actor, outcome?.reason ?? null);
     }
 }
 
 function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    const biomes = Array.isArray(flags.habitats) ? flags.habitats.map((b) => String(b).trim()).filter(Boolean) : [];
-    const componentTypes = Array.isArray(flags.componentTypes) ? flags.componentTypes.map((f) => String(f).trim()).filter(Boolean) : [];
+    const normalizeList = (value) => {
+        if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+        if (typeof value === 'string' && value.trim()) return [value.trim()];
+        return [];
+    };
+    const biomes = normalizeList(flags.habitats);
+    const componentTypes = normalizeList(flags.componentTypes);
+    const harvestingSkills = normalizeList(flags.harvestingSkills).length
+        ? normalizeList(flags.harvestingSkills)
+        : ['Herbalism', 'Cooking'];
     const rawDC = Number(flags.defaultDC);
     const dc = Number.isFinite(rawDC) ? Math.max(1, Math.min(30, Math.floor(rawDC))) : 5;
-    return { dc, biomes, componentTypes };
+    return { dc, biomes, componentTypes, harvestingSkills };
 }
 
 async function _notifyGMSceneGatherNotConfigured(scene) {
@@ -462,7 +564,7 @@ export async function requestGatherAndHarvestFromScene() {
     }
 
     const scene = canvas.scene;
-    const { dc, biomes, componentTypes } = _getSceneGatherSettings(scene);
+    const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
     if (!biomes.length || !componentTypes.length) {
         await _notifyGMSceneGatherNotConfigured(scene);
         return;
@@ -482,7 +584,7 @@ export async function requestGatherAndHarvestFromScene() {
 
     const actorsForRequest = [];
     for (const { token, actor } of selected) {
-        const situationalBonus = await getGatheringRollBonusForActor(actor);
+        const situationalBonus = await getGatheringRollBonusForActor(actor, harvestingSkills);
         actorsForRequest.push({
             id: token.id,
             actorId: actor.id,
@@ -495,7 +597,7 @@ export async function requestGatherAndHarvestFromScene() {
         return;
     }
 
-    const pendingContext = { dc, biomes, componentTypes };
+    const pendingContext = { dc, biomes, componentTypes, skillIds: harvestingSkills };
     setPendingGather(pendingContext);
     const rollBuffer = [];
 
@@ -526,7 +628,7 @@ export async function requestGatherAndHarvestFromScene() {
 
             for (const { actor: a, outcome: o } of rollBuffer) {
                 if (!a) {
-                    sendGatherFailureCard(a);
+                    sendGatherFailureCard(a, o?.reason ?? null);
                     continue;
                 }
                 if (o.noPool) {
@@ -537,14 +639,14 @@ export async function requestGatherAndHarvestFromScene() {
                     if (o.componentAutoGatherGranted && o.itemRecords?.length) {
                         await sendGatherConsolationCard(a, o.itemRecords, o.perkNames ?? []);
                     } else {
-                        sendGatherFailureCard(a);
+                        sendGatherFailureCard(a, o?.reason ?? null);
                     }
                     continue;
                 }
                 if (o.itemRecords?.length) {
                     await sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
                 } else {
-                    sendGatherFailureCard(a);
+                    sendGatherFailureCard(a, o?.reason ?? null);
                 }
             }
 

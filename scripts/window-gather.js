@@ -11,6 +11,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { CRAFTING_SKILLS } from './schema-recipes.js';
 import {
     getBiomeOptionsForMultiselect,
     getComponentTypeOptions,
@@ -27,7 +28,7 @@ import {
 const GATHER_APP_ID = 'artificer-gather';
 const GATHER_BOUNDS_SETTING = 'windowBoundsGather';
 const GATHER_SETTINGS_KEY = 'gatherWindowSettings';
-const DEFAULT_GATHER_SETTINGS = { biomes: [], componentTypes: [], dc: 10 };
+const DEFAULT_GATHER_SETTINGS = { biomes: [], componentTypes: [], skillIds: ['Herbalism', 'Cooking'], dc: 10 };
 
 let _currentGatherWindowRef = null;
 let _gatherDelegationAttached = false;
@@ -36,9 +37,11 @@ function getGatherWindowSettings() {
     try {
         const raw = game.settings.get(MODULE.ID, GATHER_SETTINGS_KEY);
         if (raw && typeof raw === 'object' && Array.isArray(raw.biomes) && Array.isArray(raw.componentTypes)) {
+            const validSkillIds = Array.isArray(raw.skillIds) ? raw.skillIds.map((s) => String(s).trim()).filter(Boolean) : [];
             return {
                 biomes: raw.biomes,
                 componentTypes: raw.componentTypes,
+                skillIds: validSkillIds.length ? validSkillIds : ['Herbalism', 'Cooking'],
                 dc: typeof raw.dc === 'number' && raw.dc >= 1 && raw.dc <= 30 ? raw.dc : 10
             };
         }
@@ -102,13 +105,20 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     async getData(options = {}) {
         const saved = getGatherWindowSettings();
         const selectedBiomes = this._selectedBiomes ?? saved.biomes;
+        const selectedSkillIds = this._selectedSkillIds ?? saved.skillIds;
         const componentTypeOptions = getComponentTypeOptions().map((o) => ({
             ...o,
             checked: saved.componentTypes.includes(o.value)
         }));
+        const skillOptions = Object.values(CRAFTING_SKILLS).map((sid) => ({
+            value: sid,
+            label: sid,
+            checked: selectedSkillIds.includes(sid)
+        }));
         return {
             biomeOptions: getBiomeOptionsForMultiselect(selectedBiomes),
             componentTypeOptions,
+            skillOptions,
             dc: saved.dc,
             isGM: game.user.isGM
         };
@@ -177,12 +187,14 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         BlacksmithUtils.playSound(BlacksmithConstants.SOUNDPOP01, 0.5);
         const root = this._getGatherRoot();
         const dcEl = root?.querySelector('#gather-dc');
-        const checkboxes = root?.querySelectorAll?.('input.gather-checkbox:checked');
+        const typeCheckboxes = root?.querySelectorAll?.('input.gather-checkbox[name="gather-type"]:checked');
+        const skillCheckboxes = root?.querySelectorAll?.('input.gather-checkbox[name="gather-skill"]:checked');
         const biomeBtns = root?.querySelectorAll?.('.gather-biome-btn.active');
 
         const selectedBiomes = biomeBtns?.length ? Array.from(biomeBtns).map((b) => b.dataset?.biome).filter(Boolean) : (this._selectedBiomes ?? []);
         const dc = Math.max(1, Math.min(30, parseInt(dcEl?.value, 10) || 10));
-        const componentTypes = Array.from(checkboxes ?? []).map((cb) => cb.value?.trim()).filter(Boolean);
+        const componentTypes = Array.from(typeCheckboxes ?? []).map((cb) => cb.value?.trim()).filter(Boolean);
+        const skillIds = Array.from(skillCheckboxes ?? []).map((cb) => cb.value?.trim()).filter(Boolean);
 
         if (!selectedBiomes.length) {
             ui.notifications?.warn('Select at least one habitat.');
@@ -192,12 +204,16 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             ui.notifications?.warn('Select at least one component type.');
             return;
         }
+        if (!skillIds.length) {
+            ui.notifications?.warn('Select at least one harvesting skill.');
+            return;
+        }
 
-        const settings = { biomes: selectedBiomes, componentTypes, dc };
+        const settings = { biomes: selectedBiomes, componentTypes, skillIds, dc };
         saveGatherWindowSettings(settings);
 
-        setPendingGather({ dc, biomes: selectedBiomes, componentTypes });
-        this._lastGatherContext = { dc, biomes: selectedBiomes, componentTypes };
+        setPendingGather({ dc, biomes: selectedBiomes, componentTypes, skillIds });
+        this._lastGatherContext = { dc, biomes: selectedBiomes, componentTypes, skillIds };
         this._gatherRollBuffer = [];
 
         const selectedActors = this._getSelectedCanvasActors();
@@ -223,7 +239,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         for (const token of controlledTokens) {
             const actor = token?.actor;
             if (!actor) continue;
-            const situationalBonus = await getGatheringRollBonusForActor(actor);
+            const situationalBonus = await getGatheringRollBonusForActor(actor, skillIds);
             actorsForRequest.push({
                 id: token.id,
                 actorId: actor.id,
@@ -302,7 +318,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         for (const { actor: a, outcome: o } of this._gatherRollBuffer) {
             if (!a) {
-                sendGatherFailureCard(a);
+                sendGatherFailureCard(a, o?.reason ?? null);
                 continue;
             }
             if (o.noPool) {
@@ -313,14 +329,14 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 if (o.componentAutoGatherGranted && o.itemRecords?.length) {
                     sendGatherConsolationCard(a, o.itemRecords, o.perkNames ?? []);
                 } else {
-                    sendGatherFailureCard(a);
+                    sendGatherFailureCard(a, o?.reason ?? null);
                 }
                 continue;
             }
             if (o.itemRecords?.length) {
                 await sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
             } else {
-                sendGatherFailureCard(a);
+                sendGatherFailureCard(a, o?.reason ?? null);
             }
         }
 
