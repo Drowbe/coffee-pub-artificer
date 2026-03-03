@@ -235,7 +235,7 @@ function getRecipeJournalUuid(recipe) {
  */
 async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, enabledSkillIds = null) {
     let recipesToUse = recipes;
-    if (enabledSkillIds != null && enabledSkillIds.length > 0) {
+    if (enabledSkillIds != null && (enabledSkillIds instanceof Set ? enabledSkillIds.size : enabledSkillIds.length) > 0) {
         const set = enabledSkillIds instanceof Set ? enabledSkillIds : new Set(enabledSkillIds);
         recipesToUse = recipes.filter((r) => {
             const skill = (r.skill ?? '').toString().trim().toLowerCase();
