@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "notes": "Biome-only gathering art mapping. Keys should be lowercase biome names. Use 'any' as fallback.",
+  "states": {
+    "idle": {
+      "byBiome": {
+        "forest": [
+          "images/gathering/herbalism-plant-berries-01.webp",
+          "images/gathering/herbalism-plant-bush-01.webp",
+          "images/gathering/herbalism-plant-flowers-01.webp",
+          "images/gathering/herbalism-plant-flowers-02.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-creatureparts-fur-01.webp"
+        ],
+        "grassland": [
+          "images/gathering/herbalism-plant-flowers-01.webp",
+          "images/gathering/herbalism-plant-flowers-02.webp",
+          "images/gathering/herbalism-plant-bush-01.webp",
+          "images/gathering/herbalism-plant-berries-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-creatureparts-fur-01.webp"
+        ],
+        "mountain": [
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp",
+          "images/gathering/herbalism-environmental-charcaol-01.webp"
+        ],
+        "arctic": [
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp"
+        ],
+        "planar": [
+          "images/gathering/herbalism-plant-flowers-02.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp"
+        ],
+        "coastal": [
+          "images/gathering/herbalism-plant-bush-01.webp",
+          "images/gathering/herbalism-plant-berries-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp"
+        ],
+        "swamp": [
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-plant-bush-01.webp"
+        ],
+        "desert": [
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp",
+          "images/gathering/herbalism-environmental-charcaol-01.webp"
+        ],
+        "underdark": [
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp"
+        ],
+        "underwater": [
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp"
+        ],
+        "urban": [
+          "images/gathering/herbalism-plant-bush-01.webp",
+          "images/gathering/herbalism-plant-flowers-01.webp",
+          "images/gathering/herbalism-environmental-charcaol-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-creatureparts-fur-01.webp"
+        ],
+        "hill": [
+          "images/gathering/herbalism-plant-flowers-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-plant-bush-01.webp"
+        ],
+        "any": [
+          "images/gathering/herbalism-plant-berries-01.webp",
+          "images/gathering/herbalism-plant-bush-01.webp",
+          "images/gathering/herbalism-plant-flowers-01.webp",
+          "images/gathering/herbalism-plant-flowers-02.webp",
+          "images/gathering/herbalism-plant-lichen-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-plant-roots-01.webp",
+          "images/gathering/herbalism-creatureparts-fur-01.webp",
+          "images/gathering/herbalism-creatureparts-meat-01.webp",
+          "images/gathering/herbalism-environmental-charcaol-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp"
+        ]
+      }
+    },
+    "active": {
+      "byBiome": {
+        "forest": [
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-pile-leaves-01.webp"
+        ],
+        "grassland": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp"
+        ],
+        "mountain": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp"
+        ],
+        "arctic": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp"
+        ],
+        "planar": [
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/cartography-pile-treasure-01.webp"
+        ],
+        "coastal": [
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-environmental-water-01.webp"
+        ],
+        "swamp": [
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-plant-moss-01.webp"
+        ],
+        "desert": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp"
+        ],
+        "underdark": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-plant-mushrooms-01.webp",
+          "images/gathering/herbalism-gems-quartz-01.webp"
+        ],
+        "underwater": [
+          "images/gathering/herbalism-environmental-water-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-pile-leaves-01.webp"
+        ],
+        "urban": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-environmental-charcaol-01.webp",
+          "images/gathering/cartography-pile-treasure-01.webp"
+        ],
+        "hill": [
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp"
+        ],
+        "any": [
+          "images/gathering/herbalism-pile-leaves-01.webp",
+          "images/gathering/herbalism-pile-dirt-01.webp",
+          "images/gathering/cartography-pile-treasure-01.webp",
+          "images/gathering/herbalism-minerals-rocks-01.webp",
+          "images/gathering/herbalism-minerals-ore-01.webp"
+        ]
+      }
+    }
+  }
+}

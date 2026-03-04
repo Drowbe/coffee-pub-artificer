@@ -5,6 +5,7 @@
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { requestGatherAndHarvestFromSceneWithOptions } from './manager-gather.js';
+import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 
 const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
@@ -110,7 +111,13 @@ export class PinsManager {
                     updates.ownership = { default: 2 };
                 }
                 if (this._isLegacyWorkingImage(pin?.image)) {
-                    updates.image = PIN_DEFAULT_IMAGE;
+                    const resolvedIdleImage = await resolveGatheringImageForScene(scene, 'idle');
+                    updates.image = resolvedIdleImage || PIN_DEFAULT_IMAGE;
+                    updates.shape = 'none';
+                }
+                if (this._isSeedlingIcon(pin?.image)) {
+                    const resolvedIdleImage = await resolveGatheringImageForScene(scene, 'idle');
+                    if (resolvedIdleImage) updates.image = resolvedIdleImage;
                     updates.shape = 'none';
                 }
                 if (Object.keys(updates).length) {
@@ -144,7 +151,7 @@ export class PinsManager {
                         y,
                         text: PIN_TEXT,
                         ownership: { default: 2 },
-                        image: PIN_DEFAULT_IMAGE,
+                        image: (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE,
                         shape: 'none',
                         dropShadow: true,
                         textLayout: 'arc-below',
@@ -227,6 +234,12 @@ export class PinsManager {
         return value.includes('/modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp')
             || value.includes('/modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp')
             || value.endsWith('/images/animations/gathering-leaf-swirl-00.webp');
+    }
+
+    static _isSeedlingIcon(imagePath) {
+        const value = String(imagePath ?? '').trim().toLowerCase();
+        if (!value) return true;
+        return value.includes('fa-seedling');
     }
 
     static async _onPinDoubleClick(evt) {

@@ -15,6 +15,7 @@ import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-item
 import { getAPI } from './api-artificer.js';
 import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay, getComponentAutoGatherPerkNames } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
+import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null }} PendingGather */
 
@@ -23,7 +24,6 @@ const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
 let _gatherSocketApi = null;
 let _gatherSocketRegistered = false;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
-const GATHER_PIN_WORKING_IMAGE = 'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-01.webp';
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
@@ -622,8 +622,11 @@ async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.sce
     const pin = pins.get?.(pinId, sceneId ? { sceneId } : undefined) ?? null;
     const originalImage = pin?.image ?? null;
 
+    const scene = sceneId ? game.scenes?.get?.(sceneId) ?? null : canvas?.scene ?? null;
+    const activeImage = await resolveGatheringImageForScene(scene, 'active');
+
     try {
-        await pins.update?.(pinId, { image: GATHER_PIN_WORKING_IMAGE, shape: 'none' }, sceneId ? { sceneId } : undefined);
+        await pins.update?.(pinId, { image: activeImage || originalImage || 'fa-solid fa-seedling', shape: 'none' }, sceneId ? { sceneId } : undefined);
         await pins.refreshPin?.(pinId, sceneId ? { sceneId } : undefined);
     } catch {
         // Ignore image-swap failures.
