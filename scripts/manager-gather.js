@@ -23,6 +23,9 @@ const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
 let _gatherSocketApi = null;
 let _gatherSocketRegistered = false;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
+const GATHER_PIN_WORKING_IMAGE = 'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-01.webp';
+const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
+const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
 
 /**
@@ -593,6 +596,75 @@ async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
     }
 }
 
+async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.scene?.id ?? null) {
+    if (!requestId || !pinId) return;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins) return;
+
+    const pin = pins.get?.(pinId, sceneId ? { sceneId } : undefined) ?? null;
+    const originalImage = pin?.image ?? null;
+
+    try {
+        await pins.update?.(pinId, { image: GATHER_PIN_WORKING_IMAGE, shape: 'none' }, sceneId ? { sceneId } : undefined);
+        await pins.refreshPin?.(pinId, sceneId ? { sceneId } : undefined);
+    } catch {
+        // Ignore image-swap failures.
+    }
+
+    let pingController = null;
+    try {
+        pingController = await pins.ping?.(pinId, { animation: 'rotate', untilStopped: true });
+    } catch {
+        // Ignore ping failures.
+    }
+    if (!pingController?.stop) {
+        BlacksmithUtils?.postConsoleAndNotification?.(MODULE.NAME, 'Gather pin animation did not start controller', { pinId, sceneId }, false, false);
+    }
+
+    let animationTimeoutId = null;
+    if (pingController?.stop) {
+        animationTimeoutId = setTimeout(async () => {
+            try {
+                pingController.stop();
+                if (pingController.promise) await pingController.promise;
+            } catch {
+                // Ignore timeout-stop failures.
+            }
+        }, GATHER_PIN_ANIMATION_TIMEOUT_MS);
+    }
+
+    _pinProcessingStates.set(requestId, { pinId, sceneId, originalImage, pingController, animationTimeoutId });
+}
+
+async function _stopGatherPinProcessing(requestId, { restoreImage = false } = {}) {
+    if (!requestId) return;
+    const state = _pinProcessingStates.get(requestId);
+    if (!state) return;
+
+    if (state.animationTimeoutId) clearTimeout(state.animationTimeoutId);
+    try {
+        if (state.pingController?.stop) {
+            state.pingController.stop();
+            if (state.pingController.promise) {
+                await state.pingController.promise;
+            }
+        }
+    } catch {
+        // Ignore animation stop failures.
+    }
+    _pinProcessingStates.delete(requestId);
+
+    if (!restoreImage) return;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins?.update) return;
+    try {
+        await pins.update(state.pinId, { image: state.originalImage ?? 'fa-solid fa-seedling', shape: 'none' }, state.sceneId ? { sceneId: state.sceneId } : undefined);
+        await pins.reload?.();
+    } catch {
+        // ignore restore failures
+    }
+}
+
 async function _ensureGatherSocketHandler() {
     if (_gatherSocketRegistered) return;
     if (!_gatherSocketApi) {
@@ -670,9 +742,16 @@ async function _processGatherRollOnGM(data) {
             sendGatherFailureCard(a, o?.reason ?? null);
         }
     }
-    if (pending?.sourcePinId) {
+    const shouldConsumePin = bucket.some(({ outcome }) => {
+        if (!outcome) return false;
+        if (outcome.success && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
+        if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
+        return false;
+    });
+    if (pending?.sourcePinId && shouldConsumePin) {
         await _deleteGatherPin(pending.sourcePinId, pending.sourceSceneId ?? sceneId ?? canvas?.scene?.id ?? null);
     }
+    await _stopGatherPinProcessing(requestId, { restoreImage: false });
     _gatherRollBuffers.delete(requestId);
 }
 
@@ -752,20 +831,25 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     const rollBuffer = [];
     const requestId = foundry.utils.randomID();
     await _ensureGatherSocketHandler();
+    if (sourcePinId) {
+        await _startGatherPinProcessing(requestId, sourcePinId, pendingContext.sourceSceneId);
+    }
 
-    await api.openRequestRollDialog({
-        silent: true,
-        title: 'Gather and Harvest',
-        dc,
-        initialFilter: 'selected',
-        initialType: 'ability',
-        initialValue: 'wis',
-        actors: actorsForRequest,
-        groupRoll: false,
-        onRollComplete: async (payload) => {
+    try {
+        await api.openRequestRollDialog({
+            silent: true,
+            title: 'Gather and Harvest',
+            dc,
+            initialFilter: 'selected',
+            initialType: 'ability',
+            initialValue: 'wis',
+            actors: actorsForRequest,
+            groupRoll: false,
+            onRollComplete: async (payload) => {
             const rollTotal = payload?.result?.total != null ? payload.result.total : null;
             if (rollTotal == null) {
                 ui.notifications?.warn('Could not read roll result.');
+                await _stopGatherPinProcessing(requestId, { restoreImage: true });
                 return;
             }
 
@@ -773,6 +857,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                 const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
                 if (!gmRecipients.length) {
                     ui.notifications?.warn('No GM connected to resolve gather results.');
+                    await _stopGatherPinProcessing(requestId, { restoreImage: true });
                     return;
                 }
                 await _gatherSocketApi.emit(GATHER_SOCKET_EVENT, {
@@ -784,6 +869,9 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                     allComplete: !!payload?.allComplete,
                     pending: pendingContext
                 }, { recipients: gmRecipients });
+                if (payload?.allComplete) {
+                    await _stopGatherPinProcessing(requestId, { restoreImage: false });
+                }
                 return;
             }
 
@@ -820,10 +908,21 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                 }
             }
 
-            if (pendingContext?.sourcePinId) {
+            const shouldConsumePin = rollBuffer.some(({ outcome }) => {
+                if (!outcome) return false;
+                if (outcome.success && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
+                if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
+                return false;
+            });
+            if (pendingContext?.sourcePinId && shouldConsumePin) {
                 await _deleteGatherPin(pendingContext.sourcePinId, pendingContext.sourceSceneId ?? canvas?.scene?.id ?? null);
             }
+            await _stopGatherPinProcessing(requestId, { restoreImage: false });
             consumePendingGather();
         }
-    });
+        });
+    } catch (error) {
+        await _stopGatherPinProcessing(requestId, { restoreImage: true });
+        throw error;
+    }
 }

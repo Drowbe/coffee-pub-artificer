@@ -10,6 +10,13 @@ const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
 const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
+const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
+const LEGACY_WORKING_IMAGE_PATHS = new Set([
+    'modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp',
+    'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp',
+    'images/animations/gathering-leaf-swirl-00.webp',
+    '/modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp'
+]);
 
 export class PinsManager {
     static _hookManager = null;
@@ -98,8 +105,16 @@ export class PinsManager {
             }) ?? [];
             let changed = false;
             for (const pin of existingPins) {
+                const updates = {};
                 if ((pin?.ownership?.default ?? 0) < 2) {
-                    await this._pins.update(pin.id, { ownership: { default: 2 } }, { sceneId });
+                    updates.ownership = { default: 2 };
+                }
+                if (this._isLegacyWorkingImage(pin?.image)) {
+                    updates.image = PIN_DEFAULT_IMAGE;
+                    updates.shape = 'none';
+                }
+                if (Object.keys(updates).length) {
+                    await this._pins.update(pin.id, updates, { sceneId });
                     changed = true;
                 }
                 if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
@@ -129,7 +144,7 @@ export class PinsManager {
                         y,
                         text: PIN_TEXT,
                         ownership: { default: 2 },
-                        image: 'fa-solid fa-seedling',
+                        image: PIN_DEFAULT_IMAGE,
                         shape: 'none',
                         dropShadow: true,
                         textLayout: 'arc-below',
@@ -203,6 +218,15 @@ export class PinsManager {
         const x = Math.floor(Math.random() * (maxX - minX) + minX);
         const y = Math.floor(Math.random() * (maxY - minY) + minY);
         return { x, y };
+    }
+
+    static _isLegacyWorkingImage(imagePath) {
+        const value = String(imagePath ?? '').trim();
+        if (!value) return false;
+        if (LEGACY_WORKING_IMAGE_PATHS.has(value)) return true;
+        return value.includes('/modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp')
+            || value.includes('/modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp')
+            || value.endsWith('/images/animations/gathering-leaf-swirl-00.webp');
     }
 
     static async _onPinDoubleClick(evt) {
