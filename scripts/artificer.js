@@ -13,6 +13,9 @@ import { CraftingWindow } from './window-crafting.js';
 import { SkillsWindow } from './window-skills.js';
 import { GatherWindow } from './window-gather.js';
 import { requestGatherAndHarvestFromScene } from './manager-gather.js';
+import { requestDiscoverGatherSpotsFromScene } from './manager-gather.js';
+import { clearGatheringSpotsForScene } from './manager-gather.js';
+import { populateGatheringSpotsForScene } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 import { PinsManager } from './manager-pins.js';
 
@@ -284,14 +287,52 @@ function registerMenubarIntegration() {
             await requestGatherAndHarvestFromScene();
         }
     });
+
+    const discoverGatherItemId = 'artificer-discover-spots';
+    const discoverGatherRegistered = blacksmith.registerSecondaryBarItem(barType, discoverGatherItemId, {
+        icon: 'fa-solid fa-binoculars',
+        label: 'Explore the Area',
+        title: 'Explore the Area',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: async function() {
+            await requestDiscoverGatherSpotsFromScene();
+        }
+    });
+
+    const populateGatherItemId = 'artificer-populate-spots';
+    const populateGatherRegistered = blacksmith.registerSecondaryBarItem(barType, populateGatherItemId, {
+        icon: 'fa-solid fa-seedling',
+        label: 'Populate Gathering Spots',
+        title: 'Populate Gathering Spots',
+        moduleId: MODULE.ID,
+        visible: game.user.isGM,
+        onClick: async function() {
+            if (!game.user.isGM) return;
+            await populateGatheringSpotsForScene(canvas?.scene ?? null);
+        }
+    });
+
+    const clearGatherItemId = 'artificer-clear-spots';
+    const clearGatherRegistered = blacksmith.registerSecondaryBarItem(barType, clearGatherItemId, {
+        icon: 'fa-solid fa-broom',
+        label: 'Clear Gathering Spots',
+        title: 'Clear Gathering Spots',
+        moduleId: MODULE.ID,
+        visible: game.user.isGM,
+        onClick: async function() {
+            if (!game.user.isGM) return;
+            await clearGatheringSpotsForScene(canvas?.scene ?? null);
+        }
+    });
     
-    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered) {
+    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
         }
     } else {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}`, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, true, false);
         }
     }
 }

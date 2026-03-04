@@ -6,12 +6,14 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { requestGatherAndHarvestFromSceneWithOptions } from './manager-gather.js';
 import { resolveGatheringImageForScene } from './manager-gathering-images.js';
+import { FAMILY_LABELS } from './schema-artificer-item.js';
 
 const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
 const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
 const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
+const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
 const LEGACY_WORKING_IMAGE_PATHS = new Set([
     'modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp',
     'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp',
@@ -97,61 +99,45 @@ export class PinsManager {
 
             const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
             const enabled = !!sceneFlags.enabled;
-            const targetCount = enabled ? Math.max(0, Number(sceneFlags.gatherSpots) || 0) : 0;
+            const discoveredNodes = enabled && Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY])
+                ? sceneFlags[DISCOVERY_NODES_FLAG_KEY].filter((n) => n && typeof n === 'object' && n.id)
+                : [];
+            const targetCount = discoveredNodes.length;
             const bounds = this._getSpawnBounds(scene);
             const existingPins = this._pins.list({
                 sceneId,
                 moduleId: MODULE.ID,
                 type: PIN_TYPE_GATHER_SPOT
             }) ?? [];
+            const existingById = new Map(existingPins.map((p) => [String(p.id), p]));
+            const discoveredIdSet = new Set(discoveredNodes.map((n) => String(n.id)));
             let changed = false;
+
+            // Remove pins that are no longer represented by discovered nodes.
             for (const pin of existingPins) {
-                const updates = {};
-                if ((pin?.ownership?.default ?? 0) < 2) {
-                    updates.ownership = { default: 2 };
-                }
-                if (this._isLegacyWorkingImage(pin?.image)) {
-                    const resolvedIdleImage = await resolveGatheringImageForScene(scene, 'idle');
-                    updates.image = resolvedIdleImage || PIN_DEFAULT_IMAGE;
-                    updates.shape = 'none';
-                }
-                if (this._isSeedlingIcon(pin?.image)) {
-                    const resolvedIdleImage = await resolveGatheringImageForScene(scene, 'idle');
-                    if (resolvedIdleImage) updates.image = resolvedIdleImage;
-                    updates.shape = 'none';
-                }
-                if (Object.keys(updates).length) {
-                    await this._pins.update(pin.id, updates, { sceneId });
-                    changed = true;
-                }
-                if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
-                    const { x, y } = this._getRandomPointInBounds(bounds);
-                    await this._pins.update(pin.id, { x, y }, { sceneId });
-                    changed = true;
-                }
-            }
-
-            if (existingPins.length > targetCount) {
-                const toDelete = existingPins.slice(targetCount);
-                for (const pin of toDelete) {
+                if (!discoveredIdSet.has(String(pin.id))) {
                     await this._pins.delete(pin.id, { sceneId });
+                    changed = true;
                 }
-                changed = changed || toDelete.length > 0;
             }
 
-            if (existingPins.length < targetCount) {
-                const toCreate = targetCount - existingPins.length;
-                for (let i = 0; i < toCreate; i++) {
+            // Ensure each discovered node has an up-to-date pin.
+            for (const node of discoveredNodes) {
+                const nodeId = String(node.id);
+                const pin = existingById.get(nodeId) ?? null;
+                const updates = {};
+
+                if (!pin) {
                     const { x, y } = this._getRandomPointInBounds(bounds);
                     await this._pins.create({
-                        id: foundry.utils.randomID(),
+                        id: nodeId,
                         moduleId: MODULE.ID,
                         type: PIN_TYPE_GATHER_SPOT,
                         x,
                         y,
-                        text: PIN_TEXT,
+                        text: this._getNodePinText(node),
                         ownership: { default: 2 },
-                        image: (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE,
+                        image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE,
                         shape: 'none',
                         dropShadow: true,
                         textLayout: 'arc-below',
@@ -164,8 +150,31 @@ export class PinsManager {
                             iconColor: '#eaffe5'
                         }
                     }, { sceneId });
+                    changed = true;
+                    continue;
                 }
-                changed = changed || toCreate > 0;
+
+                if ((pin?.ownership?.default ?? 0) < 2) {
+                    updates.ownership = { default: 2 };
+                }
+                const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE;
+                if (this._isLegacyWorkingImage(pin?.image) || this._isSeedlingIcon(pin?.image)) {
+                    updates.image = resolvedIdleImage;
+                    updates.shape = 'none';
+                }
+                const nextText = this._getNodePinText(node);
+                if (pin?.text !== nextText) {
+                    updates.text = nextText;
+                }
+                if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
+                    const { x, y } = this._getRandomPointInBounds(bounds);
+                    updates.x = x;
+                    updates.y = y;
+                }
+                if (Object.keys(updates).length) {
+                    await this._pins.update(pin.id, updates, { sceneId });
+                    changed = true;
+                }
             }
 
             if (changed) {
@@ -240,6 +249,13 @@ export class PinsManager {
         const value = String(imagePath ?? '').trim().toLowerCase();
         if (!value) return true;
         return value.includes('fa-seedling');
+    }
+
+    static _getNodePinText(node) {
+        const family = String(node?.sourceFamily ?? '').trim();
+        if (!family) return PIN_TEXT;
+        const label = FAMILY_LABELS?.[family] ?? family;
+        return `Gather: ${label}`;
     }
 
     static async _onPinDoubleClick(evt) {

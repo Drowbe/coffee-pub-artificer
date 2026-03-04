@@ -17,16 +17,27 @@ import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComp
 import { getFromCache } from './cache/cache-items.js';
 import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 
-/** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null }} PendingGather */
+/** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
 let _pendingGather = null;
 const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
+const DISCOVERY_SOCKET_EVENT = `${MODULE.ID}.gatherDiscoveryResolved`;
 let _gatherSocketApi = null;
 let _gatherSocketRegistered = false;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
+const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
+const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
+
+const RARITY_RANKS = {
+    common: 1,
+    uncommon: 2,
+    rare: 3,
+    'very rare': 4,
+    legendary: 5
+};
 
 const GATHER_PIN_CUES = {
     start: { animation: ['scale-small', 'ripple'], loops: 1, broadcast: true },
@@ -381,7 +392,7 @@ export async function getGatheringRollBonusForActor(actor, skillIds = DEFAULT_GA
  */
 export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!pending) return { success: false };
-    const { dc, biomes, componentTypes, skillIds } = pending;
+    const { dc, biomes, componentTypes, skillIds, sourceFamily, maxRarityRank } = pending;
     const enabledSkillIds = _normalizeGatherSkillIds(skillIds);
     if (!enabledSkillIds.length) {
         return {
@@ -441,7 +452,14 @@ export async function processGatherRollResult(rollTotal, actor, pending) {
         return { success: false };
     }
     if (!actor) return { success: false };
-    const eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
+    let eligibleRecords = getEligibleGatherRecords(biomes, componentTypes);
+    if (sourceFamily) {
+        eligibleRecords = eligibleRecords.filter((rec) => String(rec?.family ?? '') === String(sourceFamily));
+    }
+    if (Number.isFinite(Number(maxRarityRank)) && Number(maxRarityRank) > 0) {
+        const cap = Number(maxRarityRank);
+        eligibleRecords = eligibleRecords.filter((rec) => _getRarityRank(_getRecordRarity(rec)) <= cap);
+    }
     if (!eligibleRecords.length) return { success: true, noPool: true };
 
     const recordsAllowedByPerks = eligibleRecords.filter((rec) => {
@@ -524,9 +542,138 @@ function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     return { dc, biomes, componentTypes, harvestingSkills };
 }
 
+function _normalizeRarityKey(value) {
+    const raw = String(value ?? '').trim().toLowerCase();
+    if (!raw) return 'common';
+    if (raw === 'veryrare' || raw === 'very-rare') return 'very rare';
+    return raw;
+}
+
+function _getRarityRank(value) {
+    const key = _normalizeRarityKey(value);
+    return RARITY_RANKS[key] ?? 1;
+}
+
+function _getRecordRarity(rec) {
+    const direct = rec?.rarity ?? rec?.rarityLabel ?? rec?.itemRarity ?? null;
+    if (direct) return _normalizeRarityKey(direct);
+    const labelsRarity = rec?.labels?.rarity;
+    if (labelsRarity) return _normalizeRarityKey(labelsRarity);
+    const sysRarity = rec?.system?.rarity;
+    if (typeof sysRarity === 'string') return _normalizeRarityKey(sysRarity);
+    if (sysRarity?.value) return _normalizeRarityKey(sysRarity.value);
+    return 'common';
+}
+
+function _getDiscoveryMaxRarityRank(rollTotal, dc) {
+    if (rollTotal < dc) return 0;
+    if (rollTotal >= dc + 20) return 5;
+    if (rollTotal >= dc + 15) return 4;
+    if (rollTotal >= dc + 10) return 3;
+    if (rollTotal >= dc + 5) return 2;
+    return 1;
+}
+
+function _getDiscoveryNodeCount(rollTotal, dc, remainingCap) {
+    if (rollTotal < dc) return 0;
+    const discovered = 1 + Math.floor((rollTotal - dc) / 5);
+    const bounded = Math.max(1, Math.min(3, discovered));
+    return Math.max(0, Math.min(remainingCap, bounded));
+}
+
+function _getSceneDiscoveredNodes(scene = canvas?.scene ?? null) {
+    const sceneFlags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
+    const nodes = Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY]) ? sceneFlags[DISCOVERY_NODES_FLAG_KEY] : [];
+    return nodes.filter((n) => n && typeof n === 'object' && n.id);
+}
+
+async function _setSceneDiscoveredNodes(scene, nodes) {
+    const clean = Array.isArray(nodes) ? nodes : [];
+    await scene?.setFlag?.(MODULE.ID, 'scene', {
+        ...(scene.getFlag(MODULE.ID, 'scene') ?? {}),
+        [DISCOVERY_NODES_FLAG_KEY]: clean
+    });
+}
+
+export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null) {
+    if (!game.user?.isGM) {
+        ui.notifications?.warn('Only a GM can clear gathering spots.');
+        return;
+    }
+    if (!scene) {
+        ui.notifications?.warn('No active scene.');
+        return;
+    }
+
+    await _setSceneDiscoveredNodes(scene, []);
+    ui.notifications?.info(`Cleared gathering spots for "${scene.name ?? 'scene'}".`);
+}
+
+export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? null) {
+    if (!game.user?.isGM) {
+        ui.notifications?.warn('Only a GM can populate gathering spots.');
+        return;
+    }
+    if (!scene) {
+        ui.notifications?.warn('No active scene.');
+        return;
+    }
+
+    const context = _buildDiscoveryContext(scene);
+    if (!context.biomes.length || !context.componentTypes.length || context.gatherSpots <= 0) {
+        await _notifyGMSceneGatherNotConfigured(scene);
+        return;
+    }
+
+    const existing = _getSceneDiscoveredNodes(scene);
+    let remaining = Math.max(0, Number(context.gatherSpots) - existing.length);
+    if (remaining <= 0) {
+        ui.notifications?.info(`"${scene.name ?? 'Scene'}" is already at gather spot cap.`);
+        return;
+    }
+
+    const basePool = getEligibleGatherRecords(context.biomes, context.componentTypes);
+    if (!basePool.length) {
+        ui.notifications?.warn('No eligible gather records for this scene configuration.');
+        return;
+    }
+
+    const additions = [];
+    while (remaining > 0) {
+        const rec = pickOneGatherRecord(basePool);
+        const family = String(rec?.family ?? '').trim();
+        if (!family) break;
+        const rarity = _getRecordRarity(rec);
+        additions.push({
+            id: foundry.utils.randomID(),
+            sourceFamily: family,
+            maxRarityRank: Math.max(1, _getRarityRank(rarity)),
+            rarity,
+            biomes: [...context.biomes],
+            componentTypes: [family],
+            skillIds: [...context.harvestingSkills]
+        });
+        remaining -= 1;
+    }
+
+    if (!additions.length) {
+        ui.notifications?.warn('Could not populate gathering spots from current pool.');
+        return;
+    }
+
+    await _setSceneDiscoveredNodes(scene, [...existing, ...additions]);
+    ui.notifications?.info(`Populated ${additions.length} gathering spot(s) in "${scene.name ?? 'scene'}".`);
+}
+
+function _getNodeByPinId(scene = canvas?.scene ?? null, pinId = null) {
+    if (!pinId) return null;
+    const nodes = _getSceneDiscoveredNodes(scene);
+    return nodes.find((n) => String(n.id) === String(pinId)) ?? null;
+}
+
 async function _notifyGMSceneGatherNotConfigured(scene) {
     const sceneName = scene?.name ?? 'Current Scene';
-    const gmMessage = `Artificer Gather and Harvest is not configured for "${sceneName}". Configure Artificer Scene settings (Habitats and Component Types).`;
+    const gmMessage = `Artificer gathering is not configured for "${sceneName}". Configure Artificer Scene settings (Habitats, Component Types, and Gather Spots).`;
     if (game.user?.isGM) {
         ui.notifications?.warn(gmMessage);
         return;
@@ -597,6 +744,13 @@ async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
     if (!pins?.delete) return;
     try {
         await pins.delete(pinId, sceneId ? { sceneId } : undefined);
+        if (sceneId) {
+            const scene = game.scenes?.get?.(sceneId) ?? null;
+            if (scene) {
+                const nodes = _getSceneDiscoveredNodes(scene).filter((n) => String(n.id) !== String(pinId));
+                await _setSceneDiscoveredNodes(scene, nodes);
+            }
+        }
         await pins.reload?.();
     } catch (e) {
         BlacksmithUtils?.postConsoleAndNotification?.(MODULE.NAME, 'Gather pin delete failed', e?.message ?? String(e), true, false);
@@ -698,6 +852,10 @@ async function _ensureGatherSocketHandler() {
         if (!game.user?.isGM) return;
         await _processGatherRollOnGM(data);
     });
+    await _gatherSocketApi.register(DISCOVERY_SOCKET_EVENT, async (data) => {
+        if (!game.user?.isGM) return;
+        await _processDiscoveryRollOnGM(data);
+    });
     _gatherSocketRegistered = true;
 }
 
@@ -784,12 +942,200 @@ async function _processGatherRollOnGM(data) {
     _gatherRollBuffers.delete(requestId);
 }
 
+async function _applyDiscoveryResults(scene, context, entries) {
+    const { dc, biomes, componentTypes, harvestingSkills, gatherSpots } = context;
+    let remaining = Math.max(0, Number(gatherSpots) || 0);
+    const existing = _getSceneDiscoveredNodes(scene);
+    remaining = Math.max(0, remaining - existing.length);
+    if (remaining <= 0) return { discovered: 0, byRarity: {} };
+
+    const discovered = [];
+    const byRarity = {};
+    for (const entry of entries) {
+        if (remaining <= 0) break;
+        const rollTotal = Number(entry?.rollTotal);
+        if (!Number.isFinite(rollTotal)) continue;
+        const maxRarityRank = _getDiscoveryMaxRarityRank(rollTotal, dc);
+        if (maxRarityRank <= 0) continue;
+
+        const countForRoll = _getDiscoveryNodeCount(rollTotal, dc, remaining);
+        if (countForRoll <= 0) continue;
+
+        const basePool = getEligibleGatherRecords(biomes, componentTypes)
+            .filter((rec) => _getRarityRank(_getRecordRarity(rec)) <= maxRarityRank);
+        if (!basePool.length) continue;
+
+        for (let i = 0; i < countForRoll; i++) {
+            if (remaining <= 0) break;
+            const rec = pickOneGatherRecord(basePool);
+            if (!rec?.uuid) continue;
+            const family = String(rec?.family ?? '').trim();
+            if (!family) continue;
+            const rarity = _getRecordRarity(rec);
+            byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
+            discovered.push({
+                id: foundry.utils.randomID(),
+                sourceFamily: family,
+                maxRarityRank,
+                rarity,
+                biomes: [...biomes],
+                componentTypes: [family],
+                skillIds: [...harvestingSkills]
+            });
+            remaining -= 1;
+        }
+    }
+
+    if (!discovered.length) return { discovered: 0, byRarity };
+    await _setSceneDiscoveredNodes(scene, [...existing, ...discovered]);
+    return { discovered: discovered.length, byRarity };
+}
+
+async function _processDiscoveryRollOnGM(data) {
+    const requestId = String(data?.requestId ?? '');
+    const rollTotal = Number(data?.rollTotal);
+    const allComplete = !!data?.allComplete;
+    if (!requestId || !Number.isFinite(rollTotal)) return;
+
+    const bucket = _discoveryRollBuffers.get(requestId) ?? [];
+    bucket.push({
+        actor: data?.speakerActorId ? game.actors?.get?.(data.speakerActorId) ?? null : null,
+        rollTotal
+    });
+    _discoveryRollBuffers.set(requestId, bucket);
+    if (!allComplete) return;
+
+    const sceneId = data?.sceneId ?? canvas?.scene?.id ?? null;
+    const scene = sceneId ? game.scenes?.get?.(sceneId) ?? null : null;
+    const context = data?.context ?? null;
+    if (!scene || !context) {
+        _discoveryRollBuffers.delete(requestId);
+        return;
+    }
+
+    const result = await _applyDiscoveryResults(scene, context, bucket);
+    const raritySummary = Object.entries(result.byRarity ?? {})
+        .map(([rarity, count]) => `${count} ${rarity}`)
+        .join(', ');
+    if (result.discovered > 0) {
+        ui.notifications?.info(`Discovered ${result.discovered} gathering spot(s)${raritySummary ? `: ${raritySummary}` : ''}.`);
+    } else {
+        ui.notifications?.info('No gathering spots discovered.');
+    }
+    _discoveryRollBuffers.delete(requestId);
+}
+
+function _buildDiscoveryContext(scene) {
+    const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
+    const sceneFlags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
+    const gatherSpots = Math.max(0, Number(sceneFlags.gatherSpots) || 0);
+    return { dc, biomes, componentTypes, harvestingSkills, gatherSpots };
+}
+
 /**
  * Request a Gather and Harvest roll directly from current scene configuration.
  * Works for both GM and players, using selected tokens on the canvas.
  */
 export async function requestGatherAndHarvestFromScene() {
     return requestGatherAndHarvestFromSceneWithOptions({});
+}
+
+/**
+ * Request a Discovery roll that may spawn gather spots for the active scene.
+ * Works for both GM and players; results are applied by GM.
+ */
+export async function requestDiscoverGatherSpotsFromScene() {
+    if (!canvas?.ready || !canvas?.scene) {
+        ui.notifications?.warn('Canvas is not ready.');
+        return;
+    }
+
+    const scene = canvas.scene;
+    const context = _buildDiscoveryContext(scene);
+    if (!context.biomes.length || !context.componentTypes.length || context.gatherSpots <= 0) {
+        await _notifyGMSceneGatherNotConfigured(scene);
+        return;
+    }
+
+    const selected = _getControlledTokenActorsForRequest();
+    if (!selected.length) {
+        ui.notifications?.warn('Select at least one token you can control on the canvas.');
+        return;
+    }
+
+    const api = game.modules.get('coffee-pub-blacksmith')?.api;
+    if (!api?.openRequestRollDialog) {
+        ui.notifications?.warn('Blacksmith Request a Roll API not available.');
+        return;
+    }
+
+    const actors = [];
+    for (const { token, actor } of selected) {
+        const situationalBonus = await getGatheringRollBonusForActor(actor, context.harvestingSkills);
+        actors.push({
+            id: token.id,
+            actorId: actor.id,
+            name: token.name || actor.name,
+            situationalBonus
+        });
+    }
+    if (!actors.length) {
+        ui.notifications?.warn('No valid tokens selected.');
+        return;
+    }
+
+    const requestId = foundry.utils.randomID();
+    await _ensureGatherSocketHandler();
+    const localBuffer = [];
+
+    await api.openRequestRollDialog({
+        silent: true,
+        title: 'Discover Gathering Spots',
+        dc: context.dc,
+        initialFilter: 'selected',
+        initialType: 'ability',
+        initialValue: 'wis',
+        actors,
+        groupRoll: false,
+        onRollComplete: async (payload) => {
+            const rollTotal = payload?.result?.total != null ? Number(payload.result.total) : null;
+            if (!Number.isFinite(rollTotal)) {
+                ui.notifications?.warn('Could not read roll result.');
+                return;
+            }
+
+            if (!game.user?.isGM) {
+                const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
+                if (!gmRecipients.length) {
+                    ui.notifications?.warn('No GM connected to resolve discovery.');
+                    return;
+                }
+                await _gatherSocketApi.emit(DISCOVERY_SOCKET_EVENT, {
+                    requestId,
+                    sceneId: scene.id,
+                    speakerActorId: payload?.message?.speaker?.actor ?? null,
+                    rollTotal,
+                    allComplete: !!payload?.allComplete,
+                    context
+                }, { recipients: gmRecipients });
+                return;
+            }
+
+            const actor = await _resolveActorFromRollPayload(payload);
+            localBuffer.push({ actor, rollTotal });
+            if (!payload?.allComplete) return;
+
+            const result = await _applyDiscoveryResults(scene, context, localBuffer);
+            const raritySummary = Object.entries(result.byRarity ?? {})
+                .map(([rarity, count]) => `${count} ${rarity}`)
+                .join(', ');
+            if (result.discovered > 0) {
+                ui.notifications?.info(`Discovered ${result.discovered} gathering spot(s)${raritySummary ? `: ${raritySummary}` : ''}.`);
+            } else {
+                ui.notifications?.info('No gathering spots discovered.');
+            }
+        }
+    });
 }
 
 /**
@@ -810,7 +1156,12 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
 
     const scene = canvas.scene;
     const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
-    if (!biomes.length || !componentTypes.length) {
+    const sourceNode = sourcePinId ? _getNodeByPinId(scene, sourcePinId) : null;
+    const effectiveBiomes = sourceNode?.biomes?.length ? sourceNode.biomes : biomes;
+    const effectiveComponentTypes = sourceNode?.componentTypes?.length ? sourceNode.componentTypes : componentTypes;
+    const effectiveSkills = sourceNode?.skillIds?.length ? sourceNode.skillIds : harvestingSkills;
+
+    if (!effectiveBiomes.length || !effectiveComponentTypes.length) {
         await _notifyGMSceneGatherNotConfigured(scene);
         return;
     }
@@ -835,7 +1186,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
 
     const actorsForRequest = [];
     for (const { token, actor } of selected) {
-        const situationalBonus = await getGatheringRollBonusForActor(actor, harvestingSkills);
+        const situationalBonus = await getGatheringRollBonusForActor(actor, effectiveSkills);
         actorsForRequest.push({
             id: token.id,
             actorId: actor.id,
@@ -850,11 +1201,13 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
 
     const pendingContext = {
         dc,
-        biomes,
-        componentTypes,
-        skillIds: harvestingSkills,
+        biomes: effectiveBiomes,
+        componentTypes: effectiveComponentTypes,
+        skillIds: effectiveSkills,
         sourcePinId,
-        sourceSceneId: canvas.scene.id
+        sourceSceneId: canvas.scene.id,
+        sourceFamily: sourceNode?.sourceFamily ?? null,
+        maxRarityRank: Number.isFinite(Number(sourceNode?.maxRarityRank)) ? Number(sourceNode.maxRarityRank) : null
     };
     setPendingGather(pendingContext);
     const rollBuffer = [];
