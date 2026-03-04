@@ -57,6 +57,15 @@ export class SceneManager {
             callback: (scene, changed, options, userId) => this._broadcastSceneArtificerUpdate(scene, changed, options, userId)
         });
         this._log('SceneManager: hook registered (updateScene)');
+        this._hookManager.registerHook({
+            name: 'renderSceneDirectory',
+            description: 'Decorate Scene Directory entries with Artificer gather indicator',
+            context: SCENE_CONTEXT,
+            key: `${SCENE_CONTEXT}-render-scene-directory`,
+            priority: 3,
+            callback: (app, html) => this._decorateSceneDirectory(html)
+        });
+        this._log('SceneManager: hook registered (renderSceneDirectory)');
 
         this._initialized = true;
         this._log('SceneManager: initialized');
@@ -226,6 +235,63 @@ export class SceneManager {
             userId,
             changed: changedSceneData
         });
+
+        // Keep Scene Directory badge state current after saving Scene Config.
+        this._refreshSceneDirectoryIndicator(scene);
+    }
+
+    static _hasGatheringConfigured(scene) {
+        if (!scene) return false;
+        const flags = scene.getFlag(MODULE.ID, 'scene') ?? {};
+        const normalizeList = (value) => {
+            if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
+            if (typeof value === 'string' && value.trim()) return [value.trim()];
+            return [];
+        };
+        const enabled = !!flags.enabled;
+        const gatherSpots = Math.max(0, Number(flags.gatherSpots) || 0);
+        const habitats = normalizeList(flags.habitats);
+        const componentTypes = normalizeList(flags.componentTypes);
+        return enabled && gatherSpots > 0 && habitats.length > 0 && componentTypes.length > 0;
+    }
+
+    static _decorateSceneDirectory(html) {
+        const root = this._resolveRoot(html);
+        if (!root) return;
+        const sceneItems = root.querySelectorAll?.('[data-document-id], [data-entry-id]');
+        if (!sceneItems?.length) return;
+
+        for (const item of sceneItems) {
+            const sceneId = item.dataset?.documentId || item.dataset?.entryId;
+            if (!sceneId) continue;
+            const scene = game.scenes?.get?.(sceneId);
+            const shouldShow = this._hasGatheringConfigured(scene);
+            let badge = item.querySelector('.artificer-scene-gather-indicator');
+
+            if (!shouldShow) {
+                badge?.remove();
+                item.classList?.remove('artificer-scene-has-gather');
+                continue;
+            }
+
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'artificer-scene-gather-indicator';
+                badge.innerHTML = '<i class="fa-solid fa-seedling"></i>';
+                badge.title = 'Artificer gathering configured';
+                item.appendChild(badge);
+            }
+            item.classList?.add('artificer-scene-has-gather');
+        }
+    }
+
+    static _refreshSceneDirectoryIndicator(scene) {
+        if (!scene?.id) return;
+        const directoryRoot = document.querySelector?.('#scenes, .scenes-sidebar, .directory[data-tab="scenes"]');
+        if (!directoryRoot) return;
+        const item = directoryRoot.querySelector?.(`[data-document-id="${scene.id}"], [data-entry-id="${scene.id}"]`);
+        if (!item) return;
+        this._decorateSceneDirectory(directoryRoot);
     }
 
     static _log(message, details = null, isError = false, notify = false) {

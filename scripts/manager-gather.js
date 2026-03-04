@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { getFamilyFromFlags } from './utility-artificer-item.js';
@@ -15,9 +16,13 @@ import { getAPI } from './api-artificer.js';
 import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay, getComponentAutoGatherPerkNames } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 
-/** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[] }} PendingGather */
+/** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null }} PendingGather */
 
 let _pendingGather = null;
+const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
+let _gatherSocketApi = null;
+let _gatherSocketRegistered = false;
+const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
 
 /**
@@ -539,6 +544,68 @@ function _getControlledTokenActorsForRequest() {
         .filter((entry) => !!entry.actor);
 }
 
+function _distanceInSceneUnits(fromPoint, toPoint) {
+    const dx = Number(toPoint?.x) - Number(fromPoint?.x);
+    const dy = Number(toPoint?.y) - Number(fromPoint?.y);
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return Infinity;
+    const pixels = Math.hypot(dx, dy);
+    const gridPx = Number(canvas?.dimensions?.size) || 100;
+    const gridUnits = Number(canvas?.dimensions?.distance) || 5;
+    return (pixels / gridPx) * gridUnits;
+}
+
+function _getPinById(pinId, sceneId = canvas?.scene?.id ?? null) {
+    if (!pinId) return null;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins?.get) return null;
+    return pins.get(pinId, sceneId ? { sceneId } : undefined);
+}
+
+function _getPinCenter(pin) {
+    const x = Number(pin?.x);
+    const y = Number(pin?.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    return { x, y };
+}
+
+function _getEligibleTokenActorsForPinProximity(pin, maxDistanceUnits = 5) {
+    const selected = _getControlledTokenActorsForRequest();
+    const pinCenter = _getPinCenter(pin);
+    if (!pinCenter) return [];
+    return selected.filter(({ token }) => {
+        const tokenCenter = token?.center ?? {
+            x: Number(token?.document?.x) + (Number(token?.w) || Number(canvas?.dimensions?.size) || 100) / 2,
+            y: Number(token?.document?.y) + (Number(token?.h) || Number(canvas?.dimensions?.size) || 100) / 2
+        };
+        return _distanceInSceneUnits(tokenCenter, pinCenter) <= maxDistanceUnits;
+    });
+}
+
+async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
+    if (!pinId) return;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins?.delete) return;
+    try {
+        await pins.delete(pinId, sceneId ? { sceneId } : undefined);
+        await pins.reload?.();
+    } catch (e) {
+        BlacksmithUtils?.postConsoleAndNotification?.(MODULE.NAME, 'Gather pin delete failed', e?.message ?? String(e), true, false);
+    }
+}
+
+async function _ensureGatherSocketHandler() {
+    if (_gatherSocketRegistered) return;
+    if (!_gatherSocketApi) {
+        _gatherSocketApi = await BlacksmithAPI.getSockets();
+    }
+    await _gatherSocketApi.waitForReady();
+    await _gatherSocketApi.register(GATHER_SOCKET_EVENT, async (data) => {
+        if (!game.user?.isGM) return;
+        await _processGatherRollOnGM(data);
+    });
+    _gatherSocketRegistered = true;
+}
+
 async function _resolveActorFromRollPayload(payload) {
     const { tokenId, message } = payload ?? {};
     if (tokenId && canvas?.scene) {
@@ -553,15 +620,85 @@ async function _resolveActorFromRollPayload(payload) {
     return null;
 }
 
+async function _processGatherRollOnGM(data) {
+    const rollTotal = Number(data?.rollTotal);
+    const requestId = String(data?.requestId ?? '');
+    if (!Number.isFinite(rollTotal) || !requestId) return;
+
+    const tokenId = data?.tokenId ?? null;
+    const sceneId = data?.sceneId ?? canvas?.scene?.id ?? null;
+    const pending = data?.pending ?? null;
+    const allComplete = !!data?.allComplete;
+    const speakerActorId = data?.speakerActorId ?? null;
+
+    let actor = null;
+    if (sceneId && tokenId) {
+        const scene = game.scenes?.get?.(sceneId) ?? null;
+        const tokenDoc = scene?.tokens?.get?.(tokenId) ?? null;
+        actor = tokenDoc?.actor ?? (tokenDoc?.actorId ? game.actors.get(tokenDoc.actorId) : null) ?? null;
+    }
+    if (!actor && speakerActorId) {
+        actor = game.actors?.get?.(speakerActorId) ?? null;
+    }
+
+    const outcome = await processGatherRollResult(rollTotal, actor ?? null, pending);
+    const bucket = _gatherRollBuffers.get(requestId) ?? [];
+    bucket.push({ actor: actor ?? null, outcome });
+    _gatherRollBuffers.set(requestId, bucket);
+    if (!allComplete) return;
+
+    for (const { actor: a, outcome: o } of bucket) {
+        if (!a) {
+            sendGatherFailureCard(a, o?.reason ?? null);
+            continue;
+        }
+        if (o.noPool) {
+            sendGatherNoPoolCard(a);
+            continue;
+        }
+        if (!o.success) {
+            if (o.componentAutoGatherGranted && o.itemRecords?.length) {
+                await sendGatherConsolationCard(a, o.itemRecords, o.perkNames ?? []);
+            } else {
+                sendGatherFailureCard(a, o?.reason ?? null);
+            }
+            continue;
+        }
+        if (o.itemRecords?.length) {
+            await sendGatherSuccessCard(a, o.itemRecords, o.appliedPerks);
+        } else {
+            sendGatherFailureCard(a, o?.reason ?? null);
+        }
+    }
+    if (pending?.sourcePinId) {
+        await _deleteGatherPin(pending.sourcePinId, pending.sourceSceneId ?? sceneId ?? canvas?.scene?.id ?? null);
+    }
+    _gatherRollBuffers.delete(requestId);
+}
+
 /**
  * Request a Gather and Harvest roll directly from current scene configuration.
  * Works for both GM and players, using selected tokens on the canvas.
  */
 export async function requestGatherAndHarvestFromScene() {
+    return requestGatherAndHarvestFromSceneWithOptions({});
+}
+
+/**
+ * Request a Gather and Harvest roll directly from current scene configuration.
+ * Works for both GM and players.
+ * @param {{ sourcePinId?: string|null, requirePinProximity?: boolean, maxDistanceUnits?: number }} [options]
+ */
+export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) {
     if (!canvas?.ready || !canvas?.scene) {
         ui.notifications?.warn('Canvas is not ready.');
         return;
     }
+
+    const sourcePinId = options?.sourcePinId ?? null;
+    const requirePinProximity = !!options?.requirePinProximity;
+    const maxDistanceUnits = Number.isFinite(Number(options?.maxDistanceUnits)) ? Number(options.maxDistanceUnits) : 5;
+    const sourcePin = sourcePinId ? _getPinById(sourcePinId, canvas.scene.id) : null;
 
     const scene = canvas.scene;
     const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
@@ -576,9 +713,15 @@ export async function requestGatherAndHarvestFromScene() {
         return;
     }
 
-    const selected = _getControlledTokenActorsForRequest();
+    const selected = requirePinProximity && sourcePin
+        ? _getEligibleTokenActorsForPinProximity(sourcePin, maxDistanceUnits)
+        : _getControlledTokenActorsForRequest();
     if (!selected.length) {
-        ui.notifications?.warn('Select at least one token you can control on the canvas.');
+        if (requirePinProximity && sourcePin) {
+            ui.notifications?.warn(`Select at least one controlled token within ${maxDistanceUnits} ft of the gathering spot.`);
+        } else {
+            ui.notifications?.warn('Select at least one token you can control on the canvas.');
+        }
         return;
     }
 
@@ -597,9 +740,18 @@ export async function requestGatherAndHarvestFromScene() {
         return;
     }
 
-    const pendingContext = { dc, biomes, componentTypes, skillIds: harvestingSkills };
+    const pendingContext = {
+        dc,
+        biomes,
+        componentTypes,
+        skillIds: harvestingSkills,
+        sourcePinId,
+        sourceSceneId: canvas.scene.id
+    };
     setPendingGather(pendingContext);
     const rollBuffer = [];
+    const requestId = foundry.utils.randomID();
+    await _ensureGatherSocketHandler();
 
     await api.openRequestRollDialog({
         silent: true,
@@ -614,6 +766,24 @@ export async function requestGatherAndHarvestFromScene() {
             const rollTotal = payload?.result?.total != null ? payload.result.total : null;
             if (rollTotal == null) {
                 ui.notifications?.warn('Could not read roll result.');
+                return;
+            }
+
+            if (!game.user?.isGM) {
+                const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
+                if (!gmRecipients.length) {
+                    ui.notifications?.warn('No GM connected to resolve gather results.');
+                    return;
+                }
+                await _gatherSocketApi.emit(GATHER_SOCKET_EVENT, {
+                    requestId,
+                    sceneId: canvas?.scene?.id ?? null,
+                    tokenId: payload?.tokenId ?? null,
+                    speakerActorId: payload?.message?.speaker?.actor ?? null,
+                    rollTotal,
+                    allComplete: !!payload?.allComplete,
+                    pending: pendingContext
+                }, { recipients: gmRecipients });
                 return;
             }
 
@@ -650,6 +820,9 @@ export async function requestGatherAndHarvestFromScene() {
                 }
             }
 
+            if (pendingContext?.sourcePinId) {
+                await _deleteGatherPin(pendingContext.sourcePinId, pendingContext.sourceSceneId ?? canvas?.scene?.id ?? null);
+            }
             consumePendingGather();
         }
     });

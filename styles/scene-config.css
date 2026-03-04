@@ -26,3 +26,25 @@
 .scene-config .tab[data-tab="artificer"] .artificer-scene-checkbox > input[type="checkbox"] {
     margin: 0;
 }
+
+/* Scene Directory gather marker */
+.directory-item.artificer-scene-has-gather,
+[data-document-id].artificer-scene-has-gather {
+    position: relative;
+}
+
+.artificer-scene-gather-indicator {
+    position: absolute;
+    right: 8px;
+    top: 7px;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #91df9a;
+    text-shadow: 0 0 6px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 2;
+    font-size: 0.9rem;
+}

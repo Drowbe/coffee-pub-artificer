@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { requestGatherAndHarvestFromScene } from './manager-gather.js';
+import { requestGatherAndHarvestFromSceneWithOptions } from './manager-gather.js';
 
 const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
@@ -210,7 +210,11 @@ export class PinsManager {
         if (!pin) return;
         if (pin.moduleId !== MODULE.ID) return;
         if ((pin.type ?? '') !== PIN_TYPE_GATHER_SPOT) return;
-        await requestGatherAndHarvestFromScene();
+        await requestGatherAndHarvestFromSceneWithOptions({
+            sourcePinId: pin.id,
+            requirePinProximity: true,
+            maxDistanceUnits: 10
+        });
     }
 
     static _log(message, details = null, isError = false, notify = false) {
