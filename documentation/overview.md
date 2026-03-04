@@ -1,6 +1,8 @@
 # Coffee Pub Artificer - System Explanation
 
 > **For implementation:** Architecture, data storage, and technical decisions are in `documentation/architecture-artificer.md`. This document explains the system for users and designers.
+>
+> **Gathering design:** Discovery + Harvest flow and item-level difficulty are defined in `documentation/gathering-flow-design.md`.
 
 ## Overview: How the Crafting System Works
 

@@ -1,6 +1,8 @@
 # Coffee Pub Artificer - Implementation Plan
 
 > **Canonical source:** `documentation/architecture-artificer.md` is the source of truth for architecture and decisions. For current task focus, see `documentation/TODO.md`.
+>
+> **Gathering design source:** `documentation/gathering-flow-design.md` (Discovery + Harvest loop, rarity-band discovery, item-level difficulty).
 
 This document merges phased task breakdown, current status, MVP path, and technical notes into a single implementation plan.
 
