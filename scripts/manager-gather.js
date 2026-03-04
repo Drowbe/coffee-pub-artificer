@@ -45,6 +45,7 @@ const GATHER_PIN_CUES = {
     success: { animation: ['flash', 'scale-small'], loops: 1, broadcast: true },
     failure: { animation: ['shake'], loops: 1, broadcast: true }
 };
+const PIN_TYPE_GATHER_SPOT = 'gather-spot';
 
 /**
  * Get biome options for multiselect (create-window style: name + selected).
@@ -262,6 +263,27 @@ function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
         if (ann) return `<div class="blacksmith-card ${ann.className}"><div class="card-header">${title}</div><div class="section-content">${bodyHtml}</div></div>`;
     }
     return `<div class="blacksmith-card ${themeClassName}"><div class="card-header">${title}</div><div class="section-content">${bodyHtml}</div></div>`;
+}
+
+function sendExploreResultCard({
+    sceneName = 'Current Scene',
+    discovered = 0,
+    byRarity = {},
+    mode = 'explore'
+} = {}) {
+    const title = mode === 'populate' ? 'Populate Gathering Spots' : 'Explore the Area';
+    const raritySummary = Object.entries(byRarity ?? {})
+        .map(([rarity, count]) => `${count} ${rarity}`)
+        .join(', ');
+    const body = discovered > 0
+        ? `<p><strong>${discovered}</strong> gathering spot(s) were discovered in <strong>${sceneName}</strong>${raritySummary ? `: ${raritySummary}` : ''}.</p><p>Next step: move to a spot and double-click it to gather and harvest.</p>`
+        : `<p>No gathering spots were discovered in <strong>${sceneName}</strong>.</p><p>Try exploring again, changing habitats/component types, or increasing support through perks.</p>`;
+    const html = buildChatCardHtml(title, body, 'card');
+    ChatMessage.create({
+        content: html,
+        speaker: ChatMessage.getSpeaker(),
+        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+    });
 }
 
 /**
@@ -605,6 +627,19 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
         return;
     }
 
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    const sceneId = scene.id;
+    if (pins?.list && pins?.delete) {
+        const existingPins = pins.list({
+            sceneId,
+            moduleId: MODULE.ID,
+            type: PIN_TYPE_GATHER_SPOT
+        }) ?? [];
+        for (const pin of existingPins) {
+            await pins.delete(pin.id, { sceneId });
+        }
+        await pins.reload?.();
+    }
     await _setSceneDiscoveredNodes(scene, []);
     ui.notifications?.info(`Cleared gathering spots for "${scene.name ?? 'scene'}".`);
 }
@@ -663,6 +698,17 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
 
     await _setSceneDiscoveredNodes(scene, [...existing, ...additions]);
     ui.notifications?.info(`Populated ${additions.length} gathering spot(s) in "${scene.name ?? 'scene'}".`);
+    const byRarity = {};
+    for (const node of additions) {
+        const rarity = String(node?.rarity ?? 'common');
+        byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
+    }
+    sendExploreResultCard({
+        sceneName: scene.name ?? 'Current Scene',
+        discovered: additions.length,
+        byRarity,
+        mode: 'populate'
+    });
 }
 
 function _getNodeByPinId(scene = canvas?.scene ?? null, pinId = null) {
@@ -881,7 +927,7 @@ async function _processGatherRollOnGM(data) {
     const tokenId = data?.tokenId ?? null;
     const sceneId = data?.sceneId ?? canvas?.scene?.id ?? null;
     const pending = data?.pending ?? null;
-    const allComplete = !!data?.allComplete;
+    const allComplete = data?.allComplete !== false;
     const speakerActorId = data?.speakerActorId ?? null;
 
     let actor = null;
@@ -994,7 +1040,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
 async function _processDiscoveryRollOnGM(data) {
     const requestId = String(data?.requestId ?? '');
     const rollTotal = Number(data?.rollTotal);
-    const allComplete = !!data?.allComplete;
+    const allComplete = data?.allComplete !== false;
     if (!requestId || !Number.isFinite(rollTotal)) return;
 
     const bucket = _discoveryRollBuffers.get(requestId) ?? [];
@@ -1022,6 +1068,12 @@ async function _processDiscoveryRollOnGM(data) {
     } else {
         ui.notifications?.info('No gathering spots discovered.');
     }
+    sendExploreResultCard({
+        sceneName: scene.name ?? 'Current Scene',
+        discovered: result.discovered,
+        byRarity: result.byRarity ?? {},
+        mode: 'explore'
+    });
     _discoveryRollBuffers.delete(requestId);
 }
 
@@ -1115,7 +1167,7 @@ export async function requestDiscoverGatherSpotsFromScene() {
                     sceneId: scene.id,
                     speakerActorId: payload?.message?.speaker?.actor ?? null,
                     rollTotal,
-                    allComplete: !!payload?.allComplete,
+                    allComplete: payload?.allComplete !== false,
                     context
                 }, { recipients: gmRecipients });
                 return;
@@ -1123,7 +1175,7 @@ export async function requestDiscoverGatherSpotsFromScene() {
 
             const actor = await _resolveActorFromRollPayload(payload);
             localBuffer.push({ actor, rollTotal });
-            if (!payload?.allComplete) return;
+            if (payload?.allComplete === false) return;
 
             const result = await _applyDiscoveryResults(scene, context, localBuffer);
             const raritySummary = Object.entries(result.byRarity ?? {})
@@ -1134,6 +1186,12 @@ export async function requestDiscoverGatherSpotsFromScene() {
             } else {
                 ui.notifications?.info('No gathering spots discovered.');
             }
+            sendExploreResultCard({
+                sceneName: scene.name ?? 'Current Scene',
+                discovered: result.discovered,
+                byRarity: result.byRarity ?? {},
+                mode: 'explore'
+            });
         }
     });
 }
@@ -1248,10 +1306,10 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                     tokenId: payload?.tokenId ?? null,
                     speakerActorId: payload?.message?.speaker?.actor ?? null,
                     rollTotal,
-                    allComplete: !!payload?.allComplete,
+                    allComplete: payload?.allComplete !== false,
                     pending: pendingContext
                 }, { recipients: gmRecipients });
-                if (payload?.allComplete) {
+                if (payload?.allComplete !== false) {
                     await _stopGatherPinProcessing(requestId, { restoreImage: false });
                 }
                 return;
@@ -1264,7 +1322,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
             const outcome = await processGatherRollResult(rollTotal, actor ?? null, pending);
             rollBuffer.push({ actor: actor ?? null, outcome });
 
-            if (!payload?.allComplete) return;
+            if (payload?.allComplete === false) return;
 
             for (const { actor: a, outcome: o } of rollBuffer) {
                 if (!a) {

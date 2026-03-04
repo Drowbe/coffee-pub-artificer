@@ -189,26 +189,12 @@ function registerMenubarIntegration() {
         return;
     }
     
-    // Register secondary bar item for crafting
-    const craftingItemId = 'artificer-crafting';
-    const craftingRegistered = blacksmith.registerSecondaryBarItem(barType, craftingItemId, {
-        icon: 'fa-solid fa-hammer',
-        label: 'Craft',
-        title: 'Craft',
-        moduleId: MODULE.ID,
-        visible: true,
-        onClick: function() {
-            const win = new CraftingWindow();
-            win.render(true);
-        }
-    });
-
     // Register secondary bar item for creating items (GM only)
     const createItemItemId = 'artificer-create-item';
     const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
         icon: 'fa-solid fa-plus-circle',
-        label: 'Create Item',
-        title: 'Create Item',
+        label: 'Create Component',
+        title: 'Create Component',
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: function() {
@@ -246,60 +232,6 @@ function registerMenubarIntegration() {
         }
     });
 
-    // Register secondary bar item for skills window
-    const skillsItemId = 'artificer-skills';
-    const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
-        icon: 'fa-solid fa-seedling',
-        label: 'Skills',
-        title: 'Skills',
-        moduleId: MODULE.ID,
-        visible: true,
-        onClick: function() {
-            const win = new SkillsWindow();
-            win.render(true);
-        }
-    });
-
-    // Register secondary bar item for Roll for Components (gather) — GM only
-    const gatherItemId = 'artificer-roll-components';
-    const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
-        icon: 'fa-solid fa-leaf',
-        label: 'Roll for Components',
-        title: 'Roll for Components',
-        moduleId: MODULE.ID,
-        visible: game.user.isGM,
-        onClick: function() {
-            if (!game.user.isGM) return;
-            const win = new GatherWindow();
-            win.render(true);
-        }
-    });
-
-    // Register secondary bar item for Gather and Harvest (uses Scene Artificer settings) - available to all users
-    const gatherHarvestItemId = 'artificer-gather-harvest';
-    const gatherHarvestRegistered = blacksmith.registerSecondaryBarItem(barType, gatherHarvestItemId, {
-        icon: 'fa-solid fa-seedling',
-        label: 'Gather and Harvest',
-        title: 'Gather and Harvest',
-        moduleId: MODULE.ID,
-        visible: true,
-        onClick: async function() {
-            await requestGatherAndHarvestFromScene();
-        }
-    });
-
-    const discoverGatherItemId = 'artificer-discover-spots';
-    const discoverGatherRegistered = blacksmith.registerSecondaryBarItem(barType, discoverGatherItemId, {
-        icon: 'fa-solid fa-binoculars',
-        label: 'Explore the Area',
-        title: 'Explore the Area',
-        moduleId: MODULE.ID,
-        visible: true,
-        onClick: async function() {
-            await requestDiscoverGatherSpotsFromScene();
-        }
-    });
-
     const populateGatherItemId = 'artificer-populate-spots';
     const populateGatherRegistered = blacksmith.registerSecondaryBarItem(barType, populateGatherItemId, {
         icon: 'fa-solid fa-seedling',
@@ -323,6 +255,74 @@ function registerMenubarIntegration() {
         onClick: async function() {
             if (!game.user.isGM) return;
             await clearGatheringSpotsForScene(canvas?.scene ?? null);
+        }
+    });
+
+    // Register secondary bar item for Roll for Components (gather) — GM only
+    const gatherItemId = 'artificer-roll-components';
+    const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
+        icon: 'fa-solid fa-leaf',
+        label: 'Request Roll for Components',
+        title: 'Request Roll for Components',
+        moduleId: MODULE.ID,
+        visible: game.user.isGM,
+        onClick: function() {
+            if (!game.user.isGM) return;
+            const win = new GatherWindow();
+            win.render(true);
+        }
+    });
+
+    // Register secondary bar item for skills window
+    const skillsItemId = 'artificer-skills';
+    const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
+        icon: 'fa-solid fa-seedling',
+        label: 'Manage Skills',
+        title: 'Manage Skills',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const win = new SkillsWindow();
+            win.render(true);
+        }
+    });
+
+    // Register secondary bar item for crafting
+    const craftingItemId = 'artificer-crafting';
+    const craftingRegistered = blacksmith.registerSecondaryBarItem(barType, craftingItemId, {
+        icon: 'fa-solid fa-hammer',
+        label: 'Crafting Station',
+        title: 'Crafting Station',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const win = new CraftingWindow();
+            win.render(true);
+        }
+    });
+
+    const discoverGatherItemId = 'artificer-discover-spots';
+    const discoverGatherRegistered = blacksmith.registerSecondaryBarItem(barType, discoverGatherItemId, {
+        icon: 'fa-solid fa-binoculars',
+        label: 'Explore the Area',
+        title: 'Explore the Area',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: async function() {
+            await requestDiscoverGatherSpotsFromScene();
+        }
+    });
+
+    // Register secondary bar item for Gather and Harvest (direct roll-based gather; no pin required)
+    const gatherHarvestItemId = 'artificer-gather-harvest';
+    const gatherHarvestRegistered = blacksmith.registerSecondaryBarItem(barType, gatherHarvestItemId, {
+        icon: 'fa-solid fa-seedling',
+        label: 'Gather and Harvest',
+        title: 'Gather and Harvest',
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: async function() {
+            await requestGatherAndHarvestFromScene();
         }
     });
     
