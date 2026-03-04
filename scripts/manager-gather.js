@@ -40,12 +40,16 @@ const RARITY_RANKS = {
 };
 
 const GATHER_PIN_CUES = {
-    start: { animation: ['scale-small', 'ripple'], loops: 1, broadcast: true },
-    working: { animation: ['pulse', 'glow'], untilStopped: true },
-    success: { animation: ['flash', 'scale-small'], loops: 1, broadcast: true },
-    failure: { animation: ['shake'], loops: 1, broadcast: true }
+    start: { animation: ['scale-small', 'ripple'], loops: 1, broadcast: true, sound: 'interface-notification-05' },
+    working: { animation: ['pulse', 'glow'], untilStopped: true, sound: 'rustling-grass' },
+    success: { animation: ['flash', 'scale-small'], loops: 1, broadcast: true, sound: 'fanfare-success-1' },
+    failure: { animation: ['shake'], loops: 1, broadcast: true, sound: 'interface-error-03' }
 };
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
+const SOUND_EXPLORE_SUCCESS = 'interface-notification-10';
+const SOUND_EXPLORE_FAIL = 'interface-error-03';
+const SOUND_POPULATE = 'fanfare-success-2';
+const SOUND_CLEAR = 'interface-button-10';
 
 /**
  * Get biome options for multiselect (create-window style: name + selected).
@@ -265,6 +269,32 @@ function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
     return `<div class="blacksmith-card ${themeClassName}"><div class="card-header">${title}</div><div class="section-content">${bodyHtml}</div></div>`;
 }
 
+async function _playBlacksmithSound(soundName) {
+    const sound = String(soundName ?? '').trim();
+    if (!sound) return;
+    try {
+        const utils = globalThis?.BlacksmithUtils;
+        const soundPath = _resolveBlacksmithSoundPath(sound);
+        if (!soundPath || !utils?.playSound) return;
+        await utils.playSound(soundPath, 0.8, false, false);
+    } catch {
+        // Ignore sound failures.
+    }
+}
+
+function _resolveBlacksmithSoundPath(sound) {
+    if (!sound) return '';
+    if (sound.includes('/') || sound.startsWith('http://') || sound.startsWith('https://')) {
+        return sound;
+    }
+    const pinsApi = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    const options = pinsApi?.getSoundOptions?.() ?? [];
+    const name = sound.toLowerCase();
+    const match = options.find((opt) => String(opt?.value ?? '').toLowerCase().endsWith(`/${name}.mp3`));
+    if (match?.value) return String(match.value);
+    return `modules/coffee-pub-blacksmith/sounds/${sound}.mp3`;
+}
+
 function sendExploreResultCard({
     sceneName = 'Current Scene',
     discovered = 0,
@@ -284,6 +314,7 @@ function sendExploreResultCard({
         speaker: ChatMessage.getSpeaker(),
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
+    _playBlacksmithSound(discovered > 0 ? SOUND_EXPLORE_SUCCESS : SOUND_EXPLORE_FAIL);
 }
 
 /**
@@ -629,7 +660,9 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
 
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     const sceneId = scene.id;
-    if (pins?.list && pins?.delete) {
+    if (pins?.deleteAllByType) {
+        await pins.deleteAllByType(PIN_TYPE_GATHER_SPOT, { sceneId, moduleId: MODULE.ID });
+    } else if (pins?.list && pins?.delete) {
         const existingPins = pins.list({
             sceneId,
             moduleId: MODULE.ID,
@@ -638,10 +671,11 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
         for (const pin of existingPins) {
             await pins.delete(pin.id, { sceneId });
         }
-        await pins.reload?.();
     }
+    await pins?.reload?.();
     await _setSceneDiscoveredNodes(scene, []);
     ui.notifications?.info(`Cleared gathering spots for "${scene.name ?? 'scene'}".`);
+    _playBlacksmithSound(SOUND_CLEAR);
 }
 
 export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? null) {
@@ -709,6 +743,7 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         byRarity,
         mode: 'populate'
     });
+    _playBlacksmithSound(SOUND_POPULATE);
 }
 
 function _getNodeByPinId(scene = canvas?.scene ?? null, pinId = null) {

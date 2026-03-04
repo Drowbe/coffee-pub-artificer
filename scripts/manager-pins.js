@@ -14,6 +14,12 @@ const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
 const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
+const PIN_EVENT_ANIMATIONS = Object.freeze({
+    hover: { animation: 'ripple', sound: null },
+    click: { animation: null, sound: null },
+    doubleClick: { animation: 'scale-medium', sound: 'rustling-grass' },
+    delete: { animation: 'dissolve', sound: 'interface-pop-01' }
+});
 const LEGACY_WORKING_IMAGE_PATHS = new Set([
     'modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp',
     'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp',
@@ -142,6 +148,7 @@ export class PinsManager {
                         dropShadow: true,
                         textLayout: 'arc-below',
                         textDisplay: 'hover',
+                        eventAnimations: PIN_EVENT_ANIMATIONS,
                         size: { w: PIN_SIZE, h: PIN_SIZE },
                         style: {
                             fill: '#0f0f0f',
@@ -165,6 +172,9 @@ export class PinsManager {
                 const nextText = this._getNodePinText(node);
                 if (pin?.text !== nextText) {
                     updates.text = nextText;
+                }
+                if (!foundry.utils.deepEqual(pin?.eventAnimations ?? null, PIN_EVENT_ANIMATIONS)) {
+                    updates.eventAnimations = PIN_EVENT_ANIMATIONS;
                 }
                 if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
                     const { x, y } = this._getRandomPointInBounds(bounds);

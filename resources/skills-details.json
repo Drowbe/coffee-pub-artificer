@@ -252,7 +252,7 @@
           "icon": "fa-flask-vial"
         },
         {
-          "perkID": "alchemy-expert-alchemy",
+          "perkID": "alchemy-mystic-alchemy",
           "index": 1,
           "value": 0,
           "name": "Alchemy Mystic",
