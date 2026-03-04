@@ -28,6 +28,13 @@ const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
 
+const GATHER_PIN_CUES = {
+    start: { animation: ['scale-small', 'ripple'], loops: 1, broadcast: true },
+    working: { animation: ['pulse', 'glow'], untilStopped: true },
+    success: { animation: ['flash', 'scale-small'], loops: 1, broadcast: true },
+    failure: { animation: ['shake'], loops: 1, broadcast: true }
+};
+
 /**
  * Get biome options for multiselect (create-window style: name + selected).
  * @param {string[]} selectedBiomes - Currently selected biome keys
@@ -596,6 +603,17 @@ async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
     }
 }
 
+async function _playGatherPinCue(pinId, cue = null) {
+    if (!pinId || !cue) return;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins?.ping) return;
+    try {
+        await pins.ping(pinId, cue);
+    } catch {
+        // Ignore cue failures.
+    }
+}
+
 async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.scene?.id ?? null) {
     if (!requestId || !pinId) return;
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
@@ -611,9 +629,11 @@ async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.sce
         // Ignore image-swap failures.
     }
 
+    await _playGatherPinCue(pinId, GATHER_PIN_CUES.start);
+
     let pingController = null;
     try {
-        pingController = await pins.ping?.(pinId, { animation: 'rotate', untilStopped: true });
+        pingController = await pins.ping?.(pinId, GATHER_PIN_CUES.working);
     } catch {
         // Ignore ping failures.
     }
@@ -748,10 +768,16 @@ async function _processGatherRollOnGM(data) {
         if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
         return false;
     });
-    if (pending?.sourcePinId && shouldConsumePin) {
-        await _deleteGatherPin(pending.sourcePinId, pending.sourceSceneId ?? sceneId ?? canvas?.scene?.id ?? null);
+    const pinSceneId = pending?.sourceSceneId ?? sceneId ?? canvas?.scene?.id ?? null;
+    if (pending?.sourcePinId) {
+        await _stopGatherPinProcessing(requestId, { restoreImage: !shouldConsumePin });
+        await _playGatherPinCue(pending.sourcePinId, shouldConsumePin ? GATHER_PIN_CUES.success : GATHER_PIN_CUES.failure);
+    } else {
+        await _stopGatherPinProcessing(requestId, { restoreImage: false });
     }
-    await _stopGatherPinProcessing(requestId, { restoreImage: false });
+    if (pending?.sourcePinId && shouldConsumePin) {
+        await _deleteGatherPin(pending.sourcePinId, pinSceneId);
+    }
     _gatherRollBuffers.delete(requestId);
 }
 
@@ -914,10 +940,16 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                 if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
                 return false;
             });
-            if (pendingContext?.sourcePinId && shouldConsumePin) {
-                await _deleteGatherPin(pendingContext.sourcePinId, pendingContext.sourceSceneId ?? canvas?.scene?.id ?? null);
+            const pinSceneId = pendingContext?.sourceSceneId ?? canvas?.scene?.id ?? null;
+            if (pendingContext?.sourcePinId) {
+                await _stopGatherPinProcessing(requestId, { restoreImage: !shouldConsumePin });
+                await _playGatherPinCue(pendingContext.sourcePinId, shouldConsumePin ? GATHER_PIN_CUES.success : GATHER_PIN_CUES.failure);
+            } else {
+                await _stopGatherPinProcessing(requestId, { restoreImage: false });
             }
-            await _stopGatherPinProcessing(requestId, { restoreImage: false });
+            if (pendingContext?.sourcePinId && shouldConsumePin) {
+                await _deleteGatherPin(pendingContext.sourcePinId, pinSceneId);
+            }
             consumePendingGather();
         }
         });
