@@ -31,6 +31,18 @@ const BIOME_ALIASES = {
     plains: 'grassland'
 };
 const FAMILY_ALIASES = Object.freeze({
+    gem: 'mineral',
+    gems: 'mineral',
+    mineral: 'mineral',
+    minerals: 'mineral',
+    ore: 'mineral',
+    rocks: 'mineral',
+    rock: 'mineral',
+    plant: 'plant',
+    plants: 'plant',
+    environmental: 'environmental',
+    essence: 'environmental',
+    creaturepart: 'creature parts',
     creatureparts: 'creature parts',
     creature_parts: 'creature parts',
     creature: 'creature parts'
@@ -89,7 +101,12 @@ function _collectImagesFromBucket(bucket, families = []) {
         selected.push(..._asStringArray(byFamily?.[family]));
     }
     if (selected.length) return selected;
-    return anyFamily;
+    if (anyFamily.length) return anyFamily;
+    const combined = [];
+    for (const values of Object.values(byFamily)) {
+        combined.push(..._asStringArray(values));
+    }
+    return combined;
 }
 
 async function _loadMapping() {

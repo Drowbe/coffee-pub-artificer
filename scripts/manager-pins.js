@@ -13,19 +13,15 @@ const PIN_TYPE_GATHER_SPOT = 'gather-spot';
 const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
 const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
+const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
 const PIN_EVENT_ANIMATIONS = Object.freeze({
-    hover: { animation: 'ripple', sound: null },
+    hover: { animation: 'ripple', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-03.mp3` },
     click: { animation: null, sound: null },
-    doubleClick: { animation: 'scale-medium', sound: 'rustling-grass' },
-    delete: { animation: 'dissolve', sound: 'interface-pop-01' }
+    doubleClick: { animation: 'scale-medium', sound: `${BLACKSMITH_SOUNDS_BASE}/rustling-grass.mp3` },
+    add: { animation: 'ping', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-02.mp3` },
+    delete: { animation: 'dissolve', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-01.mp3` }
 });
-const LEGACY_WORKING_IMAGE_PATHS = new Set([
-    'modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp',
-    'modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp',
-    'images/animations/gathering-leaf-swirl-00.webp',
-    '/modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp'
-]);
 
 export class PinsManager {
     static _hookManager = null;
@@ -173,7 +169,7 @@ export class PinsManager {
                     updates.ownership = { default: 2 };
                 }
                 const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE;
-                if (this._isLegacyWorkingImage(pin?.image) || this._isSeedlingIcon(pin?.image)) {
+                if (String(pin?.image ?? '') !== String(resolvedIdleImage ?? '')) {
                     updates.image = resolvedIdleImage;
                     updates.shape = 'none';
                 }
@@ -252,21 +248,6 @@ export class PinsManager {
         const x = Math.floor(Math.random() * (maxX - minX) + minX);
         const y = Math.floor(Math.random() * (maxY - minY) + minY);
         return { x, y };
-    }
-
-    static _isLegacyWorkingImage(imagePath) {
-        const value = String(imagePath ?? '').trim();
-        if (!value) return false;
-        if (LEGACY_WORKING_IMAGE_PATHS.has(value)) return true;
-        return value.includes('/modules/coffee-pub-artificer/images/animations/gathering-leaf-swirl-00.webp')
-            || value.includes('/modules/coffee-pub-artificer/images/animations/swirl-leaves/gathering-leaf-swirl-00.webp')
-            || value.endsWith('/images/animations/gathering-leaf-swirl-00.webp');
-    }
-
-    static _isSeedlingIcon(imagePath) {
-        const value = String(imagePath ?? '').trim().toLowerCase();
-        if (!value) return true;
-        return value.includes('fa-seedling');
     }
 
     static _getNodePinText(node) {
