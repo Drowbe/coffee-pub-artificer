@@ -315,7 +315,8 @@
           "rules": {
             "benefits": [
               { "title": "Catalyst dampening", "description": "On failed alchemy attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } },
-              { "title": "Stability under pressure", "description": "+1 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 1 } }
+              { "title": "Stability under pressure", "description": "+1 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 1 } },
+              { "title": "Lucky salvage", "description": "On failed craft, 25% chance to salvage a random tier-0 potion.", "rule": { "randomTier0PotionOnFailChance": 0.25 } }
             ]
           }
         },

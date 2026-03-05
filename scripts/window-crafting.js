@@ -188,6 +188,40 @@ async function applyCraftFumbleDamage(actor, formula = '1d10') {
     return { amount, applied: true, formula: safeFormula };
 }
 
+async function tryGrantRandomTier0PotionOnFail(actor, chance = 0) {
+    const pct = Math.max(0, Math.min(1, Number(chance) || 0));
+    if (!actor || pct <= 0) return null;
+    if (Math.random() > pct) return null;
+
+    const recipes = getAPI()?.recipes?.getAll?.() ?? [];
+    const tier0Alchemy = recipes.filter((r) => {
+        const skill = String(r?.skill ?? '').trim().toLowerCase();
+        const level = Number(r?.skillLevel);
+        const resultName = String(r?.resultItemName ?? r?.name ?? '').trim();
+        return skill === 'alchemy' && level === 0 && !!resultName;
+    });
+    if (!tier0Alchemy.length) return null;
+
+    const potionCandidates = [];
+    for (const r of tier0Alchemy) {
+        const resultName = String(r?.resultItemName ?? r?.name ?? '').trim();
+        const item = await resolveItemByName(resultName);
+        if (!item) continue;
+        const isPotionType = String(item?.type ?? '').toLowerCase() === 'consumable'
+            && String(item?.system?.type?.value ?? item?.system?.type?.subtype ?? '').toLowerCase() === 'potion';
+        const potionByName = /potion/i.test(String(item?.name ?? ''));
+        if (isPotionType || potionByName) potionCandidates.push(item);
+    }
+    const pool = potionCandidates.length ? potionCandidates : [];
+    if (!pool.length) return null;
+    const pick = pool[Math.floor(Math.random() * pool.length)] ?? null;
+    if (!pick) return null;
+
+    const added = await addCraftedItemToActor(actor, pick.toObject());
+    if (!added) return null;
+    return { name: added.name ?? pick.name ?? 'Tier-0 Potion', img: added.img ?? pick.img ?? '', uuid: added.uuid ?? '' };
+}
+
 /**
  * Check if actor can craft a recipe: ingredients, tool, apparatus, container
  * @param {Actor|null} actor
@@ -2301,6 +2335,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let criticalCraftingEnabled = false;
         let criticalSuccessOutputMultiplier = 1;
         let criticalFailureDamageFormula = null;
+        let randomTier0PotionOnFailChance = 0;
         let forceSuccess = false;
         let forceFailure = false;
         /** @type {Array<{ perkName: string, effect: string }>} */
@@ -2324,6 +2359,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             criticalCraftingEnabled = !!rules.criticalCraftingEnabled;
             criticalSuccessOutputMultiplier = Math.max(1, Math.floor(Number(rules.criticalSuccessOutputMultiplier) || 1));
             criticalFailureDamageFormula = rules.criticalFailureDamageFormula ?? null;
+            randomTier0PotionOnFailChance = Math.max(0, Math.min(1, Number(rules.randomTier0PotionOnFailChance) || 0));
 
             const roll = new Roll('1d20');
             await roll.evaluate();
@@ -2377,6 +2413,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             let sludgeCreated = false;
             let sludgeName = '';
             let sludgeItemAdded = null;
+            let bonusPotion = null;
             const sludgeResolved = await resolveItemByName("Experimenter's Sludge");
             if (sludgeResolved) {
                 const sludgeObj = sludgeResolved.toObject();
@@ -2386,6 +2423,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     sludgeName = added.name ?? sludgeResolved.name ?? "Experimenter's Sludge";
                     sludgeItemAdded = added;
                 }
+            }
+            if (randomTier0PotionOnFailChance > 0) {
+                bonusPotion = await tryGrantRandomTier0PotionOnFail(actor, randomTier0PotionOnFailChance);
             }
 
             let rollFailIssue = rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.';
@@ -2397,6 +2437,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 } else {
                     rollFailIssue = 'Critical fumble! Your kit detonates.';
                 }
+            }
+            if (bonusPotion?.name) {
+                rollFailIssue += ` Failsoft Catalyst produced: ${bonusPotion.name}.`;
             }
             this.lastCraftTags = [recipe.name];
             return {

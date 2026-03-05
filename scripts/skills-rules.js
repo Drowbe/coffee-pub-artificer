@@ -274,7 +274,8 @@ export async function getAppliedGatheringPerksForDisplay(skillId, learnedPerkIds
  *   similarIngredientSubstitutions: number,
  *   criticalCraftingEnabled: boolean,
  *   criticalSuccessOutputMultiplier: number,
- *   criticalFailureDamageFormula: string | null
+ *   criticalFailureDamageFormula: string | null,
+ *   randomTier0PotionOnFailChance: number
  * }>}
  */
 export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill) {
@@ -298,6 +299,7 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     let criticalCraftingEnabled = false;
     let criticalSuccessOutputMultiplier = 1;
     let criticalFailureDamageFormula = null;
+    let randomTier0PotionOnFailChance = 0;
 
     for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
         if (Array.isArray(rule.recipeTierAccess) && rule.recipeTierAccess.length >= 2) {
@@ -340,6 +342,9 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
             const dmg = String(rule.criticalCrafting.critFailureDamageFormula ?? '').trim();
             if (dmg) criticalFailureDamageFormula = dmg;
         }
+        if (typeof rule.randomTier0PotionOnFailChance === 'number' && Number.isFinite(rule.randomTier0PotionOnFailChance)) {
+            randomTier0PotionOnFailChance = Math.max(randomTier0PotionOnFailChance, Math.max(0, Math.min(1, Number(rule.randomTier0PotionOnFailChance))));
+        }
     }
 
     const experimentalCraftingTypes = Array.from(experimentalCraftingTypesSet);
@@ -371,7 +376,8 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         similarIngredientSubstitutions,
         criticalCraftingEnabled,
         criticalSuccessOutputMultiplier,
-        criticalFailureDamageFormula
+        criticalFailureDamageFormula,
+        randomTier0PotionOnFailChance
     };
 }
 
@@ -527,6 +533,10 @@ export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, r
                 const mult = Number(rule.criticalCrafting.critSuccessOutputMultiplier) || 2;
                 const dmg = String(rule.criticalCrafting.critFailureDamageFormula ?? '1d10').trim();
                 effectsByPerk.get(perkName).push(`Nat 20: auto success x${Math.max(2, Math.floor(mult))} output; Nat 1: auto fail and ${dmg} self-damage`);
+            }
+            if (typeof rule.randomTier0PotionOnFailChance === 'number' && Number.isFinite(rule.randomTier0PotionOnFailChance) && rule.randomTier0PotionOnFailChance > 0) {
+                const pct = Math.round(Math.max(0, Math.min(1, Number(rule.randomTier0PotionOnFailChance))) * 100);
+                effectsByPerk.get(perkName).push(`${pct}% chance to gain a random tier-0 potion on failed craft`);
             }
         }
     }
