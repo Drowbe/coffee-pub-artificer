@@ -963,7 +963,98 @@
           "requirement": "Smith's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-hammer"
+          "icon": "fa-hammer",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks smithing recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Steady forging", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "smithing-journeyman-forger",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Forger",
+          "description": "You can maintain heat and strike rhythm long enough to produce consistent intermediate-grade work.",
+          "requirement": "Basic Smithing",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-anvil",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks smithing recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "smithing-masterwork-smith",
+          "index": 3,
+          "value": 0,
+          "name": "Masterwork Smith",
+          "description": "You can shape difficult alloys and recover cleanly from imperfect hammer cycles.",
+          "requirement": "Journeyman Forger",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hammer",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks smithing recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Material control", "description": "On failed smithing attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "smithing-legendary-metalsmith",
+          "index": 4,
+          "value": 0,
+          "name": "Legendary Metalsmith",
+          "description": "Your furnace discipline and finishing precision support top-tier forged outcomes.",
+          "requirement": "Masterwork Smith",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-industry",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks smithing recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "smithing-experimental-metallurgy",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Metallurgy",
+          "description": "You can attempt unstable metallurgical processes above your normal tier and adapt to bad input.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental smithing", "description": "May attempt smithing recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "smithing" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive control", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "smithing-efficient-reclamation",
+          "index": 6,
+          "value": 0,
+          "name": "Efficient Reclamation",
+          "description": "You reclaim usable material from successful runs and shorten setup cycles.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-recycle",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Forge cadence", "description": "Reduce required smithing time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -988,7 +1079,98 @@
           "requirement": "Leatherworker's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-scissors"
+          "icon": "fa-scissors",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks leatherworking recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Clean cuts", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "leatherworking-journeyman-tanner",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Tanner",
+          "description": "You can cure and reinforce hides consistently for dependable field-grade gear.",
+          "requirement": "Basic Leatherworking",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shield",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks leatherworking recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "leatherworking-master-stitcher",
+          "index": 3,
+          "value": 0,
+          "name": "Master Stitcher",
+          "description": "You maintain seam integrity and reduce loss when complex pieces go off-pattern.",
+          "requirement": "Journeyman Tanner",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-scissors",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks leatherworking recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Material control", "description": "On failed leatherworking attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "leatherworking-grand-armorer",
+          "index": 4,
+          "value": 0,
+          "name": "Grand Armorer",
+          "description": "You can produce top-tier fitted leatherwork with expert finishing and stress balancing.",
+          "requirement": "Master Stitcher",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-user-shield",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks leatherworking recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "leatherworking-experimental-patterning",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Patterning",
+          "description": "You can attempt advanced patterning beyond your tier and recover from flawed pattern input.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-ruler-combined",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental leatherworking", "description": "May attempt leatherworking recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "leatherworking" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive fitting", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "leatherworking-scrap-savvy",
+          "index": 6,
+          "value": 0,
+          "name": "Scrap Savvy",
+          "description": "You waste less leather and trim your workflow for faster turnarounds.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-recycle",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast stitching", "description": "Reduce required leatherworking time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1013,7 +1195,98 @@
           "requirement": "Tinker's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-gears"
+          "icon": "fa-gears",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tinkering recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Precision assembly", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tinkering-journeyman-mechanist",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Mechanist",
+          "description": "You can align moving parts and maintain reliability across mid-complexity builds.",
+          "requirement": "Basic Tinkering",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-gears",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tinkering recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "tinkering-master-calibrator",
+          "index": 3,
+          "value": 0,
+          "name": "Master Calibrator",
+          "description": "You can tune fine mechanisms and recover from misalignment without total part loss.",
+          "requirement": "Journeyman Mechanist",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-screwdriver-wrench",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tinkering recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed tinkering attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "tinkering-arcane-engineer",
+          "index": 4,
+          "value": 0,
+          "name": "Arcane Engineer",
+          "description": "You can execute elite, high-complexity mechanism work with tight tolerance control.",
+          "requirement": "Master Calibrator",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-microchip",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tinkering recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tinkering-experimental-prototyping",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Prototyping",
+          "description": "You can prototype beyond your tier and identify invalid parts before final assembly.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental tinkering", "description": "May attempt tinkering recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "tinkering" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Prototype adaptation", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tinkering-bench-efficiency",
+          "index": 6,
+          "value": 0,
+          "name": "Bench Efficiency",
+          "description": "You optimize bench setup to reduce time and reclaim reusable parts.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered parts", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Faster assembly", "description": "Reduce required tinkering time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1038,7 +1311,98 @@
           "requirement": "Cartographer's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-map"
+          "icon": "fa-map",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cartography recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Survey discipline", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cartography-journeyman-surveyor",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Surveyor",
+          "description": "You produce dependable route maps and terrain drafts under variable conditions.",
+          "requirement": "Basic Cartography",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-compass",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cartography recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "cartography-master-atlasmaker",
+          "index": 3,
+          "value": 0,
+          "name": "Master Atlasmaker",
+          "description": "You can merge partial surveys into reliable high-detail charts with minimal waste.",
+          "requirement": "Journeyman Surveyor",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-map-location-dot",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cartography recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed cartography attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "cartography-legendary-geometer",
+          "index": 4,
+          "value": 0,
+          "name": "Legendary Geometer",
+          "description": "You can create elite-grade chartwork and spatial records with precision and repeatability.",
+          "requirement": "Master Atlasmaker",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-globe",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cartography recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cartography-experimental-projection",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Projection",
+          "description": "You can attempt advanced chart projection beyond your tier and correct bad source notes.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental cartography", "description": "May attempt cartography recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "cartography" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive drafting", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cartography-draft-efficiency",
+          "index": 6,
+          "value": 0,
+          "name": "Draft Efficiency",
+          "description": "You reduce draft turnaround and preserve reusable mapping materials.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered materials", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast drafting", "description": "Reduce required cartography time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1064,7 +1428,98 @@
           "requirement": "Calligrapher's Supplies",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-feather-pointed"
+          "icon": "fa-feather-pointed",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks inscription recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Steady hand", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "inscription-journeyman-scribe",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Scribe",
+          "description": "You can maintain legibility and structure across longer, more complex inscription work.",
+          "requirement": "Basic Inscription",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-pen-nib",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks inscription recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "inscription-master-runescribe",
+          "index": 3,
+          "value": 0,
+          "name": "Master Runescribe",
+          "description": "You can execute intricate symbol frameworks and recover from partial layout errors.",
+          "requirement": "Journeyman Scribe",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-scroll",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks inscription recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed inscription attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "inscription-archivist-prime",
+          "index": 4,
+          "value": 0,
+          "name": "Archivist Prime",
+          "description": "You produce elite-grade inscription work with durable structure and low error rates.",
+          "requirement": "Master Runescribe",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-book-open-reader",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks inscription recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "inscription-experimental-glyphwork",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Glyphwork",
+          "description": "You can attempt unstable glyph layouts above your tier and recover from invalid strokes.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental inscription", "description": "May attempt inscription recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "inscription" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive control", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "inscription-efficient-layout",
+          "index": 6,
+          "value": 0,
+          "name": "Efficient Layout",
+          "description": "You accelerate layout planning and preserve expensive writing inputs.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered materials", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast inscription", "description": "Reduce required inscription time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1089,7 +1544,98 @@
           "requirement": "Enchanter's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-wand-magic-sparkles"
+          "icon": "fa-wand-magic-sparkles",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks enchanting recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Arcane control", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "enchanting-journeyman-infuser",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Infuser",
+          "description": "You can bind stable effects into prepared items with consistent retention.",
+          "requirement": "Basic Enchanting",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-wand-sparkles",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks enchanting recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "enchanting-master-binder",
+          "index": 3,
+          "value": 0,
+          "name": "Master Binder",
+          "description": "You can stabilize volatile enchantments and reduce reagent loss on failed bindings.",
+          "requirement": "Journeyman Infuser",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-ring",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks enchanting recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed enchanting attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "enchanting-archmage-artificer",
+          "index": 4,
+          "value": 0,
+          "name": "Archmage Artificer",
+          "description": "You can execute elite enchantment work with exceptional stability and consistency.",
+          "requirement": "Master Binder",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hat-wizard",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks enchanting recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "enchanting-experimental-infusion",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Infusion",
+          "description": "You can attempt advanced infusions beyond your tier and adapt to unstable catalysts.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental enchanting", "description": "May attempt enchanting recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "enchanting" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive channeling", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "enchanting-arcane-economy",
+          "index": 6,
+          "value": 0,
+          "name": "Arcane Economy",
+          "description": "You reclaim infusion material and streamline ritual prep.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-recycle",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered reagents", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Faster rituals", "description": "Reduce required enchanting time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1114,7 +1660,98 @@
           "requirement": "Jeweler's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-gem"
+          "icon": "fa-gem",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks gemcraft recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Cutting precision", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "gemcraft-journeyman-lapidary",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Lapidary",
+          "description": "You can facet and polish mid-grade stones with stable geometry and reduced fracture risk.",
+          "requirement": "Basic Gemcraft",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-gem",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks gemcraft recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "gemcraft-master-setter",
+          "index": 3,
+          "value": 0,
+          "name": "Master Setter",
+          "description": "You can mount delicate stones securely and recover from partial cracking events.",
+          "requirement": "Journeyman Lapidary",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-ring",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks gemcraft recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed gemcraft attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "gemcraft-crown-jeweler",
+          "index": 4,
+          "value": 0,
+          "name": "Crown Jeweler",
+          "description": "You can execute elite gemwork with high clarity preservation and master-grade finish.",
+          "requirement": "Master Setter",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-crown",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks gemcraft recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "gemcraft-experimental-cutting",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Cutting",
+          "description": "You can attempt advanced gem cuts above your tier and salvage layout mistakes on the fly.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental gemcraft", "description": "May attempt gemcraft recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "gemcraft" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive faceting", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "gemcraft-stone-economy",
+          "index": 6,
+          "value": 0,
+          "name": "Stone Economy",
+          "description": "You preserve valuable cut stock and speed up bench operations.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast benchwork", "description": "Reduce required gemcraft time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1139,7 +1776,98 @@
           "requirement": "Weaver's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-scissors"
+          "icon": "fa-scissors",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tailoring recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Pattern discipline", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tailoring-journeyman-cutter",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Cutter",
+          "description": "You can produce well-fitted garments and layered textiles with reliable structure.",
+          "requirement": "Basic Tailoring",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-ruler",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tailoring recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "tailoring-master-weaver",
+          "index": 3,
+          "value": 0,
+          "name": "Master Weaver",
+          "description": "You can handle complex patterns and reduce material waste on difficult pieces.",
+          "requirement": "Journeyman Cutter",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shirt",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tailoring recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed tailoring attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "tailoring-grand-couturier",
+          "index": 4,
+          "value": 0,
+          "name": "Grand Couturier",
+          "description": "You can execute elite textile construction with excellent fit and durability.",
+          "requirement": "Master Weaver",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-star",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks tailoring recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tailoring-experimental-patternwork",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Patternwork",
+          "description": "You can attempt advanced patternwork above your tier and adapt to flawed measurements.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental tailoring", "description": "May attempt tailoring recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "tailoring" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive fitting", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "tailoring-bolt-economy",
+          "index": 6,
+          "value": 0,
+          "name": "Bolt Economy",
+          "description": "You minimize cloth waste and tighten production timing.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-recycle",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast tailoring", "description": "Reduce required tailoring time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     },
@@ -1164,7 +1892,98 @@
           "requirement": "Mason's Tools",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-hammer"
+          "icon": "fa-hammer",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks masonry recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Stone discipline", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "masonry-journeyman-stonecutter",
+          "index": 2,
+          "value": 0,
+          "name": "Journeyman Stonecutter",
+          "description": "You can shape and fit structural stonework with dependable alignment.",
+          "requirement": "Basic Masonry",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-cubes",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks masonry recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
+        },
+        {
+          "perkID": "masonry-master-builder",
+          "index": 3,
+          "value": 0,
+          "name": "Master Builder",
+          "description": "You can manage difficult joins and recover from partial block failures.",
+          "requirement": "Journeyman Stonecutter",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-building",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks masonry recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Loss mitigation", "description": "On failed masonry attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "masonry-grand-architect",
+          "index": 4,
+          "value": 0,
+          "name": "Grand Architect",
+          "description": "You can execute elite stonecraft with high structural reliability and precision finish.",
+          "requirement": "Master Builder",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-monument",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks masonry recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "masonry-experimental-composition",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Composition",
+          "description": "You can attempt advanced stone compositions beyond your tier and adapt to bad stock.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental masonry", "description": "May attempt masonry recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "masonry" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive planning", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "masonry-efficient-quarrying",
+          "index": 6,
+          "value": 0,
+          "name": "Efficient Quarrying",
+          "description": "You reclaim useful stone cuts and accelerate project setup.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Fast masonry", "description": "Reduce required masonry time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } }
+            ]
+          }
         }
       ]
     }
