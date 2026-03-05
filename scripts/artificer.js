@@ -195,6 +195,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-plus-circle',
         label: 'Create Component',
         title: 'Create Component',
+        order: 10,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: function() {
@@ -223,6 +224,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-book-open',
         label: 'Import Recipes',
         title: 'Import Recipes',
+        order: 20,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: function() {
@@ -237,6 +239,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-seedling',
         label: 'Populate Gathering Spots',
         title: 'Populate Gathering Spots',
+        order: 30,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: async function() {
@@ -250,6 +253,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-broom',
         label: 'Clear Gathering Spots',
         title: 'Clear Gathering Spots',
+        order: 40,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: async function() {
@@ -264,6 +268,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-leaf',
         label: 'Request Roll for Components',
         title: 'Request Roll for Components',
+        order: 50,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: function() {
@@ -279,6 +284,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-seedling',
         label: 'Manage Skills',
         title: 'Manage Skills',
+        order: 60,
         moduleId: MODULE.ID,
         visible: true,
         onClick: function() {
@@ -293,6 +299,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-hammer',
         label: 'Crafting Station',
         title: 'Crafting Station',
+        order: 70,
         moduleId: MODULE.ID,
         visible: true,
         onClick: function() {
@@ -306,6 +313,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-binoculars',
         label: 'Explore the Area',
         title: 'Explore the Area',
+        order: 80,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {
@@ -319,6 +327,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-seedling',
         label: 'Gather and Harvest',
         title: 'Gather and Harvest',
+        order: 90,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {

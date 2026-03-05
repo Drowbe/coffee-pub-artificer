@@ -227,7 +227,12 @@
           "requirement": "Alchemist's Supplies",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-vial"
+          "icon": "fa-vial",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } }
+            ]
+          }
         },
         {
           "perkID": "alchemy-advanced-alchemy",
@@ -238,7 +243,12 @@
           "requirement": "Basic Alchemy",
           "cost": 3,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-flask"
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } }
+            ]
+          }
         },
         {
           "perkID": "alchemy-expert-alchemy",
@@ -249,7 +259,13 @@
           "requirement": "Advanced Alchemy",
           "cost": 3,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-flask-vial"
+          "icon": "fa-flask-vial",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Steady hands", "description": "On failed alchemy attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
         },
         {
           "perkID": "alchemy-mystic-alchemy",
@@ -260,7 +276,31 @@
           "requirement": "Expert Alchemy",
           "cost": 4,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-flask-round-potion"
+          "icon": "fa-flask-round-potion",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Refined process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "alchemy-experimental-alchemist",
+          "index": 1,
+          "value": 0,
+          "name": "Experimental Alchemist",
+          "description": "You are willing to test unstable formulas and make controlled guesses when standard instructions run out.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-cauldron",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental alchemy", "description": "May attempt alchemy recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "alchemy" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Experimental control", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
         }
       ]
     },

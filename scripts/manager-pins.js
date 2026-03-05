@@ -135,7 +135,17 @@ export class PinsManager {
 
                 if (!pin) {
                     const { x, y } = this._getRandomPointInBounds(bounds);
+                    const defaultDesign = this._getGatherSpotDefaultDesign();
+                    const defaultStyle = (defaultDesign.style && typeof defaultDesign.style === 'object')
+                        ? defaultDesign.style
+                        : {
+                            fill: '#0f0f0f',
+                            stroke: '#ffffff',
+                            strokeWidth: 3,
+                            iconColor: '#eaffe5'
+                        };
                     await this._pins.create({
+                        ...defaultDesign,
                         id: nodeId,
                         moduleId: MODULE.ID,
                         type: PIN_TYPE_GATHER_SPOT,
@@ -144,18 +154,13 @@ export class PinsManager {
                         text: this._getNodePinText(node),
                         ownership: { default: 2 },
                         image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE,
-                        shape: 'none',
-                        dropShadow: true,
-                        textLayout: 'arc-below',
-                        textDisplay: 'hover',
+                        shape: defaultDesign.shape ?? 'none',
+                        dropShadow: defaultDesign.dropShadow ?? true,
+                        textLayout: defaultDesign.textLayout ?? 'arc-below',
+                        textDisplay: defaultDesign.textDisplay ?? 'hover',
                         eventAnimations: PIN_EVENT_ANIMATIONS,
-                        size: { w: PIN_SIZE, h: PIN_SIZE },
-                        style: {
-                            fill: '#0f0f0f',
-                            stroke: '#ffffff',
-                            strokeWidth: 3,
-                            iconColor: '#eaffe5'
-                        }
+                        size: defaultDesign.size ?? { w: PIN_SIZE, h: PIN_SIZE },
+                        style: defaultStyle
                     }, { sceneId });
                     changed = true;
                     continue;
@@ -266,6 +271,29 @@ export class PinsManager {
         if (!family) return PIN_TEXT;
         const label = FAMILY_LABELS?.[family] ?? family;
         return `Gather: ${label}`;
+    }
+
+    static _getGatherSpotDefaultDesign() {
+        const raw = this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_TYPE_GATHER_SPOT) ?? null;
+        if (!raw || typeof raw !== 'object') return {};
+
+        const out = {};
+        if (raw.size && typeof raw.size === 'object') {
+            const w = Number(raw.size.w);
+            const h = Number(raw.size.h);
+            if (Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0) out.size = { w, h };
+        }
+        if (typeof raw.shape === 'string') out.shape = raw.shape;
+        if (typeof raw.dropShadow === 'boolean') out.dropShadow = raw.dropShadow;
+        if (raw.style && typeof raw.style === 'object') out.style = { ...raw.style };
+        if (typeof raw.textLayout === 'string') out.textLayout = raw.textLayout;
+        if (typeof raw.textDisplay === 'string') out.textDisplay = raw.textDisplay;
+        if (typeof raw.textColor === 'string') out.textColor = raw.textColor;
+        if (Number.isFinite(Number(raw.textSize))) out.textSize = Number(raw.textSize);
+        if (Number.isFinite(Number(raw.textMaxLength))) out.textMaxLength = Number(raw.textMaxLength);
+        if (Number.isFinite(Number(raw.textMaxWidth))) out.textMaxWidth = Number(raw.textMaxWidth);
+        if (typeof raw.textScaleWithPin === 'boolean') out.textScaleWithPin = raw.textScaleWithPin;
+        return out;
     }
 
     static async _onPinDoubleClick(evt) {
