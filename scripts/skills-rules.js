@@ -275,7 +275,12 @@ export async function getAppliedGatheringPerksForDisplay(skillId, learnedPerkIds
  *   criticalCraftingEnabled: boolean,
  *   criticalSuccessOutputMultiplier: number,
  *   criticalFailureDamageFormula: string | null,
- *   randomTier0PotionOnFailChance: number
+ *   randomTier0PotionOnFailChance: number,
+ *   poisonPotencyBonus: number,
+ *   poisonYieldBonusChance: number,
+ *   poisonFumbleDamageMultiplier: number,
+ *   poisonDeliveryTagAccess: string[],
+ *   barterPersuasionBonus: number
  * }>}
  */
 export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill) {
@@ -300,6 +305,11 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     let criticalSuccessOutputMultiplier = 1;
     let criticalFailureDamageFormula = null;
     let randomTier0PotionOnFailChance = 0;
+    let poisonPotencyBonus = 0;
+    let poisonYieldBonusChance = 0;
+    let poisonFumbleDamageMultiplier = 1;
+    const poisonDeliveryTagAccessSet = new Set();
+    let barterPersuasionBonus = 0;
 
     for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
         if (Array.isArray(rule.recipeTierAccess) && rule.recipeTierAccess.length >= 2) {
@@ -345,6 +355,24 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         if (typeof rule.randomTier0PotionOnFailChance === 'number' && Number.isFinite(rule.randomTier0PotionOnFailChance)) {
             randomTier0PotionOnFailChance = Math.max(randomTier0PotionOnFailChance, Math.max(0, Math.min(1, Number(rule.randomTier0PotionOnFailChance))));
         }
+        if (typeof rule.poisonPotencyBonus === 'number' && Number.isFinite(rule.poisonPotencyBonus)) {
+            poisonPotencyBonus += Number(rule.poisonPotencyBonus);
+        }
+        if (typeof rule.poisonYieldBonusChance === 'number' && Number.isFinite(rule.poisonYieldBonusChance)) {
+            poisonYieldBonusChance = Math.max(poisonYieldBonusChance, Math.max(0, Math.min(1, Number(rule.poisonYieldBonusChance))));
+        }
+        if (typeof rule.poisonFumbleDamageMultiplier === 'number' && Number.isFinite(rule.poisonFumbleDamageMultiplier) && rule.poisonFumbleDamageMultiplier > 0) {
+            poisonFumbleDamageMultiplier = Math.min(poisonFumbleDamageMultiplier, Number(rule.poisonFumbleDamageMultiplier));
+        }
+        if (Array.isArray(rule.poisonDeliveryTagAccess)) {
+            for (const tag of rule.poisonDeliveryTagAccess) {
+                const v = String(tag ?? '').trim().toLowerCase();
+                if (v) poisonDeliveryTagAccessSet.add(v);
+            }
+        }
+        if (typeof rule.barterPersuasionBonus === 'number' && Number.isFinite(rule.barterPersuasionBonus)) {
+            barterPersuasionBonus += Number(rule.barterPersuasionBonus);
+        }
     }
 
     const experimentalCraftingTypes = Array.from(experimentalCraftingTypesSet);
@@ -377,7 +405,12 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         criticalCraftingEnabled,
         criticalSuccessOutputMultiplier,
         criticalFailureDamageFormula,
-        randomTier0PotionOnFailChance
+        randomTier0PotionOnFailChance,
+        poisonPotencyBonus,
+        poisonYieldBonusChance,
+        poisonFumbleDamageMultiplier,
+        poisonDeliveryTagAccess: Array.from(poisonDeliveryTagAccessSet),
+        barterPersuasionBonus
     };
 }
 
@@ -537,6 +570,25 @@ export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, r
             if (typeof rule.randomTier0PotionOnFailChance === 'number' && Number.isFinite(rule.randomTier0PotionOnFailChance) && rule.randomTier0PotionOnFailChance > 0) {
                 const pct = Math.round(Math.max(0, Math.min(1, Number(rule.randomTier0PotionOnFailChance))) * 100);
                 effectsByPerk.get(perkName).push(`${pct}% chance to gain a random tier-0 potion on failed craft`);
+            }
+            if (typeof rule.poisonPotencyBonus === 'number' && Number.isFinite(rule.poisonPotencyBonus) && rule.poisonPotencyBonus !== 0) {
+                const sign = rule.poisonPotencyBonus >= 0 ? '+' : '';
+                effectsByPerk.get(perkName).push(`${sign}${rule.poisonPotencyBonus} poison potency`);
+            }
+            if (typeof rule.poisonYieldBonusChance === 'number' && Number.isFinite(rule.poisonYieldBonusChance) && rule.poisonYieldBonusChance > 0) {
+                const pct = Math.round(Math.max(0, Math.min(1, Number(rule.poisonYieldBonusChance))) * 100);
+                effectsByPerk.get(perkName).push(`${pct}% chance for +1 extra poison output`);
+            }
+            if (typeof rule.poisonFumbleDamageMultiplier === 'number' && Number.isFinite(rule.poisonFumbleDamageMultiplier) && rule.poisonFumbleDamageMultiplier > 0 && rule.poisonFumbleDamageMultiplier < 1) {
+                const pct = Math.round((1 - Number(rule.poisonFumbleDamageMultiplier)) * 100);
+                effectsByPerk.get(perkName).push(`${pct}% reduced critical-fumble self-damage (poisoncraft)`);
+            }
+            if (Array.isArray(rule.poisonDeliveryTagAccess) && rule.poisonDeliveryTagAccess.length > 0) {
+                effectsByPerk.get(perkName).push(`Delivery access: ${rule.poisonDeliveryTagAccess.join(', ')}`);
+            }
+            if (typeof rule.barterPersuasionBonus === 'number' && Number.isFinite(rule.barterPersuasionBonus) && rule.barterPersuasionBonus !== 0) {
+                const sign = rule.barterPersuasionBonus >= 0 ? '+' : '';
+                effectsByPerk.get(perkName).push(`${sign}${rule.barterPersuasionBonus} persuasion when shopping`);
             }
         }
     }

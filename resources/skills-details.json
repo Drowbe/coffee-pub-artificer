@@ -417,15 +417,175 @@
       "skillKit": "Poisoner's Kit",
       "perks": [
         {
-          "perkID": "poisoncraft-basic-poisons",
+          "perkID": "poisoncraft-basic-toxinwork",
           "index": 1,
           "value": 0,
-          "name": "Basic Poisons",
-          "description": "You have the <strong>Poisoner's Kit</strong>  and the desire to craft poisons. Nothing can stop you now.",
+          "name": "Basic Toxinwork",
+          "description": "You have the <strong>Poisoner's Kit</strong> and the discipline to handle toxic compounds safely. You can craft basic poisons and venoms.",
           "requirement": "Poisoner's Kit",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-skull"
+          "icon": "fa-skull",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks poisoncraft recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Delivery access", "description": "You can prepare basic injury poisons.", "rule": { "poisonDeliveryTagAccess": ["injury"] } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-venom-distiller",
+          "index": 2,
+          "value": 0,
+          "name": "Venom Distiller",
+          "description": "You can refine unstable extracts into consistent toxins and keep their potency through preparation.",
+          "requirement": "Basic Toxinwork",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-vial-circle-check",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks poisoncraft recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } },
+              { "title": "Steady process", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-black-vials",
+          "index": 3,
+          "value": 0,
+          "name": "Black Vials",
+          "description": "You can seal, transport, and apply dangerous compounds with precision under field pressure.",
+          "requirement": "Venom Distiller",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask-vial",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks poisoncraft recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Controlled handling", "description": "On failed poisoncraft attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-master-toxicologist",
+          "index": 4,
+          "value": 0,
+          "name": "Master Toxicologist",
+          "description": "You understand toxicity, onset, and delivery deeply enough to produce master-grade venoms and toxins.",
+          "requirement": "Black Vials",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-skull-crossbones",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks poisoncraft recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Master control", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-experimental-toxicologist",
+          "index": 5,
+          "value": 0,
+          "name": "Experimental Toxicologist",
+          "description": "You can attempt volatile formulas beyond your normal training and adapt when a recipe is wrong or incomplete.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-cauldron",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental poisoncraft", "description": "May attempt poisoncraft recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "poisoncraft" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Experimental control", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-toxic-yield",
+          "index": 6,
+          "value": 0,
+          "name": "Toxic Yield",
+          "description": "Your filtration and extraction process squeezes additional usable toxin from successful batches.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-droplet",
+          "rules": {
+            "benefits": [
+              { "title": "Recovery on success", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Bonus output chance", "description": "25% chance for +1 extra poison output on success.", "rule": { "poisonYieldBonusChance": 0.25 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-potency-tuning",
+          "index": 7,
+          "value": 0,
+          "name": "Potency Tuning",
+          "description": "You can tune concentration and suspend compounds to preserve stronger effects without destabilizing the brew.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-wave-square",
+          "rules": {
+            "benefits": [
+              { "title": "Potency boost", "description": "Increase poison potency by +2.", "rule": { "poisonPotencyBonus": 2 } },
+              { "title": "Precision process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-quiet-delivery",
+          "index": 8,
+          "value": 0,
+          "name": "Quiet Delivery",
+          "description": "You specialize in subtle application methods and can adapt compounds to more delivery vectors.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hand-sparkles",
+          "rules": {
+            "benefits": [
+              { "title": "Delivery access", "description": "Unlocks contact and ingested delivery preparation.", "rule": { "poisonDeliveryTagAccess": ["contact", "ingested"] } },
+              { "title": "Flexible substitution", "description": "1 trait-based ingredient substitution allowed.", "rule": { "similarIngredientSubstitutions": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-failsafe-handling",
+          "index": 9,
+          "value": 0,
+          "name": "Failsafe Handling",
+          "description": "Your safety discipline prevents catastrophic self-exposure even when a brew destabilizes.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shield-virus",
+          "rules": {
+            "benefits": [
+              { "title": "Reduced self-harm", "description": "Critical-fumble poison self-damage is reduced by 50%.", "rule": { "poisonFumbleDamageMultiplier": 0.5 } },
+              { "title": "Loss control", "description": "On failed poisoncraft attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "poisoncraft-volatile-gambit",
+          "index": 10,
+          "value": 0,
+          "name": "Volatile Gambit",
+          "description": "You accept dangerous variance for exceptional highs. Great success brings explosive yield, and failure bites back.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-bomb",
+          "rules": {
+            "benefits": [
+              { "title": "Critical crafting", "description": "Nat 20 auto-succeeds with double output; nat 1 auto-fails with self-damage.", "rule": { "criticalCrafting": { "enabled": true, "critSuccessOutputMultiplier": 2, "critFailureDamageFormula": "1d10" } } },
+              { "title": "High-risk potency", "description": "Increase poison potency by +2.", "rule": { "poisonPotencyBonus": 2 } }
+            ]
+          }
         }
       ]
     },
@@ -442,15 +602,141 @@
       "skillKit": "Cook's Utensils",
       "perks": [
         {
-          "perkID": "cooking-basic-cooking",
+          "perkID": "cooking-camp-kitchen",
           "index": 1,
           "value": 0,
-          "name": "Basic Cooking",
-          "description": "You have the <strong>Cook's Utensils</strong> and the desire to cook. Nothing can stop you now.",
+          "name": "Camp Kitchen",
+          "description": "You have the <strong>Cook's Utensils</strong> and can produce reliable meals from field supplies.",
           "requirement": "Cook's Utensils",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-bowl-food"
+          "icon": "fa-bowl-food",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cooking recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Steady prep", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-provisioner",
+          "index": 2,
+          "value": 0,
+          "name": "Provisioner",
+          "description": "You can stretch supplies and preserve nutrition without sacrificing consistency.",
+          "requirement": "Camp Kitchen",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-bread-slice",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cooking recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } },
+              { "title": "Ingredient recovery", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-feastwright",
+          "index": 3,
+          "value": 0,
+          "name": "Feastwright",
+          "description": "Your timing and heat control let you produce richer, complex dishes at scale.",
+          "requirement": "Provisioner",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-drumstick-bite",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cooking recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Kitchen discipline", "description": "On failed cooking attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-master-culinarian",
+          "index": 4,
+          "value": 0,
+          "name": "Master Culinarian",
+          "description": "You can run a kitchen under pressure and consistently execute top-tier culinary preparations.",
+          "requirement": "Feastwright",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-utensils",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks cooking recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Master precision", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-improvised-pantry",
+          "index": 5,
+          "value": 0,
+          "name": "Improvised Pantry",
+          "description": "You can improvise from incomplete supplies and still produce edible, useful outcomes.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-box-open",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental cooking", "description": "May attempt cooking recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "cooking" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive palate", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-savvy-shopper",
+          "index": 6,
+          "value": 0,
+          "name": "Savvy Shopper",
+          "description": "You know how to read markets, negotiate fairly, and secure better ingredients for less.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-coins",
+          "rules": {
+            "benefits": [
+              { "title": "Market leverage", "description": "+2 to persuasion checks when shopping/bartering.", "rule": { "barterPersuasionBonus": 2 } },
+              { "title": "Frugal sourcing", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-fast-prep",
+          "index": 7,
+          "value": 0,
+          "name": "Fast Prep",
+          "description": "You can stage and execute cooking workflows quickly without sacrificing consistency.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-stopwatch",
+          "rules": {
+            "benefits": [
+              { "title": "Compressed workflow", "description": "Reduce required cooking time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } },
+              { "title": "Clean execution", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-service-rush",
+          "index": 8,
+          "value": 0,
+          "name": "Service Rush",
+          "description": "You thrive in high-pressure service windows and can convert perfect timing into extra output.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-fire-burner",
+          "rules": {
+            "benefits": [
+              { "title": "Critical service", "description": "Nat 20 auto-succeeds with double output; nat 1 auto-fails with self-damage.", "rule": { "criticalCrafting": { "enabled": true, "critSuccessOutputMultiplier": 2, "critFailureDamageFormula": "1d10" } } },
+              { "title": "Waste reduction", "description": "On failed cooking attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
         }
       ]
     },

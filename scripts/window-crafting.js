@@ -167,14 +167,15 @@ function actorHasItemNamed(actor, name) {
     return actor.items.some((i) => normalizeItemNameForMatch(i.name) === target);
 }
 
-async function applyCraftFumbleDamage(actor, formula = '1d10') {
+async function applyCraftFumbleDamage(actor, formula = '1d10', multiplier = 1) {
     if (!actor) return { amount: 0, applied: false, formula };
     const safeFormula = String(formula ?? '').trim() || '1d10';
+    const safeMultiplier = Number.isFinite(Number(multiplier)) && Number(multiplier) > 0 ? Number(multiplier) : 1;
     let amount = 0;
     try {
         const roll = new Roll(safeFormula);
         await roll.evaluate();
-        amount = Math.max(0, Number(roll.total) || 0);
+        amount = Math.max(0, Math.round((Number(roll.total) || 0) * safeMultiplier));
     } catch {
         amount = 0;
     }
@@ -2336,6 +2337,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let criticalSuccessOutputMultiplier = 1;
         let criticalFailureDamageFormula = null;
         let randomTier0PotionOnFailChance = 0;
+        let poisonYieldBonusChance = 0;
+        let poisonFumbleDamageMultiplier = 1;
         let forceSuccess = false;
         let forceFailure = false;
         /** @type {Array<{ perkName: string, effect: string }>} */
@@ -2360,6 +2363,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             criticalSuccessOutputMultiplier = Math.max(1, Math.floor(Number(rules.criticalSuccessOutputMultiplier) || 1));
             criticalFailureDamageFormula = rules.criticalFailureDamageFormula ?? null;
             randomTier0PotionOnFailChance = Math.max(0, Math.min(1, Number(rules.randomTier0PotionOnFailChance) || 0));
+            if (skillLower === 'poisoncraft') {
+                poisonYieldBonusChance = Math.max(0, Math.min(1, Number(rules.poisonYieldBonusChance) || 0));
+                poisonFumbleDamageMultiplier = Number.isFinite(Number(rules.poisonFumbleDamageMultiplier)) && Number(rules.poisonFumbleDamageMultiplier) > 0
+                    ? Number(rules.poisonFumbleDamageMultiplier)
+                    : 1;
+            }
 
             const roll = new Roll('1d20');
             await roll.evaluate();
@@ -2381,7 +2390,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         try {
             if (success) {
                 const obj = resultItem.toObject();
-                const outputMultiplier = forceSuccess ? Math.max(2, criticalSuccessOutputMultiplier) : 1;
+                const outputMultiplier = (forceSuccess ? Math.max(2, criticalSuccessOutputMultiplier) : 1)
+                    + ((poisonYieldBonusChance > 0 && Math.random() <= poisonYieldBonusChance) ? 1 : 0);
                 const createdItems = [];
                 for (let i = 0; i < outputMultiplier; i++) {
                     const added = await addCraftedItemToActor(actor, obj);
@@ -2394,7 +2404,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const consumeCount = ingredientKeptOnSuccess === 'half' ? Math.floor(items.length / 2) : items.length;
                 await this._consumeIngredients(actor, items, consumeCount);
                 this.lastCraftTags = [recipe.name];
-                const resultName = (forceSuccess && outputMultiplier > 1) ? `${recipe.name} x${outputMultiplier}` : recipe.name;
+                const resultName = (outputMultiplier > 1) ? `${recipe.name} x${outputMultiplier}` : recipe.name;
                 return {
                     success: true,
                     item: createdItem,
@@ -2430,7 +2440,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
             let rollFailIssue = rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.';
             if (forceFailure) {
-                const dmgResult = await applyCraftFumbleDamage(actor, criticalFailureDamageFormula ?? '1d10');
+                const dmgResult = await applyCraftFumbleDamage(actor, criticalFailureDamageFormula ?? '1d10', poisonFumbleDamageMultiplier);
                 if (dmgResult.amount > 0) {
                     if (dmgResult.applied) rollFailIssue = `Critical fumble! Your kit detonates. You take ${dmgResult.amount} damage.`;
                     else rollFailIssue = `Critical fumble! Your kit detonates. You take ${dmgResult.amount} damage (apply manually).`;
