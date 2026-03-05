@@ -737,6 +737,41 @@
               { "title": "Waste reduction", "description": "On failed cooking attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
             ]
           }
+        },
+        {
+          "perkID": "cooking-field-foraging",
+          "index": 9,
+          "value": 0,
+          "name": "Field Foraging",
+          "description": "You can identify edible plants, berries, and fungi in the wild and spot productive patches quickly.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-basket-shopping",
+          "rules": {
+            "benefits": [
+              { "title": "Discovery bonus", "description": "+2 to exploration/gathering rolls when using Cooking in the field.", "rule": { "gatheringRollBonus": 2 } },
+              { "title": "Culinary component access", "description": "Unlocks cooking gather access for component skill levels 0 to 9.", "rule": { "componentSkillAccess": [0, 9] } }
+            ]
+          }
+        },
+        {
+          "perkID": "cooking-advanced-foraging",
+          "index": 10,
+          "value": 0,
+          "name": "Advanced Foraging",
+          "description": "You can track game trails and hidden growth niches, turning rough terrain into reliable food supply.",
+          "requirement": "Field Foraging",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-paw",
+          "rules": {
+            "benefits": [
+              { "title": "Discovery bonus", "description": "Additional +2 to exploration/gathering rolls when using Cooking in the field.", "rule": { "gatheringRollBonus": 2 } },
+              { "title": "Advanced culinary access", "description": "Unlocks cooking gather access for component skill levels 10 to 20.", "rule": { "componentSkillAccess": [10, 20] } },
+              { "title": "Field yield", "description": "Successful gathering yields double bundles.", "rule": { "gatheringYieldMultiplier": 2 } }
+            ]
+          }
         }
       ]
     },
@@ -752,15 +787,159 @@
       "skillKit": "Healer's Kit",
       "perks": [
         {
-          "perkID": "healing-basic-care",
+          "perkID": "healing-field-triage",
           "index": 1,
           "value": 0,
-          "name": "Basic Care",
-          "description": "You possess a <strong>Healer's Kit</strong> and the knowledge to use it properly. You can stabilize wounds, clean injuries, and provide competent field treatment.",
+          "name": "Field Triage",
+          "description": "You possess a <strong>Healer's Kit</strong> and can stabilize injuries and prepare basic restorative compounds in the field.",
           "requirement": "Healer's Kit",
           "cost": 1,
           "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
-          "icon": "fa-kit-medical"
+          "icon": "fa-kit-medical",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks healing recipe tiers 0 to 1.", "rule": { "recipeTierAccess": [0, 1] } },
+              { "title": "Steady care", "description": "+1 to crafting roll quality via reduced effective DC.", "rule": { "craftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-combat-medic",
+          "index": 2,
+          "value": 0,
+          "name": "Combat Medic",
+          "description": "You can work under pressure, treating bleeding and trauma while resources are limited.",
+          "requirement": "Field Triage",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-briefcase-medical",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks healing recipe tiers 2 to 7.", "rule": { "recipeTierAccess": [2, 7] } },
+              { "title": "Loss mitigation", "description": "On failed healing attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-restorative-practitioner",
+          "index": 3,
+          "value": 0,
+          "name": "Restorative Practitioner",
+          "description": "You can formulate stronger restorative preparations with reliable repeatability.",
+          "requirement": "Combat Medic",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-prescription-bottle-medical",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks healing recipe tiers 8 to 14.", "rule": { "recipeTierAccess": [8, 14] } },
+              { "title": "Ingredient recovery", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-master-chirurgeon",
+          "index": 4,
+          "value": 0,
+          "name": "Master Chirurgeon",
+          "description": "Your process is methodical and precise, enabling elite restorative work under difficult conditions.",
+          "requirement": "Restorative Practitioner",
+          "cost": 4,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-staff-snake",
+          "rules": {
+            "benefits": [
+              { "title": "Recipe access", "description": "Unlocks healing recipe tiers 15 to 20.", "rule": { "recipeTierAccess": [15, 20] } },
+              { "title": "Master precision", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-herbal-diagnostics",
+          "index": 5,
+          "value": 0,
+          "name": "Herbal Diagnostics",
+          "description": "You can quickly identify medicinal flora and triage-gather usable treatment materials.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-seedling",
+          "rules": {
+            "benefits": [
+              { "title": "Gathering bonus", "description": "+2 to healing-focused exploration/gathering rolls.", "rule": { "gatheringRollBonus": 2 } },
+              { "title": "Medicinal access", "description": "Unlocks healing gather access for component skill levels 0 to 8.", "rule": { "componentSkillAccess": [0, 8] } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-field-apothecary",
+          "index": 6,
+          "value": 0,
+          "name": "Field Apothecary",
+          "description": "You can harvest and preserve rarer medicinal agents before they lose potency.",
+          "requirement": "Herbal Diagnostics",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-mortar-pestle",
+          "rules": {
+            "benefits": [
+              { "title": "Gathering bonus", "description": "Additional +2 to healing-focused exploration/gathering rolls.", "rule": { "gatheringRollBonus": 2 } },
+              { "title": "Advanced medicinal access", "description": "Unlocks healing gather access for component skill levels 9 to 20.", "rule": { "componentSkillAccess": [9, 20] } },
+              { "title": "Gathering yield", "description": "Successful medicinal gathering yields double bundles.", "rule": { "gatheringYieldMultiplier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-experimental-therapeutics",
+          "index": 7,
+          "value": 0,
+          "name": "Experimental Therapeutics",
+          "description": "You can attempt advanced treatments outside normal training, adapting as protocols fail.",
+          "requirement": "",
+          "cost": 1,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-flask",
+          "rules": {
+            "benefits": [
+              { "title": "Experimental healing", "description": "May attempt healing recipes above your unlocked tier.", "rule": { "experimentalCrafting": { "allowed": true, "craftingType": "healing" } } },
+              { "title": "Experimental wildcard", "description": "Experimental attempts include one wrong ingredient to identify and remove.", "rule": { "experimentalCraftingRandomComponents": 1 } },
+              { "title": "Adaptive method", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-sterile-protocols",
+          "index": 8,
+          "value": 0,
+          "name": "Sterile Protocols",
+          "description": "You maintain strict procedural discipline that improves consistency and reduces waste.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shield-virus",
+          "rules": {
+            "benefits": [
+              { "title": "Faster compounding", "description": "Reduce required healing crafting time by 25%.", "rule": { "craftingTimeMultiplier": 0.75 } },
+              { "title": "Failure control", "description": "On failed healing attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } }
+            ]
+          }
+        },
+        {
+          "perkID": "healing-differential-formulation",
+          "index": 9,
+          "value": 0,
+          "name": "Differential Formulation",
+          "description": "You can swap equivalent reagents by effect profile when ideal ingredients are unavailable.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shuffle",
+          "rules": {
+            "benefits": [
+              { "title": "Substitution", "description": "1 trait-based ingredient substitution allowed.", "rule": { "similarIngredientSubstitutions": 1 } },
+              { "title": "Clinical precision", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
         }
       ]
     },
