@@ -3,20 +3,24 @@ import { MODULE } from './const.js';
 const GATHERING_MAPPING_URL = `modules/${MODULE.ID}/resources/gathering-mapping.json`;
 
 const DEFAULT_MAPPING = {
-    version: 1,
+    version: 2,
     states: {
         idle: {
             byBiome: {
-                any: [
-                    'images/gathering/herbalism-plant-bush-01.webp'
-                ]
+                any: {
+                    anyFamily: [],
+                    byFamily: {
+                        plant: ['images/gathering/herbalism-plant-bush-01.webp']
+                    }
+                }
             }
         },
         active: {
             byBiome: {
-                any: [
-                    'images/gathering/herbalism-pile-dirt-01.webp'
-                ]
+                any: {
+                    anyFamily: ['images/gathering/herbalism-pile-dirt-01.webp'],
+                    byFamily: {}
+                }
             }
         }
     }
@@ -26,6 +30,11 @@ const BIOME_ALIASES = {
     meadow: 'grassland',
     plains: 'grassland'
 };
+const FAMILY_ALIASES = Object.freeze({
+    creatureparts: 'creature parts',
+    creature_parts: 'creature parts',
+    creature: 'creature parts'
+});
 
 let _mappingPromise = null;
 
@@ -48,6 +57,41 @@ function _asStringArray(value) {
     return value.map((v) => String(v ?? '').trim()).filter(Boolean);
 }
 
+function _normalizeFamily(raw) {
+    const value = String(raw ?? '').trim().toLowerCase();
+    if (!value) return '';
+    return FAMILY_ALIASES[value] ?? value;
+}
+
+function _normalizeFamilies(families = []) {
+    return [...new Set((Array.isArray(families) ? families : [families]).map(_normalizeFamily).filter(Boolean))];
+}
+
+function _collectImagesFromBucket(bucket, families = []) {
+    if (Array.isArray(bucket)) {
+        return _asStringArray(bucket);
+    }
+
+    const byFamily = bucket?.byFamily ?? {};
+    const anyFamily = _asStringArray(bucket?.anyFamily);
+    const normalizedFamilies = _normalizeFamilies(families);
+    if (!normalizedFamilies.length) {
+        if (anyFamily.length) return anyFamily;
+        const combined = [];
+        for (const values of Object.values(byFamily)) {
+            combined.push(..._asStringArray(values));
+        }
+        return combined;
+    }
+
+    const selected = [];
+    for (const family of normalizedFamilies) {
+        selected.push(..._asStringArray(byFamily?.[family]));
+    }
+    if (selected.length) return selected;
+    return anyFamily;
+}
+
 async function _loadMapping() {
     if (_mappingPromise) return _mappingPromise;
     _mappingPromise = (async () => {
@@ -65,17 +109,17 @@ async function _loadMapping() {
     return _mappingPromise;
 }
 
-export async function resolveGatheringImage({ state = 'idle', biomes = [] } = {}) {
+export async function resolveGatheringImage({ state = 'idle', biomes = [], families = [] } = {}) {
     const mapping = await _loadMapping();
     const stateMap = mapping?.states?.[state]?.byBiome ?? {};
 
     const normalizedBiomes = [...new Set((Array.isArray(biomes) ? biomes : []).map(_normalizeBiomeKey).filter(Boolean))];
     const pool = [];
     for (const biome of normalizedBiomes) {
-        pool.push(..._asStringArray(stateMap[biome]));
+        pool.push(..._collectImagesFromBucket(stateMap[biome], families));
     }
     if (!pool.length) {
-        pool.push(..._asStringArray(stateMap.any));
+        pool.push(..._collectImagesFromBucket(stateMap.any, families));
     }
     if (!pool.length) return '';
 
@@ -83,8 +127,9 @@ export async function resolveGatheringImage({ state = 'idle', biomes = [] } = {}
     return _toModulePath(pick);
 }
 
-export async function resolveGatheringImageForScene(scene, state = 'idle') {
+export async function resolveGatheringImageForScene(scene, state = 'idle', options = {}) {
     const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
     const biomes = Array.isArray(flags.habitats) ? flags.habitats : (flags.habitats ? [flags.habitats] : []);
-    return resolveGatheringImage({ state, biomes });
+    const families = options?.families ?? [];
+    return resolveGatheringImage({ state, biomes, families });
 }

@@ -6,7 +6,6 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { getFamilyFromFlags } from './utility-artificer-item.js';
@@ -20,10 +19,6 @@ import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
 let _pendingGather = null;
-const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
-const DISCOVERY_SOCKET_EVENT = `${MODULE.ID}.gatherDiscoveryResolved`;
-let _gatherSocketApi = null;
-let _gatherSocketRegistered = false;
 let _blacksmithRollHookRegistered = false;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
 const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
@@ -1041,40 +1036,12 @@ async function _stopGatherPinProcessing(requestId, { restoreImage = false } = {}
     }
 }
 
-async function _ensureGatherSocketHandler() {
-    if (_gatherSocketRegistered) return;
-    if (!_gatherSocketApi) {
-        _gatherSocketApi = await BlacksmithAPI.getSockets();
-    }
-    await _gatherSocketApi.waitForReady();
-    await _gatherSocketApi.register(GATHER_SOCKET_EVENT, async (data) => {
-        if (!game.user?.isGM) return;
-        await _processGatherRollOnGM(data);
-    });
-    await _gatherSocketApi.register(DISCOVERY_SOCKET_EVENT, async (data) => {
-        if (!game.user?.isGM) return;
-        await _processDiscoveryRollOnGM(data);
-    });
-    _gatherSocketRegistered = true;
-}
-
 /**
  * Initialize gather/discovery socket listeners on this client.
  * Must run for all users so player-originated roll events can be resolved by connected GMs.
  */
 export async function initializeGatherSockets() {
     _ensureBlacksmithRollCompleteHook();
-    if (_gatherSocketRegistered) return;
-    const maxAttempts = 20;
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-        try {
-            await _ensureGatherSocketHandler();
-            if (_gatherSocketRegistered) return;
-        } catch (error) {
-            if (attempt >= maxAttempts) return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 300));
-    }
 }
 
 function _ensureBlacksmithRollCompleteHook() {
@@ -1390,7 +1357,6 @@ export async function requestDiscoverGatherSpotsFromScene() {
     }
 
     const requestId = foundry.utils.randomID();
-    await _ensureGatherSocketHandler();
     const localBuffer = [];
 
     const requestResult = await api.openRequestRollDialog({
@@ -1518,7 +1484,6 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     setPendingGather(pendingContext);
     const rollBuffer = [];
     const requestId = foundry.utils.randomID();
-    await _ensureGatherSocketHandler();
     if (sourcePinId) {
         await _startGatherPinProcessing(requestId, sourcePinId, pendingContext.sourceSceneId);
     }

@@ -156,7 +156,7 @@ export class PinsManager {
                         y,
                         text: this._getNodePinText(node),
                         ownership: { default: 2 },
-                        image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE,
+                        image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE,
                         shape: defaultDesign.shape ?? 'none',
                         dropShadow: defaultDesign.dropShadow ?? true,
                         textLayout: defaultDesign.textLayout ?? 'arc-below',
@@ -172,7 +172,7 @@ export class PinsManager {
                 if ((pin?.ownership?.default ?? 0) < 2) {
                     updates.ownership = { default: 2 };
                 }
-                const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle')) || PIN_DEFAULT_IMAGE;
+                const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE;
                 if (this._isLegacyWorkingImage(pin?.image) || this._isSeedlingIcon(pin?.image)) {
                     updates.image = resolvedIdleImage;
                     updates.shape = 'none';
