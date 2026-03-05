@@ -335,6 +335,57 @@
               { "title": "Optimized process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
             ]
           }
+        },
+        {
+          "perkID": "alchemy-temporal-shifting",
+          "index": 1,
+          "value": 0,
+          "name": "Temporal Shifting",
+          "description": "You bend process timing around critical moments, compressing stable stages into a fraction of the usual time.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-hourglass-half",
+          "rules": {
+            "benefits": [
+              { "title": "Compressed workflow", "description": "Reduce required crafting time by 50%.", "rule": { "craftingTimeMultiplier": 0.5 } },
+              { "title": "Precision timing", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "alchemy-similar-enough",
+          "index": 1,
+          "value": 0,
+          "name": "Similar Enough",
+          "description": "Your practical chemistry lets you identify close analogs and substitute one ingredient by matching traits.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shuffle",
+          "rules": {
+            "benefits": [
+              { "title": "Trait substitution", "description": "May substitute 1 missing ingredient with a trait-matching ingredient.", "rule": { "similarIngredientSubstitutions": 1 } },
+              { "title": "Adaptive control", "description": "+1 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "alchemy-volatile-gambit",
+          "index": 1,
+          "value": 0,
+          "name": "Volatile Gambit",
+          "description": "You embrace high-risk synthesis: brilliance on a perfect cast, catastrophic backlash on a fumble.",
+          "requirement": "",
+          "cost": 3,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-dice-d20",
+          "rules": {
+            "benefits": [
+              { "title": "Critical surge", "description": "Natural 20 is automatic success with double output.", "rule": { "criticalCrafting": { "enabled": true, "critSuccessOutputMultiplier": 2, "critFailureDamageFormula": "1d10" } } },
+              { "title": "Backfire clause", "description": "Natural 1 is automatic failure and your kit explodes, dealing 1d10 self-damage." }
+            ]
+          }
         }
       ]
     },

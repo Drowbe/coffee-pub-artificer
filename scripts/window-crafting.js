@@ -167,6 +167,27 @@ function actorHasItemNamed(actor, name) {
     return actor.items.some((i) => normalizeItemNameForMatch(i.name) === target);
 }
 
+async function applyCraftFumbleDamage(actor, formula = '1d10') {
+    if (!actor) return { amount: 0, applied: false, formula };
+    const safeFormula = String(formula ?? '').trim() || '1d10';
+    let amount = 0;
+    try {
+        const roll = new Roll(safeFormula);
+        await roll.evaluate();
+        amount = Math.max(0, Number(roll.total) || 0);
+    } catch {
+        amount = 0;
+    }
+    if (!amount) return { amount: 0, applied: false, formula: safeFormula };
+
+    const hpPath = 'system.attributes.hp.value';
+    const hp = Number(foundry.utils.getProperty(actor, hpPath));
+    if (!Number.isFinite(hp)) return { amount, applied: false, formula: safeFormula };
+
+    await actor.update({ [hpPath]: Math.max(0, hp - amount) });
+    return { amount, applied: true, formula: safeFormula };
+}
+
 /**
  * Check if actor can craft a recipe: ingredients, tool, apparatus, container
  * @param {Actor|null} actor
@@ -1794,10 +1815,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         /** Build effective ingredient list: add wrong components at random slots when experimental. */
         let effectiveIngredients = recipe.ingredients ?? [];
+        let effectiveCraftTimeMultiplier = 1;
         if (recipe.skill && actor) {
             const learnedPerkIds = await getAPI()?.skills?.getLearnedPerks?.(actor) ?? [];
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            effectiveCraftTimeMultiplier = Math.max(0.01, Number(rules.craftingTimeMultiplier) || 1);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
             const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
             const skillLower = (recipe.skill || '').toLowerCase();
@@ -1909,7 +1932,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (rawHeat >= 0 && rawHeat <= HEAT_MAX) this.heatValue = Math.round(rawHeat);
             else if (rawHeat <= 100) this.heatValue = Math.min(HEAT_MAX, Math.round((rawHeat / 100) * HEAT_MAX));
         }
-        this.timeValue = (recipe.time != null && recipe.time >= 0) ? recipe.time : 0;
+        const baseTime = (recipe.time != null && recipe.time >= 0) ? Number(recipe.time) : 0;
+        this.timeValue = Math.max(0, Math.min(120, Math.ceil(baseTime * effectiveCraftTimeMultiplier)));
 
         const recipesListEl = this.element?.querySelector?.('.crafting-zone-recipes-list');
         const scrollTop = recipesListEl ? recipesListEl.scrollTop : 0;
@@ -2037,10 +2061,14 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         /** Build effective ingredient list (recipe + wrong components if experimental). */
         let effectiveIngredients = recipe.ingredients ?? [];
+        let similarIngredientSubstitutions = 0;
+        let craftingTimeMultiplier = 1;
         if (recipe.skill && actor) {
             const learnedPerkIds = await getAPI()?.skills?.getLearnedPerks?.(actor) ?? [];
             const forSkill = getLearnedPerkIdsForSkill(learnedPerkIds, recipe.skill);
             const rules = await getEffectiveCraftingRules(recipe.skill, forSkill);
+            similarIngredientSubstitutions = Math.max(0, Math.floor(Number(rules.similarIngredientSubstitutions) || 0));
+            craftingTimeMultiplier = Math.max(0.01, Number(rules.craftingTimeMultiplier) || 1);
             const skillLevel = recipe.skillLevel != null ? Number(recipe.skillLevel) : 0;
             const withinTier = !Number.isNaN(skillLevel) && rules.inTier(skillLevel);
             const skillLower = (recipe.skill || '').toLowerCase();
@@ -2070,20 +2098,93 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             actualCounts.set(name, (actualCounts.get(name) ?? 0) + count);
         }
 
-        /** Must have exactly the same multiset (no extra, no missing). */
+        /** Allow limited trait-based substitutions when enabled by perks. */
+        const missingCounts = new Map();
+        const extraCounts = new Map();
         for (const [name, qty] of expectedCounts) {
             const actual = actualCounts.get(name) ?? 0;
-            if (actual !== qty) {
-                if (actual > qty) issues.push('Too many ingredients or wrong ingredients in the bench. Use only the exact ingredients required by the recipe.');
-                else issues.push('Missing or wrong ingredients. Check the recipe and fill every slot with the correct item.');
-                break;
+            if (actual < qty) missingCounts.set(name, qty - actual);
+            if (actual > qty) extraCounts.set(name, actual - qty);
+        }
+        for (const [name, qty] of actualCounts) {
+            if (!expectedCounts.has(name)) extraCounts.set(name, (extraCounts.get(name) ?? 0) + qty);
+        }
+
+        if (similarIngredientSubstitutions > 0 && missingCounts.size > 0 && extraCounts.size > 0) {
+            const ingredientByName = new Map();
+            for (const ing of effectiveIngredients) {
+                const n = normalizeItemNameForMatch(ing?.name);
+                if (n && !ingredientByName.has(n)) ingredientByName.set(n, ing);
+            }
+            const slotItemByName = new Map();
+            for (const slot of this.selectedSlots) {
+                if (!slot?.item || slot.isMissing) continue;
+                const n = normalizeItemNameForMatch(slot.item.name);
+                if (n && !slotItemByName.has(n)) slotItemByName.set(n, slot.item);
+            }
+            const expectedTraitCache = new Map();
+            const actualTraitCache = new Map();
+            const getExpectedTraits = async (name) => {
+                if (expectedTraitCache.has(name)) return expectedTraitCache.get(name);
+                const traits = new Set();
+                const ing = ingredientByName.get(name) ?? null;
+                if (Array.isArray(ing?.traits)) {
+                    for (const t of ing.traits) {
+                        const v = String(t ?? '').trim().toLowerCase();
+                        if (v) traits.add(v);
+                    }
+                }
+                const sourceItem = ing?.name ? await resolveItemByName(ing.name) : null;
+                if (sourceItem) {
+                    for (const t of getTagsFromItem(sourceItem)) {
+                        const v = String(t ?? '').trim().toLowerCase();
+                        if (v) traits.add(v);
+                    }
+                }
+                expectedTraitCache.set(name, traits);
+                return traits;
+            };
+            const getActualTraits = (name) => {
+                if (actualTraitCache.has(name)) return actualTraitCache.get(name);
+                const traits = new Set();
+                const item = slotItemByName.get(name) ?? null;
+                if (item) {
+                    for (const t of getTagsFromItem(item)) {
+                        const v = String(t ?? '').trim().toLowerCase();
+                        if (v) traits.add(v);
+                    }
+                }
+                actualTraitCache.set(name, traits);
+                return traits;
+            };
+            let substitutionsRemaining = similarIngredientSubstitutions;
+            for (const [missingName] of [...missingCounts]) {
+                while ((missingCounts.get(missingName) ?? 0) > 0 && substitutionsRemaining > 0) {
+                    const wantTraits = await getExpectedTraits(missingName);
+                    if (!wantTraits.size) break;
+                    let matchedExtra = null;
+                    for (const [extraName, qty] of extraCounts) {
+                        if (qty <= 0) continue;
+                        const haveTraits = getActualTraits(extraName);
+                        const overlap = [...wantTraits].some((t) => haveTraits.has(t));
+                        if (overlap) {
+                            matchedExtra = extraName;
+                            break;
+                        }
+                    }
+                    if (!matchedExtra) break;
+                    missingCounts.set(missingName, Math.max(0, (missingCounts.get(missingName) ?? 0) - 1));
+                    extraCounts.set(matchedExtra, Math.max(0, (extraCounts.get(matchedExtra) ?? 0) - 1));
+                    substitutionsRemaining--;
+                }
             }
         }
-        for (const name of actualCounts.keys()) {
-            if (!expectedCounts.has(name)) {
-                issues.push('Too many ingredients or wrong ingredients in the bench. Use only the exact ingredients required by the recipe.');
-                break;
-            }
+
+        const stillMissing = [...missingCounts.values()].some((n) => n > 0);
+        const stillExtra = [...extraCounts.values()].some((n) => n > 0);
+        if (stillMissing || stillExtra) {
+            if (stillExtra) issues.push('Too many ingredients or wrong ingredients in the bench. Use only the exact ingredients required by the recipe.');
+            else issues.push('Missing or wrong ingredients. Check the recipe and fill every slot with the correct item.');
         }
 
         /** Apparatus must match. */
@@ -2100,7 +2201,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         /** Time must match recipe time. */
         if (recipe.time != null && recipe.time >= 0) {
-            const wantTime = Math.max(0, Math.min(120, Math.ceil(Number(recipe.time))));
+            const baseTime = Number(recipe.time);
+            const wantTime = Math.max(0, Math.min(120, Math.ceil(baseTime * craftingTimeMultiplier)));
             const actualTime = Math.max(0, Math.min(120, Math.ceil(this.timeValue)));
             if (actualTime !== wantTime) issues.push(`Wrong process time. This recipe requires ${wantTime}s.`);
         }
@@ -2195,6 +2297,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         let ingredientLossOnFail = 'all';
         let ingredientKeptOnSuccess = undefined;
         let rollTotal = null;
+        let naturalRoll = null;
+        let criticalCraftingEnabled = false;
+        let criticalSuccessOutputMultiplier = 1;
+        let criticalFailureDamageFormula = null;
+        let forceSuccess = false;
+        let forceFailure = false;
         /** @type {Array<{ perkName: string, effect: string }>} */
         let appliedPerks = [];
 
@@ -2213,31 +2321,48 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             resolvedDC += rules.dcModifier;
             ingredientLossOnFail = rules.ingredientLossOnFail;
             ingredientKeptOnSuccess = rules.ingredientKeptOnSuccess;
+            criticalCraftingEnabled = !!rules.criticalCraftingEnabled;
+            criticalSuccessOutputMultiplier = Math.max(1, Math.floor(Number(rules.criticalSuccessOutputMultiplier) || 1));
+            criticalFailureDamageFormula = rules.criticalFailureDamageFormula ?? null;
 
             const roll = new Roll('1d20');
             await roll.evaluate();
-            rollTotal = roll.total;
+            naturalRoll = Number(roll.total);
+            rollTotal = naturalRoll;
             if (isExperimental && rules.experimentalRollBonus) {
                 rollTotal += rules.experimentalRollBonus;
             }
+            if (criticalCraftingEnabled && naturalRoll === 20) {
+                forceSuccess = true;
+            }
+            if (criticalCraftingEnabled && naturalRoll === 1) {
+                forceFailure = true;
+            }
         }
 
-        const success = rollTotal === null ? true : rollTotal >= resolvedDC;
+        const success = forceSuccess ? true : (forceFailure ? false : (rollTotal === null ? true : rollTotal >= resolvedDC));
 
         try {
             if (success) {
                 const obj = resultItem.toObject();
-                const createdItem = await addCraftedItemToActor(actor, obj);
+                const outputMultiplier = forceSuccess ? Math.max(2, criticalSuccessOutputMultiplier) : 1;
+                const createdItems = [];
+                for (let i = 0; i < outputMultiplier; i++) {
+                    const added = await addCraftedItemToActor(actor, obj);
+                    if (added) createdItems.push(added);
+                }
+                const createdItem = createdItems[0] ?? null;
                 if (!createdItem) {
                     return { success: false, item: null, name: 'Creation failed', quality: 'Failed', rollTotal, dc: resolvedDC, appliedPerks };
                 }
                 const consumeCount = ingredientKeptOnSuccess === 'half' ? Math.floor(items.length / 2) : items.length;
                 await this._consumeIngredients(actor, items, consumeCount);
                 this.lastCraftTags = [recipe.name];
+                const resultName = (forceSuccess && outputMultiplier > 1) ? `${recipe.name} x${outputMultiplier}` : recipe.name;
                 return {
                     success: true,
                     item: createdItem,
-                    name: recipe.name,
+                    name: resultName,
                     quality: 'Basic',
                     rollTotal,
                     dc: resolvedDC,
@@ -2263,7 +2388,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 }
             }
 
-            const rollFailIssue = rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.';
+            let rollFailIssue = rollTotal != null ? `Craft failed (rolled ${rollTotal} vs DC ${resolvedDC}).` : 'Craft failed.';
+            if (forceFailure) {
+                const dmgResult = await applyCraftFumbleDamage(actor, criticalFailureDamageFormula ?? '1d10');
+                if (dmgResult.amount > 0) {
+                    if (dmgResult.applied) rollFailIssue = `Critical fumble! Your kit detonates. You take ${dmgResult.amount} damage.`;
+                    else rollFailIssue = `Critical fumble! Your kit detonates. You take ${dmgResult.amount} damage (apply manually).`;
+                } else {
+                    rollFailIssue = 'Critical fumble! Your kit detonates.';
+                }
+            }
             this.lastCraftTags = [recipe.name];
             return {
                 success: false,

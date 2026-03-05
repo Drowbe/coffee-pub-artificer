@@ -269,7 +269,12 @@ export async function getAppliedGatheringPerksForDisplay(skillId, learnedPerkIds
  *   dcModifier: number,
  *   experimentalRollBonus: number,
  *   ingredientLossOnFail: 'all' | 'half',
- *   ingredientKeptOnSuccess: undefined | 'half'
+ *   ingredientKeptOnSuccess: undefined | 'half',
+ *   craftingTimeMultiplier: number,
+ *   similarIngredientSubstitutions: number,
+ *   criticalCraftingEnabled: boolean,
+ *   criticalSuccessOutputMultiplier: number,
+ *   criticalFailureDamageFormula: string | null
  * }>}
  */
 export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill) {
@@ -288,6 +293,11 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
     let experimentalRollBonus = 0;
     let ingredientLossOnFail = 'all';
     let ingredientKeptOnSuccess = undefined;
+    let craftingTimeMultiplier = 1;
+    let similarIngredientSubstitutions = 0;
+    let criticalCraftingEnabled = false;
+    let criticalSuccessOutputMultiplier = 1;
+    let criticalFailureDamageFormula = null;
 
     for (const rule of iterateRulesFromPerks(perks, learnedPerkIdsForSkill)) {
         if (Array.isArray(rule.recipeTierAccess) && rule.recipeTierAccess.length >= 2) {
@@ -315,6 +325,21 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         if (rule.ingredientKeptOnSuccess === 'half') {
             ingredientKeptOnSuccess = 'half';
         }
+        if (typeof rule.craftingTimeMultiplier === 'number' && Number.isFinite(rule.craftingTimeMultiplier) && rule.craftingTimeMultiplier > 0) {
+            craftingTimeMultiplier = Math.min(craftingTimeMultiplier, rule.craftingTimeMultiplier);
+        }
+        if (typeof rule.similarIngredientSubstitutions === 'number' && Number.isFinite(rule.similarIngredientSubstitutions)) {
+            similarIngredientSubstitutions = Math.max(similarIngredientSubstitutions, Math.floor(rule.similarIngredientSubstitutions));
+        }
+        if (rule.criticalCrafting?.enabled === true) {
+            criticalCraftingEnabled = true;
+            const mult = Number(rule.criticalCrafting.critSuccessOutputMultiplier);
+            if (Number.isFinite(mult) && mult > criticalSuccessOutputMultiplier) {
+                criticalSuccessOutputMultiplier = Math.floor(mult);
+            }
+            const dmg = String(rule.criticalCrafting.critFailureDamageFormula ?? '').trim();
+            if (dmg) criticalFailureDamageFormula = dmg;
+        }
     }
 
     const experimentalCraftingTypes = Array.from(experimentalCraftingTypesSet);
@@ -341,7 +366,12 @@ export async function getEffectiveCraftingRules(skillId, learnedPerkIdsForSkill)
         dcModifier,
         experimentalRollBonus,
         ingredientLossOnFail,
-        ingredientKeptOnSuccess
+        ingredientKeptOnSuccess,
+        craftingTimeMultiplier,
+        similarIngredientSubstitutions,
+        criticalCraftingEnabled,
+        criticalSuccessOutputMultiplier,
+        criticalFailureDamageFormula
     };
 }
 
@@ -484,6 +514,19 @@ export async function getAppliedPerksForCraft(skillId, learnedPerkIdsForSkill, r
             if (typeof rule.experimentalCraftingDCModifier === 'number' && rule.experimentalCraftingDCModifier !== 0 && isExperimental) {
                 const sign = rule.experimentalCraftingDCModifier >= 0 ? '+' : '';
                 effectsByPerk.get(perkName).push(`${sign}${rule.experimentalCraftingDCModifier} roll bonus (experimental attempt)`);
+            }
+            if (typeof rule.craftingTimeMultiplier === 'number' && Number.isFinite(rule.craftingTimeMultiplier) && rule.craftingTimeMultiplier > 0 && rule.craftingTimeMultiplier < 1) {
+                const pct = Math.round((1 - rule.craftingTimeMultiplier) * 100);
+                effectsByPerk.get(perkName).push(`-${pct}% crafting time`);
+            }
+            if (typeof rule.similarIngredientSubstitutions === 'number' && rule.similarIngredientSubstitutions > 0) {
+                const n = Math.floor(rule.similarIngredientSubstitutions);
+                effectsByPerk.get(perkName).push(n === 1 ? '1 trait-based ingredient substitution' : `${n} trait-based ingredient substitutions`);
+            }
+            if (rule.criticalCrafting?.enabled === true) {
+                const mult = Number(rule.criticalCrafting.critSuccessOutputMultiplier) || 2;
+                const dmg = String(rule.criticalCrafting.critFailureDamageFormula ?? '1d10').trim();
+                effectsByPerk.get(perkName).push(`Nat 20: auto success x${Math.max(2, Math.floor(mult))} output; Nat 1: auto fail and ${dmg} self-damage`);
             }
         }
     }
