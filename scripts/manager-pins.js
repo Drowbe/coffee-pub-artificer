@@ -134,7 +134,10 @@ export class PinsManager {
                 const updates = {};
 
                 if (!pin) {
-                    const { x, y } = this._getRandomPointInBounds(bounds);
+                    const nodeX = Number(node?.x);
+                    const nodeY = Number(node?.y);
+                    const hasNodePoint = Number.isFinite(nodeX) && Number.isFinite(nodeY) && this._isPointInBounds(nodeX, nodeY, bounds);
+                    const { x, y } = hasNodePoint ? { x: nodeX, y: nodeY } : this._getRandomPointInBounds(bounds);
                     const defaultDesign = this._getGatherSpotDefaultDesign();
                     const defaultStyle = (defaultDesign.style && typeof defaultDesign.style === 'object')
                         ? defaultDesign.style

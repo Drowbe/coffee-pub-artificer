@@ -24,6 +24,7 @@ const GATHER_SOCKET_EVENT = `${MODULE.ID}.gatherRollResolved`;
 const DISCOVERY_SOCKET_EVENT = `${MODULE.ID}.gatherDiscoveryResolved`;
 let _gatherSocketApi = null;
 let _gatherSocketRegistered = false;
+let _blacksmithRollHookRegistered = false;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
 const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
@@ -50,6 +51,14 @@ const SOUND_EXPLORE_SUCCESS = 'interface-notification-10';
 const SOUND_EXPLORE_FAIL = 'interface-error-03';
 const SOUND_POPULATE = 'fanfare-success-2';
 const SOUND_CLEAR = 'interface-button-10';
+const DEFAULT_DISCOVERY_RADIUS_UNITS = 60;
+const DEFAULT_DISCOVERY_RARITY_OFFSETS = Object.freeze({
+    common: 0,
+    uncommon: 3,
+    rare: 6,
+    'very rare': 10,
+    legendary: 14
+});
 
 /**
  * Get biome options for multiselect (create-window style: name + selected).
@@ -590,9 +599,16 @@ function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const harvestingSkills = normalizeList(flags.harvestingSkills).length
         ? normalizeList(flags.harvestingSkills)
         : ['Herbalism', 'Cooking'];
-    const rawDC = Number(flags.defaultDC);
-    const dc = Number.isFinite(rawDC) ? Math.max(1, Math.min(30, Math.floor(rawDC))) : 5;
-    return { dc, biomes, componentTypes, harvestingSkills };
+    const fallbackDC = Number(flags.defaultDC);
+    const rawDiscoveryDC = Number(flags.discoveryDC);
+    const rawHarvestDC = Number(flags.harvestDC);
+    const discoveryDC = Number.isFinite(rawDiscoveryDC)
+        ? Math.max(0, Math.min(20, Math.floor(rawDiscoveryDC)))
+        : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, Math.floor(fallbackDC))) : 5);
+    const harvestDC = Number.isFinite(rawHarvestDC)
+        ? Math.max(0, Math.min(20, Math.floor(rawHarvestDC)))
+        : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, Math.floor(fallbackDC))) : 5);
+    return { discoveryDC, harvestDC, biomes, componentTypes, harvestingSkills };
 }
 
 function _normalizeRarityKey(value) {
@@ -625,6 +641,50 @@ function _getDiscoveryMaxRarityRank(rollTotal, dc) {
     if (rollTotal >= dc + 10) return 3;
     if (rollTotal >= dc + 5) return 2;
     return 1;
+}
+
+function _getRarityKeyFromRank(rank) {
+    if (rank >= 5) return 'legendary';
+    if (rank === 4) return 'very rare';
+    if (rank === 3) return 'rare';
+    if (rank === 2) return 'uncommon';
+    if (rank === 1) return 'common';
+    return null;
+}
+
+function _getDiscoveryMaxRarityRankByThresholds(rollTotal, thresholds = {}) {
+    if (rollTotal >= Number(thresholds.legendary)) return 5;
+    if (rollTotal >= Number(thresholds['very rare'])) return 4;
+    if (rollTotal >= Number(thresholds.rare)) return 3;
+    if (rollTotal >= Number(thresholds.uncommon)) return 2;
+    if (rollTotal >= Number(thresholds.common)) return 1;
+    return 0;
+}
+
+function _buildDiscoveryThresholds(baseDC, offsets = {}) {
+    const base = Math.max(0, Math.min(20, Number(baseDC) || 0));
+    const clampOffset = (v, fallback = 0) => {
+        const n = Number(v);
+        if (!Number.isFinite(n)) return fallback;
+        return Math.max(0, Math.min(30, Math.floor(n)));
+    };
+    const raw = {
+        common: clampOffset(offsets.common, DEFAULT_DISCOVERY_RARITY_OFFSETS.common),
+        uncommon: clampOffset(offsets.uncommon, DEFAULT_DISCOVERY_RARITY_OFFSETS.uncommon),
+        rare: clampOffset(offsets.rare, DEFAULT_DISCOVERY_RARITY_OFFSETS.rare),
+        'very rare': clampOffset(offsets['very rare'], DEFAULT_DISCOVERY_RARITY_OFFSETS['very rare']),
+        legendary: clampOffset(offsets.legendary, DEFAULT_DISCOVERY_RARITY_OFFSETS.legendary)
+    };
+
+    const ordered = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
+    const thresholds = {};
+    let running = -Infinity;
+    for (const rarity of ordered) {
+        const value = Math.max(0, Math.min(50, base + raw[rarity]));
+        running = Math.max(running, value);
+        thresholds[rarity] = running;
+    }
+    return thresholds;
 }
 
 function _getDiscoveryNodeCount(rollTotal, dc, remainingCap) {
@@ -806,6 +866,64 @@ function _getPinCenter(pin) {
     return { x, y };
 }
 
+function _getTokenCenterById(scene, tokenId) {
+    if (!scene || !tokenId) return null;
+    const tokenDoc = scene?.tokens?.get?.(tokenId) ?? null;
+    if (!tokenDoc) return null;
+    const x = Number(tokenDoc.x);
+    const y = Number(tokenDoc.y);
+    const w = Number(tokenDoc.width) || 1;
+    const h = Number(tokenDoc.height) || 1;
+    const gridSize = Number(scene?.grid?.size) || Number(canvas?.dimensions?.size) || 100;
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(gridSize)) return null;
+    return {
+        x: x + (w * gridSize) / 2,
+        y: y + (h * gridSize) / 2
+    };
+}
+
+function _getSceneSpawnBounds(scene = canvas?.scene ?? null) {
+    const dims = canvas?.dimensions ?? {};
+    const edgePadding = 40;
+    const sceneX = Number(dims.sceneX);
+    const sceneY = Number(dims.sceneY);
+    const sceneWidth = Number(dims.sceneWidth);
+    const sceneHeight = Number(dims.sceneHeight);
+    if (Number.isFinite(sceneX) && Number.isFinite(sceneY) && Number.isFinite(sceneWidth) && Number.isFinite(sceneHeight)) {
+        return {
+            minX: sceneX + edgePadding,
+            minY: sceneY + edgePadding,
+            maxX: Math.max(sceneX + edgePadding + 1, sceneX + sceneWidth - edgePadding),
+            maxY: Math.max(sceneY + edgePadding + 1, sceneY + sceneHeight - edgePadding)
+        };
+    }
+    const rect = dims.sceneRect ?? { x: 0, y: 0, width: Number(dims.width) || Number(scene?.width) || 3000, height: Number(dims.height) || Number(scene?.height) || 2000 };
+    return {
+        minX: Number(rect.x) + edgePadding,
+        minY: Number(rect.y) + edgePadding,
+        maxX: Math.max(Number(rect.x) + edgePadding + 1, Number(rect.x) + Number(rect.width) - edgePadding),
+        maxY: Math.max(Number(rect.y) + edgePadding + 1, Number(rect.y) + Number(rect.height) - edgePadding)
+    };
+}
+
+function _getRandomPointAroundCenter(center, radiusUnits, scene = canvas?.scene ?? null) {
+    const cx = Number(center?.x);
+    const cy = Number(center?.y);
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) return null;
+    const gridPx = Number(canvas?.dimensions?.size) || Number(scene?.grid?.size) || 100;
+    const gridUnits = Number(canvas?.dimensions?.distance) || 5;
+    const radiusPx = Math.max(0, Number(radiusUnits) || 0) * (gridPx / gridUnits);
+    const theta = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * radiusPx;
+    const rawX = cx + Math.cos(theta) * r;
+    const rawY = cy + Math.sin(theta) * r;
+    const bounds = _getSceneSpawnBounds(scene);
+    return {
+        x: Math.round(Math.max(bounds.minX, Math.min(bounds.maxX, rawX))),
+        y: Math.round(Math.max(bounds.minY, Math.min(bounds.maxY, rawY)))
+    };
+}
+
 function _getEligibleTokenActorsForPinProximity(pin, maxDistanceUnits = 5) {
     const selected = _getControlledTokenActorsForRequest();
     const pinCenter = _getPinCenter(pin);
@@ -940,6 +1058,76 @@ async function _ensureGatherSocketHandler() {
     _gatherSocketRegistered = true;
 }
 
+/**
+ * Initialize gather/discovery socket listeners on this client.
+ * Must run for all users so player-originated roll events can be resolved by connected GMs.
+ */
+export async function initializeGatherSockets() {
+    _ensureBlacksmithRollCompleteHook();
+    if (_gatherSocketRegistered) return;
+    const maxAttempts = 20;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await _ensureGatherSocketHandler();
+            if (_gatherSocketRegistered) return;
+        } catch (error) {
+            if (attempt >= maxAttempts) return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300));
+    }
+}
+
+function _ensureBlacksmithRollCompleteHook() {
+    if (_blacksmithRollHookRegistered) return;
+    Hooks.on('blacksmith.requestRollComplete', async (payload) => {
+        if (!game.user?.isGM) return;
+        if (!payload || typeof payload !== 'object') return;
+        const rollerUserId = String(payload?.rollerUserId ?? '');
+        if (rollerUserId && rollerUserId === String(game.user.id)) return;
+
+        const messageId = String(payload?.messageId ?? '');
+        if (!messageId) return;
+        const message = payload?.message ?? game.messages?.get?.(messageId) ?? null;
+        const rollContext = message?.getFlag?.(MODULE.ID, 'rollContext') ?? null;
+        if (!rollContext || typeof rollContext !== 'object') return;
+
+        const rollTotal = Number(payload?.result?.total);
+        if (!Number.isFinite(rollTotal)) return;
+        const tokenId = payload?.tokenId ?? null;
+        const speakerActorId = payload?.messageData?.actors?.find?.((a) => String(a?.id ?? '') === String(tokenId))?.actorId
+            ?? payload?.message?.speaker?.actor
+            ?? null;
+        const sceneId = payload?.message?.speaker?.scene ?? canvas?.scene?.id ?? null;
+        const allComplete = payload?.allComplete !== false;
+
+        if (rollContext.kind === 'discovery' && rollContext.context) {
+            await _processDiscoveryRollOnGM({
+                requestId: String(rollContext.requestId ?? `msg:${messageId}`),
+                rollTotal,
+                allComplete,
+                tokenId,
+                speakerActorId,
+                sceneId,
+                context: rollContext.context
+            });
+            return;
+        }
+
+        if (rollContext.kind === 'gather' && rollContext.pending) {
+            await _processGatherRollOnGM({
+                requestId: String(rollContext.requestId ?? `msg:${messageId}`),
+                rollTotal,
+                allComplete,
+                tokenId,
+                speakerActorId,
+                sceneId,
+                pending: rollContext.pending
+            });
+        }
+    });
+    _blacksmithRollHookRegistered = true;
+}
+
 async function _resolveActorFromRollPayload(payload) {
     const { tokenId, message } = payload ?? {};
     if (tokenId && canvas?.scene) {
@@ -1024,7 +1212,13 @@ async function _processGatherRollOnGM(data) {
 }
 
 async function _applyDiscoveryResults(scene, context, entries) {
-    const { dc, biomes, componentTypes, harvestingSkills, gatherSpots } = context;
+    const { discoveryThresholds, discoveryDC, dc, biomes, componentTypes, harvestingSkills, gatherSpots, discoveryRadiusUnits } = context;
+    const fallbackBaseDC = Number.isFinite(Number(discoveryDC))
+        ? Number(discoveryDC)
+        : (Number.isFinite(Number(dc)) ? Number(dc) : 5);
+    const effectiveThresholds = (discoveryThresholds && Number.isFinite(Number(discoveryThresholds.common)))
+        ? discoveryThresholds
+        : _buildDiscoveryThresholds(fallbackBaseDC, DEFAULT_DISCOVERY_RARITY_OFFSETS);
     let remaining = Math.max(0, Number(gatherSpots) || 0);
     const existing = _getSceneDiscoveredNodes(scene);
     remaining = Math.max(0, remaining - existing.length);
@@ -1036,15 +1230,21 @@ async function _applyDiscoveryResults(scene, context, entries) {
         if (remaining <= 0) break;
         const rollTotal = Number(entry?.rollTotal);
         if (!Number.isFinite(rollTotal)) continue;
-        const maxRarityRank = _getDiscoveryMaxRarityRank(rollTotal, dc);
+        const maxRarityRank = _getDiscoveryMaxRarityRankByThresholds(rollTotal, effectiveThresholds);
         if (maxRarityRank <= 0) continue;
 
-        const countForRoll = _getDiscoveryNodeCount(rollTotal, dc, remaining);
+        const maxRarityKey = _getRarityKeyFromRank(maxRarityRank);
+        const thresholdDC = Number.isFinite(Number(effectiveThresholds?.[maxRarityKey]))
+            ? Number(effectiveThresholds[maxRarityKey])
+            : 0;
+        const countForRoll = _getDiscoveryNodeCount(rollTotal, thresholdDC, remaining);
         if (countForRoll <= 0) continue;
 
         const basePool = getEligibleGatherRecords(biomes, componentTypes)
             .filter((rec) => _getRarityRank(_getRecordRarity(rec)) <= maxRarityRank);
         if (!basePool.length) continue;
+        const anchor = _getTokenCenterById(scene, entry?.tokenId ?? null);
+        const radiusUnits = Math.max(5, Number(discoveryRadiusUnits) || DEFAULT_DISCOVERY_RADIUS_UNITS);
 
         for (let i = 0; i < countForRoll; i++) {
             if (remaining <= 0) break;
@@ -1053,6 +1253,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
             const family = String(rec?.family ?? '').trim();
             if (!family) continue;
             const rarity = _getRecordRarity(rec);
+            const point = anchor ? _getRandomPointAroundCenter(anchor, radiusUnits, scene) : null;
             byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
             discovered.push({
                 id: foundry.utils.randomID(),
@@ -1061,7 +1262,9 @@ async function _applyDiscoveryResults(scene, context, entries) {
                 rarity,
                 biomes: [...biomes],
                 componentTypes: [family],
-                skillIds: [...harvestingSkills]
+                skillIds: [...harvestingSkills],
+                x: Number.isFinite(Number(point?.x)) ? Number(point.x) : null,
+                y: Number.isFinite(Number(point?.y)) ? Number(point.y) : null
             });
             remaining -= 1;
         }
@@ -1081,7 +1284,8 @@ async function _processDiscoveryRollOnGM(data) {
     const bucket = _discoveryRollBuffers.get(requestId) ?? [];
     bucket.push({
         actor: data?.speakerActorId ? game.actors?.get?.(data.speakerActorId) ?? null : null,
-        rollTotal
+        rollTotal,
+        tokenId: data?.tokenId ?? null
     });
     _discoveryRollBuffers.set(requestId, bucket);
     if (!allComplete) return;
@@ -1113,10 +1317,24 @@ async function _processDiscoveryRollOnGM(data) {
 }
 
 function _buildDiscoveryContext(scene) {
-    const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
+    const { discoveryDC, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
     const sceneFlags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    const gatherSpots = Math.max(0, Number(sceneFlags.gatherSpots) || 0);
-    return { dc, biomes, componentTypes, harvestingSkills, gatherSpots };
+    const rawBase = Number(sceneFlags.discoveryBaseDC);
+    const discoveryBaseDC = Number.isFinite(rawBase) ? Math.max(0, Math.min(20, Math.floor(rawBase))) : discoveryDC;
+    const discoveryThresholds = _buildDiscoveryThresholds(discoveryBaseDC, {
+        common: sceneFlags.discoveryOffsetCommon,
+        uncommon: sceneFlags.discoveryOffsetUncommon,
+        rare: sceneFlags.discoveryOffsetRare,
+        'very rare': sceneFlags.discoveryOffsetVeryRare,
+        legendary: sceneFlags.discoveryOffsetLegendary
+    });
+    const gatherSpots = Math.max(0, Math.min(30, Number(sceneFlags.gatherSpots) || 0));
+    const rawRadius = Number(sceneFlags.discoveryRadiusUnits);
+    const discoveryRadiusUnits = Number.isFinite(rawRadius)
+        ? Math.max(5, Math.min(300, Math.round(rawRadius / 5) * 5))
+        : DEFAULT_DISCOVERY_RADIUS_UNITS;
+    const discoveryRollDC = Number.isFinite(Number(discoveryThresholds.common)) ? Number(discoveryThresholds.common) : discoveryBaseDC;
+    return { discoveryBaseDC, discoveryThresholds, discoveryRollDC, biomes, componentTypes, harvestingSkills, gatherSpots, discoveryRadiusUnits };
 }
 
 /**
@@ -1175,10 +1393,10 @@ export async function requestDiscoverGatherSpotsFromScene() {
     await _ensureGatherSocketHandler();
     const localBuffer = [];
 
-    await api.openRequestRollDialog({
+    const requestResult = await api.openRequestRollDialog({
         silent: true,
         title: 'Discover Gathering Spots',
-        dc: context.dc,
+        dc: context.discoveryRollDC,
         initialFilter: 'selected',
         initialType: 'ability',
         initialValue: 'wis',
@@ -1192,24 +1410,11 @@ export async function requestDiscoverGatherSpotsFromScene() {
             }
 
             if (!game.user?.isGM) {
-                const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
-                if (!gmRecipients.length) {
-                    ui.notifications?.warn('No GM connected to resolve discovery.');
-                    return;
-                }
-                await _gatherSocketApi.emit(DISCOVERY_SOCKET_EVENT, {
-                    requestId,
-                    sceneId: scene.id,
-                    speakerActorId: payload?.message?.speaker?.actor ?? null,
-                    rollTotal,
-                    allComplete: payload?.allComplete !== false,
-                    context
-                }, { recipients: gmRecipients });
                 return;
             }
 
             const actor = await _resolveActorFromRollPayload(payload);
-            localBuffer.push({ actor, rollTotal });
+            localBuffer.push({ actor, rollTotal, tokenId: payload?.tokenId ?? null });
             if (payload?.allComplete === false) return;
 
             const result = await _applyDiscoveryResults(scene, context, localBuffer);
@@ -1229,6 +1434,14 @@ export async function requestDiscoverGatherSpotsFromScene() {
             });
         }
     });
+    const requestMessage = requestResult?.message ?? (requestResult?.messageId ? game.messages?.get?.(requestResult.messageId) ?? null : null);
+    if (requestMessage?.setFlag) {
+        await requestMessage.setFlag(MODULE.ID, 'rollContext', {
+            kind: 'discovery',
+            requestId,
+            context
+        });
+    }
 }
 
 /**
@@ -1248,7 +1461,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     const sourcePin = sourcePinId ? _getPinById(sourcePinId, canvas.scene.id) : null;
 
     const scene = canvas.scene;
-    const { dc, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
+    const { harvestDC, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
     const sourceNode = sourcePinId ? _getNodeByPinId(scene, sourcePinId) : null;
     const effectiveBiomes = sourceNode?.biomes?.length ? sourceNode.biomes : biomes;
     const effectiveComponentTypes = sourceNode?.componentTypes?.length ? sourceNode.componentTypes : componentTypes;
@@ -1293,7 +1506,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     }
 
     const pendingContext = {
-        dc,
+        dc: harvestDC,
         biomes: effectiveBiomes,
         componentTypes: effectiveComponentTypes,
         skillIds: effectiveSkills,
@@ -1311,10 +1524,10 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     }
 
     try {
-        await api.openRequestRollDialog({
+        const requestResult = await api.openRequestRollDialog({
             silent: true,
             title: 'Gather and Harvest',
-            dc,
+            dc: harvestDC,
             initialFilter: 'selected',
             initialType: 'ability',
             initialValue: 'wis',
@@ -1329,21 +1542,6 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
             }
 
             if (!game.user?.isGM) {
-                const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
-                if (!gmRecipients.length) {
-                    ui.notifications?.warn('No GM connected to resolve gather results.');
-                    await _stopGatherPinProcessing(requestId, { restoreImage: true });
-                    return;
-                }
-                await _gatherSocketApi.emit(GATHER_SOCKET_EVENT, {
-                    requestId,
-                    sceneId: canvas?.scene?.id ?? null,
-                    tokenId: payload?.tokenId ?? null,
-                    speakerActorId: payload?.message?.speaker?.actor ?? null,
-                    rollTotal,
-                    allComplete: payload?.allComplete !== false,
-                    pending: pendingContext
-                }, { recipients: gmRecipients });
                 if (payload?.allComplete !== false) {
                     await _stopGatherPinProcessing(requestId, { restoreImage: false });
                 }
@@ -1402,6 +1600,14 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
             consumePendingGather();
         }
         });
+        const requestMessage = requestResult?.message ?? (requestResult?.messageId ? game.messages?.get?.(requestResult.messageId) ?? null : null);
+        if (requestMessage?.setFlag) {
+            await requestMessage.setFlag(MODULE.ID, 'rollContext', {
+                kind: 'gather',
+                requestId,
+                pending: pendingContext
+            });
+        }
     } catch (error) {
         await _stopGatherPinProcessing(requestId, { restoreImage: true });
         throw error;

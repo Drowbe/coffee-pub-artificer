@@ -135,8 +135,32 @@ export class SceneManager {
             ? currentHarvestingSkills
             : defaultHarvestingSkills;
         const selectedHarvestingSkills = new Set(rawHarvestingSkills.map((s) => String(s).trim()).filter(Boolean));
-        const defaultDC = Number.isFinite(Number(sceneFlags.defaultDC)) ? Math.max(1, Math.min(30, Number(sceneFlags.defaultDC))) : 5;
-        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Number(sceneFlags.gatherSpots)) : 0;
+        const fallbackDC = Number(sceneFlags.defaultDC);
+        const discoveryDCRaw = Number(sceneFlags.discoveryDC);
+        const harvestDCRaw = Number(sceneFlags.harvestDC);
+        const discoveryDCFallback = Number.isFinite(discoveryDCRaw)
+            ? Math.max(0, Math.min(20, discoveryDCRaw))
+            : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, fallbackDC)) : 5);
+        const discoveryBaseDCRaw = Number(sceneFlags.discoveryBaseDC);
+        const discoveryBaseDC = Number.isFinite(discoveryBaseDCRaw)
+            ? Math.max(0, Math.min(20, discoveryBaseDCRaw))
+            : discoveryDCFallback;
+        const harvestDC = Number.isFinite(harvestDCRaw)
+            ? Math.max(0, Math.min(20, harvestDCRaw))
+            : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, fallbackDC)) : 5);
+        const clampOffset = (raw, fallbackValue) => Number.isFinite(Number(raw))
+            ? Math.max(0, Math.min(30, Number(raw)))
+            : fallbackValue;
+        const discoveryOffsetCommon = clampOffset(sceneFlags.discoveryOffsetCommon, 0);
+        const discoveryOffsetUncommon = clampOffset(sceneFlags.discoveryOffsetUncommon, 3);
+        const discoveryOffsetRare = clampOffset(sceneFlags.discoveryOffsetRare, 6);
+        const discoveryOffsetVeryRare = clampOffset(sceneFlags.discoveryOffsetVeryRare, 10);
+        const discoveryOffsetLegendary = clampOffset(sceneFlags.discoveryOffsetLegendary, 14);
+        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Math.min(30, Number(sceneFlags.gatherSpots))) : 0;
+        const discoveryRadiusUnitsRaw = Number(sceneFlags.discoveryRadiusUnits);
+        const discoveryRadiusUnits = Number.isFinite(discoveryRadiusUnitsRaw)
+            ? Math.max(5, Math.min(300, Math.round(discoveryRadiusUnitsRaw / 5) * 5))
+            : 60;
         const habitatOptionsHtml = OFFICIAL_BIOMES.map((biome) => {
             const checked = selectedHabitats.has(biome) ? 'checked' : '';
             return `
@@ -201,20 +225,79 @@ export class SceneManager {
                     ${harvestingSkillOptionsHtml}
                 </div>
             </fieldset>
-            <div class="form-group">
-                <label>Default DC</label>
-                <div class="form-fields">
-                    <input type="number" min="1" max="30" step="1" name="flags.${MODULE.ID}.scene.defaultDC" value="${defaultDC}" />
+            <fieldset class="artificer-scene-fieldset artificer-scene-thresholds">
+                <legend>Discovery DC Thresholds (Base + Offset)</legend>
+                <div class="form-group">
+                    <label>Base DC</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="20" step="1" name="flags.${MODULE.ID}.scene.discoveryBaseDC" value="${discoveryBaseDC}" data-artificer-range="discovery-base-dc" />
+                        <span class="range-value" data-artificer-range-value="discovery-base-dc">${discoveryBaseDC}</span>
+                    </div>
                 </div>
+                <div class="form-group">
+                    <label>Common Offset (+)</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.discoveryOffsetCommon" value="${discoveryOffsetCommon}" data-artificer-range="offset-common" />
+                        <span class="range-value" data-artificer-range-value="offset-common">${discoveryOffsetCommon}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Uncommon Offset (+)</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.discoveryOffsetUncommon" value="${discoveryOffsetUncommon}" data-artificer-range="offset-uncommon" />
+                        <span class="range-value" data-artificer-range-value="offset-uncommon">${discoveryOffsetUncommon}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Rare Offset (+)</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.discoveryOffsetRare" value="${discoveryOffsetRare}" data-artificer-range="offset-rare" />
+                        <span class="range-value" data-artificer-range-value="offset-rare">${discoveryOffsetRare}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Very Rare Offset (+)</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.discoveryOffsetVeryRare" value="${discoveryOffsetVeryRare}" data-artificer-range="offset-very-rare" />
+                        <span class="range-value" data-artificer-range-value="offset-very-rare">${discoveryOffsetVeryRare}</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Legendary Offset (+)</label>
+                    <div class="form-fields">
+                        <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.discoveryOffsetLegendary" value="${discoveryOffsetLegendary}" data-artificer-range="offset-legendary" />
+                        <span class="range-value" data-artificer-range-value="offset-legendary">${discoveryOffsetLegendary}</span>
+                    </div>
+                </div>
+                <p class="hint">Roll checks Legendary, then Very Rare, Rare, Uncommon, and Common. Each threshold is Base DC + Offset.</p>
+            </fieldset>
+            <div class="form-group">
+                <label>Harvest DC</label>
+                <div class="form-fields">
+                    <input type="range" min="0" max="20" step="1" name="flags.${MODULE.ID}.scene.harvestDC" value="${harvestDC}" data-artificer-range="harvest-dc" />
+                    <span class="range-value" data-artificer-range-value="harvest-dc">${harvestDC}</span>
+                </div>
+                <p class="hint">Difficulty Class for Gather and Harvest rolls in this scene (0-20).</p>
             </div>
             <div class="form-group">
                 <label>Gather Spots</label>
                 <div class="form-fields">
-                    <input type="number" min="0" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" />
+                    <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" data-artificer-range="spots" />
+                    <span class="range-value" data-artificer-range-value="spots">${gatherSpots}</span>
                 </div>
+                <p class="hint">Maximum discovered gathering spots allowed on this scene (0-30).</p>
+            </div>
+            <div class="form-group">
+                <label>Discovery Radius (ft)</label>
+                <div class="form-fields">
+                    <input type="range" min="5" max="300" step="5" name="flags.${MODULE.ID}.scene.discoveryRadiusUnits" value="${discoveryRadiusUnits}" data-artificer-range="radius" />
+                    <span class="range-value" data-artificer-range-value="radius">${discoveryRadiusUnits}</span>
+                </div>
+                <p class="hint">New discovery spots spawn around the rolling token within this distance (5-300 ft).</p>
             </div>
         `;
         tabBodyHost.appendChild(tabPanel);
+        this._wireRangeDisplays(tabPanel);
 
         // Keep Save Changes last in the form flow.
         const footer = form.querySelector('.form-footer, footer.application-footer');
@@ -223,6 +306,21 @@ export class SceneManager {
         }
 
         this._log(`SceneManager: Artificer tab injected for scene "${app?.document?.name ?? 'Unknown'}"`);
+    }
+
+    static _wireRangeDisplays(root) {
+        if (!root?.querySelectorAll) return;
+        const ranges = root.querySelectorAll('input[type="range"][data-artificer-range]');
+        for (const input of ranges) {
+            const key = input.dataset.artificerRange;
+            const display = root.querySelector(`[data-artificer-range-value="${key}"]`);
+            if (!display) continue;
+            const sync = () => {
+                display.textContent = String(input.value ?? '');
+            };
+            input.addEventListener('input', sync);
+            sync();
+        }
     }
 
     static _broadcastSceneArtificerUpdate(scene, changed, options, userId) {

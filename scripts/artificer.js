@@ -16,6 +16,7 @@ import { requestGatherAndHarvestFromScene } from './manager-gather.js';
 import { requestDiscoverGatherSpotsFromScene } from './manager-gather.js';
 import { clearGatheringSpotsForScene } from './manager-gather.js';
 import { populateGatheringSpotsForScene } from './manager-gather.js';
+import { initializeGatherSockets } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 import { PinsManager } from './manager-pins.js';
 
@@ -112,6 +113,9 @@ Hooks.once('ready', async () => {
  * Initialize module features
  */
 function initializeModule() {
+    initializeGatherSockets().catch((error) => {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Gather sockets failed to initialize`, error?.message ?? String(error), true, false);
+    });
     SceneManager.initialize().catch((error) => {
         BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Scene manager failed to initialize`, error?.message ?? String(error), true, false);
     });

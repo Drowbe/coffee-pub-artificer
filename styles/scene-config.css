@@ -6,6 +6,31 @@
     padding: 0 6px;
 }
 
+.scene-config .tab[data-tab="artificer"] .artificer-scene-thresholds {
+    display: block;
+}
+
+.scene-config .tab[data-tab="artificer"] .artificer-scene-thresholds > .form-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scene-config .tab[data-tab="artificer"] .artificer-scene-thresholds > .form-group > label {
+    flex: 0 0 160px;
+}
+
+.scene-config .tab[data-tab="artificer"] .artificer-scene-thresholds > .form-group > .form-fields {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scene-config .tab[data-tab="artificer"] .artificer-scene-thresholds > .form-group > .form-fields > input[type="range"] {
+    flex: 1;
+}
+
 .scene-config .tab[data-tab="artificer"] .artificer-scene-checkbox-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
