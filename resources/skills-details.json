@@ -301,6 +301,40 @@
               { "title": "Experimental control", "description": "+2 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 2 } }
             ]
           }
+        },
+        {
+          "perkID": "alchemy-failsoft-catalyst",
+          "index": 1,
+          "value": 0,
+          "name": "Failsoft Catalyst",
+          "description": "You build your process around controlled failure states. When reactions break, they break slowly and salvageably.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-shield-halved",
+          "rules": {
+            "benefits": [
+              { "title": "Catalyst dampening", "description": "On failed alchemy attempts, lose only half the ingredients.", "rule": { "ingredientLossOnFail": "half" } },
+              { "title": "Stability under pressure", "description": "+1 to experimental crafting roll total.", "rule": { "experimentalCraftingDCModifier": 1 } }
+            ]
+          }
+        },
+        {
+          "perkID": "alchemy-efficient-recovery",
+          "index": 1,
+          "value": 0,
+          "name": "Efficient Recovery",
+          "description": "Your cleanup and extraction discipline lets you reclaim useful material from successful runs.",
+          "requirement": "",
+          "cost": 2,
+          "perkLearnedBackgroundColor": "rgba(105, 139, 1, 0.5)",
+          "icon": "fa-recycle",
+          "rules": {
+            "benefits": [
+              { "title": "Recovered stock", "description": "On success, keep half the ingredients.", "rule": { "ingredientKeptOnSuccess": "half" } },
+              { "title": "Optimized process", "description": "-1 crafting DC when crafting within unlocked tier.", "rule": { "craftingDCModifier": -1 } }
+            ]
+          }
         }
       ]
     },
