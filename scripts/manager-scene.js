@@ -128,8 +128,12 @@ export class SceneManager {
         const profile = (sceneFlags.profile ?? '').toString();
         const selectedHabitats = new Set(normalizeList(sceneFlags.habitats));
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
-        const selectedComponentTypes = new Set(normalizeList(sceneFlags.componentTypes));
-        const defaultHarvestingSkills = [CRAFTING_SKILLS.HERBALISM, CRAFTING_SKILLS.COOKING];
+        const currentComponentTypes = normalizeList(sceneFlags.componentTypes);
+        const rawComponentTypes = currentComponentTypes.length
+            ? currentComponentTypes
+            : componentFamilies;
+        const selectedComponentTypes = new Set(rawComponentTypes.map((s) => String(s).trim()).filter(Boolean));
+        const defaultHarvestingSkills = Object.values(CRAFTING_SKILLS);
         const currentHarvestingSkills = normalizeList(sceneFlags.harvestingSkills);
         const rawHarvestingSkills = currentHarvestingSkills.length
             ? currentHarvestingSkills
@@ -156,7 +160,7 @@ export class SceneManager {
         const discoveryOffsetRare = clampOffset(sceneFlags.discoveryOffsetRare, 6);
         const discoveryOffsetVeryRare = clampOffset(sceneFlags.discoveryOffsetVeryRare, 10);
         const discoveryOffsetLegendary = clampOffset(sceneFlags.discoveryOffsetLegendary, 14);
-        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(0, Math.min(30, Number(sceneFlags.gatherSpots))) : 0;
+        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(1, Math.min(30, Number(sceneFlags.gatherSpots))) : 1;
         const discoveryRadiusUnitsRaw = Number(sceneFlags.discoveryRadiusUnits);
         const discoveryRadiusUnits = Number.isFinite(discoveryRadiusUnitsRaw)
             ? Math.max(5, Math.min(300, Math.round(discoveryRadiusUnitsRaw / 5) * 5))
@@ -282,10 +286,10 @@ export class SceneManager {
             <div class="form-group">
                 <label>Gather Spots</label>
                 <div class="form-fields">
-                    <input type="range" min="0" max="30" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" data-artificer-range="spots" />
+                    <input type="range" min="1" max="30" step="1" name="flags.${MODULE.ID}.scene.gatherSpots" value="${gatherSpots}" data-artificer-range="spots" />
                     <span class="range-value" data-artificer-range-value="spots">${gatherSpots}</span>
                 </div>
-                <p class="hint">Maximum discovered gathering spots allowed on this scene (0-30).</p>
+                <p class="hint">Maximum discovered gathering spots allowed on this scene (1-30).</p>
             </div>
             <div class="form-group">
                 <label>Discovery Radius (ft)</label>
@@ -347,7 +351,7 @@ export class SceneManager {
             return [];
         };
         const enabled = !!flags.enabled;
-        const gatherSpots = Math.max(0, Number(flags.gatherSpots) || 0);
+        const gatherSpots = Math.max(1, Math.min(30, Number(flags.gatherSpots) || 1));
         const habitats = normalizeList(flags.habitats);
         const componentTypes = normalizeList(flags.componentTypes);
         return enabled && gatherSpots > 0 && habitats.length > 0 && componentTypes.length > 0;

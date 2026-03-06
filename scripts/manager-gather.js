@@ -1295,7 +1295,7 @@ function _buildDiscoveryContext(scene) {
         'very rare': sceneFlags.discoveryOffsetVeryRare,
         legendary: sceneFlags.discoveryOffsetLegendary
     });
-    const gatherSpots = Math.max(0, Math.min(30, Number(sceneFlags.gatherSpots) || 0));
+    const gatherSpots = Math.max(1, Math.min(30, Number(sceneFlags.gatherSpots) || 1));
     const rawRadius = Number(sceneFlags.discoveryRadiusUnits);
     const discoveryRadiusUnits = Number.isFinite(rawRadius)
         ? Math.max(5, Math.min(300, Math.round(rawRadius / 5) * 5))

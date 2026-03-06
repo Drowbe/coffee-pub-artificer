@@ -14,6 +14,8 @@ const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
 const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
 const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
+const BLACKSMITH_MODULE_ID = 'coffee-pub-blacksmith';
+const BLACKSMITH_PINS_FLAG_KEY = 'pins';
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
 const PIN_EVENT_ANIMATIONS = Object.freeze({
     hover: { animation: 'ripple', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-03.mp3` },
@@ -28,6 +30,7 @@ export class PinsManager {
     static _pins = null;
     static _initialized = false;
     static _syncInProgress = new Set();
+    static _syncQueued = new Set();
 
     static async initialize() {
         if (this._initialized) return;
@@ -74,9 +77,18 @@ export class PinsManager {
 
     static async _onUpdateScene(scene, changed) {
         if (!scene?.id || scene.id !== canvas?.scene?.id) return;
-        const changedSceneData = foundry.utils.getProperty(changed, `flags.${MODULE.ID}.scene`);
-        if (!changedSceneData) return;
-        await this.syncScenePins(scene.id);
+        const changedArtificerScene = foundry.utils.getProperty(changed, `flags.${MODULE.ID}.scene`);
+        const changedBlacksmithPins = foundry.utils.getProperty(changed, `flags.${BLACKSMITH_MODULE_ID}.${BLACKSMITH_PINS_FLAG_KEY}`);
+
+        if (game.user?.isGM) {
+            if (!changedArtificerScene) return;
+            await this.syncScenePins(scene.id);
+            return;
+        }
+
+        if (changedArtificerScene || changedBlacksmithPins !== undefined) {
+            await this._reloadPinsForCurrentScene(scene.id);
+        }
     }
 
     static async syncActiveScenePins() {
@@ -86,119 +98,145 @@ export class PinsManager {
     }
 
     static async syncScenePins(sceneId) {
-        if (!sceneId || !game.user?.isGM) return;
-        if (this._syncInProgress.has(sceneId)) return;
+        if (!sceneId) return;
+        if (!game.user?.isGM) {
+            await this._reloadPinsForCurrentScene(sceneId);
+            return;
+        }
+        if (this._syncInProgress.has(sceneId)) {
+            // If updates arrive while a sync is running, queue a second pass.
+            this._syncQueued.add(sceneId);
+            return;
+        }
         this._syncInProgress.add(sceneId);
 
+        try {
+            do {
+                this._syncQueued.delete(sceneId);
+
+                if (!this._pins?.isReady?.()) {
+                    await this._pins.whenReady?.();
+                }
+                if (!this._pins?.isReady?.()) return;
+
+                const scene = game.scenes?.get(sceneId);
+                if (!scene) return;
+
+                const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
+                const enabled = !!sceneFlags.enabled;
+                const discoveredNodes = enabled && Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY])
+                    ? sceneFlags[DISCOVERY_NODES_FLAG_KEY].filter((n) => n && typeof n === 'object' && n.id)
+                    : [];
+                const targetCount = discoveredNodes.length;
+                const bounds = this._getSpawnBounds(scene);
+                const existingPins = this._pins.list({
+                    sceneId,
+                    moduleId: MODULE.ID,
+                    type: PIN_TYPE_GATHER_SPOT
+                }) ?? [];
+                const existingById = new Map(existingPins.map((p) => [String(p.id), p]));
+                const discoveredIdSet = new Set(discoveredNodes.map((n) => String(n.id)));
+                let changed = false;
+
+                // Remove pins that are no longer represented by discovered nodes.
+                for (const pin of existingPins) {
+                    if (!discoveredIdSet.has(String(pin.id))) {
+                        await this._pins.delete(pin.id, { sceneId });
+                        changed = true;
+                    }
+                }
+
+                // Ensure each discovered node has an up-to-date pin.
+                for (const node of discoveredNodes) {
+                    const nodeId = String(node.id);
+                    const pin = existingById.get(nodeId) ?? null;
+                    const updates = {};
+
+                    if (!pin) {
+                        const nodeX = Number(node?.x);
+                        const nodeY = Number(node?.y);
+                        const hasNodePoint = Number.isFinite(nodeX) && Number.isFinite(nodeY) && this._isPointInBounds(nodeX, nodeY, bounds);
+                        const { x, y } = hasNodePoint ? { x: nodeX, y: nodeY } : this._getRandomPointInBounds(bounds);
+                        const defaultDesign = this._getGatherSpotDefaultDesign();
+                        const defaultStyle = (defaultDesign.style && typeof defaultDesign.style === 'object')
+                            ? defaultDesign.style
+                            : {
+                                fill: '#0f0f0f',
+                                stroke: '#ffffff',
+                                strokeWidth: 3,
+                                iconColor: '#eaffe5'
+                            };
+                        await this._pins.create({
+                            ...defaultDesign,
+                            id: nodeId,
+                            moduleId: MODULE.ID,
+                            type: PIN_TYPE_GATHER_SPOT,
+                            x,
+                            y,
+                            text: this._getNodePinText(node),
+                            ownership: { default: 2 },
+                            image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE,
+                            shape: defaultDesign.shape ?? 'none',
+                            dropShadow: defaultDesign.dropShadow ?? true,
+                            textLayout: defaultDesign.textLayout ?? 'arc-below',
+                            textDisplay: defaultDesign.textDisplay ?? 'hover',
+                            eventAnimations: PIN_EVENT_ANIMATIONS,
+                            size: defaultDesign.size ?? { w: PIN_SIZE, h: PIN_SIZE },
+                            style: defaultStyle
+                        }, { sceneId });
+                        changed = true;
+                        continue;
+                    }
+
+                    if ((pin?.ownership?.default ?? 0) < 2) {
+                        updates.ownership = { default: 2 };
+                    }
+                    const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE;
+                    if (String(pin?.image ?? '') !== String(resolvedIdleImage ?? '')) {
+                        updates.image = resolvedIdleImage;
+                        updates.shape = 'none';
+                    }
+                    const nextText = this._getNodePinText(node);
+                    if (pin?.text !== nextText) {
+                        updates.text = nextText;
+                    }
+                    if (!foundry.utils.deepEqual(pin?.eventAnimations ?? null, PIN_EVENT_ANIMATIONS)) {
+                        updates.eventAnimations = PIN_EVENT_ANIMATIONS;
+                    }
+                    if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
+                        const { x, y } = this._getRandomPointInBounds(bounds);
+                        updates.x = x;
+                        updates.y = y;
+                    }
+                    if (Object.keys(updates).length) {
+                        await this._pins.update(pin.id, updates, { sceneId });
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    await this._pins.reload();
+                    this._log(`PinsManager: synced gather spots for scene "${scene.name}" target=${targetCount}`);
+                }
+            } while (this._syncQueued.has(sceneId));
+        } catch (error) {
+            this._log('PinsManager: sync failed', error?.message ?? String(error), true, false);
+        } finally {
+            this._syncInProgress.delete(sceneId);
+        }
+    }
+
+    static async _reloadPinsForCurrentScene(sceneId) {
+        if (!this._pins) return;
+        if (sceneId !== canvas?.scene?.id) return;
         try {
             if (!this._pins?.isReady?.()) {
                 await this._pins.whenReady?.();
             }
             if (!this._pins?.isReady?.()) return;
-
-            const scene = game.scenes?.get(sceneId);
-            if (!scene) return;
-
-            const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
-            const enabled = !!sceneFlags.enabled;
-            const discoveredNodes = enabled && Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY])
-                ? sceneFlags[DISCOVERY_NODES_FLAG_KEY].filter((n) => n && typeof n === 'object' && n.id)
-                : [];
-            const targetCount = discoveredNodes.length;
-            const bounds = this._getSpawnBounds(scene);
-            const existingPins = this._pins.list({
-                sceneId,
-                moduleId: MODULE.ID,
-                type: PIN_TYPE_GATHER_SPOT
-            }) ?? [];
-            const existingById = new Map(existingPins.map((p) => [String(p.id), p]));
-            const discoveredIdSet = new Set(discoveredNodes.map((n) => String(n.id)));
-            let changed = false;
-
-            // Remove pins that are no longer represented by discovered nodes.
-            for (const pin of existingPins) {
-                if (!discoveredIdSet.has(String(pin.id))) {
-                    await this._pins.delete(pin.id, { sceneId });
-                    changed = true;
-                }
-            }
-
-            // Ensure each discovered node has an up-to-date pin.
-            for (const node of discoveredNodes) {
-                const nodeId = String(node.id);
-                const pin = existingById.get(nodeId) ?? null;
-                const updates = {};
-
-                if (!pin) {
-                    const nodeX = Number(node?.x);
-                    const nodeY = Number(node?.y);
-                    const hasNodePoint = Number.isFinite(nodeX) && Number.isFinite(nodeY) && this._isPointInBounds(nodeX, nodeY, bounds);
-                    const { x, y } = hasNodePoint ? { x: nodeX, y: nodeY } : this._getRandomPointInBounds(bounds);
-                    const defaultDesign = this._getGatherSpotDefaultDesign();
-                    const defaultStyle = (defaultDesign.style && typeof defaultDesign.style === 'object')
-                        ? defaultDesign.style
-                        : {
-                            fill: '#0f0f0f',
-                            stroke: '#ffffff',
-                            strokeWidth: 3,
-                            iconColor: '#eaffe5'
-                        };
-                    await this._pins.create({
-                        ...defaultDesign,
-                        id: nodeId,
-                        moduleId: MODULE.ID,
-                        type: PIN_TYPE_GATHER_SPOT,
-                        x,
-                        y,
-                        text: this._getNodePinText(node),
-                        ownership: { default: 2 },
-                        image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE,
-                        shape: defaultDesign.shape ?? 'none',
-                        dropShadow: defaultDesign.dropShadow ?? true,
-                        textLayout: defaultDesign.textLayout ?? 'arc-below',
-                        textDisplay: defaultDesign.textDisplay ?? 'hover',
-                        eventAnimations: PIN_EVENT_ANIMATIONS,
-                        size: defaultDesign.size ?? { w: PIN_SIZE, h: PIN_SIZE },
-                        style: defaultStyle
-                    }, { sceneId });
-                    changed = true;
-                    continue;
-                }
-
-                if ((pin?.ownership?.default ?? 0) < 2) {
-                    updates.ownership = { default: 2 };
-                }
-                const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE;
-                if (String(pin?.image ?? '') !== String(resolvedIdleImage ?? '')) {
-                    updates.image = resolvedIdleImage;
-                    updates.shape = 'none';
-                }
-                const nextText = this._getNodePinText(node);
-                if (pin?.text !== nextText) {
-                    updates.text = nextText;
-                }
-                if (!foundry.utils.deepEqual(pin?.eventAnimations ?? null, PIN_EVENT_ANIMATIONS)) {
-                    updates.eventAnimations = PIN_EVENT_ANIMATIONS;
-                }
-                if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
-                    const { x, y } = this._getRandomPointInBounds(bounds);
-                    updates.x = x;
-                    updates.y = y;
-                }
-                if (Object.keys(updates).length) {
-                    await this._pins.update(pin.id, updates, { sceneId });
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                await this._pins.reload();
-                this._log(`PinsManager: synced gather spots for scene "${scene.name}" target=${targetCount}`);
-            }
-        } catch (error) {
-            this._log('PinsManager: sync failed', error?.message ?? String(error), true, false);
-        } finally {
-            this._syncInProgress.delete(sceneId);
+            await this._pins.reload?.();
+        } catch {
+            // no-op: player refresh is best-effort
         }
     }
 
