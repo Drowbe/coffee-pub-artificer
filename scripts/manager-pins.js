@@ -31,6 +31,7 @@ export class PinsManager {
     static _initialized = false;
     static _syncInProgress = new Set();
     static _syncQueued = new Set();
+    static _pinDeletedHookRegistered = false;
 
     static async initialize() {
         if (this._initialized) return;
@@ -67,6 +68,7 @@ export class PinsManager {
             callback: (scene, changed) => this._onUpdateScene(scene, changed)
         });
         this._log('PinsManager: hook registered (updateScene)');
+        this._registerPinDeleteRefreshHook();
 
         this._initialized = true;
         this._log('PinsManager: initialized');
@@ -238,6 +240,20 @@ export class PinsManager {
         } catch {
             // no-op: player refresh is best-effort
         }
+    }
+
+    static _registerPinDeleteRefreshHook() {
+        if (this._pinDeletedHookRegistered) return;
+        Hooks.on('blacksmith.pins.deleted', async (payload) => {
+            const moduleId = String(payload?.moduleId ?? '');
+            const type = String(payload?.type ?? '');
+            const sceneId = payload?.sceneId ?? null;
+            if (moduleId !== MODULE.ID) return;
+            if (type !== PIN_TYPE_GATHER_SPOT) return;
+            if (!sceneId || sceneId !== canvas?.scene?.id) return;
+            await this._reloadPinsForCurrentScene(sceneId);
+        });
+        this._pinDeletedHookRegistered = true;
     }
 
     static _getRandomPointOnCanvas() {

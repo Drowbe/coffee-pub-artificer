@@ -75,6 +75,14 @@
 
 ### HIGH PRIORITY
 
+**Blacksmith Pins API Collaboration (gather/discovery lifecycle)**
+- [ ] Propose `pins.consume(pinId, options)` API for atomic success/failure cue + delete + client-safe cleanup
+- [ ] Propose `pins.setState(pinId, stateId, options)` for declarative transient pin states (`idle`, `working`, `active`) managed by Pins renderer
+- [ ] Propose per-pin mutation lock/queue helper (`pins.withLock(pinId, fn)`) to prevent update/delete/animation interleaving
+- [ ] Request renderer lifecycle guarantee: deleting a pin always removes all animation/render artifacts on every client
+- [ ] Request completion hook for render-finalized deletes (e.g., `blacksmith.pins.deletedRendered`) for deterministic module follow-up
+- [ ] Build a tiny Artificer+Blacksmith repro harness for player-driven gather consume flow and share with API dev
+
 **Phase 0: Foundation & Architecture Setup**
 - [x] Set up folder structure (`resources/`, `templates/`)
 - [x] Define schema definitions with JSDoc for all data types (`schema-*.js` files)

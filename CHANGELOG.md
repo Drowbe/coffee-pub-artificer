@@ -6,18 +6,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [13.0.9] - Skills rules merged into skills-details
+## [13.0.9] - Gather discovery, scene settings, and pins reliability
 
 ### Added
-- **Perk rules in skills-details:** Each perk in `resources/skills-details.json` may now include an optional `rules.benefits` array (same structure as before: `title`, `description`, `rule`). Herbalism perks define recipe tier access, crafting DC modifiers, gathering bonuses, and experimental crafting rules in place.
+- **Discovery rarity thresholds (Base + Offset):** Scene settings now support rarity-based discovery thresholds using `Base DC + offset` per rarity band (Common, Uncommon, Rare, Very Rare, Legendary), evaluated from Legendary down to Common.
+- **Pin add animation support for gather spots:** Gather pins now use Blacksmith `add` event animation (`ping`) with `interface-pop-02` sound for clearer discovery feedback when a new spot is placed.
+- **Immediate pin materialization on discovery:** GM discovery application now creates missing Blacksmith pins for newly discovered nodes immediately instead of waiting for later reconciliation.
+- **Shared gather pin config:** Added `scripts/config-gather-pins.js` as single source of truth for gather pin type, text, size, default image, and event animations/sounds.
 
 ### Changed
-- **Single source for skills data:** `scripts/skills-rules.js` now loads only `resources/skills-details.json` and derives the rules lookup from each perk’s `rules.benefits`. `loadSkillsRules()` returns the same in-memory shape for backward compatibility; crafting window, gather logic, and API are unchanged.
-- **Skills window — benefits from details:** Perk details pane reads benefits from `perk.rules?.benefits` in the details payload instead of loading a separate rules file. Removed local rules fetch and cache from `window-skills.js`.
-- **Documentation:** `documentation/skills-rules-design.md` updated to describe the single-file layout; `styles/window-skills.css` comment updated for benefits source.
+- **Scene settings defaults:**
+  - Component Types default to all checked when unset.
+  - Harvesting Skills default to all checked when unset.
+- **Scene settings sliders:**
+  - Gather Spots now uses a minimum of `1` (range `1-30`) in UI and runtime clamping.
+  - Discovery radius remains slider-based (`5-300`, step `5`).
+  - DC/offset controls use slider inputs and hint text presentation.
+- **Gather image selection moved to data-first logic:**
+  - `resources/gathering-mapping.json` migrated to v2 structure with biome + family buckets (`byFamily` + `anyFamily`).
+  - Resolver now selects by state/biome/family from mapping data, with explicit fallback order, instead of filename token heuristics.
+- **Family-aware pin imagery:** Discovered node family is passed to image resolution for idle gather pin art selection.
+- **Blacksmith roll completion integration:** Gather/discovery roll completion now relies on Blacksmith’s completion path (`blacksmith.requestRollComplete`) and no longer uses Artificer-side socket forwarding.
+- **Pin sync flow hardening:**
+  - Added queued GM sync pass (`_syncQueued`) so scene updates arriving during active sync are not dropped.
+  - Player clients now refresh pin renderer on both Artificer scene-flag updates and Blacksmith pin-flag updates.
+  - Existing pins now re-sync image/event animation drift directly when resolved values differ.
+
+### Fixed
+- **Player explore reliability:** Fixed case where a second explore could discover spots but not show pins until a later gather/delete action.
+- **Player/GM visual consistency:** Fixed cases where pin removals or updates appeared on GM first and lagged on player canvases.
+- **Gather pin audio field compatibility:** Event animation sounds now use normalized Blacksmith sound paths for stable config/playback.
+- **Family mapping gaps:** Added normalization aliases (`Gem/Gems -> mineral`, `CreaturePart -> creature parts`, etc.) and stronger fallback behavior to prevent seedling fallback from empty image pools.
+- **Gather consume render lag on players:** Added gather-spot delete refresh handling on `blacksmith.pins.deleted` so player canvases reload pins when a gather spot is consumed.
+- **Session hotfix for gather pin lifecycle:** Removed active gather image/state swap from the live gather roll flow to avoid renderer desync artifacts (stuck/overlay pin behavior) during consume/delete.
 
 ### Removed
-- **resources/skills-rules.json:** Removed; all rules now live under each perk in `resources/skills-details.json`.
+- **Artificer custom roll-relay socket path:** Removed temporary gather/discovery relay registration and usage from `manager-gather.js`; Blacksmith authoritative completion flow is now the only path.
 
 ## [13.0.8] - Skills rules, gather enhancements, Request Roll API integration
 
