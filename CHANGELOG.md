@@ -6,8 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.9] - Skills rules merged into skills-details
 
+### Added
+- **Perk rules in skills-details:** Each perk in `resources/skills-details.json` may now include an optional `rules.benefits` array (same structure as before: `title`, `description`, `rule`). Herbalism perks define recipe tier access, crafting DC modifiers, gathering bonuses, and experimental crafting rules in place.
 
+### Changed
+- **Single source for skills data:** `scripts/skills-rules.js` now loads only `resources/skills-details.json` and derives the rules lookup from each perk’s `rules.benefits`. `loadSkillsRules()` returns the same in-memory shape for backward compatibility; crafting window, gather logic, and API are unchanged.
+- **Skills window — benefits from details:** Perk details pane reads benefits from `perk.rules?.benefits` in the details payload instead of loading a separate rules file. Removed local rules fetch and cache from `window-skills.js`.
+- **Documentation:** `documentation/skills-rules-design.md` updated to describe the single-file layout; `styles/window-skills.css` comment updated for benefits source.
+
+### Removed
+- **resources/skills-rules.json:** Removed; all rules now live under each perk in `resources/skills-details.json`.
 
 ## [13.0.8] - Skills rules, gather enhancements, Request Roll API integration
 

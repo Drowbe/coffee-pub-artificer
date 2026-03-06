@@ -26,6 +26,7 @@ const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
+const DISCOVERY_MIN_POINT_SEPARATION_PX = 90;
 
 const RARITY_RANKS = {
     common: 1,
@@ -42,6 +43,16 @@ const GATHER_PIN_CUES = {
     failure: { animation: ['shake'], loops: 1, broadcast: true, sound: 'interface-error-03' }
 };
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
+const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
+const PIN_SIZE = 100;
+const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
+const PIN_EVENT_ANIMATIONS = Object.freeze({
+    hover: { animation: 'ripple', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-03.mp3` },
+    click: { animation: null, sound: null },
+    doubleClick: { animation: 'scale-medium', sound: `${BLACKSMITH_SOUNDS_BASE}/rustling-grass.mp3` },
+    add: { animation: 'ping', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-02.mp3` },
+    delete: { animation: 'dissolve', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-01.mp3` }
+});
 const SOUND_EXPLORE_SUCCESS = 'interface-notification-10';
 const SOUND_EXPLORE_FAIL = 'interface-error-03';
 const SOUND_POPULATE = 'fanfare-success-2';
@@ -919,6 +930,37 @@ function _getRandomPointAroundCenter(center, radiusUnits, scene = canvas?.scene 
     };
 }
 
+function _distancePx(a, b) {
+    const dx = Number(a?.x) - Number(b?.x);
+    const dy = Number(a?.y) - Number(b?.y);
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) return Infinity;
+    return Math.hypot(dx, dy);
+}
+
+function _pickDiscoveryPoint(anchor, radiusUnits, scene, occupied = []) {
+    const existing = (Array.isArray(occupied) ? occupied : [])
+        .filter((p) => Number.isFinite(Number(p?.x)) && Number.isFinite(Number(p?.y)))
+        .map((p) => ({ x: Number(p.x), y: Number(p.y) }));
+    if (!anchor) return null;
+    if (!existing.length) return _getRandomPointAroundCenter(anchor, radiusUnits, scene);
+
+    let best = null;
+    let bestMinDistance = -1;
+    for (let i = 0; i < 20; i++) {
+        const point = _getRandomPointAroundCenter(anchor, radiusUnits, scene);
+        if (!point) continue;
+        const minDistance = existing.reduce((acc, p) => Math.min(acc, _distancePx(point, p)), Infinity);
+        if (minDistance > bestMinDistance) {
+            best = point;
+            bestMinDistance = minDistance;
+        }
+        if (minDistance >= DISCOVERY_MIN_POINT_SEPARATION_PX) {
+            return point;
+        }
+    }
+    return best;
+}
+
 function _getEligibleTokenActorsForPinProximity(pin, maxDistanceUnits = 5) {
     const selected = _getControlledTokenActorsForRequest();
     const pinCenter = _getPinCenter(pin);
@@ -1193,6 +1235,9 @@ async function _applyDiscoveryResults(scene, context, entries) {
 
     const discovered = [];
     const byRarity = {};
+    const occupiedPoints = existing
+        .filter((n) => Number.isFinite(Number(n?.x)) && Number.isFinite(Number(n?.y)))
+        .map((n) => ({ x: Number(n.x), y: Number(n.y) }));
     for (const entry of entries) {
         if (remaining <= 0) break;
         const rollTotal = Number(entry?.rollTotal);
@@ -1220,7 +1265,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
             const family = String(rec?.family ?? '').trim();
             if (!family) continue;
             const rarity = _getRecordRarity(rec);
-            const point = anchor ? _getRandomPointAroundCenter(anchor, radiusUnits, scene) : null;
+            const point = anchor ? _pickDiscoveryPoint(anchor, radiusUnits, scene, occupiedPoints) : null;
             byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
             discovered.push({
                 id: foundry.utils.randomID(),
@@ -1233,13 +1278,67 @@ async function _applyDiscoveryResults(scene, context, entries) {
                 x: Number.isFinite(Number(point?.x)) ? Number(point.x) : null,
                 y: Number.isFinite(Number(point?.y)) ? Number(point.y) : null
             });
+            if (Number.isFinite(Number(point?.x)) && Number.isFinite(Number(point?.y))) {
+                occupiedPoints.push({ x: Number(point.x), y: Number(point.y) });
+            }
             remaining -= 1;
         }
     }
 
     if (!discovered.length) return { discovered: 0, byRarity };
     await _setSceneDiscoveredNodes(scene, [...existing, ...discovered]);
+    await _ensureDiscoveredNodesPinned(scene, discovered);
     return { discovered: discovered.length, byRarity };
+}
+
+async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
+    const nodes = Array.isArray(discoveredNodes) ? discoveredNodes.filter((n) => n && n.id) : [];
+    if (!scene?.id || !nodes.length) return;
+    const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    if (!pins?.create || !pins?.list) return;
+
+    const existingPins = pins.list({
+        sceneId: scene.id,
+        moduleId: MODULE.ID,
+        type: PIN_TYPE_GATHER_SPOT
+    }) ?? [];
+    const existingIds = new Set(existingPins.map((p) => String(p.id)));
+
+    let created = false;
+    for (const node of nodes) {
+        const nodeId = String(node.id);
+        if (!nodeId || existingIds.has(nodeId)) continue;
+        const family = String(node?.sourceFamily ?? '').trim();
+        const label = FAMILY_LABELS[family] ?? family;
+        const image = await resolveGatheringImageForScene(scene, 'idle', { families: [family] });
+        const x = Number(node?.x);
+        const y = Number(node?.y);
+        try {
+            await pins.create({
+                id: nodeId,
+                moduleId: MODULE.ID,
+                type: PIN_TYPE_GATHER_SPOT,
+                x: Number.isFinite(x) ? x : Number(canvas?.dimensions?.sceneX) + 100 || 100,
+                y: Number.isFinite(y) ? y : Number(canvas?.dimensions?.sceneY) + 100 || 100,
+                ownership: { default: 2 },
+                text: family ? `Gather: ${label}` : 'Gathering Spot',
+                image: image || PIN_DEFAULT_IMAGE,
+                shape: 'none',
+                dropShadow: true,
+                textLayout: 'arc-below',
+                textDisplay: 'hover',
+                eventAnimations: PIN_EVENT_ANIMATIONS,
+                size: { w: PIN_SIZE, h: PIN_SIZE }
+            }, { sceneId: scene.id });
+            existingIds.add(nodeId);
+            created = true;
+        } catch {
+            // Keep discovery flowing even if one pin create fails; sync path can reconcile later.
+        }
+    }
+    if (created) {
+        await pins.reload?.();
+    }
 }
 
 async function _processDiscoveryRollOnGM(data) {
