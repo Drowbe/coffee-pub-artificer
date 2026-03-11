@@ -182,8 +182,8 @@ function registerMenubarIntegration() {
         toggleable: true,
         active: false,
         iconColor: null,
-        buttonNormalTint: "rgba(3, 43, 18, 0.9)",
-        buttonSelectedTint: null
+        buttonNormalTint: null,
+        buttonSelectedTint: "rgba(3, 43, 18, 0.9)"
     });
     
     if (!toolRegistered) {
