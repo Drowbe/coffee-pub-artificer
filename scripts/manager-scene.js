@@ -302,6 +302,7 @@ export class SceneManager {
         `;
         tabBodyHost.appendChild(tabPanel);
         this._wireRangeDisplays(tabPanel);
+        this._syncInjectedTabState(app, form, tabsNav, tabButton, tabPanel, dataGroup);
 
         // Keep Save Changes last in the form flow.
         const footer = form.querySelector('.form-footer, footer.application-footer');
@@ -310,6 +311,55 @@ export class SceneManager {
         }
 
         this._log(`SceneManager: Artificer tab injected for scene "${app?.document?.name ?? 'Unknown'}"`);
+    }
+
+    static _syncInjectedTabState(app, form, tabsNav, tabButton, tabPanel, dataGroup) {
+        if (!form || !tabsNav || !tabButton || !tabPanel) return;
+
+        const getActiveFromNav = () => {
+            const activeNav = tabsNav.querySelector('.item.active, .tab.active, [data-tab].active');
+            return activeNav?.dataset?.tab ?? null;
+        };
+
+        const tabControllers = Array.isArray(app?._tabs)
+            ? app._tabs.filter((tabs) => !dataGroup || tabs?.group === dataGroup)
+            : [];
+
+        // Re-bind tabs so the newly-injected tab/panel pair participates in normal tab logic.
+        for (const tabs of tabControllers) {
+            if (typeof tabs?.bind === 'function') {
+                try {
+                    tabs.bind(form);
+                } catch (_) {}
+            }
+        }
+
+        let activeTab = getActiveFromNav();
+        if (!activeTab) {
+            for (const tabs of tabControllers) {
+                if (typeof tabs?.active === 'string' && tabs.active) {
+                    activeTab = tabs.active;
+                    break;
+                }
+            }
+        }
+        if (!activeTab) {
+            const tabOptions = Array.isArray(app?.options?.tabs) ? app.options.tabs : [];
+            const configured = tabOptions.find((tab) => (tab?.group ?? 'sheet') === dataGroup);
+            if (typeof configured?.initial === 'string' && configured.initial) activeTab = configured.initial;
+        }
+
+        if (activeTab === 'artificer') {
+            tabButton.classList.add('active');
+            tabPanel.classList.add('active');
+        }
+
+        for (const tabs of tabControllers) {
+            if (!activeTab || typeof tabs?.activate !== 'function') continue;
+            try {
+                tabs.activate(activeTab, { triggerCallback: false });
+            } catch (_) {}
+        }
     }
 
     static _wireRangeDisplays(root) {
