@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [13.0.10]
+
+### Fixed
+- **Scene Config Artificer tab scrolling:** Added explicit vertical overflow handling so Artificer scene settings remain scrollable when tab content is taller than the Scene Config window.
+- **Scene Config remembered-tab empty state:** Fixed initial render when reopening Scene Config with Artificer as the last-selected tab by re-binding/activating tab state after Artificer tab injection.
+
+
 ## [13.0.9] - Gather discovery, scene settings, and pins reliability
 
 ### Added
