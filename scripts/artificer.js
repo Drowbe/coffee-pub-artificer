@@ -10,6 +10,7 @@ import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js';
 import { CraftingWindow } from './window-crafting.js';
+import { RecipeBrowserWindow } from './window-recipes.js';
 import { SkillsWindow } from './window-skills.js';
 import { GatherWindow } from './window-gather.js';
 import { requestGatherAndHarvestFromScene } from './manager-gather.js';
@@ -38,6 +39,7 @@ Hooks.once('init', async () => {
         'modules/coffee-pub-artificer/templates/import-recipes.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/window-crafting.hbs',
+        'modules/coffee-pub-artificer/templates/window-recipes.hbs',
         'modules/coffee-pub-artificer/templates/window-skills.hbs',
         'modules/coffee-pub-artificer/templates/window-gather.hbs',
         'modules/coffee-pub-artificer/templates/card-results-gather.hbs',
@@ -298,12 +300,27 @@ function registerMenubarIntegration() {
     });
 
     // Register secondary bar item for crafting
+    const recipeBrowserItemId = 'artificer-recipes';
+    const recipeBrowserRegistered = blacksmith.registerSecondaryBarItem(barType, recipeBrowserItemId, {
+        icon: 'fa-solid fa-book-open',
+        label: 'Recipe Browser',
+        title: 'Recipe Browser',
+        order: 70,
+        moduleId: MODULE.ID,
+        visible: true,
+        onClick: function() {
+            const win = new RecipeBrowserWindow();
+            win.render(true);
+        }
+    });
+
+    // Register secondary bar item for crafting
     const craftingItemId = 'artificer-crafting';
     const craftingRegistered = blacksmith.registerSecondaryBarItem(barType, craftingItemId, {
         icon: 'fa-solid fa-hammer',
         label: 'Crafting Station',
         title: 'Crafting Station',
-        order: 70,
+        order: 75,
         moduleId: MODULE.ID,
         visible: true,
         onClick: function() {
@@ -339,13 +356,13 @@ function registerMenubarIntegration() {
         }
     });
     
-    if (craftingRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
+    if (craftingRegistered && recipeBrowserRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
         }
     } else {
         if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, true, false);
+            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, recipe-browser: ${recipeBrowserRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, true, false);
         }
     }
 }

@@ -73,6 +73,7 @@
     "scripts/item-sheet-artificer.js",
     "scripts/window-artificer-recipe-import.js",
     "scripts/window-crafting.js",
+    "scripts/window-recipes.js",
     "scripts/window-skills.js",
     "scripts/panel-crafting-experiment.js",
     "scripts/manager-ingredients.js",

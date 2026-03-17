@@ -1,0 +1,269 @@
+{{!-- Artificer Recipe Browser - recipe list + details, styled to match the crafting window --}}
+
+<div class="crafting-window-root">
+    <header class="crafting-window-header">
+        <div class="crafting-window-header-content">
+            <div class="crafting-window-header-icon">
+                {{#if crafterImg}}
+                <img src="{{crafterImg}}" alt="" class="crafting-window-header-portrait" />
+                {{else}}
+                <i class="fa-solid fa-book-open"></i>
+                {{/if}}
+            </div>
+            <div class="crafting-window-header-title-block">
+                <div class="crafting-window-header-title">Artificer Recipe Browser</div>
+                <div class="crafting-window-header-crafter">{{#if crafterName}}{{crafterName}}{{else}}Select a crafter{{/if}}</div>
+            </div>
+            {{#if enabledSkillsBadges.length}}
+            <div class="crafting-window-header-right">
+                <div class="crafting-window-skill-badges" data-tooltip="Enabled skills (you have the required kit)">
+                    {{#each enabledSkillsBadges}}
+                    <div class="crafting-window-skill-badge" data-tooltip="{{this.name}}">
+                        {{#if this.img}}
+                        <img src="{{this.img}}" alt="{{this.name}}" class="crafting-window-skill-badge-img" />
+                        {{else}}
+                        <i class="fa-solid fa-toolbox crafting-window-skill-badge-fallback"></i>
+                        {{/if}}
+                    </div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </header>
+
+    <div class="crafting-window-body">
+        <aside class="crafting-zone crafting-zone-recipes">
+            <section class="crafting-zone-section">
+                <div class="crafting-zone-recipes-header">
+                    <h3 class="crafting-zone-section-title">Recipes</h3>
+                    <div class="crafting-recipe-filter-buttons">
+                        <button type="button" class="crafting-recipe-filter-btn {{#unless showLockedRecipes}}active{{/unless}}" data-action="toggleShowLockedRecipes" title="{{#if showLockedRecipes}}Show only unlocked recipes{{else}}Show all recipes (including locked){{/if}}" aria-label="{{#if showLockedRecipes}}Show only unlocked recipes{{else}}Show all recipes (including locked){{/if}}">
+                            <i class="fa-solid fa-unlock"></i>
+                        </button>
+                        <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyCraftable}}active{{/if}}" data-action="toggleShowOnlyCraftable" title="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}" aria-label="{{#if showOnlyCraftable}}Show all recipes{{else}}Show only craftable recipes{{/if}}">
+                            <i class="fa-solid fa-hammer"></i>
+                        </button>
+                        <button type="button" class="crafting-recipe-filter-btn {{#if showOnlyWithKit}}active{{/if}}" data-action="toggleShowOnlyWithKit" title="{{#if showOnlyWithKit}}Show all recipes (including skills without kit){{else}}Show only recipes for skills I have the kit for{{/if}}" aria-label="{{#if showOnlyWithKit}}Show all recipes{{else}}Show only recipes for skills I have kit for{{/if}}">
+                            <i class="fa-solid fa-toolbox"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="crafting-zone-section-input-wrap">
+                    <input type="text" id="{{appId}}-filter-recipes" class="crafting-zone-section-input" placeholder="Search recipes..." value="{{filterRecipeSearch}}" dir="ltr" />
+                    <button type="button" class="crafting-zone-section-input-clear" data-action="clearRecipeSearch" title="Clear search" aria-label="Clear search"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="crafting-zone-filters-row">
+                    <select id="{{appId}}-filter-recipe-journal" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by journal">
+                        <option value="{{recipeJournalAllOption.value}}" {{#if recipeJournalAllOption.selected}}selected{{/if}}>{{recipeJournalAllOption.label}}</option>
+                        {{#each recipeJournalOptionGroups}}
+                        <optgroup label="{{this.label}}" class="artificer-crafting-optgroup">
+                            {{#each this.options}}
+                            <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                            {{/each}}
+                        </optgroup>
+                        {{/each}}
+                    </select>
+                </div>
+                <div class="crafting-zone-recipes-list">
+                    {{#each recipeListWithDividers}}
+                    {{#if this.isCoverDivider}}
+                    <div class="crafting-recipe-book {{#if this.selected}}crafting-recipe-book-selected{{/if}}" data-action="selectCoverPage" data-journal-uuid="{{this.journalUuid}}" title="View cover page">
+                        {{#if this.coverImage}}
+                        <img src="{{this.coverImage}}" alt="" class="crafting-recipe-book-img" />
+                        {{else}}
+                        <i class="fa-solid fa-book crafting-recipe-book-icon" aria-hidden="true"></i>
+                        {{/if}}
+                        <div class="crafting-recipe-book-content">
+                            <div class="crafting-recipe-book-title-row">
+                                <span class="crafting-recipe-book-title">{{this.journalName}}</span>
+                            </div>
+                            <span class="crafting-recipe-book-tags">Cover Page</span>
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="crafting-recipe-page {{#if this.selected}}crafting-recipe-page-selected{{/if}}{{#if this.recipeHiddenByPerk}} crafting-recipe-page-hidden{{/if}}" data-recipe-id="{{this.recipeId}}" data-action="selectRecipe" title="Click to view recipe details">
+                        <img src="{{this.resultImg}}" alt="" class="crafting-recipe-page-img" />
+                        <div class="crafting-recipe-page-content">
+                            <div class="crafting-recipe-page-title-row">
+                                <span class="crafting-recipe-page-title">
+                                    {{#if this.experimentalIconBeforeTitle}}<i class="{{this.experimentalIconBeforeTitle}} crafting-recipe-page-experimental-prefix" title="Experimental crafting (above your tier)"></i>{{/if}}
+                                    {{this.result}}
+                                </span>
+                            </div>
+                            <span class="crafting-recipe-page-tags">{{#each this.tags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
+                        </div>
+                        {{#if this.recipeHiddenByPerk}}<i class="crafting-recipe-page-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if this.showDimLock}}<i class="crafting-recipe-page-locked-icon crafting-recipe-page-locked-icon-dimmed fa-solid fa-lock" title="Above your tier — viewable via experimental; recipe is still locked"></i>{{else}}{{#if this.canCraft}}<i class="crafting-recipe-page-craftable-icon {{this.craftableIconClass}}" title="All ingredients available"></i>{{/if}}{{/if}}{{/if}}
+                    </div>
+                    {{/if}}
+                    {{else}}
+                    <div class="crafting-zone-empty">There are no recipes to show. Do you have the right kit to view these type of recipes?</div>
+                    {{/each}}
+                </div>
+            </section>
+        </aside>
+
+        <aside class="crafting-zone crafting-zone-result">
+            <section class="crafting-zone-section">
+                <h3 class="crafting-zone-section-title">Details</h3>
+                <div class="crafting-details-content">
+                    {{#if viewingCoverPage}}
+                    {{#if selectedJournalCoverBlock}}
+                    <div class="crafting-recipe-details">
+                        <div class="crafting-recipe-name">Cover Page</div>
+                        <div class="crafting-recipe-journal-name">{{selectedJournalCoverBlock.journalName}}</div>
+                        <div class="crafting-recipe-journal-cover">
+                            {{#if selectedJournalCoverBlock.coverImage}}
+                            <img src="{{selectedJournalCoverBlock.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
+                            {{/if}}
+                            {{#if selectedJournalCoverBlock.author}}
+                            <div class="crafting-recipe-journal-cover-author">{{selectedJournalCoverBlock.author}}</div>
+                            {{/if}}
+                            {{#if selectedJournalCoverBlock.description}}
+                            <div class="crafting-recipe-journal-cover-description">{{selectedJournalCoverBlock.description}}</div>
+                            {{/if}}
+                            {{#unless selectedJournalCoverBlock.hasAnyContent}}
+                            <div class="crafting-recipe-journal-cover-description">This journal has a Cover Page, but it has no image, author, or description.</div>
+                            {{/unless}}
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="crafting-zone-empty">Cover Page details are unavailable for the selected journal.</div>
+                    {{/if}}
+                    {{else}}
+                    {{#if selectedRecipeData}}
+                    <div class="crafting-recipe-details">
+                        {{#if selectedRecipeData.recipeHiddenByPerk}}
+                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
+                        {{#if selectedRecipeData.journalName}}
+                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
+                        {{#if selectedRecipeData.journalCover}}
+                        <div class="crafting-recipe-journal-cover">
+                            {{#if selectedRecipeData.journalCover.coverImage}}
+                            <img src="{{selectedRecipeData.journalCover.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
+                            {{/if}}
+                            {{#if selectedRecipeData.journalCover.author}}
+                            <div class="crafting-recipe-journal-cover-author">{{selectedRecipeData.journalCover.author}}</div>
+                            {{/if}}
+                            {{#if selectedRecipeData.journalCover.description}}
+                            <div class="crafting-recipe-journal-cover-description">{{selectedRecipeData.journalCover.description}}</div>
+                            {{/if}}
+                        </div>
+                        {{/if}}
+                        {{/if}}
+                        {{#if selectedRecipeData.skillLevel}}
+                        <div class="crafting-detail-rows crafting-detail-rows-top">
+                            <div class="crafting-detail-row"><span class="crafting-detail-label">Skill Level:</span><span class="crafting-detail-value">{{selectedRecipeData.skillLevel}}</span></div>
+                        </div>
+                        {{/if}}
+                        {{#if selectedRecipeData.requiredPerk}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-required-perk">
+                            <i class="{{selectedRecipeData.requiredPerk.iconClass}} crafting-recipe-required-perk-icon" aria-hidden="true"></i>
+                            <span class="crafting-recipe-required-perk-message">You need the {{selectedRecipeData.requiredPerk.skillName}} {{selectedRecipeData.requiredPerk.perkName}} perk to view this recipe.</span>
+                        </div>
+                        {{else}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-required-perk">
+                            <i class="fa-solid fa-lock crafting-recipe-required-perk-icon" aria-hidden="true"></i>
+                            <span class="crafting-recipe-required-perk-message">{{selectedRecipeData.hiddenMessage}}</span>
+                        </div>
+                        {{/if}}
+                        {{else}}
+                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
+                        {{#if selectedRecipeData.journalName}}
+                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
+                        {{#if selectedRecipeData.journalCover}}
+                        <div class="crafting-recipe-journal-cover">
+                            {{#if selectedRecipeData.journalCover.coverImage}}
+                            <img src="{{selectedRecipeData.journalCover.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
+                            {{/if}}
+                            {{#if selectedRecipeData.journalCover.author}}
+                            <div class="crafting-recipe-journal-cover-author">{{selectedRecipeData.journalCover.author}}</div>
+                            {{/if}}
+                            {{#if selectedRecipeData.journalCover.description}}
+                            <div class="crafting-recipe-journal-cover-description">{{selectedRecipeData.journalCover.description}}</div>
+                            {{/if}}
+                        </div>
+                        {{/if}}
+                        {{/if}}
+                        {{#if selectedRecipeTopFields.length}}
+                        <div class="crafting-detail-rows crafting-detail-rows-top">
+                            {{#each selectedRecipeTopFields}}
+                            <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        {{#if selectedRecipeData.traits.length}}
+                        <div class="crafting-recipe-traits">
+                            {{#each selectedRecipeData.traits}}
+                            <span class="crafting-tag-badge">{{this}}</span>
+                            {{/each}}
+                        </div>
+                        {{/if}}
+                        {{#if selectedRecipeData.description}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-description">{{{selectedRecipeData.description}}}</div>
+                        {{/if}}
+                        {{/if}}
+                    </div>
+                    {{#unless selectedRecipeData.recipeHiddenByPerk}}
+                    {{#if selectedRecipeMetadata.length}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-detail-rows">
+                        {{#each selectedRecipeMetadata}}
+                        <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                    {{/unless}}
+                    {{#if selectedRecipeAppliedPerks.length}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-applied-perks">
+                        <div class="crafting-applied-perks-title">Perks applied when crafting</div>
+                        <ol class="crafting-applied-perks-list">
+                            {{#each selectedRecipeAppliedPerks}}
+                            <li class="crafting-applied-perks-item"><span class="crafting-applied-perks-name">{{this.perkName}}:</span> <span class="crafting-applied-perks-effect">{{this.effect}}</span></li>
+                            {{/each}}
+                        </ol>
+                    </div>
+                    {{else}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-applied-perks">
+                        <div class="crafting-applied-perks-title">Perks applied when crafting</div>
+                        <p class="crafting-applied-perks-none">None</p>
+                    </div>
+                    {{/if}}
+                    {{else}}
+                    <div class="crafting-zone-empty">Select a recipe to see the details of the recipe.</div>
+                    {{/if}}
+                    {{/if}}
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <section class="crafting-window-buttons">
+        <div class="crafting-window-action-bar">
+            <div class="crafting-window-action-left">
+                <button type="button" class="crafting-window-btn-secondary" data-action="refreshCache" {{#if cacheStatus.building}}disabled{{/if}} title="Build or refresh item cache (compendia + world)">
+                    <i class="fa-solid fa-database"></i> Refresh
+                </button>
+                <span class="crafting-window-cache-status">
+                    {{#if cacheStatus.building}}
+                    <i class="fa-solid fa-spinner fa-spin"></i> {{cacheStatus.message}}
+                    {{else if cacheStatus.hasCache}}
+                    {{cacheStatus.message}}
+                    {{else}}
+                    No Cache: Refresh to Build
+                    {{/if}}
+                </span>
+            </div>
+            <div class="crafting-window-action-right">
+                <button type="button" class="crafting-window-btn-primary" data-action="openInCraftingWindow" {{#unless canOpenInCraftingWindow}}disabled{{/unless}} title="{{#if canOpenInCraftingWindow}}Open this recipe in the crafting window{{else}}Select a recipe first{{/if}}">
+                    <i class="fa-solid fa-up-right-from-square"></i> {{browserActionLabel}}
+                </button>
+            </div>
+        </div>
+    </section>
+</div>

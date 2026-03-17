@@ -170,6 +170,10 @@
     border-bottom: 1px solid var(--craft-border-color);
 }
 
+.recipe-browser-window .crafting-window-body {
+    grid-template-columns: 320px minmax(0, 1fr);
+}
+
 /* ----- Shared zone styling ----- */
 .crafting-zone {
     display: flex;
@@ -194,6 +198,12 @@
         var(--craft-banner-image-panel-01);
 }
 
+.recipe-browser-window .crafting-window-body .crafting-zone-recipes {
+    width: 320px;
+    min-width: 320px;
+    max-width: 320px;
+}
+
 .crafting-window-body .crafting-zone-ingredients {
     width: 250px;
     min-width: 250px;
@@ -216,6 +226,10 @@
     background-image:
         linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
         var(--craft-banner-image-panel-04);
+}
+
+.recipe-browser-window .crafting-window-action-right {
+    margin-left: auto;
 }
 
 .crafting-zone:last-child {

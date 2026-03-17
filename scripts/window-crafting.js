@@ -745,8 +745,8 @@ const CRAFTING_APP_ID = 'artificer-crafting';
 /** Setting key for client-scoped window bounds (size/position) */
 const CRAFTING_BOUNDS_SETTING = 'windowBoundsCrafting';
 
-/** Module-level ref for delegation (like Quick Encounter) */
-let _currentCraftingWindowRef = null;
+/** Active crafting-style windows keyed by app id for shared delegation. */
+const _craftingWindowRefs = new Map();
 let _craftingDelegationAttached = false;
 
 /**
@@ -801,7 +801,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.lastResult = null;
         this.lastCraftTags = [];
         /** @type {ArtificerRecipe|null} */
-        this.selectedRecipe = null;
+        this.selectedRecipe = options.selectedRecipe ?? null;
         /** When true, Details panel shows the selected journal's Cover page instead of a recipe. */
         this.viewingCoverPage = options.viewingCoverPage ?? false;
         /** Journal UUID whose cover is shown in Details when viewingCoverPage is true. */
@@ -830,15 +830,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._craftPending = null;
     }
 
+    _getBoundsSettingKey() {
+        return CRAFTING_BOUNDS_SETTING;
+    }
+
     /** Save window bounds to client setting when position changes (move/resize). */
     _onPosition(position) {
         super._onPosition?.(position);
-        saveWindowBounds(CRAFTING_BOUNDS_SETTING, position);
+        saveWindowBounds(this._getBoundsSettingKey(), position);
     }
 
     /** Save window bounds when closing so we remember size/position next time. */
     async _preClose() {
-        if (this.position) saveWindowBounds(CRAFTING_BOUNDS_SETTING, this.position);
+        _craftingWindowRefs.delete(this.id);
+        if (this.position) saveWindowBounds(this._getBoundsSettingKey(), this.position);
         return super._preClose?.();
     }
 
@@ -1471,12 +1476,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /** Attach document-level delegation (encounter pattern: ref + root.contains) */
     _attachDelegationOnce() {
-        _currentCraftingWindowRef = this;
+        _craftingWindowRefs.set(this.id, this);
         if (_craftingDelegationAttached) return;
         _craftingDelegationAttached = true;
 
         document.addEventListener('click', (e) => {
-            const w = _currentCraftingWindowRef;
+            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
+                const root = candidate?._getCraftingRoot?.();
+                return root?.contains?.(e.target);
+            }) ?? null;
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
@@ -1619,10 +1627,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 w.render();
                 return;
             }
+            const openInCraftingBtn = e.target?.closest?.('[data-action="openInCraftingWindow"]');
+            if (openInCraftingBtn) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                w._openInCraftingWindow?.();
+                return;
+            }
         }, true);
 
         document.addEventListener('change', (e) => {
-            const w = _currentCraftingWindowRef;
+            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
+                const root = candidate?._getCraftingRoot?.();
+                return root?.contains?.(e.target);
+            }) ?? null;
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
@@ -1667,7 +1686,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         document.addEventListener('input', (e) => {
-            const w = _currentCraftingWindowRef;
+            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
+                const root = candidate?._getCraftingRoot?.();
+                return root?.contains?.(e.target);
+            }) ?? null;
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
@@ -1733,6 +1755,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     _getActor() {
         return this._getCrafterActor();
+    }
+
+    _openInCraftingWindow() {
+        if (!this.selectedRecipe) return;
+        const win = new CraftingWindow({
+            selectedRecipe: this.selectedRecipe,
+            filterRecipeJournal: this.filterRecipeJournal,
+            filterRecipeSearch: this.filterRecipeSearch
+        });
+        win.render(true);
     }
 
     /** Call render() and restore the components list scroll position so it doesn't jump to top. */

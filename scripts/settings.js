@@ -419,6 +419,7 @@ export const registerSettings = () => {
     // -- Window bounds (size/position) per app – client-scoped so GM and players remember their own layout --
     const windowBoundsDefaults = [
         { key: 'windowBoundsCrafting', default: { width: 1100, height: 750 } },
+        { key: 'windowBoundsRecipes', default: { width: 1100, height: 750 } },
         { key: 'windowBoundsSkills', default: { width: 900, height: 600 } },
         { key: 'windowBoundsGather', default: { width: 650, height: 400 } },
         { key: 'windowBoundsRecipeImport', default: { width: 560, height: 520 } },
