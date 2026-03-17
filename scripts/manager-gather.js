@@ -1201,12 +1201,8 @@ async function _processGatherRollOnGM(data) {
             sendGatherFailureCard(a, o?.reason ?? null);
         }
     }
-    const shouldConsumePin = bucket.some(({ outcome }) => {
-        if (!outcome) return false;
-        if (outcome.success && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
-        if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
-        return false;
-    });
+    // Harvest attempts always consume the originating gather node once the roll resolves.
+    const shouldConsumePin = !!pending?.sourcePinId;
     const pinSceneId = pending?.sourceSceneId ?? sceneId ?? canvas?.scene?.id ?? null;
     if (pending?.sourcePinId) {
         await _stopGatherPinProcessing(requestId, { restoreImage: !shouldConsumePin });
@@ -1645,12 +1641,8 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
                 }
             }
 
-            const shouldConsumePin = rollBuffer.some(({ outcome }) => {
-                if (!outcome) return false;
-                if (outcome.success && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
-                if (outcome.componentAutoGatherGranted && Array.isArray(outcome.itemRecords) && outcome.itemRecords.length > 0) return true;
-                return false;
-            });
+            // Harvest attempts always consume the originating gather node once the roll resolves.
+            const shouldConsumePin = !!pendingContext?.sourcePinId;
             const pinSceneId = pendingContext?.sourceSceneId ?? canvas?.scene?.id ?? null;
             if (pendingContext?.sourcePinId) {
                 await _stopGatherPinProcessing(requestId, { restoreImage: !shouldConsumePin });
