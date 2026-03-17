@@ -1,200 +1,93 @@
-# TODO - Active Issues and Future Tasks
+# TODO - Active Backlog
 
-**Progress overview:** Current release **v13.0.6**. For a full history of completed work see **CHANGELOG.md**. Recent highlights: persisted item cache (TYPE → FAMILY → TRAITS migration, macro in `macros/`), Skills Window (ApplicationV2, JSON-driven), Crafting Window (recipe rows, components, timer/sounds), Roll for Components (Gather) with biome/DC and chat cards, GM-only menubar (Create Item, Import Recipes, Roll for Components), Split Minor Potions macro; macro scripts live in `macros/`.
+**Progress overview:** Current release **v13.0.10**. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
 
-## IN PROGRESS / CURRENT FOCUS
+## Current Focus
 
-### Skills Window (Phase 4 – UI in progress)
-- [x] Skills Window (ApplicationV2) opened from Artificer secondary bar
-- [x] Data-driven from `resources/skills-details.json` (skills, perks, cost, value, name, description, requirement, icon, colors)
-- [x] Panel layout: label row (left-aligned name, right-aligned total-cost dots) above badge + perks
-- [x] Badge: square image, clickable → skill details in Details pane
-- [x] Perks: 2×5 grid (10 perks max), square scaling; perk number = cost; click → perk details
-- [x] Applied state: perk with value > 0 uses `.perk-applied` styling (green number badge)
-- [x] Panels column fixed 700px; details pane flexes; panels scroll when many skills
-- [x] Event delegation via `_onFirstRender` so badge/perk clicks work with ApplicationV2 PARTS
-- [ ] Persist perk values to actor flags (Apply button)
-- [ ] Skill progression logic (XP, level-up, gating)
+### Gather / Pins Reliability
+- [ ] Eliminate the player-driven gather/discovery completion race around request-roll message context and GM-side resolution.
+- [ ] Verify gather-node consume/delete behavior across GM and player clients after harvest success and failure.
+- [ ] Build a tiny Artificer + Blacksmith repro harness for gather/discovery pin lifecycle issues and share it with the Blacksmith API dev.
 
-### Recently Completed
-- [x] **13.0.5 / 13.0.6:** Crafting sounds (component panel, timer heat/grind); sound scope (local for crafting, broadcast for success/failure); GM-only menubar — Create Item, Import Recipes, Roll for Components (and Request Roll) visible only to GM; Split Minor Potions macro (skill detection strips HTML); macro scripts moved to `macros/`.
-- [x] Persisted item cache (world setting `itemCache`; save on Refresh, restore on getCacheStatus)
-- [x] Rarity: EPIC → VERY_RARE (Very Rare) per D&D 5e
-- [x] IngredientStorage: use item cache when available, else notify GM
-- [x] Crafting window: crafter portrait/name in header, "Results" → "Details"
-- [x] Ingredient settings: `itemLookupOrder`, `ingredientStorageSource`
-- [x] **Broader component list:** Show D&D consumables (potions, oils, etc.) without artificer flags; fixed consumable detection (use `item.type` not `system.type.value`)
-- [x] **Recipe row redesign:** Result item image, title on top, tags below; async recipe resolution for images
-- [x] **UI tweaks:** "Ingredients" → "Components"; hammer icon right-justified; time slider 0–120; recipe defaults heat/time to 0 when unset; "Tags for this combination" moved to Details
-- [x] **Skills Window:** Full UI shell, JSON-driven panels/perks, badge and perk details, scrolling panels, cost dots
+### Skills System
+- [ ] Implement actual skill progression and XP gain.
+- [ ] Implement skill-level gating for recipes, blueprints, and other downstream systems.
+- [ ] Add level-up / progression notifications.
 
----
+## High Priority
 
-## ACTIVE ISSUES
+### Blacksmith Pins API Collaboration
+- [ ] Propose `pins.consume(pinId, options)` for atomic cue + delete + client-safe cleanup.
+- [ ] Propose `pins.setState(pinId, stateId, options)` for declarative transient pin states managed by the renderer.
+- [ ] Propose a per-pin mutation lock / queue helper (`pins.withLock(pinId, fn)`) to prevent update/delete/animation interleaving.
+- [ ] Request a renderer lifecycle guarantee that deleting a pin removes all render artifacts on every client.
+- [ ] Request a render-finalized delete hook (for example `blacksmith.pins.deletedRendered`) for deterministic follow-up work.
 
-### CRITICAL PRIORITY
+### Workstations
+- [ ] Create an `ArtificerWorkstation` data model implementation.
+- [ ] Create workstation data definitions.
+- [ ] Implement workstation placement.
+- [ ] Integrate workstation modifiers with crafting.
+- [ ] Create workstation browsing / management UI.
 
-### HIGH PRIORITY
+### Recipes / Blueprints
+- [ ] Create `RecipeForm` for editing.
+- [ ] Implement recipe unlock / discovery systems.
+- [ ] Create `BlueprintForm` for editing.
+- [ ] Create `BlueprintPanel` for browsing.
+- [ ] Implement multi-stage blueprint crafting flow.
+- [ ] Implement blueprint progress tracking UI / flow.
 
-**Blacksmith Pins API Collaboration (gather/discovery lifecycle)**
-- [ ] Propose `pins.consume(pinId, options)` API for atomic success/failure cue + delete + client-safe cleanup
-- [ ] Propose `pins.setState(pinId, stateId, options)` for declarative transient pin states (`idle`, `working`, `active`) managed by Pins renderer
-- [ ] Propose per-pin mutation lock/queue helper (`pins.withLock(pinId, fn)`) to prevent update/delete/animation interleaving
-- [ ] Request renderer lifecycle guarantee: deleting a pin always removes all animation/render artifacts on every client
-- [ ] Request completion hook for render-finalized deletes (e.g., `blacksmith.pins.deletedRendered`) for deterministic module follow-up
-- [ ] Build a tiny Artificer+Blacksmith repro harness for player-driven gather consume flow and share with API dev
+### Salvage
+- [ ] Implement salvage rules engine.
+- [ ] Create salvage UI.
+- [ ] Implement salvage yield calculation.
+- [ ] Integrate salvage with Foundry item sheets / item actions.
 
-**Phase 0: Foundation & Architecture Setup**
-- [x] Set up folder structure (`resources/`, `templates/`)
-- [x] Define schema definitions with JSDoc for all data types (`schema-*.js` files)
-- [ ] Create validation functions for each data type (Phase 1)
-- [x] Set up module API for external access (`api-artificer.js`)
-- [x] Create placeholder manager classes (`manager-*.js` files)
-- [x] Define module settings in `settings.js` (journal selections, ingredient compendium mapping; feature toggles to follow)
-- [x] Add localization keys for new settings in `lang/en.json`
+## Medium Priority
 
-**Phase 1: Core Data System**
-- [x] Item Creation & Import System:
-  - [x] Create `utility-artificer-item.js` with core item creation functions
-  - [x] Create `window-artificer-item.js` unified form for manual creation
-  - [x] Create `utility-artificer-recipe-import.js` for recipe import (window-artificer-recipe-import.js)
-  - [x] Define JSON structure template (D&D 5e + flags.artificer)
-  - [x] Add menubar buttons for Create Item and Import Recipes (GM-only per 13.0.5)
-- [x] Create class-based data models:
-  - [x] `ArtificerIngredient` (Raw materials with tags, family, tier, rarity)
-  - [x] `ArtificerComponent` (Refined materials)
-  - [x] `ArtificerEssence` (Magical affinities)
-  - [x] `ArtificerRecipe` (Recipe definitions)
-  - [x] `ArtificerBlueprint` (Multi-stage blueprint definitions)
-  - [ ] `ArtificerWorkstation` (Workstation definitions)
-- [x] Implement `TagManager` class (validation, categories, families)
-- [x] Implement data storage managers (ingredients, recipes, blueprints) with configurable ingredient compendium mapping
-- [ ] Create initial data set:
-  - [ ] Starter ingredients (5-10 examples per family) using creation utilities
-  - [ ] Starter components (2-3 per type)
-  - [ ] Starter essences (5-7 examples)
-  - [ ] Example recipes (2-3)
-  - [ ] Example blueprint (1)
+### Initial Content
+- [ ] Add starter ingredient examples.
+- [ ] Add starter component examples.
+- [ ] Add starter essence examples.
+- [ ] Add example recipes.
+- [ ] Add an example blueprint.
 
-**Phase 2: Trait Logic & Experimentation Engine**
-- [ ] Implement family + trait combination algorithm (see plan §6)
-- [ ] Create `ExperimentationEngine` class
-- [ ] Implement trait discovery (optional: track usage per actor, progressive reveal)
-- [ ] Implement item generation from family + trait combinations
-- [ ] Add quality/stability calculation (based on skill, workstation, rarity)
+### Experimentation
+- [ ] Finish the family + trait combination algorithm.
+- [ ] Implement trait discovery / progressive reveal.
+- [ ] Implement item generation from family + trait combinations.
+- [ ] Add quality / stability calculation based on skill, workstation, and rarity.
 
-**Phase 3: Basic Crafting UI**
-- [x] Create crafting window (ApplicationV2)
-- [x] Implement ingredient browser (filter, search, tag display)
-- [x] Implement recipe browser (filter by skill, workstation, category, tags)
-- [x] Create result display area
-- [x] Integrate with actor inventory
+### Recipe / Blueprint Portability
+- [ ] Add recipe / blueprint export and import support.
+- [ ] Define a community content format.
 
-### MEDIUM PRIORITY
+### Notifications / Validation
+- [ ] Add broader notification integration for discoveries, crafting events, and progression.
+- [ ] Add dedicated content validation tooling for packs / imported content.
 
-**Important Decisions - Should Resolve Before Phase 2-3:**
-- [x] **Q7: Recipe Numbering** - ✅ DECIDED: Hash-based numbers (R1, R2, etc.)
-- [x] **Q8: Recipe Result Linking** - ✅ DECIDED: Link to existing items in compendium
-- [x] **Q9: Blueprint Stage Progression** - ✅ DECIDED: Player manually initiates each stage
-- [x] **Q10: Panel Organization** - ✅ DECIDED: Both (default to status, with category filter)
+## Deferred
 
-**Phase 4: Skill System**
-- [ ] Create skill data model (store in actor flags)
-- [ ] Implement skill progression logic (XP gain from crafting, quality, discoveries)
-- [ ] Implement skill gating (recipe/blueprint requirements)
-- [x] Create Skills Window UI (ApplicationV2, JSON-driven; badge + perks, details pane)
-- [ ] Persist perk investments to actor flags (Apply); integrate with SkillManager
-- [ ] Add level-up notifications
+### Gathering Expansion
+- [ ] Create mini-game framework.
+- [ ] Implement timing bar mini-game.
+- [ ] Implement radial spinner mini-game.
+- [ ] Implement quick-match mini-game.
+- [ ] Integrate mini-games with gathering.
+- [ ] Add advanced biome logic (weather, time-of-day).
+- [ ] Add proximity / visual indicators for gathering.
 
-**Phase 5: Recipe System**
-- [x] Create `RecipeParser` class (parse HTML journal entries)
-- [ ] Create `RecipeForm` (FormApplication for editing)
-- [ ] Create `RecipePanel` (ApplicationV2 for browsing) — recipes shown in crafting window
-- [ ] Implement recipe unlock system
-- [x] Implement recipe crafting (override tag logic, apply benefits)
-- [ ] Create recipe discovery system (from books, NPCs, scrolls, etc.)
-
-**Phase 7: Salvage & Breakdown System**
-- [ ] Implement salvage rules engine
-- [ ] Create salvage UI (button on item context menu)
-- [ ] Implement salvage yield calculation
-- [ ] Add integration with Foundry items (hook into item sheets)
-
-### LOW PRIORITY
-
-**Phase 6: Workstation System**
-- [ ] Create workstation data definitions
-- [ ] Implement workstation placement (scene-based or abstract)
-- [ ] Integrate workstation modifiers with crafting
-- [ ] Create workstation UI (browser, manager, placement tool)
-
-**Phase 8: Gathering System (Basic)**
-- [x] Create gathering node definitions (biomes/habitats, component types; compendium + eligibility)
-- [x] Implement basic gathering interaction (Roll for Components — GM selects biomes, types, DC; request roll for tokens)
-- [x] Implement biome/seasonal logic (habitat multi-select, eligible items by biome)
-- [x] Create gathering UI (Roll for Components window, chat cards, remember settings)
-
-**Phase 9: Blueprint System**
-- [x] Create `BlueprintParser` class (parse multi-stage blueprints)
-- [ ] Create `BlueprintForm` (FormApplication for editing)
-- [ ] Create `BlueprintPanel` (ApplicationV2 for browsing)
-- [ ] Implement multi-stage crafting flow
-- [ ] Implement blueprint progress tracking
-
-**Integration Features:**
-- [ ] Recipe/Blueprint export/import system
-- [ ] Community content format and sharing
-- [ ] Notification integration (trait discoveries, skill increases, crafting events)
-
-## DEFERRED
-
-**Phase 10: Gathering Mini-Games**
-- [ ] Create mini-game framework
-- [ ] Implement timing bar mini-game
-- [ ] Implement radial spinner mini-game
-- [ ] Implement quick-match mini-game
-- [ ] Integrate mini-games with gathering
-
-**Phase 11: Advanced Gathering Features**
-- [ ] Visual indicators (sparkle/wiggle animations)
-- [ ] Hot/cold proximity indicators
-- [ ] Advanced biome logic (weather, time-of-day)
-
-**Phase 12: Canvas Integration & Advanced UI**
-- [ ] Canvas workstation pins (PIXI-based)
-- [ ] Canvas gathering node pins
-- [ ] Drag-and-drop ingredient slots
-- [ ] Advanced crafting UI features
-
-**Phase 13: Community Features & Expansion Support**
-- [ ] Import/export system for expansion packs
-- [ ] Content validation tools
-- [ ] Community content browser/manager
-
-**Phase 14: Polish & Optimization**
-- [ ] Performance optimization
-- [ ] UX polish (tooltips, shortcuts, bulk operations)
-- [ ] Complete error handling
-- [ ] Full localization support
-
-## FUTURE PHASES
-
-**Nice-to-Have Features:**
-- Blueprint canvas pins (stage-level pins like Quest objectives)
-- Recipe/Blueprint numbering system (R1, B1, etc.)
-- Advanced progress display locations
-- Pin interaction refinements
-- Advanced filtering options
-- Recipe mastery tracking
-- Crafting history log
-
----
+### UI / Polish
+- [ ] Add drag-and-drop ingredient slots.
+- [ ] Add advanced crafting UI features.
+- [ ] Performance optimization.
+- [ ] UX polish (tooltips, shortcuts, bulk operations).
+- [ ] Complete localization support.
+- [ ] Harden remaining error handling paths.
 
 ## Notes
 
-- Questions marked with **Q##** reference questions in `documentation/architecture-artificer.md` section 12
-- Phases reference `documentation/plan-artificer.md` for detailed task breakdowns
-- Critical priority items are blockers - cannot proceed without decisions
-- High priority items form the MVP (core crafting functionality)
-- Medium priority items enhance the core system
-- Low priority items are enhancements that can be added incrementally
+- Questions marked with **Q##** in older docs were already resolved; keep decisions in `documentation/architecture-artificer.md` and shipped history in `CHANGELOG.md`.
+- Discovery-based gather spots and canvas gather pins are already implemented; remaining work is reliability and lifecycle cleanup, not initial pin support.
+- Skill perk persistence to actor flags is already implemented; the remaining skill work is progression, gating, and notifications.
