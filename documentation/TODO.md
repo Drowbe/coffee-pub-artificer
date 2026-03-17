@@ -4,36 +4,6 @@
 
 ## IN PROGRESS / CURRENT FOCUS
 
-### Data Model: TYPE > FAMILY > TRAITS (Priority) ✅
-
-**Goal:** Adopt the single hierarchy (TYPE → FAMILY → TRAITS); remove primary tag, secondary tags, and quirk as separate fields. Family is identity; traits are modifiers.
-
-**Tasks:**
-- [x] Update schemas: `schema-artificer-item.js` (TYPE/FAMILY/TRAITS), schema-ingredients/components/essences JSDoc; legacy maps for migration.
-- [x] Update item form UI: TYPE select, FAMILY select (options by type), TRAITS tagging UI (no primary/secondary/quirk).
-- [x] Update utility-artificer-item.js, item-sheet-artificer.js, cache, experimentation-engine, window-crafting, model-ingredient, utility-artificer-import to use `type`/`family`/`traits` (with legacy read support).
-- [x] **Migration:** `scripts/migrations/migrate-artificer-flags.js` + `api.runMigration(options)`; idempotent. Run on backup/copy first.
-- [x] **Macro for GMs:** Example script at `macros/migration-macro-example.js` — create a Script macro, paste, run as GM. Optional `includeCompendia: ['packId']` for compendium migration.
-- [x] Document macro: see `macros/migration-macro-example.js` header and plan-artificer.md §2.6.
-
-**Related files:** schema-artificer-item.js, window-artificer-item.js, item-sheet-artificer.js, utility-artificer-item.js, cache, migrations, api-artificer.js.
-
-### Persisted Lightweight Item Cache ✅
-
-**Goal:** Replace in-memory item cache with a persisted cache for fast name-based lookup, fewer compendium calls, and alias support.
-
-**Tasks:**
-- [x] Replace in-memory cache with persisted storage (world setting `itemCache`)
-- [x] Add cache schema: `name`, `uuid`, `img`, `type`, `dndType`, `family`, `tags`, `tier`, `rarity`, `source`, `artificerType`
-- [x] Include schema version and last-built timestamp
-- [x] Integrate translation (setting + index): canonical name + all aliases → uuid
-- [x] Implement lookup: normalized name → index → uuid → `fromUuid()` when needed
-- [x] Map D&D consumable type to family (potion, poison, food, oil, etc.)
-- [x] Wire cache refresh to existing "Refresh Cache" button in crafting UI
-- [ ] (Optional) Support overlay metadata for core items
-
-**Related files:** `scripts/cache/cache-items.js`, `scripts/data/storage/storage-ingredients.js`, `scripts/utility-artificer-item.js`, `scripts/settings.js`, `resources/translation-item.json`
-
 ### Skills Window (Phase 4 – UI in progress)
 - [x] Skills Window (ApplicationV2) opened from Artificer secondary bar
 - [x] Data-driven from `resources/skills-details.json` (skills, perks, cost, value, name, description, requirement, icon, colors)
@@ -63,15 +33,6 @@
 ## ACTIVE ISSUES
 
 ### CRITICAL PRIORITY
-
-**Decision Blockers - Must Resolve Before Phase 1:**
-- [x] **Q1: Ingredient Storage** - ✅ DECIDED: Compendium Packs (Items)
-- [x] **Q2: Blueprint Storage** - ✅ DECIDED: Separate journal ("Artificer Blueprints")
-- [x] **Q3: Canvas/Pin Approach for MVP** - ✅ DECIDED: Abstract menu-based for MVP
-- [x] **Q4: Blueprint State Representation** - ✅ DECIDED: HTML markup (`<s>`, `<code>`, `<em>`)
-- [x] **Q5: Workstation Storage** - ✅ DECIDED: Hybrid (compendium + scene flags)
-- [x] **Q6: Gathering Node Storage** - ✅ DECIDED: Compendium definitions + scene flags
-- [x] **Q11: Item System Integration** - ✅ DECIDED: D&D 5e
 
 ### HIGH PRIORITY
 
