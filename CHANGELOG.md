@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.11]
+
+### Added
+- **Recipe Browser window:** Added a dedicated recipe browser window with the same visual language as the crafting station, focused on recipe browsing and details without the components and bench columns.
+- **Recipe Browser menubar entry:** Added a new secondary bar button to open the Recipe Browser directly.
+
+### Changed
+- **Recipe Browser action flow:** Replaced the crafting action in the recipe-focused view with `Open in Crafting Window`, which opens the selected recipe in the normal crafting station.
+- **Crafting window event handling:** Crafting-style windows now track delegation per open window so the new Recipe Browser and the Crafting Station can coexist more reliably.
+
+### Fixed
+- **Gather node consumption on failure:** Gather spots are now consumed when a harvest roll resolves, even when the roll fails, matching the intended gather-node lifecycle.
+
 
 ## [13.0.10]
 
