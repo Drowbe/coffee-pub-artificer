@@ -439,7 +439,7 @@ export const registerSettings = () => {
         hint: 'Stores last used Habitat, component types, harvesting skills, and DC for Roll for Components.',
         scope: 'world',
         config: false,
-        default: { biomes: [], componentTypes: [], skillIds: ['Herbalism', 'Cooking'], dc: 10 },
+        default: { biomes: [], componentTypes: [], skillIds: [], dc: 0 },
         type: Object
     });
 

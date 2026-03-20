@@ -25,7 +25,7 @@
  * @property {string} id - Unique identifier (UUID)
  * @property {string} name - Blueprint name
  * @property {string} narrative - Narrative hook/story element
- * @property {string} skill - Required skill (see CRAFTING_SKILLS in schema-recipes.js)
+ * @property {string} skill - Required skill (must match an enabled id in the skills mapping JSON)
  * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {BlueprintStage[]} stages - Multi-stage requirements
  * @property {string} resultItemUuid - UUID of resulting item (Item document UUID)

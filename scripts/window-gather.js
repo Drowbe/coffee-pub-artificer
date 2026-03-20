@@ -11,7 +11,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
-import { CRAFTING_SKILLS } from './schema-recipes.js';
+import { loadSkillsDetails, resolveGatherDefaults, getEnabledCraftingSkillIds } from './skills-rules.js';
 import {
     getBiomeOptionsForMultiselect,
     getComponentTypeOptions,
@@ -28,27 +28,37 @@ import {
 const GATHER_APP_ID = 'artificer-gather';
 const GATHER_BOUNDS_SETTING = 'windowBoundsGather';
 const GATHER_SETTINGS_KEY = 'gatherWindowSettings';
-const DEFAULT_GATHER_SETTINGS = { biomes: [], componentTypes: [], skillIds: ['Herbalism', 'Cooking'], dc: 10 };
-
 let _currentGatherWindowRef = null;
 let _gatherDelegationAttached = false;
 
-function getGatherWindowSettings() {
+/**
+ * Merge saved gather window settings with defaults from skills mapping (`gatherDefaults`).
+ */
+async function getGatherWindowSettings() {
+    const jsonDefaults = resolveGatherDefaults(await loadSkillsDetails());
     try {
         const raw = game.settings.get(MODULE.ID, GATHER_SETTINGS_KEY);
         if (raw && typeof raw === 'object' && Array.isArray(raw.biomes) && Array.isArray(raw.componentTypes)) {
             const validSkillIds = Array.isArray(raw.skillIds) ? raw.skillIds.map((s) => String(s).trim()).filter(Boolean) : [];
+            const dcRaw = Number(raw.dc);
+            const dc =
+                Number.isFinite(dcRaw) && dcRaw >= 1 && dcRaw <= 30 ? Math.floor(dcRaw) : jsonDefaults.dc;
             return {
                 biomes: raw.biomes,
                 componentTypes: raw.componentTypes,
-                skillIds: validSkillIds.length ? validSkillIds : ['Herbalism', 'Cooking'],
-                dc: typeof raw.dc === 'number' && raw.dc >= 1 && raw.dc <= 30 ? raw.dc : 10
+                skillIds: validSkillIds.length ? validSkillIds : jsonDefaults.gatherWindowSkillIds,
+                dc
             };
         }
     } catch {
         // ignore
     }
-    return { ...DEFAULT_GATHER_SETTINGS };
+    return {
+        biomes: [],
+        componentTypes: [],
+        skillIds: jsonDefaults.gatherWindowSkillIds,
+        dc: jsonDefaults.dc
+    };
 }
 
 function saveGatherWindowSettings(settings) {
@@ -104,14 +114,15 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async getData(options = {}) {
-        const saved = getGatherWindowSettings();
+        const saved = await getGatherWindowSettings();
         const selectedBiomes = this._selectedBiomes ?? saved.biomes;
         const selectedSkillIds = this._selectedSkillIds ?? saved.skillIds;
         const componentTypeOptions = getComponentTypeOptions().map((o) => ({
             ...o,
             checked: saved.componentTypes.includes(o.value)
         }));
-        const skillOptions = Object.values(CRAFTING_SKILLS).map((sid) => ({
+        const allSkillIds = await getEnabledCraftingSkillIds();
+        const skillOptions = allSkillIds.map((sid) => ({
             value: sid,
             label: sid,
             checked: selectedSkillIds.includes(sid)
@@ -140,7 +151,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                w._toggleBiome(biomeBtn.dataset.biome);
+                void w._toggleBiome(biomeBtn.dataset.biome);
                 return;
             }
 
@@ -160,9 +171,10 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return document.querySelector('.gather-window-root');
     }
 
-    _toggleBiome(biome) {
+    async _toggleBiome(biome) {
         if (!OFFICIAL_BIOMES.includes(biome)) return;
-        const current = this._selectedBiomes ?? getGatherWindowSettings().biomes;
+        const saved = await getGatherWindowSettings();
+        const current = this._selectedBiomes ?? saved.biomes;
         const next = current.includes(biome) ? current.filter((b) => b !== biome) : [...current, biome];
         this._selectedBiomes = next;
         this.render();

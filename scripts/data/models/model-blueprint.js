@@ -4,7 +4,8 @@
 
 import { MODULE } from '../../const.js';
 import { hashString } from '../../utils/helpers.js';
-import { CRAFTING_SKILLS, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { BLUEPRINT_STAGE_STATES } from '../../schema-blueprints.js';
 
 /**
@@ -20,7 +21,7 @@ export class ArtificerBlueprint {
         this.id = data.id ?? '';
         this.name = data.name ?? '';
         this.narrative = data.narrative ?? '';
-        this.skill = data.skill ?? CRAFTING_SKILLS.ALCHEMY;
+        this.skill = data.skill ?? getSyncFallbackRecipeSkillId();
         this.skillLevel = data.skillLevel ?? 1;
         this.stages = data.stages ?? [];
         this.resultItemUuid = data.resultItemUuid ?? '';
@@ -38,10 +39,17 @@ export class ArtificerBlueprint {
      * @private
      */
     _validateAndNormalize() {
-        // Validate skill
-        if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ALCHEMY}`, null, true, false);
-            this.skill = CRAFTING_SKILLS.ALCHEMY;
+        const validSkills = getLastKnownEnabledCraftingSkillIds();
+        if (validSkills?.length && !validSkills.includes(this.skill)) {
+            const fallback = validSkills[0];
+            BlacksmithUtils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Invalid blueprint skill: ${this.skill}. Defaulting to ${fallback}`,
+                null,
+                true,
+                false
+            );
+            this.skill = fallback;
         }
 
         // Validate skillLevel (0-20)

@@ -6,7 +6,8 @@ import { MODULE } from '../../const.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
 import { buildRecipePageHtml } from '../../utility-artificer-recipe-import.js';
-import { SKILL_LEVEL_MAX, CRAFTING_SKILLS } from '../../schema-recipes.js';
+import { SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { getEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { getPotionBrewingData } from '../potion-brewing-recipe-data.js';
 
 /** JournalEntry document type for folder filtering */
@@ -364,7 +365,7 @@ export class RecipeStorage {
         } else {
             journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && (j.name || '').trim() === journalName);
         }
-        const validSkills = new Set(Object.values(CRAFTING_SKILLS));
+        const validSkills = new Set(await getEnabledCraftingSkillIds());
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];
             for (const page of pages) {

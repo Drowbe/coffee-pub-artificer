@@ -4,7 +4,8 @@
 
 import { MODULE } from '../../const.js';
 import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
 import { getArtificerTypeFromFlags, getFamilyFromFlags } from '../../utility-artificer-item.js';
 
@@ -31,7 +32,7 @@ export class ArtificerRecipe {
         this.name = data.name ?? '';
         this.type = data.type ?? ITEM_TYPES.CONSUMABLE;
         this.category = data.category ?? '';
-        this.skill = data.skill ?? CRAFTING_SKILLS.ALCHEMY;
+        this.skill = data.skill ?? getSyncFallbackRecipeSkillId();
         this.skillLevel = data.skillLevel ?? 1;
         this.heat = data.heat ?? null;
         this.processType = data.processType ?? null;
@@ -67,10 +68,18 @@ export class ArtificerRecipe {
             this.type = ITEM_TYPES.CONSUMABLE;
         }
         
-        // Validate skill
-        if (!Object.values(CRAFTING_SKILLS).includes(this.skill)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid recipe skill: ${this.skill}. Defaulting to ${CRAFTING_SKILLS.ALCHEMY}`, null, true, false);
-            this.skill = CRAFTING_SKILLS.ALCHEMY;
+        // Validate skill against last known enabled ids from skills mapping (when available)
+        const validSkills = getLastKnownEnabledCraftingSkillIds();
+        if (validSkills?.length && !validSkills.includes(this.skill)) {
+            const fallback = validSkills[0];
+            BlacksmithUtils.postConsoleAndNotification(
+                MODULE.NAME,
+                `Invalid recipe skill: ${this.skill}. Defaulting to ${fallback}`,
+                null,
+                true,
+                false
+            );
+            this.skill = fallback;
         }
         
         // Validate skillLevel (0-20)

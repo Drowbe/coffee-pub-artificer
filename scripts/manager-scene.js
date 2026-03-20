@@ -6,7 +6,7 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
-import { CRAFTING_SKILLS } from './schema-recipes.js';
+import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
 
 const SCENE_SOCKET_EVENT = `${MODULE.ID}.sceneArtificerUpdated`;
 const SCENE_CONTEXT = `${MODULE.ID}-scene-manager`;
@@ -35,7 +35,7 @@ export class SceneManager {
             context: SCENE_CONTEXT,
             key: `${SCENE_CONTEXT}-render-scene-config`,
             priority: 3,
-            callback: (app, html) => this._injectArtificerTab(app, html)
+            callback: (app, html) => void this._injectArtificerTab(app, html)
         });
         this._log('SceneManager: hook registered (renderSceneConfig)');
         this._hookManager.registerHook({
@@ -44,7 +44,7 @@ export class SceneManager {
             context: SCENE_CONTEXT,
             key: `${SCENE_CONTEXT}-render-application-v2-scene-config`,
             priority: 3,
-            callback: (app, html) => this._injectArtificerTabV2(app, html)
+            callback: (app, html) => void this._injectArtificerTabV2(app, html)
         });
         this._log('SceneManager: hook registered (renderApplicationV2)');
 
@@ -85,10 +85,10 @@ export class SceneManager {
         const appName = app?.constructor?.name ?? '';
         const isSceneConfig = appName === 'SceneConfig' || app?.documentName === 'Scene' || app?.document?.documentName === 'Scene';
         if (!isSceneConfig) return;
-        this._injectArtificerTab(app, html);
+        void this._injectArtificerTab(app, html);
     }
 
-    static _injectArtificerTab(app, html) {
+    static async _injectArtificerTab(app, html) {
         const root = this._resolveRoot(html) || this._resolveRoot(app?.element) || this._resolveRoot(app?._element);
         if (!root) {
             this._log('SceneManager: tab inject skipped (no render root)');
@@ -133,7 +133,12 @@ export class SceneManager {
             ? currentComponentTypes
             : componentFamilies;
         const selectedComponentTypes = new Set(rawComponentTypes.map((s) => String(s).trim()).filter(Boolean));
-        const defaultHarvestingSkills = Object.values(CRAFTING_SKILLS);
+        let defaultHarvestingSkills = [];
+        try {
+            defaultHarvestingSkills = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
+        } catch {
+            /* skills mapping unavailable — leave checkboxes empty */
+        }
         const currentHarvestingSkills = normalizeList(sceneFlags.harvestingSkills);
         const rawHarvestingSkills = currentHarvestingSkills.length
             ? currentHarvestingSkills
@@ -184,7 +189,7 @@ export class SceneManager {
                 </label>
             `;
         }).join('');
-        const harvestingSkillOptionsHtml = Object.values(CRAFTING_SKILLS).map((skillId) => {
+        const harvestingSkillOptionsHtml = defaultHarvestingSkills.map((skillId) => {
             const checked = selectedHarvestingSkills.has(skillId) ? 'checked' : '';
             return `
                 <label class="checkbox artificer-scene-checkbox">

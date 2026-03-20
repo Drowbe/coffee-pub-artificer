@@ -13,7 +13,15 @@ import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
 import { getAPI } from './api-artificer.js';
-import { getLearnedPerkIdsForSkill, getEffectiveGatheringRules, getEffectiveComponentSkillAccess, getAppliedGatheringPerksForDisplay, getComponentAutoGatherPerkNames } from './skills-rules.js';
+import {
+    getLearnedPerkIdsForSkill,
+    getEffectiveGatheringRules,
+    getEffectiveComponentSkillAccess,
+    getAppliedGatheringPerksForDisplay,
+    getComponentAutoGatherPerkNames,
+    loadSkillsDetails,
+    resolveGatherDefaults
+} from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 
@@ -26,8 +34,6 @@ const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null,
 const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
-const DEFAULT_GATHER_SKILLS = ['Herbalism'];
-
 /** Single-slot memo for gathering skill context (same actor + skills + perks → repeat calls are cheap). */
 let _gatherSkillContextCache = { key: null, value: null };
 
@@ -129,14 +135,14 @@ export function consumePendingGather() {
     return p;
 }
 
-function _normalizeGatherSkillIds(skillIds) {
-    const raw = Array.isArray(skillIds) ? skillIds : DEFAULT_GATHER_SKILLS;
+async function _normalizeGatherSkillIds(skillIds) {
+    const raw = Array.isArray(skillIds) && skillIds.length ? skillIds : resolveGatherDefaults(await loadSkillsDetails()).singleSkillIds;
     const cleaned = raw.map((s) => String(s).trim()).filter(Boolean);
     return [...new Set(cleaned)];
 }
 
-async function _getGatheringSkillContext(actor, skillIds = DEFAULT_GATHER_SKILLS) {
-    const enabledSkillIds = _normalizeGatherSkillIds(skillIds);
+async function _getGatheringSkillContext(actor, skillIds) {
+    const enabledSkillIds = await _normalizeGatherSkillIds(skillIds);
     if (!enabledSkillIds.length) {
         return {
             enabledSkillIds,
@@ -468,7 +474,7 @@ export async function sendGatherSuccessCard(actor = null, items = [], appliedPer
  * @param {Actor|null} actor
  * @returns {Promise<number>}
  */
-export async function getGatheringRollBonusForActor(actor, skillIds = DEFAULT_GATHER_SKILLS) {
+export async function getGatheringRollBonusForActor(actor, skillIds) {
     if (!actor) return 0;
     const ctx = await _getGatheringSkillContext(actor, skillIds);
     return Math.max(0, Number(ctx.gatheringRollBonus) || 0);
@@ -485,7 +491,7 @@ export async function getGatheringRollBonusForActor(actor, skillIds = DEFAULT_GA
 export async function processGatherRollResult(rollTotal, actor, pending) {
     if (!pending) return { success: false };
     const { dc, biomes, componentTypes, skillIds, sourceFamily, maxRarityRank } = pending;
-    const enabledSkillIds = _normalizeGatherSkillIds(skillIds);
+    const enabledSkillIds = await _normalizeGatherSkillIds(skillIds);
     if (!enabledSkillIds.length) {
         return {
             success: false,
@@ -617,7 +623,7 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
     }
 }
 
-function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
+async function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
     const normalizeList = (value) => {
         if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
@@ -626,9 +632,15 @@ function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     };
     const biomes = normalizeList(flags.habitats);
     const componentTypes = normalizeList(flags.componentTypes);
+    let harvestingFallback = [];
+    try {
+        harvestingFallback = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
+    } catch {
+        /* skills mapping failed — caller may surface errors elsewhere */
+    }
     const harvestingSkills = normalizeList(flags.harvestingSkills).length
         ? normalizeList(flags.harvestingSkills)
-        : ['Herbalism', 'Cooking'];
+        : harvestingFallback;
     const fallbackDC = Number(flags.defaultDC);
     const rawDiscoveryDC = Number(flags.discoveryDC);
     const rawHarvestDC = Number(flags.harvestDC);
@@ -778,7 +790,7 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         return;
     }
 
-    const context = _buildDiscoveryContext(scene);
+    const context = await _buildDiscoveryContext(scene);
     if (!context.biomes.length || !context.componentTypes.length || context.gatherSpots <= 0) {
         await _notifyGMSceneGatherNotConfigured(scene);
         return;
@@ -1412,8 +1424,8 @@ async function _processDiscoveryRollOnGM(data) {
     _discoveryRollBuffers.delete(requestId);
 }
 
-function _buildDiscoveryContext(scene) {
-    const { discoveryDC, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
+async function _buildDiscoveryContext(scene) {
+    const { discoveryDC, biomes, componentTypes, harvestingSkills } = await _getSceneGatherSettings(scene);
     const sceneFlags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
     const rawBase = Number(sceneFlags.discoveryBaseDC);
     const discoveryBaseDC = Number.isFinite(rawBase) ? Math.max(0, Math.min(20, Math.floor(rawBase))) : discoveryDC;
@@ -1452,7 +1464,7 @@ export async function requestDiscoverGatherSpotsFromScene() {
     }
 
     const scene = canvas.scene;
-    const context = _buildDiscoveryContext(scene);
+    const context = await _buildDiscoveryContext(scene);
     if (!context.biomes.length || !context.componentTypes.length || context.gatherSpots <= 0) {
         await _notifyGMSceneGatherNotConfigured(scene);
         return;
@@ -1556,7 +1568,7 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     const sourcePin = sourcePinId ? _getPinById(sourcePinId, canvas.scene.id) : null;
 
     const scene = canvas.scene;
-    const { harvestDC, biomes, componentTypes, harvestingSkills } = _getSceneGatherSettings(scene);
+    const { harvestDC, biomes, componentTypes, harvestingSkills } = await _getSceneGatherSettings(scene);
     const sourceNode = sourcePinId ? _getNodeByPinId(scene, sourcePinId) : null;
     const effectiveBiomes = sourceNode?.biomes?.length ? sourceNode.biomes : biomes;
     const effectiveComponentTypes = sourceNode?.componentTypes?.length ? sourceNode.componentTypes : componentTypes;

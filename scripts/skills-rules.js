@@ -4,13 +4,107 @@
 // Loads the configured skills ruleset JSON (default: resources/skills-mapping.json)
 // and derives crafting/gathering rules from each perk's optional rules.benefits.
 
-import { getSkillsRulesetFetchUrl } from './config-rulesets.js';
+import { MODULE } from './const.js';
+import { getSkillsRulesetFetchUrl, getSkillsRulesetPath } from './config-rulesets.js';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
 let _skillsRulesCache = null;
 
 /** @type {{ skills: Array<{ id: string, name: string, perks: Array<{ perkID: string, name: string, icon?: string, rules?: { benefits: Array } }> }> } | null } */
 let _skillsDetailsCache = null;
+
+/** @type {Promise<object>|null} */
+let _skillsDetailsPromise = null;
+
+/** Last successful load: enabled skill ids in JSON order (for sync fallbacks after first load). */
+let _lastKnownEnabledCraftingSkillIds = null;
+
+let _skillsRulesetErrorReported = false;
+
+function _reportSkillsRulesetFailure(configPath, detail) {
+    if (_skillsRulesetErrorReported) return;
+    _skillsRulesetErrorReported = true;
+    const title = `${MODULE.TITLE}: Skills ruleset failed`;
+    const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Skills Ruleset JSON** in module settings, then change the setting or reload to retry.`;
+    console.error(title, detail);
+    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    } else if (game.user?.isGM && typeof ui !== 'undefined') {
+        ui.notifications?.error?.(`${title}. ${detail}`);
+    }
+}
+
+/**
+ * Enabled crafting skill ids from a loaded details document (JSON order).
+ * @param {object} details
+ * @returns {string[]}
+ */
+export function extractEnabledSkillIds(details) {
+    return (details?.skills ?? [])
+        .filter((s) => s && s.id && s.skillEnabled !== false)
+        .map((s) => String(s.id).trim())
+        .filter(Boolean);
+}
+
+/**
+ * Resolve gather UI / scene defaults from skills mapping + optional `gatherDefaults` block.
+ * @param {object} details - Root document from skills mapping JSON
+ * @returns {{ singleSkillIds: string[], gatherWindowSkillIds: string[], dc: number, harvestingSkillIds: string[] }}
+ */
+export function resolveGatherDefaults(details) {
+    const enabled = extractEnabledSkillIds(details);
+    const gd = details?.gatherDefaults ?? {};
+    const clean = (arr) => (Array.isArray(arr) ? arr.map((s) => String(s).trim()).filter(Boolean) : []);
+
+    const single = clean(gd.singleSkillIds).length ? clean(gd.singleSkillIds) : enabled.length ? [enabled[0]] : [];
+
+    let windowSkills = clean(gd.gatherWindowSkillIds);
+    if (!windowSkills.length) {
+        windowSkills = enabled.slice(0, Math.min(2, Math.max(1, enabled.length)));
+    }
+
+    const dcRaw = Number(gd.dc);
+    const dc = Number.isFinite(dcRaw) ? Math.max(1, Math.min(30, Math.floor(dcRaw))) : 10;
+
+    let harvesting = clean(gd.harvestingSkillIds);
+    if (!harvesting.length) {
+        harvesting = [...enabled];
+    }
+
+    return {
+        singleSkillIds: single,
+        gatherWindowSkillIds: windowSkills.length ? windowSkills : [...single],
+        dc,
+        harvestingSkillIds: harvesting.length ? harvesting : [...single]
+    };
+}
+
+/**
+ * After a successful skills load, returns cached enabled ids; otherwise null.
+ * @returns {string[]|null}
+ */
+export function getLastKnownEnabledCraftingSkillIds() {
+    return _lastKnownEnabledCraftingSkillIds ? [..._lastKnownEnabledCraftingSkillIds] : null;
+}
+
+/**
+ * Sync fallback for recipe/blueprint models before the first successful skills load.
+ * After load, prefers first enabled id from the mapping.
+ * @returns {string}
+ */
+export function getSyncFallbackRecipeSkillId() {
+    if (_lastKnownEnabledCraftingSkillIds?.length) return _lastKnownEnabledCraftingSkillIds[0];
+    return 'Alchemy';
+}
+
+/**
+ * All enabled crafting skill ids from the configured mapping (async).
+ * @returns {Promise<string[]>}
+ */
+export async function getEnabledCraftingSkillIds() {
+    const d = await loadSkillsDetails();
+    return extractEnabledSkillIds(d);
+}
 
 /**
  * Build the rules lookup (skillId -> perks -> perkID -> { title, benefits }) from skills mapping JSON.
@@ -49,28 +143,86 @@ function buildRulesFromDetails(details) {
 
 /** Drop cached skills JSON and derived rules (e.g. after settings change). */
 export function invalidateSkillsRulesCaches() {
+    _skillsDetailsPromise = null;
     _skillsDetailsCache = null;
     _skillsRulesCache = null;
+    _lastKnownEnabledCraftingSkillIds = null;
+    _skillsRulesetErrorReported = false;
 }
 
 /**
- * Load skills mapping JSON. Caches result.
- * @returns {Promise<{ skills: Array }>}
+ * Load and parse skills mapping JSON. No silent fallback — throws after GM notification.
+ * @returns {Promise<object>}
+ */
+async function _loadSkillsDocument() {
+    const configPath = getSkillsRulesetPath();
+    const url = getSkillsRulesetFetchUrl();
+    if (!url) {
+        const msg = 'Could not resolve a URL for the skills ruleset (empty path?).';
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    let res;
+    try {
+        res = await fetch(url, { cache: 'no-store' });
+    } catch (e) {
+        const msg = `Network error while loading: ${e?.message ?? String(e)}`;
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw e;
+    }
+    if (!res.ok) {
+        const msg = `HTTP ${res.status} ${res.statusText || ''}`.trim();
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    const text = await res.text();
+    if (!text?.trim()) {
+        const msg = 'File is empty.';
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch (e) {
+        const msg = `Invalid JSON: ${e?.message ?? String(e)}`;
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw e;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        const msg = 'Root value must be a JSON object.';
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    if (!Array.isArray(parsed.skills)) {
+        const msg = 'Missing or invalid "skills" array.';
+        _reportSkillsRulesetFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    _lastKnownEnabledCraftingSkillIds = extractEnabledSkillIds(parsed);
+    _skillsRulesetErrorReported = false;
+    return parsed;
+}
+
+/**
+ * Load skills mapping JSON. Caches result. Rejects on load/parse failure (no fake empty document).
+ * @returns {Promise<{ skills: Array, gatherDefaults?: object, schemaVersion?: number }>}
  */
 export async function loadSkillsDetails() {
     if (_skillsDetailsCache) return _skillsDetailsCache;
-    try {
-        const url = getSkillsRulesetFetchUrl();
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        _skillsDetailsCache = data;
-        return data;
-    } catch (e) {
-        console.warn('skills-rules: Could not load skills ruleset JSON', e);
-        _skillsDetailsCache = { schemaVersion: 1, skills: [] };
-        return _skillsDetailsCache;
+    if (!_skillsDetailsPromise) {
+        _skillsDetailsPromise = (async () => {
+            try {
+                const data = await _loadSkillsDocument();
+                _skillsDetailsCache = data;
+                return data;
+            } catch (e) {
+                _skillsDetailsPromise = null;
+                throw e;
+            }
+        })();
     }
+    return _skillsDetailsPromise;
 }
 
 /**

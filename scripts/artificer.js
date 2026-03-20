@@ -4,6 +4,7 @@
 
 import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
+import { loadSkillsDetails } from './skills-rules.js';
 import { getAPI } from './api-artificer.js';
 import { loadTranslationFromFile } from './cache/cache-items.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
@@ -72,6 +73,12 @@ Hooks.once('ready', async () => {
         
         // Register settings FIRST during the ready phase
         registerSettings();
+
+        try {
+            await loadSkillsDetails();
+        } catch {
+            /* Strict loader posts GM-facing error; continue boot so settings can be fixed */
+        }
 
         // Pre-load item translation (alias → canonical) for cache
         await loadTranslationFromFile();

@@ -5,7 +5,8 @@
 import { MODULE } from './const.js';
 import { getOrCreateJournal, extractNameFromUuidLink, normalizePunctuationForStorage } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
-import { ITEM_TYPES, CRAFTING_SKILLS, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
+import { ITEM_TYPES, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
+import { getSyncFallbackRecipeSkillId } from './skills-rules.js';
 import { resolveItemByName } from './utility-artificer-item.js';
 
 /** Default journal name when none configured */
@@ -91,7 +92,7 @@ export async function validateRecipePayload(payload) {
     if (payload.description == null || typeof payload.description !== 'string') {
         return { valid: false, error: `Recipe "${payload.name}" requires a "description" field (string)` };
     }
-    const skill = payload.skill ?? CRAFTING_SKILLS.ALCHEMY;
+    const skill = payload.skill ?? getSyncFallbackRecipeSkillId();
     const apparatusName = payload.apparatusName ?? payload.containerName ?? payload.container ?? null;
     const containerName = payload.containerName ?? null;
     const skillKit = payload.skillKit ?? payload.toolName ?? payload.tool ?? null;

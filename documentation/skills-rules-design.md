@@ -9,6 +9,13 @@
 - **skills-mapping.json** (or the file chosen in module settings) is the single source of truth. Each skill has `id`, `name`, `perks[]`. Each perk has `perkID`, `name`, `description`, `requirement`, `cost`, `icon`, and optionally **rules** with a **benefits** array.
 - **rules.benefits:** Optional. Each entry has **title**, **description**, and **rule**. The **description** is shown in the Skills window benefits list; the **rule** object is what the crafting and gathering code consumes.
 - **scripts/skills-rules.js** loads that JSON and derives a rules lookup (by skill and perkID) from each perk’s `rules.benefits` for use by the crafting window and gather logic.
+- **Strict loading:** If the file is missing, empty, invalid JSON, not an object, or missing a `skills` array, the loader notifies the GM and **throws** (no silent empty fallback). Cache clears on failure so fixing the file or setting retries.
+- **Enabled skills:** Any skill with `skillEnabled === false` is excluded from “enabled” lists (gather UI checkboxes, scene harvesting defaults, recipe skill validation when the registry is loaded).
+- **Optional `gatherDefaults` (root object):** Drives gather UI and scene fallbacks when flags/settings are unset:
+  - `singleSkillIds` — default when a gather API needs exactly one skill list (e.g. internal normalization); if omitted, first enabled skill id.
+  - `gatherWindowSkillIds` — default selected harvesting skills for Roll for Components when saved settings have no `skillIds`; if omitted, up to the first two enabled skills.
+  - `dc` — default gather DC (1–30) when saved `dc` is unset/invalid; default 10 if omitted.
+  - `harvestingSkillIds` — default scene “Harvesting skills” checkboxes when the scene has none saved; if omitted, **all** enabled skill ids.
 
 ---
 

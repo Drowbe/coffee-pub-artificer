@@ -18,7 +18,7 @@
  * @property {string} name - Recipe name
  * @property {string} type - Item type (Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice)
  * @property {string} category - Category within type (e.g., "Potion" for Consumable)
- * @property {string} skill - Required skill (see CRAFTING_SKILLS; must match skills-mapping.json skill ids)
+ * @property {string} skill - Required skill (must match an enabled id in the configured skills mapping JSON)
  * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
  * @property {string|null} processType - Process type: 'heat' | 'grind' (null = any / legacy heat)
@@ -54,24 +54,9 @@ export const ITEM_TYPES = {
 };
 
 /**
- * Crafting Skills (ids must match the configured skills ruleset JSON, default resources/skills-mapping.json)
- * @enum {string}
+ * Crafting skill ids are defined only in the skills mapping JSON (`skills` array).
+ * Use `getEnabledCraftingSkillIds()` / `getLastKnownEnabledCraftingSkillIds()` from `./skills-rules.js`.
  */
-export const CRAFTING_SKILLS = {
-    HERBALISM: 'Herbalism',
-    ALCHEMY: 'Alchemy',
-    POISONCRAFT: 'Poisoncraft',
-    COOKING: 'Cooking',
-    SMITHING: 'Smithing',
-    LEATHERWORKING: 'Leatherworking',
-    TINKERING: 'Tinkering',
-    CARTOGRAPHY: 'Cartography',
-    INSCRIPTION: 'Inscription',
-    ENCHANTING: 'Enchanting',
-    GEMCRAFT: 'Gemcraft',
-    TAILORING: 'Tailoring',
-    MASONRY: 'Masonry'
-};
 
 /** Skill level range for recipes and components (gathering). Default 1. */
 export const SKILL_LEVEL_MIN = 0;

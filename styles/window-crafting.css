@@ -111,10 +111,10 @@
 .crafting-window-skill-badges {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
     background: rgba(0, 0, 0, 0.0);
     border: 0px solid rgba(172, 159, 129, 0.4);
-    border-radius: 6px;
+    border-radius: 0px;
     padding: 0px 0px 0px 0px;
 }
 
@@ -126,6 +126,10 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid rgba(172, 159, 129, 0.6);
+    border-radius: 6px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
 }
 
 .crafting-window-skill-badge-img {
