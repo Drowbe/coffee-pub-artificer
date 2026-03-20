@@ -2,7 +2,7 @@
 // ===== ARTIFICER SKILLS WINDOW ====================================
 // ==================================================================
 // Stacked horizontal skill panels (left) + details pane (right).
-// Data driven by resources/skills-details.json.
+// Data driven by the configured skills ruleset JSON (default: resources/skills-mapping.json).
 // Click badge → skill details. Click perk → perk details.
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -10,10 +10,10 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { SkillManager } from './manager-skills.js';
+import { loadSkillsDetails } from './skills-rules.js';
 
 const SKILLS_APP_ID = 'artificer-skills';
 const SKILLS_BOUNDS_SETTING = 'windowBoundsSkills';
-const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
 
 const _skillManager = new SkillManager();
 
@@ -27,28 +27,6 @@ function actorHasItemNamed(actor, name) {
     if (!actor || !name?.trim()) return true;
     const target = name.trim();
     return actor.items.some((i) => (i.name || '').trim() === target);
-}
-
-/** Cached skills data from JSON */
-let _skillsDetailsCache = null;
-
-/**
- * Load skills details from JSON. Caches result.
- * @returns {Promise<{skills: Array}>}
- */
-async function loadSkillsDetails() {
-    if (_skillsDetailsCache) return _skillsDetailsCache;
-    try {
-        const res = await fetch(SKILLS_DETAILS_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        _skillsDetailsCache = data;
-        return data;
-    } catch (e) {
-        console.warn('Artificer Skills: Could not load skills-details.json', e);
-        _skillsDetailsCache = { schemaVersion: 1, skills: [] };
-        return _skillsDetailsCache;
-    }
 }
 
 let _skillsDelegationAttached = false;

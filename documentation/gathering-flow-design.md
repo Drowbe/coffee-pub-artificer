@@ -123,5 +123,5 @@ For each harvested spot:
 
 - Family-level global modifiers are intentionally avoided; they flatten item identity.
 - This model preserves meaningful differences across components within the same family.
-- Visual mapping (`resources/gathering-mapping.json`) remains orthogonal and can continue to drive spot appearance by biome/state.
+- Visual mapping (default `resources/gathering-mapping.json`; world setting **Gathering Ruleset JSON**) remains orthogonal and drives spot appearance by biome/state/family.
 

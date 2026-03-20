@@ -1,30 +1,5 @@
 import { MODULE } from './const.js';
-
-const GATHERING_MAPPING_URL = `modules/${MODULE.ID}/resources/gathering-mapping.json`;
-
-const DEFAULT_MAPPING = {
-    version: 2,
-    states: {
-        idle: {
-            byBiome: {
-                any: {
-                    anyFamily: [],
-                    byFamily: {
-                        plant: ['images/gathering/herbalism-plant-bush-01.webp']
-                    }
-                }
-            }
-        },
-        active: {
-            byBiome: {
-                any: {
-                    anyFamily: ['images/gathering/herbalism-pile-dirt-01.webp'],
-                    byFamily: {}
-                }
-            }
-        }
-    }
-};
+import { getGatheringRulesetFetchUrl, getGatheringRulesetPath } from './config-rulesets.js';
 
 const BIOME_ALIASES = {
     meadow: 'grassland',
@@ -48,7 +23,32 @@ const FAMILY_ALIASES = Object.freeze({
     creature: 'creature parts'
 });
 
+/** @type {Promise<object>|null} */
 let _mappingPromise = null;
+/** Avoid spamming the same failure; cleared on successful load or cache invalidation. */
+let _gatheringMappingErrorReported = false;
+
+function _reportGatheringMappingFailure(configPath, detail) {
+    if (_gatheringMappingErrorReported) return;
+    _gatheringMappingErrorReported = true;
+    const title = `${MODULE.TITLE}: Gathering ruleset failed`;
+    const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Gathering Ruleset JSON** in module settings, then use Reload (or change the setting) to retry.`;
+    console.error(title, detail);
+    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    } else if (game.user?.isGM && typeof ui !== 'undefined') {
+        ui.notifications?.error(`${title}. ${detail}`);
+    }
+}
+
+/**
+ * Clear cached gathering mapping (e.g. after world setting change).
+ * Next resolve will fetch again.
+ */
+export function invalidateGatheringMappingCache() {
+    _mappingPromise = null;
+    _gatheringMappingErrorReported = false;
+}
 
 function _normalizeBiomeKey(raw) {
     const biome = String(raw ?? '').trim().toLowerCase();
@@ -109,25 +109,75 @@ function _collectImagesFromBucket(bucket, families = []) {
     return combined;
 }
 
+/**
+ * Load and parse gathering mapping JSON. No silent fallback — throws on failure after notifying GM once.
+ * @returns {Promise<object>}
+ */
+async function _loadMappingDocument() {
+    const configPath = getGatheringRulesetPath();
+    const url = getGatheringRulesetFetchUrl();
+    if (!url) {
+        const msg = 'Could not resolve a URL for the gathering ruleset (empty path?).';
+        _reportGatheringMappingFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    let res;
+    try {
+        res = await fetch(url, { cache: 'no-store' });
+    } catch (e) {
+        const msg = `Network error while loading: ${e?.message ?? String(e)}`;
+        _reportGatheringMappingFailure(configPath, msg);
+        throw e;
+    }
+    if (!res.ok) {
+        const msg = `HTTP ${res.status} ${res.statusText || ''}`.trim();
+        _reportGatheringMappingFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    const text = await res.text();
+    if (!text?.trim()) {
+        const msg = 'File is empty.';
+        _reportGatheringMappingFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch (e) {
+        const msg = `Invalid JSON: ${e?.message ?? String(e)}`;
+        _reportGatheringMappingFailure(configPath, msg);
+        throw e;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        const msg = 'Root value must be a JSON object.';
+        _reportGatheringMappingFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    _gatheringMappingErrorReported = false;
+    return parsed;
+}
+
 async function _loadMapping() {
-    if (_mappingPromise) return _mappingPromise;
-    _mappingPromise = (async () => {
-        try {
-            const res = await fetch(GATHERING_MAPPING_URL, { cache: 'no-store' });
-            if (!res.ok) return DEFAULT_MAPPING;
-            const text = await res.text();
-            if (!text?.trim()) return DEFAULT_MAPPING;
-            const parsed = JSON.parse(text);
-            return parsed && typeof parsed === 'object' ? parsed : DEFAULT_MAPPING;
-        } catch {
-            return DEFAULT_MAPPING;
-        }
-    })();
+    if (!_mappingPromise) {
+        _mappingPromise = (async () => {
+            try {
+                return await _loadMappingDocument();
+            } catch (e) {
+                _mappingPromise = null;
+                throw e;
+            }
+        })();
+    }
     return _mappingPromise;
 }
 
 export async function resolveGatheringImage({ state = 'idle', biomes = [], families = [] } = {}) {
-    const mapping = await _loadMapping();
+    let mapping;
+    try {
+        mapping = await _loadMapping();
+    } catch {
+        return '';
+    }
     const stateMap = mapping?.states?.[state]?.byBiome ?? {};
 
     const normalizedBiomes = [...new Set((Array.isArray(biomes) ? biomes : []).map(_normalizeBiomeKey).filter(Boolean))];

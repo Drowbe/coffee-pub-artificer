@@ -8,7 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.0.12]
 
+### Added
+- **Skills & Gathering settings:** New module section **Skills and Gathering** → **Rules** with file-picker world settings **Skills Ruleset JSON** and **Gathering Ruleset JSON** (defaults: bundled `skills-mapping.json` and `gathering-mapping.json`). Changing a path invalidates the in-memory cache so the next UI load uses the new file.
+- **`scripts/config-rulesets.js`:** Resolves configured paths to fetch URLs via `foundry.utils.getRoute` where available.
+
 ### Changed
+- **Renamed** `resources/skills-details.json` → **`resources/skills-mapping.json`** (same schema). All loaders now read the path from **Skills Ruleset JSON** (defaulting to the bundled file).
+- **Gathering imagery** (`manager-gathering-images.js`) loads from **Gathering Ruleset JSON** instead of a hardcoded module path. Load/parse failures are reported to the GM (no silent embedded fallback); failed loads clear the cache so fixing the file or settings allows retry.
+- **`SkillManager` / Skills window** use `loadSkillsDetails()` from `skills-rules.js` so a single cache and URL source drive skills data.
 - **Gather roll-complete hook registration:** `manager-gather.js` now registers `blacksmith.requestRollComplete` through Blacksmith HookManager (`BlacksmithAPI.getHookManager().registerHook(...)`) instead of raw `Hooks.on(...)`, aligning with module API guidance and improving lifecycle consistency.
 - **Crafting countdown update path:** Craft countdown no longer triggers a full window `render()` every second; it now updates only timer/container progress DOM during countdown to reduce repeated heavy context recomputation.
 - **Gathering skill context:** `_getGatheringSkillContext()` memoizes results per actor + enabled skills + learned perks so repeated calls in the same flow skip redundant async rule work.

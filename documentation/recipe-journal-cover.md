@@ -19,7 +19,7 @@ Use the same visible, label-based format as recipe pages: paragraphs with **bold
 | **Description:** | Short description of the book | Shown in the crafting window when a recipe from this journal is selected. |
 | *(image)* | Any image on the Cover page | The **first** `<img>` in the Cover page HTML is used as the book cover in the crafting window (shown next to the journal name when a recipe is selected). |
 
-Skill names should match the artificer skill ids (e.g. from skills-details), such as: Herbalism, Alchemy, Poisoncraft, Cooking, Smithing, Leatherworking, Tinkering, Cartography, Inscription, Enchanting, Gemcraft, Tailoring, Masonry.
+Skill names should match the artificer skill ids (e.g. from your skills ruleset JSON / `skills-mapping.json`), such as: Herbalism, Alchemy, Poisoncraft, Cooking, Smithing, Leatherworking, Tinkering, Cartography, Inscription, Enchanting, Gemcraft, Tailoring, Masonry.
 
 ## Example (in the journal editor)
 

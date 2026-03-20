@@ -60,7 +60,7 @@ This document merges phased task breakdown, current status, MVP path, and techni
 **Phase 3:** ✅ Crafting window, recipe/ingredient browser, result display, actor integration
 
 **Phase 4 (Skills):** Skills Window UI in place
-- ✅ Skills Window (ApplicationV2) from Artificer bar; data from `resources/skills-details.json`
+- ✅ Skills Window (ApplicationV2) from Artificer bar; data from the configured skills ruleset JSON (default `resources/skills-mapping.json`)
 - ✅ Panels: label (left) + total-cost dots (right), badge + perks; click badge → skill details, perk → perk details
 - ✅ Perks show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
 - ⏳ Persist to actor flags (Apply), skill progression logic (next)

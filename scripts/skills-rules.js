@@ -1,10 +1,10 @@
 // ==================================================================
 // ===== SKILLS RULES (crafting window integration) ================
 // ==================================================================
-// Loads resources/skills-details.json and derives crafting/gathering
-// rules from each perk's optional rules.benefits (tier access, DC modifier, etc.).
+// Loads the configured skills ruleset JSON (default: resources/skills-mapping.json)
+// and derives crafting/gathering rules from each perk's optional rules.benefits.
 
-const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
+import { getSkillsRulesetFetchUrl } from './config-rulesets.js';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
 let _skillsRulesCache = null;
@@ -13,7 +13,7 @@ let _skillsRulesCache = null;
 let _skillsDetailsCache = null;
 
 /**
- * Build the rules lookup (skillId -> perks -> perkID -> { title, benefits }) from skills-details.
+ * Build the rules lookup (skillId -> perks -> perkID -> { title, benefits }) from skills mapping JSON.
  * Used so existing code that expects loadSkillsRules() to return that shape continues to work.
  * @param {{ skills: Array }} details
  * @returns {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> }}
@@ -47,27 +47,34 @@ function buildRulesFromDetails(details) {
     return out;
 }
 
+/** Drop cached skills JSON and derived rules (e.g. after settings change). */
+export function invalidateSkillsRulesCaches() {
+    _skillsDetailsCache = null;
+    _skillsRulesCache = null;
+}
+
 /**
- * Load skills-details.json. Caches result.
+ * Load skills mapping JSON. Caches result.
  * @returns {Promise<{ skills: Array }>}
  */
 export async function loadSkillsDetails() {
     if (_skillsDetailsCache) return _skillsDetailsCache;
     try {
-        const res = await fetch(SKILLS_DETAILS_URL);
+        const url = getSkillsRulesetFetchUrl();
+        const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         _skillsDetailsCache = data;
         return data;
     } catch (e) {
-        console.warn('skills-rules: Could not load skills-details.json', e);
+        console.warn('skills-rules: Could not load skills ruleset JSON', e);
         _skillsDetailsCache = { schemaVersion: 1, skills: [] };
         return _skillsDetailsCache;
     }
 }
 
 /**
- * Load rules derived from skills-details.json. Caches result.
+ * Load rules derived from skills mapping JSON. Caches result.
  * Rules come from each perk's optional rules.benefits in the details file.
  * @returns {Promise<{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> }>}
  */

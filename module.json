@@ -41,6 +41,7 @@
   ],
   "esmodules": [
     "scripts/const.js",
+    "scripts/config-rulesets.js",
     "scripts/settings.js",
     "scripts/schema-artificer-item.js",
     "scripts/schema-ingredients.js",
@@ -50,6 +51,7 @@
     "scripts/schema-blueprints.js",
     "scripts/schema-workstations.js",
     "scripts/schema-skills.js",
+    "scripts/skills-rules.js",
     "scripts/cache/cache-items.js",
     "scripts/utils/helpers.js",
     "scripts/data/models/model-ingredient.js",
@@ -87,7 +89,6 @@
     "scripts/manager-pins.js",
     "scripts/manager-gather.js",
     "scripts/window-gather.js",
-    "scripts/skills-rules.js",
     "scripts/api-artificer.js",
     "scripts/migrations/migrate-artificer-flags.js",
     "scripts/artificer.js"

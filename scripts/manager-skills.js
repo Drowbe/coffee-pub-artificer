@@ -3,30 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-
-const SKILLS_DETAILS_URL = 'modules/coffee-pub-artificer/resources/skills-details.json';
-
-/** @type {{ skills: Array } | null } */
-let _skillsDetailsCache = null;
-
-/**
- * Load skills-details.json. Caches result.
- * @returns {Promise<{ skills: Array }>}
- */
-async function _loadSkillsDetails() {
-    if (_skillsDetailsCache) return _skillsDetailsCache;
-    try {
-        const res = await fetch(SKILLS_DETAILS_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        _skillsDetailsCache = data;
-        return data;
-    } catch (e) {
-        console.warn('SkillManager: Could not load skills-details.json', e);
-        _skillsDetailsCache = { schemaVersion: 1, skills: [] };
-        return _skillsDetailsCache;
-    }
-}
+import { loadSkillsDetails } from './skills-rules.js';
 
 const DEFAULT_POINTS = 5;
 
@@ -126,7 +103,7 @@ export class SkillManager {
      * @returns {Promise<{ skill: { id: string }, perk: object } | null>}
      */
     async _findPerk(perkID) {
-        const { skills = [] } = await _loadSkillsDetails();
+        const { skills = [] } = await loadSkillsDetails();
         for (const skill of skills) {
             const perks = skill.perks ?? [];
             const perk = perks.find((p) => (p.perkID ?? '') === perkID);
@@ -145,7 +122,7 @@ export class SkillManager {
         if (!found) return [];
         const perkName = found.perk.name ?? '';
         if (!perkName) return [];
-        const { skills = [] } = await _loadSkillsDetails();
+        const { skills = [] } = await loadSkillsDetails();
         const dependents = [];
         for (const skill of skills) {
             for (const p of skill.perks ?? []) {
@@ -166,7 +143,7 @@ export class SkillManager {
      */
     async _findPrereqPerkId(skillId, requirement) {
         if (!requirement) return null;
-        const { skills = [] } = await _loadSkillsDetails();
+        const { skills = [] } = await loadSkillsDetails();
         const skill = skills.find((s) => s.id === skillId);
         if (!skill) return null;
         const perk = (skill.perks ?? []).find((p) => p.name === requirement);

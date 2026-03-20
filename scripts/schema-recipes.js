@@ -18,7 +18,7 @@
  * @property {string} name - Recipe name
  * @property {string} type - Item type (Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice)
  * @property {string} category - Category within type (e.g., "Potion" for Consumable)
- * @property {string} skill - Required skill (see CRAFTING_SKILLS; must match skills-details.json ids)
+ * @property {string} skill - Required skill (see CRAFTING_SKILLS; must match skills-mapping.json skill ids)
  * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
  * @property {string|null} processType - Process type: 'heat' | 'grind' (null = any / legacy heat)
@@ -54,7 +54,7 @@ export const ITEM_TYPES = {
 };
 
 /**
- * Crafting Skills (ids must match resources/skills-details.json)
+ * Crafting Skills (ids must match the configured skills ruleset JSON, default resources/skills-mapping.json)
  * @enum {string}
  */
 export const CRAFTING_SKILLS = {

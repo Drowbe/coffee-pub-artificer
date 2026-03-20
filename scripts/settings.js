@@ -18,6 +18,7 @@ import { MODULE } from './const.js';
 const WORKFLOW_GROUPS = {
     GETTING_STARTED: 'getting-started',
     COMMON_SETTINGS: 'common-settings',
+    SKILLS_AND_GATHERING: 'skills-and-gathering'
 };
 
 
@@ -375,6 +376,52 @@ export const registerSettings = () => {
         numCompendiums = 1;
     }
     registerIngredientCompendiumSettings(numCompendiums);
+
+    // ====================================================================================================================
+    // == H1: SKILLS AND GATHERING
+    // ====================================================================================================================
+    registerHeader('SkillsAndGathering', 'headingH1SkillsAndGathering-Label', 'headingH1SkillsAndGathering-Hint', 'H1', WORKFLOW_GROUPS.SKILLS_AND_GATHERING);
+
+    // -- H2: Rules --
+    registerHeader('SkillsGatheringRules', 'headingH2SkillsGatheringRules-Label', 'headingH2SkillsGatheringRules-Hint', 'H2', WORKFLOW_GROUPS.SKILLS_AND_GATHERING);
+
+    const defaultSkillsJson = `modules/${MODULE.ID}/resources/skills-mapping.json`;
+    const defaultGatheringJson = `modules/${MODULE.ID}/resources/gathering-mapping.json`;
+
+    const invalidateSkillsRulesCaches = () => {
+        import('./skills-rules.js')
+            .then((m) => m.invalidateSkillsRulesCaches?.())
+            .catch(() => {});
+    };
+    const invalidateGatheringMappingCache = () => {
+        import('./manager-gathering-images.js')
+            .then((m) => m.invalidateGatheringMappingCache?.())
+            .catch(() => {});
+    };
+
+    game.settings.register(MODULE.ID, 'skillsRulesetJson', {
+        name: MODULE.ID + '.skillsRulesetJson-Label',
+        hint: MODULE.ID + '.skillsRulesetJson-Hint',
+        scope: 'world',
+        config: true,
+        default: defaultSkillsJson,
+        type: String,
+        filePicker: true,
+        group: WORKFLOW_GROUPS.SKILLS_AND_GATHERING,
+        onChange: () => invalidateSkillsRulesCaches()
+    });
+
+    game.settings.register(MODULE.ID, 'gatheringRulesetJson', {
+        name: MODULE.ID + '.gatheringRulesetJson-Label',
+        hint: MODULE.ID + '.gatheringRulesetJson-Hint',
+        scope: 'world',
+        config: true,
+        default: defaultGatheringJson,
+        type: String,
+        filePicker: true,
+        group: WORKFLOW_GROUPS.SKILLS_AND_GATHERING,
+        onChange: () => invalidateGatheringMappingCache()
+    });
 
     // -- Item Cache (persisted, GM-built) - not shown in config UI --
     game.settings.register(MODULE.ID, 'itemCache', {
