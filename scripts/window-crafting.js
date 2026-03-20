@@ -749,6 +749,40 @@ const CRAFTING_BOUNDS_SETTING = 'windowBoundsCrafting';
 const _craftingWindowRefs = new Map();
 let _craftingDelegationAttached = false;
 
+/** Last crafting window that handled a pointer event (avoids scanning all open windows on every click). */
+let _frontCraftingWindowRef = null;
+
+/**
+ * Stable fingerprint of actor inventory for crafting list caching.
+ * @param {Actor|null} actor
+ */
+function _fingerprintActorInventory(actor) {
+    if (!actor) return 'no-actor';
+    const parts = [];
+    for (const i of actor.items) {
+        parts.push(`${i.id}\t${i.system?.quantity ?? 1}\t${String(i.name ?? '')}`);
+    }
+    parts.sort();
+    return `${actor.uuid}\t${parts.length}\t${parts.join('\n')}`;
+}
+
+/**
+ * @param {MouseEvent|PointerEvent|Event} e
+ * @returns {CraftingWindow|null}
+ */
+function _resolveCraftingWindowForPointer(e) {
+    const containsTarget = (candidate) => {
+        const root = candidate?._getCraftingRoot?.();
+        return !!(root && e.target && typeof root.contains === 'function' && root.contains(e.target));
+    };
+    let w = _frontCraftingWindowRef;
+    if (!containsTarget(w)) {
+        w = [..._craftingWindowRefs.values()].reverse().find(containsTarget) ?? null;
+    }
+    if (w) _frontCraftingWindowRef = w;
+    return w;
+}
+
 /**
  * Artificer Crafting Window - Main crafting UI
  * Ingredient browser with filtering, experimentation slots, recipe placeholder
@@ -828,6 +862,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._craftCountdownInterval = null;
         /** @type {{actor: Actor, items: Item[], anyMissing: boolean}|null} - stored during countdown */
         this._craftPending = null;
+        /** Cached ingredient/apparatus/container/tool rows keyed by actor inventory fingerprint */
+        this._craftInventoryRowCache = null;
     }
 
     _getBoundsSettingKey() {
@@ -854,6 +890,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }
         this._craftingCountdownRemaining = null;
         this._craftPending = null;
+        this._craftInventoryRowCache = null;
+        if (_frontCraftingWindowRef === this) _frontCraftingWindowRef = null;
         if (this.position) saveWindowBounds(this._getBoundsSettingKey(), this.position);
         return super._preClose?.();
     }
@@ -898,11 +936,28 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return game.user?.character ?? null;
     }
 
-    async getData(options = {}) {
-        const actor = this._getCrafterActor();
+    /**
+     * Build unfiltered ingredient / apparatus / container / tool rows from the actor (CPU-heavy; cached by inventory fingerprint).
+     * @param {Actor|null} actor
+     * @returns {{ ingredientsBase: object[], apparatusItems: object[], containerItems: object[], toolItems: object[] }}
+     */
+    _computeCraftingInventoryRows(actor) {
+        function toListRow(item, addAction, isContainer) {
+            const tags = getTagsFromItem(item).join(', ');
+            return {
+                id: item.id,
+                uuid: item.uuid,
+                name: item.name,
+                img: item.img || 'icons/containers/bags/pouch-simple-brown.webp',
+                quantity: item.system?.quantity ?? 1,
+                tags,
+                isContainer,
+                addAction
+            };
+        }
 
         const artificerItems = actor
-            ? actor.items.filter(i => {
+            ? actor.items.filter((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 if (f?.type && (['ingredient', 'component', 'essence', 'apparatus', 'container', 'resultContainer'].includes(f.type) || f.type === ARTIFICER_TYPES.COMPONENT || f.type === ARTIFICER_TYPES.TOOL)) return true;
                 const cc = asCraftableConsumable(i);
@@ -910,15 +965,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             })
             : [];
 
-        let ingredients = artificerItems
-            .filter(i => {
+        const ingredientsBase = artificerItems
+            .filter((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 const at = getArtificerTypeFromFlags(f);
                 if (at === ARTIFICER_TYPES.COMPONENT || at === ARTIFICER_TYPES.CREATION) return true;
                 if (f?.type && ['ingredient', 'component', 'essence'].includes(f.type)) return true;
                 return asCraftableConsumable(i).ok;
             })
-            .map(i => {
+            .map((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 const cc = asCraftableConsumable(i);
                 const syntheticFlags = cc.ok ? { type: cc.type, family: cc.family } : f;
@@ -941,21 +996,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         /** Apparatus: vessel to craft in (beaker, mortar). Family Apparatus → apparatus slot. */
         const apparatusItems = artificerItems
-            .filter(i => {
+            .filter((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
                 return family === 'apparatus' || f?.type === 'apparatus';
             })
-            .map(i => ({ ...toListRow(i, 'addToApparatus', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Apparatus' }));
+            .map((i) => ({ ...toListRow(i, 'addToApparatus', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Apparatus' }));
 
         /** Container: vessel to put result in (vial, herb bag). Family Container → container slot. */
         const containerItems = artificerItems
-            .filter(i => {
+            .filter((i) => {
                 const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
                 const family = (getFamilyFromFlags(f) || f?.family || '').toLowerCase();
                 return family === 'container' || f?.type === 'resultContainer' || f?.type === 'container';
             })
-            .map(i => ({ ...toListRow(i, 'addToContainer', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Container' }));
+            .map((i) => ({ ...toListRow(i, 'addToContainer', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Container' }));
 
         /** Tools: kits (Alchemist's Supplies, Healer's Kit, etc.). Match by name or D&D 5e tool type. */
         const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Healer\'s Kit', 'Poisoner\'s Kit', 'Thieves\' Tools', 'Disguise Kit'];
@@ -967,7 +1022,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             const toolType = (item?.system?.toolType ?? '').toLowerCase();
             return docType === 'tool' && /kit|herbalism|poisoner|healer|art|disguise/i.test(toolType || name);
         };
-        const toolItems = actor?.items.filter(isKit)?.map(i => ({
+        const toolItems = actor?.items.filter(isKit)?.map((i) => ({
             id: i.id,
             uuid: i.uuid,
             name: i.name,
@@ -980,19 +1035,25 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             addAction: 'addToTool'
         })) ?? [];
 
-        function toListRow(item, addAction, isContainer) {
-            const tags = getTagsFromItem(item).join(', ');
-            return {
-                id: item.id,
-                uuid: item.uuid,
-                name: item.name,
-                img: item.img || 'icons/containers/bags/pouch-simple-brown.webp',
-                quantity: item.system?.quantity ?? 1,
-                tags,
-                isContainer,
-                addAction
-            };
-        }
+        return { ingredientsBase, apparatusItems, containerItems, toolItems };
+    }
+
+    /**
+     * @param {Actor|null} actor
+     * @returns {{ ingredientsBase: object[], apparatusItems: object[], containerItems: object[], toolItems: object[] }}
+     */
+    _getCachedInventoryRows(actor) {
+        const fp = _fingerprintActorInventory(actor);
+        if (this._craftInventoryRowCache?.fp === fp) return this._craftInventoryRowCache.rows;
+        const rows = this._computeCraftingInventoryRows(actor);
+        this._craftInventoryRowCache = { fp, rows };
+        return rows;
+    }
+
+    async getData(options = {}) {
+        const actor = this._getCrafterActor();
+        const { ingredientsBase, apparatusItems, containerItems, toolItems } = this._getCachedInventoryRows(actor);
+        let ingredients = [...ingredientsBase];
 
         // Apply filters: left = Artificer TYPE, right = FAMILY (driven by type)
         if (this.filterArtificerType) {
@@ -1177,13 +1238,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 return `${name} | ${uuid} | hasCoverPage=${!!cover?.hasCoverPage}`;
             })
             .join(' || ');
-        BlacksmithUtils.postConsoleAndNotification(
-            MODULE.NAME,
-            'Cover list state',
-            `filterJournal="${this.filterRecipeJournal ?? ''}" journalsInRecipes=${journalDebugRows || '(none)'}`,
-            false,
-            false
-        );
+        if (globalThis.CONFIG?.debug?.coffeePubArtificer?.recipeJournalCovers) {
+            BlacksmithUtils.postConsoleAndNotification(
+                MODULE.NAME,
+                'Cover list state',
+                `filterJournal="${this.filterRecipeJournal ?? ''}" journalsInRecipes=${journalDebugRows || '(none)'}`,
+                false,
+                false
+            );
+        }
         const hasRecipes = knownCombinations.length > 0;
 
         // Build list with cover divider above each journal's recipes (All view and single-journal view).
@@ -1494,10 +1557,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         _craftingDelegationAttached = true;
 
         document.addEventListener('click', (e) => {
-            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
-                const root = candidate?._getCraftingRoot?.();
-                return root?.contains?.(e.target);
-            }) ?? null;
+            const w = _resolveCraftingWindowForPointer(e);
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
@@ -1651,10 +1711,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         }, true);
 
         document.addEventListener('change', (e) => {
-            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
-                const root = candidate?._getCraftingRoot?.();
-                return root?.contains?.(e.target);
-            }) ?? null;
+            const w = _resolveCraftingWindowForPointer(e);
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;
@@ -1699,10 +1756,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         });
 
         document.addEventListener('input', (e) => {
-            const w = [..._craftingWindowRefs.values()].reverse().find((candidate) => {
-                const root = candidate?._getCraftingRoot?.();
-                return root?.contains?.(e.target);
-            }) ?? null;
+            const w = _resolveCraftingWindowForPointer(e);
             if (!w) return;
             const root = w._getCraftingRoot();
             if (!root?.contains?.(e.target)) return;

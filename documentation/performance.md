@@ -159,3 +159,11 @@ Status: Completed
     - `hookManager.registerHook({ name: 'blacksmith.requestRollComplete', ... })`
   - `initializeGatherSockets()` now awaits async hook registration.
 
+- [x] `scripts/manager-gather.js` — gathering skill context memoization
+  - `_getGatheringSkillContext()` caches its result for `(actor.uuid, enabled skills, learned perk IDs)` so back-to-back calls (e.g. situational bonus + roll processing) avoid repeated rule aggregation.
+
+- [x] `scripts/window-crafting.js` — crafting `getData()` inventory path
+  - Ingredient / apparatus / container / kit list rows are recomputed only when the actor inventory fingerprint changes (id + per-item id/quantity), not on every filter/search re-render.
+  - Document-level click/change/input delegation tries the last-used crafting window first, then falls back to scanning open windows (same behavior, less work when one window is “active”).
+  - Per-render “Cover list state” console logging is gated behind `CONFIG.debug.coffeePubArtificer.recipeJournalCovers` (default off).
+

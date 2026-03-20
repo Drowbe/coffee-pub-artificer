@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Gather roll-complete hook registration:** `manager-gather.js` now registers `blacksmith.requestRollComplete` through Blacksmith HookManager (`BlacksmithAPI.getHookManager().registerHook(...)`) instead of raw `Hooks.on(...)`, aligning with module API guidance and improving lifecycle consistency.
 - **Crafting countdown update path:** Craft countdown no longer triggers a full window `render()` every second; it now updates only timer/container progress DOM during countdown to reduce repeated heavy context recomputation.
+- **Gathering skill context:** `_getGatheringSkillContext()` memoizes results per actor + enabled skills + learned perks so repeated calls in the same flow skip redundant async rule work.
+- **Crafting inventory lists:** Crafting window caches derived ingredient/apparatus/container/tool rows until the crafter’s inventory fingerprint changes, reducing CPU on filter/search re-renders.
+- **Crafting UI delegation:** Document-level handlers prefer the last-focused crafting window before scanning all open crafting windows.
+- **Debug logging:** Recipe journal “cover list state” console output runs only when `CONFIG.debug.coffeePubArtificer.recipeJournalCovers` is true.
 
 ### Fixed
 - **Crafting window timer cleanup on close:** `CraftingWindow._preClose()` now clears `_searchDebounceTimer` and `_craftCountdownInterval` and resets pending countdown state to prevent post-close callbacks.

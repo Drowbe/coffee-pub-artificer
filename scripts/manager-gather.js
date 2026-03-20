@@ -27,6 +27,21 @@ const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|nu
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 const DEFAULT_GATHER_SKILLS = ['Herbalism'];
+
+/** Single-slot memo for gathering skill context (same actor + skills + perks → repeat calls are cheap). */
+let _gatherSkillContextCache = { key: null, value: null };
+
+/**
+ * @param {Actor|null} actor
+ * @param {string[]} enabledSkillIds
+ * @param {string[]} learnedPerkIds
+ */
+function _gatherSkillContextCacheKey(actor, enabledSkillIds, learnedPerkIds) {
+    const aid = actor?.uuid ?? '';
+    const skills = [...enabledSkillIds].sort().join('\x1e');
+    const perks = [...(learnedPerkIds ?? [])].sort().join('\x1e');
+    return `${aid}\x1e${skills}\x1e${perks}`;
+}
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
 const DISCOVERY_MIN_POINT_SEPARATION_PX = 90;
 
@@ -151,6 +166,11 @@ async function _getGatheringSkillContext(actor, skillIds = DEFAULT_GATHER_SKILLS
     }
 
     const learnedPerkIds = await getAPI().skills.getLearnedPerks(actor);
+    const cacheKey = _gatherSkillContextCacheKey(actor, enabledSkillIds, learnedPerkIds);
+    if (_gatherSkillContextCache.key === cacheKey) {
+        return _gatherSkillContextCache.value;
+    }
+
     const combinedAppliedPerks = [];
     const combinedRanges = [];
     const componentAutoGatherBySkill = {};
@@ -175,7 +195,7 @@ async function _getGatheringSkillContext(actor, skillIds = DEFAULT_GATHER_SKILLS
         for (const perk of applied ?? []) combinedAppliedPerks.push(perk);
     }
 
-    return {
+    const result = {
         enabledSkillIds,
         hasEnabledSceneSkills: true,
         hasActorHarvestingSkill: activeSkillIds.length > 0,
@@ -186,6 +206,8 @@ async function _getGatheringSkillContext(actor, skillIds = DEFAULT_GATHER_SKILLS
         componentAutoGatherBySkill,
         activeSkillIds
     };
+    _gatherSkillContextCache = { key: cacheKey, value: result };
+    return result;
 }
 
 /**
