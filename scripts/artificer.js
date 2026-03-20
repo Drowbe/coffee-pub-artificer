@@ -33,8 +33,8 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 // ================================================================== 
 
 Hooks.once('init', async () => {
-    // Preload templates
-    await loadTemplates([
+    // Preload templates (v13+: global loadTemplates deprecated; removed in v15)
+    await foundry.applications.handlebars.loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
         'modules/coffee-pub-artificer/templates/import-recipes.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',

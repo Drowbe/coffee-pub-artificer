@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Crafting window timer cleanup on close:** `CraftingWindow._preClose()` now clears `_searchDebounceTimer` and `_craftCountdownInterval` and resets pending countdown state to prevent post-close callbacks.
 - **Window ref cleanup for document delegation:** `GatherWindow._preClose()` and `SkillsWindow._preClose()` now clear `_currentGatherWindowRef` / `_currentSkillsWindowRef` when closing the active instance, reducing stale-reference retention risk.
+- **Foundry v13 template preload API migration:** Replaced deprecated global `loadTemplates(...)` usage with `foundry.applications.handlebars.loadTemplates(...)` in module init to remove v13 compatibility warnings and align with v15 requirements.
 
 
 ## [13.0.11]
