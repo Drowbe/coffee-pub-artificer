@@ -1,6 +1,6 @@
 # TODO - Active Backlog
 
-**Progress overview:** Current release **v13.0.10**. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
+**Progress overview:** Current release **v13.0.12**. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
 
 ## Current Focus
 
@@ -27,6 +27,7 @@
 - [ ] Create an `ArtificerWorkstation` data model implementation.
 - [ ] Create workstation data definitions.
 - [ ] Implement workstation placement.
+- [ ] **Sequential placement:** When multiple components must be placed on the scene (e.g. 7 of 7 parts), run a guided GM flow: show **“Place 1 of N”** (then 2 of N, …), require **one canvas click per placement**, and advance/cancel cleanly. Generalize beyond workstations if the same pattern applies to gather pins or other multi-drop flows.
 - [ ] Integrate workstation modifiers with crafting.
 - [ ] Create workstation browsing / management UI.
 
@@ -45,6 +46,13 @@
 - [ ] Integrate salvage with Foundry item sheets / item actions.
 
 ## Medium Priority
+
+### Theme support
+- [ ] Let users map **core interface images** (window chrome, panel backgrounds, key icons, empty states, etc.) to their preferred assets—via module settings, a small theme manifest, or both—so the UI can match a campaign or module art pack without forking CSS.
+
+### Item packs
+- [ ] Define a **generic/base catalog** of Artificer items (logical ids, rules, tags) and treat **visual/name flavor** as swappable **packs** (e.g. “vanilla fantasy”, “grimdark”, community pack).
+- [ ] Pack selection + validation: resolve items through the active pack, fall back safely, and document how authors ship alternate packs.
 
 ### Initial Content
 - [ ] Add starter ingredient examples.
