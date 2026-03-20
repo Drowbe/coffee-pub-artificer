@@ -148,6 +148,7 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _preClose() {
         if (this.position) saveWindowBounds(SKILLS_BOUNDS_SETTING, this.position);
+        if (_currentSkillsWindowRef === this) _currentSkillsWindowRef = null;
         return super._preClose?.();
     }
 

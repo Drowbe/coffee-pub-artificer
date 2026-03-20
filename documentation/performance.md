@@ -135,3 +135,27 @@ Recommendation:
 3. Switch `manager-gather.js`’s raw `Hooks.on('blacksmith.requestRollComplete', ...)` to Blacksmith HookManager registration.
 4. Reduce per-tick `CraftingWindow.render()` work during countdown by isolating the countdown state.
 
+## Quick wins status
+
+Status: Completed
+
+- [x] `scripts/window-crafting.js`
+  - Added timer cleanup in `CraftingWindow._preClose()`:
+    - clears `_searchDebounceTimer`
+    - clears `_craftCountdownInterval`
+    - resets `_craftingCountdownRemaining` and `_craftPending`
+  - Added a guard in the search debounce callback to skip render if the window has closed.
+  - Reduced countdown overhead by updating only timer/container DOM each second instead of full `render()` on each tick.
+
+- [x] `scripts/window-gather.js`
+  - `GatherWindow._preClose()` now clears `_currentGatherWindowRef` when closing the active instance.
+
+- [x] `scripts/window-skills.js`
+  - `SkillsWindow._preClose()` now clears `_currentSkillsWindowRef` when closing the active instance.
+
+- [x] `scripts/manager-gather.js`
+  - Replaced raw `Hooks.on('blacksmith.requestRollComplete', ...)` registration with Blacksmith HookManager:
+    - `BlacksmithAPI.getHookManager()`
+    - `hookManager.registerHook({ name: 'blacksmith.requestRollComplete', ... })`
+  - `initializeGatherSockets()` now awaits async hook registration.
+

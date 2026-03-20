@@ -843,6 +843,17 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     /** Save window bounds when closing so we remember size/position next time. */
     async _preClose() {
         _craftingWindowRefs.delete(this.id);
+        // Clear timers to prevent callbacks from firing after the window closes.
+        if (this._searchDebounceTimer) {
+            clearTimeout(this._searchDebounceTimer);
+            this._searchDebounceTimer = null;
+        }
+        if (this._craftCountdownInterval) {
+            clearInterval(this._craftCountdownInterval);
+            this._craftCountdownInterval = null;
+        }
+        this._craftingCountdownRemaining = null;
+        this._craftPending = null;
         if (this.position) saveWindowBounds(this._getBoundsSettingKey(), this.position);
         return super._preClose?.();
     }
@@ -858,6 +869,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const saveEnd = inputEl?.selectionEnd ?? 0;
         this._searchDebounceTimer = setTimeout(async () => {
             this._searchDebounceTimer = null;
+            // If the window closed while the debounce was pending, skip rendering.
+            if (!_craftingWindowRefs.has(this.id)) return;
             await this.render();
             const newEl = saveId ? document.getElementById(saveId) : null;
             if (newEl && typeof newEl.focus === 'function') {
@@ -2051,9 +2064,32 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             : `modules/${MODULE.ID}/sounds/fire-boil-01.mp3`;
         BlacksmithUtils.playSound(craftSoundPath, 0.5, false, false, countdownSec);
         this._craftCountdownInterval = setInterval(() => {
+            if (!_craftingWindowRefs.has(this.id)) {
+                clearInterval(this._craftCountdownInterval ?? 0);
+                this._craftCountdownInterval = null;
+                return;
+            }
             this._craftingCountdownRemaining = Math.max(0, (this._craftingCountdownRemaining ?? 0) - 1);
-            this.render();
-            if (this._craftingCountdownRemaining <= 0) {
+            const remaining = this._craftingCountdownRemaining;
+
+            // Performance: update only the countdown DOM instead of re-rendering the full window each second.
+            const root = this._getCraftingRoot?.();
+            if (root && remaining != null) {
+                const total = Math.max(1, this.timeValue);
+                const timeFillPercent = (remaining / total) * 100;
+                const containerCraftFillPercent = 100 - timeFillPercent;
+
+                const ring = root.querySelector?.('.crafting-bench-round-timer-ring');
+                ring?.style?.setProperty?.('--time-fill', `${timeFillPercent}%`);
+
+                const valEl = root.querySelector?.('.crafting-bench-round-timer-value');
+                if (valEl) valEl.textContent = String(remaining);
+
+                const containerSlot = root.querySelector?.('.crafting-bench-container-slot');
+                containerSlot?.style?.setProperty?.('--craft-fill-percent', `${containerCraftFillPercent}`);
+            }
+
+            if (remaining <= 0) {
                 clearInterval(this._craftCountdownInterval ?? 0);
                 this._craftCountdownInterval = null;
                 const pending = this._craftPending;

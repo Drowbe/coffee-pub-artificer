@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
 import { getFamilyFromFlags } from './utility-artificer-item.js';
@@ -20,6 +21,7 @@ import { resolveGatheringImageForScene } from './manager-gathering-images.js';
 
 let _pendingGather = null;
 let _blacksmithRollHookRegistered = false;
+let _hookManager = null;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
 const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
 const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
@@ -1083,55 +1085,65 @@ async function _stopGatherPinProcessing(requestId, { restoreImage = false } = {}
  * Must run for all users so player-originated roll events can be resolved by connected GMs.
  */
 export async function initializeGatherSockets() {
-    _ensureBlacksmithRollCompleteHook();
+    await _ensureBlacksmithRollCompleteHook();
 }
 
-function _ensureBlacksmithRollCompleteHook() {
+async function _ensureBlacksmithRollCompleteHook() {
     if (_blacksmithRollHookRegistered) return;
-    Hooks.on('blacksmith.requestRollComplete', async (payload) => {
-        if (!game.user?.isGM) return;
-        if (!payload || typeof payload !== 'object') return;
-        const rollerUserId = String(payload?.rollerUserId ?? '');
-        if (rollerUserId && rollerUserId === String(game.user.id)) return;
+    if (!_hookManager) _hookManager = await BlacksmithAPI.getHookManager();
+    const hookContext = `${MODULE.ID}-gather-manager`;
+    const hookKey = `${hookContext}-blacksmith-requestRollComplete`;
+    _hookManager.registerHook({
+        name: 'blacksmith.requestRollComplete',
+        description: 'Resolve gather/discovery roll results for Artificer',
+        context: hookContext,
+        key: hookKey,
+        priority: 3,
+        callback: async (payload) => {
+            if (!game.user?.isGM) return;
+            if (!payload || typeof payload !== 'object') return;
+            const rollerUserId = String(payload?.rollerUserId ?? '');
+            if (rollerUserId && rollerUserId === String(game.user.id)) return;
 
-        const messageId = String(payload?.messageId ?? '');
-        if (!messageId) return;
-        const message = payload?.message ?? game.messages?.get?.(messageId) ?? null;
-        const rollContext = message?.getFlag?.(MODULE.ID, 'rollContext') ?? null;
-        if (!rollContext || typeof rollContext !== 'object') return;
+            const messageId = String(payload?.messageId ?? '');
+            if (!messageId) return;
+            const message = payload?.message ?? game.messages?.get?.(messageId) ?? null;
+            const rollContext = message?.getFlag?.(MODULE.ID, 'rollContext') ?? null;
+            if (!rollContext || typeof rollContext !== 'object') return;
 
-        const rollTotal = Number(payload?.result?.total);
-        if (!Number.isFinite(rollTotal)) return;
-        const tokenId = payload?.tokenId ?? null;
-        const speakerActorId = payload?.messageData?.actors?.find?.((a) => String(a?.id ?? '') === String(tokenId))?.actorId
-            ?? payload?.message?.speaker?.actor
-            ?? null;
-        const sceneId = payload?.message?.speaker?.scene ?? canvas?.scene?.id ?? null;
-        const allComplete = payload?.allComplete !== false;
+            const rollTotal = Number(payload?.result?.total);
+            if (!Number.isFinite(rollTotal)) return;
+            const tokenId = payload?.tokenId ?? null;
+            const speakerActorId = payload?.messageData?.actors?.find?.((a) => String(a?.id ?? '') === String(tokenId))?.actorId
+                ?? payload?.message?.speaker?.actor
+                ?? null;
+            const sceneId = payload?.message?.speaker?.scene ?? canvas?.scene?.id ?? null;
+            const allComplete = payload?.allComplete !== false;
 
-        if (rollContext.kind === 'discovery' && rollContext.context) {
-            await _processDiscoveryRollOnGM({
-                requestId: String(rollContext.requestId ?? `msg:${messageId}`),
-                rollTotal,
-                allComplete,
-                tokenId,
-                speakerActorId,
-                sceneId,
-                context: rollContext.context
-            });
-            return;
-        }
+            if (rollContext.kind === 'discovery' && rollContext.context) {
+                await _processDiscoveryRollOnGM({
+                    requestId: String(rollContext.requestId ?? `msg:${messageId}`),
+                    rollTotal,
+                    allComplete,
+                    tokenId,
+                    speakerActorId,
+                    sceneId,
+                    context: rollContext.context
+                });
+                return;
+            }
 
-        if (rollContext.kind === 'gather' && rollContext.pending) {
-            await _processGatherRollOnGM({
-                requestId: String(rollContext.requestId ?? `msg:${messageId}`),
-                rollTotal,
-                allComplete,
-                tokenId,
-                speakerActorId,
-                sceneId,
-                pending: rollContext.pending
-            });
+            if (rollContext.kind === 'gather' && rollContext.pending) {
+                await _processGatherRollOnGM({
+                    requestId: String(rollContext.requestId ?? `msg:${messageId}`),
+                    rollTotal,
+                    allComplete,
+                    tokenId,
+                    speakerActorId,
+                    sceneId,
+                    pending: rollContext.pending
+                });
+            }
         }
     });
     _blacksmithRollHookRegistered = true;

@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.12]
+
+### Changed
+- **Gather roll-complete hook registration:** `manager-gather.js` now registers `blacksmith.requestRollComplete` through Blacksmith HookManager (`BlacksmithAPI.getHookManager().registerHook(...)`) instead of raw `Hooks.on(...)`, aligning with module API guidance and improving lifecycle consistency.
+- **Crafting countdown update path:** Craft countdown no longer triggers a full window `render()` every second; it now updates only timer/container progress DOM during countdown to reduce repeated heavy context recomputation.
+
+### Fixed
+- **Crafting window timer cleanup on close:** `CraftingWindow._preClose()` now clears `_searchDebounceTimer` and `_craftCountdownInterval` and resets pending countdown state to prevent post-close callbacks.
+- **Window ref cleanup for document delegation:** `GatherWindow._preClose()` and `SkillsWindow._preClose()` now clear `_currentGatherWindowRef` / `_currentSkillsWindowRef` when closing the active instance, reducing stale-reference retention risk.
+
+
 ## [13.0.11]
 
 ### Added

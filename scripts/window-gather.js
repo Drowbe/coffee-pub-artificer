@@ -94,6 +94,7 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     async _preClose() {
         if (this.position) saveWindowBounds(GATHER_BOUNDS_SETTING, this.position);
+        if (_currentGatherWindowRef === this) _currentGatherWindowRef = null;
         return super._preClose?.();
     }
 
