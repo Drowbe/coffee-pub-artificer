@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { getFromCache } from './cache/cache-items.js';
-import { normalizePunctuationForStorage } from './utils/helpers.js';
+import { normalizePunctuationForStorage, normalizeItemNameForMatch } from './utils/helpers.js';
 import {
     ARTIFICER_TYPES,
     LEGACY_TYPE_TO_ARTIFICER_TYPE,
@@ -456,6 +456,45 @@ export function isArtificerItem(item) {
  */
 export function getArtificerType(item) {
     return getArtificerTypeFromFlags(item.flags[MODULE.ID] || null);
+}
+
+/**
+ * Artificer flags: item counts as recipe apparatus (same rules as crafting bench auto-fill).
+ * @param {object|null|undefined} f - flags.artificer or flags[MODULE.ID]
+ * @returns {boolean}
+ */
+export function flagsMatchRecipeApparatus(f) {
+    const family = (getFamilyFromFlags(f) || f?.family || '').toString().toLowerCase();
+    return family === 'apparatus' || f?.type === 'apparatus';
+}
+
+/**
+ * Artificer flags: item counts as recipe result container (same rules as crafting bench auto-fill).
+ * @param {object|null|undefined} f
+ * @returns {boolean}
+ */
+export function flagsMatchRecipeContainer(f) {
+    const family = (getFamilyFromFlags(f) || f?.family || '').toString().toLowerCase();
+    return family === 'container' || f?.type === 'resultContainer' || f?.type === 'container';
+}
+
+/**
+ * Whether the actor has an item matching the recipe vessel name (normalized) and optional flag predicate.
+ * Empty name → true (no requirement). Used for craftable checks and recipe model validation.
+ * @param {Actor|null} actor
+ * @param {string} name
+ * @param {(f: object|undefined) => boolean} [flagsPredicate] - If omitted, any matching name counts (e.g. skill kit).
+ * @returns {boolean}
+ */
+export function actorInventoryMatchesRecipeNamedItem(actor, name, flagsPredicate) {
+    if (!actor || !name?.trim()) return true;
+    const target = normalizeItemNameForMatch(name);
+    return actor.items.some((i) => {
+        if (normalizeItemNameForMatch(i.name) !== target) return false;
+        if (!flagsPredicate) return true;
+        const f = i.flags?.[MODULE.ID] || i.flags?.artificer;
+        return flagsPredicate(f);
+    });
 }
 
 /**

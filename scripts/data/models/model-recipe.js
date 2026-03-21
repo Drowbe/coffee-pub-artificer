@@ -7,7 +7,13 @@ import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
 import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
-import { getArtificerTypeFromFlags, getFamilyFromFlags } from '../../utility-artificer-item.js';
+import {
+    getArtificerTypeFromFlags,
+    getFamilyFromFlags,
+    actorInventoryMatchesRecipeNamedItem,
+    flagsMatchRecipeApparatus,
+    flagsMatchRecipeContainer
+} from '../../utility-artificer-item.js';
 
 /** Normalize ingredient type to TYPE (Component | Creation | Tool). Legacy ingredient/component/essence → Component. */
 function normalizeIngredientType(t) {
@@ -157,28 +163,17 @@ export class ArtificerRecipe {
             reasons.push(`Requires ${this.skill} ${this.skillLevel}, actor has ${skillValue}`);
         }
 
-        // Check skill kit (e.g. Alchemist's Supplies)
-        if (this.skillKit?.trim()) {
-            const hasKit = actor.items.some((i) => (i.name || '').trim() === this.skillKit.trim());
-            if (!hasKit) {
-                reasons.push(`Missing skill kit: ${this.skillKit}`);
-            }
+        // Check skill kit (name match; normalized — same as crafting window)
+        if (this.skillKit?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, this.skillKit, null)) {
+            reasons.push(`Missing skill kit: ${this.skillKit}`);
         }
 
-        // Check apparatus
-        if (this.apparatusName?.trim()) {
-            const hasApparatus = actor.items.some((i) => (i.name || '').trim() === this.apparatusName.trim());
-            if (!hasApparatus) {
-                reasons.push(`Missing apparatus: ${this.apparatusName}`);
-            }
+        // Apparatus / container: Artificer family+type rules match crafting bench auto-fill
+        if (this.apparatusName?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, this.apparatusName, flagsMatchRecipeApparatus)) {
+            reasons.push(`Missing apparatus: ${this.apparatusName}`);
         }
-
-        // Check container
-        if (this.containerName?.trim()) {
-            const hasContainer = actor.items.some((i) => (i.name || '').trim() === this.containerName.trim());
-            if (!hasContainer) {
-                reasons.push(`Missing container: ${this.containerName}`);
-            }
+        if (this.containerName?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, this.containerName, flagsMatchRecipeContainer)) {
+            reasons.push(`Missing container: ${this.containerName}`);
         }
         
         // Check materials

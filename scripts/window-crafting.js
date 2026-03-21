@@ -6,7 +6,15 @@ import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
-import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
+import {
+    resolveItemByName,
+    getArtificerTypeFromFlags,
+    getFamilyFromFlags,
+    addCraftedItemToActor,
+    actorInventoryMatchesRecipeNamedItem,
+    flagsMatchRecipeApparatus,
+    flagsMatchRecipeContainer
+} from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import {
@@ -239,9 +247,14 @@ async function tryGrantRandomTier0PotionOnFail(actor, chance = 0) {
  */
 function recipeCanCraft(actor, recipe) {
     if (!actor || !recipe?.ingredients?.length) return false;
-    if (recipe.skillKit?.trim() && !actorHasItemNamed(actor, recipe.skillKit)) return false;
-    if (recipe.apparatusName?.trim() && !actorHasItemNamed(actor, recipe.apparatusName)) return false;
-    if (recipe.containerName?.trim() && !actorHasItemNamed(actor, recipe.containerName)) return false;
+    // Skill kit: name match only. Apparatus/container: same Artificer family/type rules as bench auto-fill.
+    if (recipe.skillKit?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, recipe.skillKit, null)) return false;
+    if (recipe.apparatusName?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, recipe.apparatusName, flagsMatchRecipeApparatus)) {
+        return false;
+    }
+    if (recipe.containerName?.trim() && !actorInventoryMatchesRecipeNamedItem(actor, recipe.containerName, flagsMatchRecipeContainer)) {
+        return false;
+    }
     const ingredients = recipe.ingredients ?? [];
     for (const ing of ingredients) {
         const need = ing.quantity ?? 1;
