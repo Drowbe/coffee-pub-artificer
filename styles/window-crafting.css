@@ -11,12 +11,12 @@
     --craft-background: #232323;
     --craft-header-bg: rgba(0, 0, 0, 0.7);
     --craft-banner-image-title: url('../images/backgrounds/background-herbs-green.webp');       
-    --craft-banner-image-panel-01: url('../images/backgrounds/panel-background-06.webp');
-    --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-06.webp'); 
-    --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-05.webp'); 
-    --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-04.webp');   
-    --craft-widget-image-heat: url('../images/backgrounds/background-widget-heat-coals.webp');  
-    --craft-widget-image-grind: url('../images/backgrounds/background-widget-grind-herbs.webp'); 
+    --craft-banner-image-panel-01: url('../images/backgrounds/panel-background-05.webp');
+    --craft-banner-image-panel-02: url('../images/backgrounds/panel-background-05.webp'); 
+    --craft-banner-image-panel-03: url('../images/backgrounds/panel-background-04.webp'); 
+    --craft-banner-image-panel-04: url('../images/backgrounds/panel-background-03.webp');   
+    --craft-widget-image-heat: url('../images/backgrounds/background-widget-heat.webp');  
+    --craft-widget-image-grind: url('../images/backgrounds/background-widget-grind.webp'); 
     background: var(--craft-background) !important;
     border: 0 solid var(--craft-border-color) !important;
     color: rgba(224, 224, 224, 0.9);
@@ -1139,7 +1139,8 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-/* Apparatus/container missing badge above slot pseudo-effects (::after heat, etc.) */
+/* Skill/apparatus/container missing badge above slot pseudo-effects (::after heat, etc.) */
+.crafting-bench-tool-slot > .crafting-bench-slot-count,
 .crafting-bench-apparatus-slot > .crafting-bench-slot-count,
 .crafting-bench-container-slot > .crafting-bench-slot-count {
     z-index: 150;
