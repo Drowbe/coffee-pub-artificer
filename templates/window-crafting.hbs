@@ -198,6 +198,7 @@
                                 <span>Apparatus</span>
                             </div>
                             {{/if}}{{/if}}
+                            {{#if apparatusSlot.isMissing}}<span class="crafting-bench-slot-count missing" aria-hidden="true">1</span>{{/if}}
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-center">
@@ -249,6 +250,7 @@
                                 <span>Container</span>
                             </div>
                             {{/if}}{{/if}}
+                            {{#if containerSlot.isMissing}}<span class="crafting-bench-slot-count missing" aria-hidden="true">1</span>{{/if}}
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-empty"></div>

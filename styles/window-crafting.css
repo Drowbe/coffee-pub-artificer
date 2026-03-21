@@ -1139,6 +1139,12 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* Apparatus/container missing badge above slot pseudo-effects (::after heat, etc.) */
+.crafting-bench-apparatus-slot > .crafting-bench-slot-count,
+.crafting-bench-container-slot > .crafting-bench-slot-count {
+    z-index: 150;
+}
+
 /* Dimmed vessel slot when apparatus, container, or skill kit is required but missing (same as components) */
 .crafting-bench-vessel-missing {
     opacity: 0.5;
