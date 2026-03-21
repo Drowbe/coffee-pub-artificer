@@ -28,6 +28,103 @@ let _mappingPromise = null;
 /** Avoid spamming the same failure; cleared on successful load or cache invalidation. */
 let _gatheringMappingErrorReported = false;
 
+/** Rarity keys for discovery DC offsets (must match scene flags + gather manager). */
+const _GATHER_RARITY_KEYS = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
+
+/**
+ * Built-in gather runtime defaults (merged with optional `runtimeDefaults` from gathering ruleset JSON).
+ * @type {Readonly<{
+ *   pinAnimationTimeoutMs: number,
+ *   discoveryMinPointSeparationPx: number,
+ *   pinDefaultImage: string,
+ *   pinSize: number,
+ *   soundExploreSuccess: string,
+ *   soundExploreFail: string,
+ *   soundPopulate: string,
+ *   soundClear: string,
+ *   discoveryRadiusUnits: number,
+ *   discoveryRarityOffsets: Readonly<Record<string, number>>
+ * }>}
+ */
+export const BUILTIN_GATHER_RUNTIME_DEFAULTS = Object.freeze({
+    pinAnimationTimeoutMs: 5000,
+    discoveryMinPointSeparationPx: 90,
+    pinDefaultImage: 'fa-solid fa-seedling',
+    pinSize: 100,
+    soundExploreSuccess: 'interface-notification-10',
+    soundExploreFail: 'interface-error-03',
+    soundPopulate: 'fanfare-success-2',
+    soundClear: 'interface-button-10',
+    discoveryRadiusUnits: 60,
+    discoveryRarityOffsets: Object.freeze({
+        common: 0,
+        uncommon: 3,
+        rare: 6,
+        'very rare': 10,
+        legendary: 14
+    })
+});
+
+/** @type {typeof BUILTIN_GATHER_RUNTIME_DEFAULTS|null} */
+let _gatherRuntimeMerged = null;
+
+function _num(v, fallback) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+}
+
+function _mergeGatherRuntimeInternal(overrides) {
+    const b = BUILTIN_GATHER_RUNTIME_DEFAULTS;
+    const o = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
+    const ro =
+        o.discoveryRarityOffsets && typeof o.discoveryRarityOffsets === 'object' && !Array.isArray(o.discoveryRarityOffsets)
+            ? o.discoveryRarityOffsets
+            : {};
+    const mergedOffsets = { ...b.discoveryRarityOffsets };
+    for (const key of _GATHER_RARITY_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(ro, key)) {
+            const n = Number(ro[key]);
+            if (Number.isFinite(n)) mergedOffsets[key] = n;
+        }
+    }
+    return Object.freeze({
+        pinAnimationTimeoutMs: Math.max(100, Math.floor(_num(o.pinAnimationTimeoutMs, b.pinAnimationTimeoutMs))),
+        discoveryMinPointSeparationPx: Math.max(1, Math.floor(_num(o.discoveryMinPointSeparationPx, b.discoveryMinPointSeparationPx))),
+        pinDefaultImage: typeof o.pinDefaultImage === 'string' && o.pinDefaultImage.trim() ? o.pinDefaultImage.trim() : b.pinDefaultImage,
+        pinSize: Math.max(16, Math.floor(_num(o.pinSize, b.pinSize))),
+        soundExploreSuccess:
+            typeof o.soundExploreSuccess === 'string' && o.soundExploreSuccess.trim()
+                ? o.soundExploreSuccess.trim()
+                : b.soundExploreSuccess,
+        soundExploreFail:
+            typeof o.soundExploreFail === 'string' && o.soundExploreFail.trim() ? o.soundExploreFail.trim() : b.soundExploreFail,
+        soundPopulate:
+            typeof o.soundPopulate === 'string' && o.soundPopulate.trim() ? o.soundPopulate.trim() : b.soundPopulate,
+        soundClear: typeof o.soundClear === 'string' && o.soundClear.trim() ? o.soundClear.trim() : b.soundClear,
+        discoveryRadiusUnits: Math.max(5, Math.floor(_num(o.discoveryRadiusUnits, b.discoveryRadiusUnits))),
+        discoveryRarityOffsets: Object.freeze(mergedOffsets)
+    });
+}
+
+/** Resolved builtin-only runtime (same shape as merged). */
+const _builtinGatherRuntimeResolved = _mergeGatherRuntimeInternal(null);
+
+/**
+ * Effective gather runtime (builtin + last successful ruleset `runtimeDefaults`). Before first successful load, returns builtins only.
+ * @returns {typeof BUILTIN_GATHER_RUNTIME_DEFAULTS}
+ */
+export function getGatherRuntimeDefaultsSync() {
+    return _gatherRuntimeMerged ?? _builtinGatherRuntimeResolved;
+}
+
+/**
+ * Preload gathering ruleset (mapping + runtime defaults). Safe to call multiple times.
+ * @returns {Promise<object>}
+ */
+export async function preloadGatheringMapping() {
+    return _loadMapping();
+}
+
 function _reportGatheringMappingFailure(configPath, detail) {
     if (_gatheringMappingErrorReported) return;
     _gatheringMappingErrorReported = true;
@@ -161,7 +258,9 @@ async function _loadMapping() {
     if (!_mappingPromise) {
         _mappingPromise = (async () => {
             try {
-                return await _loadMappingDocument();
+                const parsed = await _loadMappingDocument();
+                _gatherRuntimeMerged = _mergeGatherRuntimeInternal(parsed.runtimeDefaults);
+                return parsed;
             } catch (e) {
                 _mappingPromise = null;
                 throw e;

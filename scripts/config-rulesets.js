@@ -11,6 +11,9 @@ export const DEFAULT_SKILLS_RULESET_PATH = `modules/${MODULE.ID}/resources/skill
 /** Bundled default: gather pin idle/active imagery by biome + family. */
 export const DEFAULT_GATHERING_RULESET_PATH = `modules/${MODULE.ID}/resources/gathering-mapping.json`;
 
+/** Bundled default: item name aliases (alias → canonical) for the item cache index. */
+export const DEFAULT_TRANSLATION_ITEM_PATH = `modules/${MODULE.ID}/resources/translation-item.json`;
+
 /**
  * Normalize a Data-path or URL for fetch().
  * @param {string} path - e.g. modules/coffee-pub-artificer/resources/skills-mapping.json
@@ -74,4 +77,26 @@ export function getSkillsRulesetFetchUrl() {
  */
 export function getGatheringRulesetFetchUrl() {
     return resolveRulesetUrl(getGatheringRulesetPath());
+}
+
+/**
+ * Configured item translation / alias file path (world setting or default).
+ * @returns {string}
+ */
+export function getTranslationItemPath() {
+    try {
+        const v = game.settings?.get?.(MODULE.ID, 'translationItemJson');
+        if (v && String(v).trim()) return String(v).trim();
+    } catch {
+        /* settings not ready */
+    }
+    return DEFAULT_TRANSLATION_ITEM_PATH;
+}
+
+/**
+ * URL used to fetch item alias JSON.
+ * @returns {string}
+ */
+export function getTranslationItemFetchUrl() {
+    return resolveRulesetUrl(getTranslationItemPath());
 }

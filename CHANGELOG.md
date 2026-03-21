@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [13.0.12]
 
 ### Added
+- **Item name aliases setting:** **Skills and Gathering** → **Item name aliases JSON** (default bundled `resources/translation-item.json`). Loads like other rulesets (strict fetch/parse; GM notification on failure). Changing the path clears the alias cache. **`config-rulesets.js`:** `getTranslationItemPath` / `getTranslationItemFetchUrl`.
+- **Gathering `runtimeDefaults`:** Optional block in the gathering ruleset JSON (alongside `states`) for pin timeout/size/default icon, discovery radius and rarity offsets, min point separation for spot placement, and Blacksmith sound basenames. Merged over builtins in `manager-gathering-images.js` (`getGatherRuntimeDefaultsSync`); `manager-gather.js` reads these values. Boot preloads the gathering mapping so runtime defaults apply as soon as the file loads.
+- **Crafting kit detection from skills mapping:** `buildCraftingKitNameSet()` in `skills-rules.js` collects `skillKit` + optional `extraKitNames` from enabled skills; the crafting window uses that set instead of a hardcoded kit list, with the same heuristics as before for edge cases.
 - **Skills & Gathering settings:** New module section **Skills and Gathering** → **Rules** with file-picker world settings **Skills Ruleset JSON** and **Gathering Ruleset JSON** (defaults: bundled `skills-mapping.json` and `gathering-mapping.json`). Changing a path invalidates the in-memory cache so the next UI load uses the new file.
 - **`scripts/config-rulesets.js`:** Resolves configured paths to fetch URLs via `foundry.utils.getRoute` where available.
 

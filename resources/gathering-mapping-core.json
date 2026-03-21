@@ -356,5 +356,24 @@
         }
       }
     }
+  },
+  "runtimeDefaults": {
+    "notes": "Optional overrides for gather pin behavior, discovery, and Blacksmith sound ids (basename, no .mp3). Omitted keys use module builtins.",
+    "pinAnimationTimeoutMs": 5000,
+    "discoveryMinPointSeparationPx": 90,
+    "pinDefaultImage": "fa-solid fa-seedling",
+    "pinSize": 100,
+    "soundExploreSuccess": "interface-notification-10",
+    "soundExploreFail": "interface-error-03",
+    "soundPopulate": "fanfare-success-2",
+    "soundClear": "interface-button-10",
+    "discoveryRadiusUnits": 60,
+    "discoveryRarityOffsets": {
+      "common": 0,
+      "uncommon": 3,
+      "rare": 6,
+      "very rare": 10,
+      "legendary": 14
+    }
   }
 }

@@ -11,6 +11,8 @@
 - **scripts/skills-rules.js** loads that JSON and derives a rules lookup (by skill and perkID) from each perk’s `rules.benefits` for use by the crafting window and gather logic.
 - **Strict loading:** If the file is missing, empty, invalid JSON, not an object, or missing a `skills` array, the loader notifies the GM and **throws** (no silent empty fallback). Cache clears on failure so fixing the file or setting retries.
 - **Enabled skills:** Any skill with `skillEnabled === false` is excluded from “enabled” lists (gather UI checkboxes, scene harvesting defaults, recipe skill validation when the registry is loaded).
+- **`skillKit` (per skill):** Display name of the D&D-style tool or kit tied to that skill (e.g. `"Herbalism Kit"`). The crafting window treats items whose **name** matches any enabled skill’s `skillKit` (or `extraKitNames`) as **tool** rows for the bench, in addition to name/type heuristics (e.g. name ending in `Kit`, `tool` + toolType).
+- **`extraKitNames` (optional array of strings, per skill):** Extra item display names that should count as that skill’s kit in the crafting inventory list (e.g. a compendium that names the kit differently).
 - **Optional `gatherDefaults` (root object):** Drives gather UI and scene fallbacks when flags/settings are unset:
   - `singleSkillIds` — default when a gather API needs exactly one skill list (e.g. internal normalization); if omitted, first enabled skill id.
   - `gatherWindowSkillIds` — default selected harvesting skills for Roll for Components when saved settings have no `skillIds`; if omitted, up to the first two enabled skills.

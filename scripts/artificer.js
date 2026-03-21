@@ -80,8 +80,19 @@ Hooks.once('ready', async () => {
             /* Strict loader posts GM-facing error; continue boot so settings can be fixed */
         }
 
+        try {
+            const gi = await import('./manager-gathering-images.js');
+            await gi.preloadGatheringMapping?.();
+        } catch {
+            /* Gathering ruleset strict loader notifies GM; runtime defaults fall back to builtins until fixed */
+        }
+
         // Pre-load item translation (alias → canonical) for cache
-        await loadTranslationFromFile();
+        try {
+            await loadTranslationFromFile();
+        } catch {
+            /* Strict loader posts GM-facing error; continue boot so settings can be fixed */
+        }
         
         // Register module with Blacksmith
         if (typeof BlacksmithModuleManager !== 'undefined') {

@@ -9,7 +9,15 @@ import { getExperimentationEngine, getTagsFromItem } from './systems/experimenta
 import { resolveItemByName, getArtificerTypeFromFlags, getFamilyFromFlags, addCraftedItemToActor } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
-import { getEffectiveCraftingRules, getExperimentalPerkIconClass, getLearnedPerkIdsForSkill, getRequiredPerkForTier, getAppliedPerksForCraft, loadSkillsDetails } from './skills-rules.js';
+import {
+    buildCraftingKitNameSet,
+    getEffectiveCraftingRules,
+    getExperimentalPerkIconClass,
+    getLearnedPerkIdsForSkill,
+    getRequiredPerkForTier,
+    getAppliedPerksForCraft,
+    loadSkillsDetails
+} from './skills-rules.js';
 import { getJournalCoverData } from './parsers/parser-journal-cover.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
 import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
@@ -937,11 +945,12 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Build unfiltered ingredient / apparatus / container / tool rows from the actor (CPU-heavy; cached by inventory fingerprint).
+     * Build unfiltered ingredient / apparatus / container / tool rows from the actor (CPU-heavy; cached by inventory + kit signature).
      * @param {Actor|null} actor
+     * @param {Set<string>} [kitNameSet] - Crafting kit display names from skills mapping
      * @returns {{ ingredientsBase: object[], apparatusItems: object[], containerItems: object[], toolItems: object[] }}
      */
-    _computeCraftingInventoryRows(actor) {
+    _computeCraftingInventoryRows(actor, kitNameSet = new Set()) {
         function toListRow(item, addAction, isContainer) {
             const tags = getTagsFromItem(item).join(', ');
             return {
@@ -1012,15 +1021,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             })
             .map((i) => ({ ...toListRow(i, 'addToContainer', true), artificerType: ARTIFICER_TYPES.TOOL, family: 'Container' }));
 
-        /** Tools: kits (Alchemist's Supplies, Healer's Kit, etc.). Match by name or D&D 5e tool type. */
-        const KNOWN_TOOLS = ['Alchemist\'s Supplies', 'Herbalism Kit', 'Healer\'s Kit', 'Poisoner\'s Kit', 'Thieves\' Tools', 'Disguise Kit'];
+        /** Tools: kits from skills mapping (`skillKit` / `extraKitNames`) plus name/tool-type heuristics. */
+        const kitNames = kitNameSet instanceof Set ? kitNameSet : new Set();
         const isKit = (item) => {
             const name = (item?.name || '').trim();
-            if (KNOWN_TOOLS.includes(name)) return true;
+            if (name && kitNames.has(name)) return true;
             if (/kit$/i.test(name)) return true;
             const docType = (item?.type ?? '').toLowerCase();
             const toolType = (item?.system?.toolType ?? '').toLowerCase();
-            return docType === 'tool' && /kit|herbalism|poisoner|healer|art|disguise/i.test(toolType || name);
+            return docType === 'tool' && /kit|herbalism|poisoner|healer|art|disguise|supplies|thieves/i.test(toolType || name);
         };
         const toolItems = actor?.items.filter(isKit)?.map((i) => ({
             id: i.id,
@@ -1040,19 +1049,29 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /**
      * @param {Actor|null} actor
+     * @param {string} kitSig - Stable signature of configured kit names (invalidates cache when skills mapping changes).
+     * @param {Set<string>} kitNameSet - Display names from skills mapping for kit detection.
      * @returns {{ ingredientsBase: object[], apparatusItems: object[], containerItems: object[], toolItems: object[] }}
      */
-    _getCachedInventoryRows(actor) {
-        const fp = _fingerprintActorInventory(actor);
+    _getCachedInventoryRows(actor, kitSig, kitNameSet) {
+        const fp = `${_fingerprintActorInventory(actor)}\x1e${kitSig ?? ''}`;
         if (this._craftInventoryRowCache?.fp === fp) return this._craftInventoryRowCache.rows;
-        const rows = this._computeCraftingInventoryRows(actor);
+        const rows = this._computeCraftingInventoryRows(actor, kitNameSet);
         this._craftInventoryRowCache = { fp, rows };
         return rows;
     }
 
     async getData(options = {}) {
         const actor = this._getCrafterActor();
-        const { ingredientsBase, apparatusItems, containerItems, toolItems } = this._getCachedInventoryRows(actor);
+        let kitNameSet = new Set();
+        try {
+            const details = await loadSkillsDetails();
+            kitNameSet = buildCraftingKitNameSet(details);
+        } catch {
+            /* Strict skills loader already notified GM; fall back to heuristics-only kit detection */
+        }
+        const kitSig = [...kitNameSet].sort().join('|');
+        const { ingredientsBase, apparatusItems, containerItems, toolItems } = this._getCachedInventoryRows(actor, kitSig, kitNameSet);
         let ingredients = [...ingredientsBase];
 
         // Apply filters: left = Artificer TYPE, right = FAMILY (driven by type)
@@ -1091,24 +1110,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         listItems.sort((a, b) =>
             (a.name ?? '').localeCompare(b.name ?? '', undefined, { sensitivity: 'base' })
         );
-
-        const slots = this.selectedSlots.map((entry) => {
-            if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
-            const item = entry.item;
-            const name = item?.name ?? entry.name ?? '?';
-            const img = item?.img ?? entry.img ?? 'icons/skills/melee/weapons-crossed-swords-yellow.webp';
-            const tags = item ? getTagsFromItem(item).join(', ') : '';
-            const tooltip = entry.isMissing
-                ? `${name} (need ${entry.count}, have ${entry.have ?? 0})`
-                : [name, tags ? `Tags: ${tags}` : ''].filter(Boolean).join('\n');
-            return {
-                item: { id: item?.id, name, img },
-                count: entry.count,
-                tags,
-                tooltip,
-                isMissing: !!entry.isMissing
-            };
-        });
 
         // Left dropdown = Artificer TYPE (Component, Creation, Tool)
         const typeOptions = [
@@ -1231,6 +1232,32 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         knownCombinations.sort((a, b) =>
             (a.result ?? '').localeCompare(b.result ?? '', undefined, { sensitivity: 'base' })
         );
+
+        const selectedComboForHidden = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
+        const recipeHiddenForIngredientTooltips = !!selectedComboForHidden?.recipeHiddenByPerk;
+        const slots = this.selectedSlots.map((entry) => {
+            if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
+            const item = entry.item;
+            const name = item?.name ?? entry.name ?? '?';
+            const img = item?.img ?? entry.img ?? 'icons/skills/melee/weapons-crossed-swords-yellow.webp';
+            const tags = item ? getTagsFromItem(item).join(', ') : '';
+            let tooltip;
+            if (recipeHiddenForIngredientTooltips) {
+                tooltip = 'Unknown Ingredient';
+            } else if (entry.isMissing) {
+                tooltip = `${name} (need ${entry.count}, have ${entry.have ?? 0})`;
+            } else {
+                tooltip = [name, tags ? `Tags: ${tags}` : ''].filter(Boolean).join('\n');
+            }
+            return {
+                item: { id: item?.id, name, img },
+                count: entry.count,
+                tags,
+                tooltip,
+                isMissing: !!entry.isMissing
+            };
+        });
+
         const journalDebugRows = [...new Set(knownCombinations.map((k) => k.journalUuid ?? '').filter(Boolean))]
             .map((uuid) => {
                 const cover = journalCoverByUuid.get(uuid);
@@ -1451,7 +1478,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             selectedRecipeMetadata,
             selectedRecipeAppliedPerks,
             selectedRecipeHiddenByPerk: selectedRecipeData?.recipeHiddenByPerk ?? false,
-            craftingHiddenSlotImg: `modules/${MODULE.ID}/images/system/crafting-hidden-01.webp`,
             familyOptions,
             typeOptions,
             filterSearch: this.filterSearch,

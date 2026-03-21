@@ -130,7 +130,7 @@
                 </div>
                 <div class="crafting-zone-ingredients-list">
                     {{#each listItems}}
-                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" data-tooltip="{{this.name}}{{#if this.tags}}\nTags: {{this.tags}}{{/if}}" title="{{this.name}}">
+                    <div class="crafting-ingredient-row {{#if this.isContainer}}crafting-container-row{{/if}}" data-action="{{this.addAction}}" data-item-id="{{this.id}}" data-item-uuid="{{this.uuid}}" data-tooltip="{{this.name}}{{#if this.tags}}\nTags: {{this.tags}}{{/if}}">
                         <img src="{{this.img}}" alt="" class="crafting-ingredient-row-img" />
                         <div class="crafting-ingredient-row-info">
                             <span class="crafting-ingredient-row-name">{{this.name}}</span>
@@ -156,8 +156,12 @@
                     {{#each slots}}
                     <div class="crafting-bench-slot {{#if this.isMissing}}crafting-bench-slot-missing{{/if}}" data-slot-index="{{@index}}">
                         {{#if this.item}}
-                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}" title="{{this.tooltip}}">
-                            <img src="{{#if ../selectedRecipeHiddenByPerk}}{{../craftingHiddenSlotImg}}{{else}}{{this.item.img}}{{/if}}" alt="" class="crafting-slot-img" />
+                        <div class="crafting-bench-slot-item" data-action="removeFromSlot" data-slot-index="{{@index}}" data-tooltip="{{this.tooltip}}">
+                            {{#if ../selectedRecipeHiddenByPerk}}
+                            <i class="fa-solid fa-circle-question crafting-slot-hidden-icon" aria-hidden="true"></i>
+                            {{else}}
+                            <img src="{{this.item.img}}" alt="" class="crafting-slot-img" />
+                            {{/if}}
                         </div>
                         <span class="crafting-bench-slot-count {{#if this.isMissing}}missing{{/if}}">{{this.count}}</span>
                         {{else}}
@@ -169,7 +173,7 @@
                 {{!-- Row 2: 3-column grid - Skill (left, no border) | Apparatus (center, like slots) | Timer (right, no border) --}}
                 <div class="crafting-bench-grid-row crafting-bench-apparatus-row">
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-center">
-                        <div class="crafting-bench-tool-slot crafting-bench-vessel-slot {{#if toolSlot.isMissing}}crafting-bench-vessel-missing{{/if}}" data-action="removeTool" data-tooltip="{{toolSlot.tooltip}}" title="{{#if toolSlot.tooltip}}{{toolSlot.tooltip}}{{else}}Skill{{/if}}">
+                        <div class="crafting-bench-tool-slot crafting-bench-vessel-slot {{#if toolSlot.isMissing}}crafting-bench-vessel-missing{{/if}}" data-action="removeTool" data-tooltip="{{#if toolSlot.tooltip}}{{toolSlot.tooltip}}{{else}}Skill{{/if}}">
                             {{#if toolSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{toolSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}{{#if toolSlot.requiredItem}}
@@ -183,7 +187,7 @@
                         </div>
                     </div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if apparatusSlot.isMissing}}crafting-bench-vessel-missing {{/if}}{{#if isCrafting}}crafting-bench-apparatus-crafting{{/if}}{{#if isGrinding}} crafting-bench-apparatus-grinding{{/if}}" data-action="removeApparatus" data-tooltip="{{apparatusSlot.tooltip}}" title="{{#if apparatusSlot.tooltip}}{{apparatusSlot.tooltip}}{{else}}Apparatus{{/if}}" style="--heat: {{heat}};" {{#if heatUnstable}}data-unstable="true"{{/if}}>
+                        <div class="crafting-bench-apparatus-slot crafting-bench-center-slot {{#if apparatusSlot.isMissing}}crafting-bench-vessel-missing {{/if}}{{#if isCrafting}}crafting-bench-apparatus-crafting{{/if}}{{#if isGrinding}} crafting-bench-apparatus-grinding{{/if}}" data-action="removeApparatus" data-tooltip="{{#if apparatusSlot.tooltip}}{{apparatusSlot.tooltip}}{{else}}Apparatus{{/if}}" style="--heat: {{heat}};" {{#if heatUnstable}}data-unstable="true"{{/if}}>
                             {{#if apparatusSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{apparatusSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}{{#if apparatusSlot.requiredItem}}
@@ -234,7 +238,7 @@
                 <div class="crafting-bench-grid-row crafting-bench-container-row">
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-empty"></div>
                     <div class="crafting-bench-grid-cell">
-                        <div class="crafting-bench-container-slot crafting-bench-center-slot {{#if containerSlot.isMissing}}crafting-bench-vessel-missing {{/if}}{{#if containerSlot.item}}{{#if isCrafting}} crafting-bench-container-slot-fill{{/if}}{{/if}}" data-action="removeContainer" data-tooltip="{{containerSlot.tooltip}}" title="{{#if containerSlot.tooltip}}{{containerSlot.tooltip}}{{else}}Container{{/if}}"{{#if containerSlot.item}}{{#if isCrafting}} style="--craft-fill-percent: {{containerCraftFillPercent}}"{{/if}}{{/if}}>
+                        <div class="crafting-bench-container-slot crafting-bench-center-slot {{#if containerSlot.isMissing}}crafting-bench-vessel-missing {{/if}}{{#if containerSlot.item}}{{#if isCrafting}} crafting-bench-container-slot-fill{{/if}}{{/if}}" data-action="removeContainer" data-tooltip="{{#if containerSlot.tooltip}}{{containerSlot.tooltip}}{{else}}Container{{/if}}"{{#if containerSlot.item}}{{#if isCrafting}} style="--craft-fill-percent: {{containerCraftFillPercent}}"{{/if}}{{/if}}>
                             {{#if containerSlot.item}}
                             <div class="crafting-bench-container-item"><img src="{{containerSlot.item.img}}" alt="" class="crafting-container-img" /></div>
                             {{else}}{{#if containerSlot.requiredItem}}

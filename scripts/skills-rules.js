@@ -47,6 +47,28 @@ export function extractEnabledSkillIds(details) {
 }
 
 /**
+ * Crafting-kit display names from enabled skills: each skill's `skillKit` plus optional `extraKitNames`.
+ * Used by the crafting window to recognize tool rows without a hardcoded kit list.
+ * @param {object} details - Root document from skills mapping JSON
+ * @returns {Set<string>}
+ */
+export function buildCraftingKitNameSet(details) {
+    const set = new Set();
+    for (const s of details?.skills ?? []) {
+        if (!s || s.skillEnabled === false) continue;
+        const k = String(s.skillKit ?? '').trim();
+        if (k) set.add(k);
+        const extras = s.extraKitNames;
+        if (!Array.isArray(extras)) continue;
+        for (const x of extras) {
+            const n = String(x ?? '').trim();
+            if (n) set.add(n);
+        }
+    }
+    return set;
+}
+
+/**
  * Resolve gather UI / scene defaults from skills mapping + optional `gatherDefaults` block.
  * @param {object} details - Root document from skills mapping JSON
  * @returns {{ singleSkillIds: string[], gatherWindowSkillIds: string[], dc: number, harvestingSkillIds: string[] }}

@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { getTranslationItemFetchUrl, getTranslationItemPath } from '../config-rulesets.js';
 import { LEGACY_FAMILY_TO_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 
 /** Schema version for cache invalidation */
@@ -38,26 +39,83 @@ function normalizeName(name) {
     return name.trim().toLowerCase();
 }
 
-/** Cached translation: alias (normalized) → canonical name. Loaded from resources/translation-item.json */
-let _translationCache = null;
+/**
+ * Cached translation: alias (normalized) → canonical name.
+ * `undefined` = not loaded yet; object = loaded (may be empty).
+ */
+let _translationCache = undefined;
+let _translationLoadErrorReported = false;
+
+function _reportTranslationItemFailure(configPath, detail) {
+    if (_translationLoadErrorReported) return;
+    _translationLoadErrorReported = true;
+    const title = `${MODULE.TITLE}: Item alias file failed`;
+    const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Item name aliases JSON** in module settings, then change the setting or reload to retry.`;
+    console.error(title, detail);
+    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
+        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    } else if (game.user?.isGM && typeof ui !== 'undefined') {
+        ui.notifications?.error?.(`${title}. ${detail}`);
+    }
+}
 
 /**
- * Load translation from resources/translation-item.json.
+ * Clear cached item aliases so the next load uses the configured path (e.g. after settings change).
+ */
+export function invalidateTranslationCache() {
+    _translationCache = undefined;
+    _translationLoadErrorReported = false;
+}
+
+/**
+ * Load translation from the configured item-alias JSON (strict: no silent empty fallback on failure).
  * Format: { "alias (normalized)": "Canonical Name", ... }
  * @returns {Promise<Object<string, string>>}
  */
 export async function loadTranslationFromFile() {
-    if (_translationCache) return _translationCache;
-    try {
-        const res = await fetch(`modules/${MODULE.ID}/resources/translation-item.json`);
-        if (!res?.ok) return {};
-        const data = await res.json();
-        _translationCache = data && typeof data === 'object' ? data : {};
-        return _translationCache;
-    } catch {
-        _translationCache = {};
-        return _translationCache;
+    if (_translationCache !== undefined) return _translationCache;
+    const configPath = getTranslationItemPath();
+    const url = getTranslationItemFetchUrl();
+    if (!url) {
+        const msg = 'Could not resolve a URL for item aliases (empty path?).';
+        _reportTranslationItemFailure(configPath, msg);
+        throw new Error(msg);
     }
+    let res;
+    try {
+        res = await fetch(url, { cache: 'no-store' });
+    } catch (e) {
+        const msg = `Network error while loading: ${e?.message ?? String(e)}`;
+        _reportTranslationItemFailure(configPath, msg);
+        throw e;
+    }
+    if (!res.ok) {
+        const msg = `HTTP ${res.status} ${res.statusText || ''}`.trim();
+        _reportTranslationItemFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    const text = await res.text();
+    if (!text?.trim()) {
+        const msg = 'File is empty.';
+        _reportTranslationItemFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    let parsed;
+    try {
+        parsed = JSON.parse(text);
+    } catch (e) {
+        const msg = `Invalid JSON: ${e?.message ?? String(e)}`;
+        _reportTranslationItemFailure(configPath, msg);
+        throw e;
+    }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        const msg = 'Root value must be a JSON object.';
+        _reportTranslationItemFailure(configPath, msg);
+        throw new Error(msg);
+    }
+    _translationLoadErrorReported = false;
+    _translationCache = /** @type {Object<string, string>} */ (parsed);
+    return _translationCache;
 }
 
 /**
@@ -65,7 +123,7 @@ export async function loadTranslationFromFile() {
  * @returns {Object<string, string>}
  */
 function getTranslationMap() {
-    return _translationCache ?? {};
+    return _translationCache !== undefined ? _translationCache : {};
 }
 
 /**

@@ -556,7 +556,7 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 
 **Storage:** World setting `game.settings.get(MODULE.ID, 'itemCache')` (scope: world, config: false). Same pattern as Bibliosoph Quick Encounter cache.
 
-**Related:** `scripts/cache/cache-items.js`, `resources/translation-item.json`, `ingredientStorageSource`, `itemLookupOrder`.
+**Related:** `scripts/cache/cache-items.js`, world setting **Item name aliases JSON** (default bundled `resources/translation-item.json`), `ingredientStorageSource`, `itemLookupOrder`.
 
 ---
 

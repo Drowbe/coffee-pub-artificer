@@ -23,7 +23,7 @@ import {
     resolveGatherDefaults
 } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
-import { resolveGatheringImageForScene } from './manager-gathering-images.js';
+import { getGatherRuntimeDefaultsSync, resolveGatheringImageForScene } from './manager-gathering-images.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
@@ -32,7 +32,9 @@ let _blacksmithRollHookRegistered = false;
 let _hookManager = null;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
 const _discoveryRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, rollTotal: number }>
-const GATHER_PIN_ANIMATION_TIMEOUT_MS = 5000;
+function _gatherRt() {
+    return getGatherRuntimeDefaultsSync();
+}
 const _pinProcessingStates = new Map(); // requestId -> { pinId, sceneId, originalImage, pingController, animationTimeoutId }
 /** Single-slot memo for gathering skill context (same actor + skills + perks → repeat calls are cheap). */
 let _gatherSkillContextCache = { key: null, value: null };
@@ -49,8 +51,6 @@ function _gatherSkillContextCacheKey(actor, enabledSkillIds, learnedPerkIds) {
     return `${aid}\x1e${skills}\x1e${perks}`;
 }
 const DISCOVERY_NODES_FLAG_KEY = 'discoveredNodes';
-const DISCOVERY_MIN_POINT_SEPARATION_PX = 90;
-
 const RARITY_RANKS = {
     common: 1,
     uncommon: 2,
@@ -66,8 +66,6 @@ const GATHER_PIN_CUES = {
     failure: { animation: ['shake'], loops: 1, broadcast: true, sound: 'interface-error-03' }
 };
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
-const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
-const PIN_SIZE = 100;
 const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
 const PIN_EVENT_ANIMATIONS = Object.freeze({
     hover: { animation: 'ripple', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-03.mp3` },
@@ -76,19 +74,6 @@ const PIN_EVENT_ANIMATIONS = Object.freeze({
     add: { animation: 'ping', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-02.mp3` },
     delete: { animation: 'dissolve', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-01.mp3` }
 });
-const SOUND_EXPLORE_SUCCESS = 'interface-notification-10';
-const SOUND_EXPLORE_FAIL = 'interface-error-03';
-const SOUND_POPULATE = 'fanfare-success-2';
-const SOUND_CLEAR = 'interface-button-10';
-const DEFAULT_DISCOVERY_RADIUS_UNITS = 60;
-const DEFAULT_DISCOVERY_RARITY_OFFSETS = Object.freeze({
-    common: 0,
-    uncommon: 3,
-    rare: 6,
-    'very rare': 10,
-    legendary: 14
-});
-
 /**
  * Get biome options for multiselect (create-window style: name + selected).
  * @param {string[]} selectedBiomes - Currently selected biome keys
@@ -359,7 +344,8 @@ function sendExploreResultCard({
         speaker: ChatMessage.getSpeaker(),
         type: CONST.CHAT_MESSAGE_TYPES.OTHER
     });
-    _playBlacksmithSound(discovered > 0 ? SOUND_EXPLORE_SUCCESS : SOUND_EXPLORE_FAIL);
+    const rt = _gatherRt();
+    _playBlacksmithSound(discovered > 0 ? rt.soundExploreSuccess : rt.soundExploreFail);
 }
 
 /**
@@ -705,17 +691,18 @@ function _getDiscoveryMaxRarityRankByThresholds(rollTotal, thresholds = {}) {
 
 function _buildDiscoveryThresholds(baseDC, offsets = {}) {
     const base = Math.max(0, Math.min(20, Number(baseDC) || 0));
+    const fallbacks = _gatherRt().discoveryRarityOffsets;
     const clampOffset = (v, fallback = 0) => {
         const n = Number(v);
         if (!Number.isFinite(n)) return fallback;
         return Math.max(0, Math.min(30, Math.floor(n)));
     };
     const raw = {
-        common: clampOffset(offsets.common, DEFAULT_DISCOVERY_RARITY_OFFSETS.common),
-        uncommon: clampOffset(offsets.uncommon, DEFAULT_DISCOVERY_RARITY_OFFSETS.uncommon),
-        rare: clampOffset(offsets.rare, DEFAULT_DISCOVERY_RARITY_OFFSETS.rare),
-        'very rare': clampOffset(offsets['very rare'], DEFAULT_DISCOVERY_RARITY_OFFSETS['very rare']),
-        legendary: clampOffset(offsets.legendary, DEFAULT_DISCOVERY_RARITY_OFFSETS.legendary)
+        common: clampOffset(offsets.common, fallbacks.common),
+        uncommon: clampOffset(offsets.uncommon, fallbacks.uncommon),
+        rare: clampOffset(offsets.rare, fallbacks.rare),
+        'very rare': clampOffset(offsets['very rare'], fallbacks['very rare']),
+        legendary: clampOffset(offsets.legendary, fallbacks.legendary)
     };
 
     const ordered = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
@@ -777,7 +764,7 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
     await pins?.reload?.();
     await _setSceneDiscoveredNodes(scene, []);
     ui.notifications?.info(`Cleared gathering spots for "${scene.name ?? 'scene'}".`);
-    _playBlacksmithSound(SOUND_CLEAR);
+    _playBlacksmithSound(_gatherRt().soundClear);
 }
 
 export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? null) {
@@ -845,7 +832,7 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         byRarity,
         mode: 'populate'
     });
-    _playBlacksmithSound(SOUND_POPULATE);
+    _playBlacksmithSound(_gatherRt().soundPopulate);
 }
 
 function _getNodeByPinId(scene = canvas?.scene ?? null, pinId = null) {
@@ -990,7 +977,7 @@ function _pickDiscoveryPoint(anchor, radiusUnits, scene, occupied = []) {
             best = point;
             bestMinDistance = minDistance;
         }
-        if (minDistance >= DISCOVERY_MIN_POINT_SEPARATION_PX) {
+        if (minDistance >= _gatherRt().discoveryMinPointSeparationPx) {
             return point;
         }
     }
@@ -1052,7 +1039,11 @@ async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.sce
     const activeImage = await resolveGatheringImageForScene(scene, 'active');
 
     try {
-        await pins.update?.(pinId, { image: activeImage || originalImage || 'fa-solid fa-seedling', shape: 'none' }, sceneId ? { sceneId } : undefined);
+        await pins.update?.(
+            pinId,
+            { image: activeImage || originalImage || _gatherRt().pinDefaultImage, shape: 'none' },
+            sceneId ? { sceneId } : undefined
+        );
         await pins.refreshPin?.(pinId, sceneId ? { sceneId } : undefined);
     } catch {
         // Ignore image-swap failures.
@@ -1079,7 +1070,7 @@ async function _startGatherPinProcessing(requestId, pinId, sceneId = canvas?.sce
             } catch {
                 // Ignore timeout-stop failures.
             }
-        }, GATHER_PIN_ANIMATION_TIMEOUT_MS);
+        }, _gatherRt().pinAnimationTimeoutMs);
     }
 
     _pinProcessingStates.set(requestId, { pinId, sceneId, originalImage, pingController, animationTimeoutId });
@@ -1269,7 +1260,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
         : (Number.isFinite(Number(dc)) ? Number(dc) : 5);
     const effectiveThresholds = (discoveryThresholds && Number.isFinite(Number(discoveryThresholds.common)))
         ? discoveryThresholds
-        : _buildDiscoveryThresholds(fallbackBaseDC, DEFAULT_DISCOVERY_RARITY_OFFSETS);
+        : _buildDiscoveryThresholds(fallbackBaseDC, _gatherRt().discoveryRarityOffsets);
     let remaining = Math.max(0, Number(gatherSpots) || 0);
     const existing = _getSceneDiscoveredNodes(scene);
     remaining = Math.max(0, remaining - existing.length);
@@ -1364,13 +1355,13 @@ async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
                 y: Number.isFinite(y) ? y : Number(canvas?.dimensions?.sceneY) + 100 || 100,
                 ownership: { default: 2 },
                 text: family ? `Gather: ${label}` : 'Gathering Spot',
-                image: image || PIN_DEFAULT_IMAGE,
+                image: image || _gatherRt().pinDefaultImage,
                 shape: 'none',
                 dropShadow: true,
                 textLayout: 'arc-below',
                 textDisplay: 'hover',
                 eventAnimations: PIN_EVENT_ANIMATIONS,
-                size: { w: PIN_SIZE, h: PIN_SIZE }
+                size: { w: _gatherRt().pinSize, h: _gatherRt().pinSize }
             }, { sceneId: scene.id });
             existingIds.add(nodeId);
             created = true;
@@ -1440,7 +1431,7 @@ async function _buildDiscoveryContext(scene) {
     const rawRadius = Number(sceneFlags.discoveryRadiusUnits);
     const discoveryRadiusUnits = Number.isFinite(rawRadius)
         ? Math.max(5, Math.min(300, Math.round(rawRadius / 5) * 5))
-        : DEFAULT_DISCOVERY_RADIUS_UNITS;
+        : _gatherRt().discoveryRadiusUnits;
     const discoveryRollDC = Number.isFinite(Number(discoveryThresholds.common)) ? Number(discoveryThresholds.common) : discoveryBaseDC;
     return { discoveryBaseDC, discoveryThresholds, discoveryRollDC, biomes, componentTypes, harvestingSkills, gatherSpots, discoveryRadiusUnits };
 }

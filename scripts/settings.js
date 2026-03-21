@@ -4,6 +4,7 @@
 
 // -- Import MODULE variables --
 import { MODULE } from './const.js';
+import { DEFAULT_TRANSLATION_ITEM_PATH } from './config-rulesets.js';
 
 
 // ================================================================== 
@@ -398,6 +399,11 @@ export const registerSettings = () => {
             .then((m) => m.invalidateGatheringMappingCache?.())
             .catch(() => {});
     };
+    const invalidateTranslationItemCache = () => {
+        import('./cache/cache-items.js')
+            .then((m) => m.invalidateTranslationCache?.())
+            .catch(() => {});
+    };
 
     game.settings.register(MODULE.ID, 'skillsRulesetJson', {
         name: MODULE.ID + '.skillsRulesetJson-Label',
@@ -421,6 +427,18 @@ export const registerSettings = () => {
         filePicker: true,
         group: WORKFLOW_GROUPS.SKILLS_AND_GATHERING,
         onChange: () => invalidateGatheringMappingCache()
+    });
+
+    game.settings.register(MODULE.ID, 'translationItemJson', {
+        name: MODULE.ID + '.translationItemJson-Label',
+        hint: MODULE.ID + '.translationItemJson-Hint',
+        scope: 'world',
+        config: true,
+        default: DEFAULT_TRANSLATION_ITEM_PATH,
+        type: String,
+        filePicker: true,
+        group: WORKFLOW_GROUPS.SKILLS_AND_GATHERING,
+        onChange: () => invalidateTranslationItemCache()
     });
 
     // -- Item Cache (persisted, GM-built) - not shown in config UI --
