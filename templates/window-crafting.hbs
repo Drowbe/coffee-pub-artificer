@@ -73,17 +73,20 @@
                 <div class="crafting-zone-recipes-list">
                     {{#each recipeListWithDividers}}
                     {{#if this.isCoverDivider}}
-                    <div class="crafting-recipe-book {{#if this.selected}}crafting-recipe-book-selected{{/if}}" data-action="selectCoverPage" data-journal-uuid="{{this.journalUuid}}" title="View cover page">
-                        {{#if this.coverImage}}
-                        <img src="{{this.coverImage}}" alt="" class="crafting-recipe-book-img" />
-                        {{else}}
-                        <i class="fa-solid fa-book crafting-recipe-book-icon" aria-hidden="true"></i>
-                        {{/if}}
-                        <div class="crafting-recipe-book-content">
-                            <div class="crafting-recipe-book-title-row">
-                                <span class="crafting-recipe-book-title">{{this.journalName}}</span>
+                    <div class="crafting-recipes-cover-section">
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-page crafting-recipe-page-cover {{#if this.selected}}crafting-recipe-page-selected{{/if}}" data-action="selectCoverPage" data-journal-uuid="{{this.journalUuid}}" title="View cover page">
+                            {{#if this.coverImage}}
+                            <img src="{{this.coverImage}}" alt="" class="crafting-recipe-page-img" />
+                            {{else}}
+                            <span class="crafting-recipe-page-img-placeholder" aria-hidden="true"><i class="fa-solid fa-book"></i></span>
+                            {{/if}}
+                            <div class="crafting-recipe-page-content">
+                                <div class="crafting-recipe-page-title-row">
+                                    <span class="crafting-recipe-page-title">{{this.journalName}}</span>
+                                </div>
+                                <span class="crafting-recipe-page-tags">Cover Page</span>
                             </div>
-                            <span class="crafting-recipe-book-tags">Cover Page</span>
                         </div>
                     </div>
                     {{else}}
@@ -257,12 +260,13 @@
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-empty"></div>
                 </div>
                 {{#if combinedTags.length}}
-                <hr class="crafting-details-divider crafting-bench-combined-tags-sep" />
-                <p class="crafting-zone-desc crafting-bench-combined-tags-label">Traits for this combination:</p>
-                <div class="crafting-bench-tags crafting-bench-combined-tags">
-                    {{#each combinedTags}}
-                    <span class="crafting-tag-badge">{{this}}</span>
-                    {{/each}}
+                <div class="crafting-bench-traits-block">
+                    <p class="crafting-zone-desc crafting-bench-combined-tags-label">Traits for this combination:</p>
+                    <div class="crafting-bench-tags crafting-bench-combined-tags">
+                        {{#each combinedTags}}
+                        <span class="crafting-tag-badge">{{this}}</span>
+                        {{/each}}
+                    </div>
                 </div>
                 {{/if}}
             </section>
@@ -333,9 +337,12 @@
                         {{/if}}
                         {{else}}
                         {{#if selectedRecipeTopFields.length}}
-                        <div class="crafting-detail-rows crafting-detail-rows-top">
+                        <div class="crafting-recipe-stats-scoreboard" role="group" aria-label="Recipe summary">
                             {{#each selectedRecipeTopFields}}
-                            <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
+                            <div class="crafting-recipe-stat-tile">
+                                <span class="crafting-recipe-stat-label">{{this.label}}</span>
+                                <span class="crafting-recipe-stat-value">{{this.value}}</span>
+                            </div>
                             {{/each}}
                         </div>
                         {{/if}}
@@ -348,7 +355,7 @@
                     {{#unless selectedRecipeData.recipeHiddenByPerk}}
                     {{#if selectedRecipeMetadata.length}}
                     <hr class="crafting-details-divider" />
-                    <div class="crafting-detail-rows">
+                    <div class="crafting-detail-rows crafting-detail-rows-metadata">
                         {{#each selectedRecipeMetadata}}
                         <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
                         {{/each}}

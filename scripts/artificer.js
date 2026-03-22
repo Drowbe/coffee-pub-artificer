@@ -203,7 +203,8 @@ function registerMenubarIntegration() {
         active: false,
         iconColor: null,
         buttonNormalTint: null,
-        buttonSelectedTint: "rgba(3, 43, 18, 0.9)"
+        /** Omit custom tint so Blacksmith / Foundry menubar uses default active styling */
+        buttonSelectedTint: null
     });
     
     if (!toolRegistered) {

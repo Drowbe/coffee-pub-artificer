@@ -766,6 +766,12 @@ const CRAFTING_APP_ID = 'artificer-crafting';
 /** Setting key for client-scoped window bounds (size/position) */
 const CRAFTING_BOUNDS_SETTING = 'windowBoundsCrafting';
 
+/**
+ * Prefix for journal names in native select options that contain perk-gated recipes.
+ * Browsers only render plain text in option elements; use Unicode lock instead of Font Awesome.
+ */
+const JOURNAL_OPTION_LOCK_PREFIX = '\u{1F512}\u00A0';
+
 /** Active crafting-style windows keyed by app id for shared delegation. */
 const _craftingWindowRefs = new Map();
 let _craftingDelegationAttached = false;
@@ -1210,8 +1216,28 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         // Apply journal/book skill filtering only when the kit filter toggle is active.
         const journalFilterSkillIds = this.showOnlyWithKit ? enabledSkillIds : null;
         const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, journalFilterSkillIds);
-        const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid, journalCoverByUuid } = journalOptionsResult;
+        const { allOption: recipeJournalAllOption, groups: _recipeJournalGroupsRaw, nameToUuids, journalByUuid, journalCoverByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
+        /** Journal display names that have at least one recipe hidden by perk (for dropdown lock prefix). */
+        const journalNamesWithPerkLockedRecipes = new Set();
+        for (const c of knownCombinations) {
+            if (c.recipeHiddenByPerk) {
+                const n = (c.journalName ?? '').trim();
+                if (n) journalNamesWithPerkLockedRecipes.add(n);
+            }
+        }
+        const recipeJournalOptionGroups = _recipeJournalGroupsRaw.map((g) => ({
+            label: g.label,
+            options: g.options.map((o) => {
+                const nameKey = (o.value ?? '').trim();
+                const locked = nameKey && journalNamesWithPerkLockedRecipes.has(nameKey);
+                const baseLabel = o.label ?? nameKey;
+                return {
+                    ...o,
+                    label: locked ? `${JOURNAL_OPTION_LOCK_PREFIX}${baseLabel}` : baseLabel
+                };
+            })
+        }));
         const selectedComboUnfiltered = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
         if (this.filterRecipeJournal) {
             const selectedName = String(this.filterRecipeJournal).trim();
@@ -1363,23 +1389,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 detailCraftableIconClass: detailCombo?.craftableIconClass ?? null
             }
             : null;
-        /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */
+        /** Top detail rows below title: Level, Skill, Rarity (result is already the card title; kit/DC omitted from requirements list by design) */
         const selectedRecipeTopFields = r
             ? [
                 r.skillLevel != null ? { label: 'Level', value: String(r.skillLevel) } : null,
-                (r.resultItemName ?? r.name) ? { label: 'Result', value: (r.resultItemName ?? r.name ?? '').trim() } : null,
                 r.skill ? { label: 'Skill', value: r.skill } : null,
                 r.rarity ? { label: 'Rarity', value: r.rarity } : null
             ].filter(Boolean)
             : [];
         const selectedRecipeMetadata = r
             ? [
-                r.skillKit ? { label: 'Skill Kit', value: r.skillKit } : null,
                 r.apparatusName ? { label: 'Apparatus', value: r.apparatusName } : null,
                 r.containerName ? { label: 'Container', value: r.containerName } : null,
                 r.processType ? { label: 'Process', value: `${r.processType} ${r.processLevel != null ? r.processLevel : ''}`.trim() } : null,
                 r.time != null ? { label: 'Time', value: `${r.time}s` } : null,
-                r.successDC != null ? { label: 'DC', value: String(r.successDC) } : null,
                 r.goldCost != null ? { label: 'Gold Cost', value: String(r.goldCost) } : null,
                 r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null
             ].filter(Boolean)
