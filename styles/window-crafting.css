@@ -476,6 +476,20 @@
     display: block;
     margin-bottom: 4px;
 }
+
+/* Details pane: result item art (same source as recipe list thumbnails), not journal cover */
+.crafting-recipe-detail-result-img {
+    max-width: min(100%, 160px);
+    max-height: 160px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.5);
+    display: block;
+    margin: 8px 0 4px 0;
+}
 .crafting-recipe-journal-cover-author {
     font-size: 0.8em;
     color: rgba(201, 201, 201, 0.7);
@@ -774,6 +788,32 @@
     font-size: 0.85em;
     color: rgba(201, 201, 201, 0.85);
     line-height: 1.3;
+}
+
+/* Details column: same row as recipe list, not clickable */
+.crafting-recipe-detail-page-header {
+    cursor: default;
+    margin-bottom: 8px;
+}
+
+.crafting-recipe-detail-page-header:hover {
+    border-color: var(--craft-border-color);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.crafting-recipe-detail-page-header.crafting-recipe-page-selected:hover {
+    border-color: rgba(41, 96, 46, 0.9);
+    background: rgba(41, 96, 46, 0.15);
+}
+
+/* Crafting bench: traits from slot ingredients at bottom of center panel */
+.crafting-bench-combined-tags-sep {
+    margin-top: 14px;
+    margin-bottom: 8px;
+}
+
+.crafting-bench-combined-tags-label {
+    margin-bottom: 6px;
 }
 
 

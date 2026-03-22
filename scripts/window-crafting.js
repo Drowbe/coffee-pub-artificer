@@ -1212,6 +1212,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const journalOptionsResult = await getRecipeJournalOptionsByFolder(recipes, this.filterRecipeJournal, journalFilterSkillIds);
         const { allOption: recipeJournalAllOption, groups: recipeJournalOptionGroups, nameToUuids, journalByUuid, journalCoverByUuid } = journalOptionsResult;
         let knownCombinations = await getRecipesForDisplay(this.selectedRecipe?.id ?? null, actor, journalByUuid);
+        const selectedComboUnfiltered = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
         if (this.filterRecipeJournal) {
             const selectedName = String(this.filterRecipeJournal).trim();
             const matchingUuids = nameToUuids.get(selectedName);
@@ -1246,8 +1247,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             (a.result ?? '').localeCompare(b.result ?? '', undefined, { sensitivity: 'base' })
         );
 
-        const selectedComboForHidden = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
-        const recipeHiddenForIngredientTooltips = !!selectedComboForHidden?.recipeHiddenByPerk;
+        const detailCombo = r ? (knownCombinations.find((c) => c.recipeId === r.id) ?? selectedComboUnfiltered) : null;
+        const recipeHiddenForIngredientTooltips = !!detailCombo?.recipeHiddenByPerk;
         const slots = this.selectedSlots.map((entry) => {
             if (!entry) return { item: null, count: 0, tags: '', tooltip: '', isMissing: false };
             const item = entry.item;
@@ -1327,29 +1328,39 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const combinedTags = [...new Set(slotTags)].map(t => t.charAt(0).toUpperCase() + t.slice(1));
 
         const cacheStatus = getCacheStatus();
-        const journalUuidForRecipe = r ? getRecipeJournalUuid(r) : '';
-        const selectedRecipeJournalName = (r && journalByUuid.get(journalUuidForRecipe)) ?? '';
-        const coverForJournal = journalUuidForRecipe ? journalCoverByUuid?.get(journalUuidForRecipe) : null;
-        const selectedRecipeJournalCover = coverForJournal && (coverForJournal.coverImage || coverForJournal.author || coverForJournal.description)
-            ? { author: coverForJournal.author, description: coverForJournal.description, coverImage: coverForJournal.coverImage }
-            : null;
-        const selectedCombo = r ? knownCombinations.find((c) => c.recipeId === r.id) : null;
+        let selectedRecipeResultImg = detailCombo?.resultImg;
+        if (r && !selectedRecipeResultImg) {
+            const rn = (r.resultItemName || r.name || '').trim();
+            const ri = rn ? await resolveItemByName(rn) : null;
+            selectedRecipeResultImg = ri?.img ?? 'icons/svg/item-bag.svg';
+        }
         let requiredPerk = null;
-        if (r && selectedCombo?.recipeHiddenByPerk && r.skill && r.skillLevel != null) {
+        if (r && detailCombo?.recipeHiddenByPerk && r.skill && r.skillLevel != null) {
             requiredPerk = await getRequiredPerkForTier(r.skill, Number(r.skillLevel));
         }
+        const listTagsFallback = (() => {
+            if (!r) return [];
+            const tags = (r.traits?.length ? r.traits : (r.ingredients ?? []).map((i) => i.name))
+                .map((t) => (typeof t === 'string' ? t.charAt(0).toUpperCase() + t.slice(1) : String(t)));
+            return tags.length ? tags : [r.name ?? '?'];
+        })();
         const selectedRecipeData = r
             ? {
                 name: r.name ?? '',
                 resultName: r.resultItemName ?? r.name ?? '',
-                journalName: selectedRecipeJournalName,
-                journalCover: selectedRecipeJournalCover,
+                resultImg: selectedRecipeResultImg ?? 'icons/svg/item-bag.svg',
                 traits: r.traits ?? [],
                 description: r.description ?? '',
-                recipeHiddenByPerk: selectedCombo?.recipeHiddenByPerk ?? false,
-                hiddenMessage: selectedCombo?.hiddenMessage ?? null,
+                recipeHiddenByPerk: detailCombo?.recipeHiddenByPerk ?? false,
+                hiddenMessage: detailCombo?.hiddenMessage ?? null,
                 skillLevel: r.skillLevel != null ? String(r.skillLevel) : null,
-                requiredPerk
+                requiredPerk,
+                listTitle: detailCombo?.result ?? r.name ?? '',
+                listTags: detailCombo?.tags?.length ? detailCombo.tags : listTagsFallback,
+                detailExperimentalIcon: detailCombo?.experimentalIconBeforeTitle ?? null,
+                detailShowDimLock: !!detailCombo?.showDimLock,
+                detailCanCraft: !!detailCombo?.canCraft,
+                detailCraftableIconClass: detailCombo?.craftableIconClass ?? null
             }
             : null;
         /** Top detail rows below title: Result, Skill, Rarity (same label+value style as metadata) */

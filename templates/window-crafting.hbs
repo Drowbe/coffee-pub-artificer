@@ -256,6 +256,15 @@
                     </div>
                     <div class="crafting-bench-grid-cell crafting-bench-grid-cell-empty"></div>
                 </div>
+                {{#if combinedTags.length}}
+                <hr class="crafting-details-divider crafting-bench-combined-tags-sep" />
+                <p class="crafting-zone-desc crafting-bench-combined-tags-label">Traits for this combination:</p>
+                <div class="crafting-bench-tags crafting-bench-combined-tags">
+                    {{#each combinedTags}}
+                    <span class="crafting-tag-badge">{{this}}</span>
+                    {{/each}}
+                </div>
+                {{/if}}
             </section>
         </main>
 
@@ -264,14 +273,6 @@
             <section class="crafting-zone-section">
                 <h3 class="crafting-zone-section-title">Details</h3>
                 <div class="crafting-details-content">
-                    {{#if combinedTags.length}}
-                    <p class="crafting-zone-desc">Traits for this combination:</p>
-                    <div class="crafting-bench-tags">
-                        {{#each combinedTags}}
-                        <span class="crafting-tag-badge">{{this}}</span>
-                        {{/each}}
-                    </div>
-                    {{/if}}
                     {{#if viewingCoverPage}}
                     {{#if selectedJournalCoverBlock}}
                     <div class="crafting-recipe-details">
@@ -297,26 +298,21 @@
                     {{/if}}
                     {{else}}
                     {{#if selectedRecipeData}}
-                    
                     <div class="crafting-recipe-details">
-                        {{#if selectedRecipeData.recipeHiddenByPerk}}
-                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
-                        {{#if selectedRecipeData.journalName}}
-                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
-                        {{#if selectedRecipeData.journalCover}}
-                        <div class="crafting-recipe-journal-cover">
-                            {{#if selectedRecipeData.journalCover.coverImage}}
-                            <img src="{{selectedRecipeData.journalCover.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
-                            {{/if}}
-                            {{#if selectedRecipeData.journalCover.author}}
-                            <div class="crafting-recipe-journal-cover-author">{{selectedRecipeData.journalCover.author}}</div>
-                            {{/if}}
-                            {{#if selectedRecipeData.journalCover.description}}
-                            <div class="crafting-recipe-journal-cover-description">{{selectedRecipeData.journalCover.description}}</div>
-                            {{/if}}
+                        <div class="crafting-recipe-page crafting-recipe-detail-page-header {{#if selectedRecipeData.recipeHiddenByPerk}}crafting-recipe-page-hidden{{else}}crafting-recipe-page-selected{{/if}}">
+                            <img src="{{selectedRecipeData.resultImg}}" alt="" class="crafting-recipe-page-img" />
+                            <div class="crafting-recipe-page-content">
+                                <div class="crafting-recipe-page-title-row">
+                                    <span class="crafting-recipe-page-title">
+                                        {{#if selectedRecipeData.detailExperimentalIcon}}<i class="{{selectedRecipeData.detailExperimentalIcon}} crafting-recipe-page-experimental-prefix" title="Experimental crafting (above your tier)"></i>{{/if}}
+                                        {{selectedRecipeData.listTitle}}
+                                    </span>
+                                </div>
+                                <span class="crafting-recipe-page-tags">{{#each selectedRecipeData.listTags}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}</span>
+                            </div>
+                            {{#if selectedRecipeData.recipeHiddenByPerk}}<i class="crafting-recipe-page-locked-icon fa-solid fa-lock" title="Recipe locked — perk required to view"></i>{{else}}{{#if selectedRecipeData.detailShowDimLock}}<i class="crafting-recipe-page-locked-icon crafting-recipe-page-locked-icon-dimmed fa-solid fa-lock" title="Above your tier — viewable via experimental; recipe is still locked"></i>{{else}}{{#if selectedRecipeData.detailCanCraft}}<i class="crafting-recipe-page-craftable-icon {{selectedRecipeData.detailCraftableIconClass}}" title="All ingredients available"></i>{{/if}}{{/if}}{{/if}}
                         </div>
-                        {{/if}}
-                        {{/if}}
+                        {{#if selectedRecipeData.recipeHiddenByPerk}}
                         {{#if selectedRecipeData.skillLevel}}
                         <div class="crafting-detail-rows crafting-detail-rows-top">
                             <div class="crafting-detail-row"><span class="crafting-detail-label">Skill Level:</span><span class="crafting-detail-value">{{selectedRecipeData.skillLevel}}</span></div>
@@ -336,34 +332,10 @@
                         </div>
                         {{/if}}
                         {{else}}
-                        <div class="crafting-recipe-name">{{selectedRecipeData.name}}</div>
-                        {{#if selectedRecipeData.journalName}}
-                        <div class="crafting-recipe-journal-name">{{selectedRecipeData.journalName}}</div>
-                        {{#if selectedRecipeData.journalCover}}
-                        <div class="crafting-recipe-journal-cover">
-                            {{#if selectedRecipeData.journalCover.coverImage}}
-                            <img src="{{selectedRecipeData.journalCover.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
-                            {{/if}}
-                            {{#if selectedRecipeData.journalCover.author}}
-                            <div class="crafting-recipe-journal-cover-author">{{selectedRecipeData.journalCover.author}}</div>
-                            {{/if}}
-                            {{#if selectedRecipeData.journalCover.description}}
-                            <div class="crafting-recipe-journal-cover-description">{{selectedRecipeData.journalCover.description}}</div>
-                            {{/if}}
-                        </div>
-                        {{/if}}
-                        {{/if}}
                         {{#if selectedRecipeTopFields.length}}
                         <div class="crafting-detail-rows crafting-detail-rows-top">
                             {{#each selectedRecipeTopFields}}
                             <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
-                            {{/each}}
-                        </div>
-                        {{/if}}
-                        {{#if selectedRecipeData.traits.length}}
-                        <div class="crafting-recipe-traits">
-                            {{#each selectedRecipeData.traits}}
-                            <span class="crafting-tag-badge">{{this}}</span>
                             {{/each}}
                         </div>
                         {{/if}}
