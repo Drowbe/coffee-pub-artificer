@@ -21,13 +21,68 @@ import { populateGatheringSpotsForScene } from './manager-gather.js';
 import { initializeGatherSockets } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 import { PinsManager } from './manager-pins.js';
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+
+/**
+ * Return the actor for the first controlled token, if any.
+ * Requires an explicit token selection (GM and players).
+ * @returns {Actor|null}
+ */
+function getControlledTokenActor() {
+    if (!canvas?.ready) return null;
+    const controlled = canvas.tokens?.controlled ?? [];
+    const token = controlled[0];
+    return token?.actor ?? null;
+}
+
+/**
+ * Require a selected token before opening a gameplay window.
+ * @param {string} windowLabel
+ * @returns {boolean}
+ */
+function ensureTokenSelectedForWindow(windowLabel) {
+    if (getControlledTokenActor()) return true;
+    ui.notifications?.warn?.(`Select a token before opening ${windowLabel}.`);
+    return false;
+}
+
+/**
+ * Close open Artificer windows so only one is open at a time.
+ * @returns {Promise<void>}
+ */
+async function closeOpenArtificerWindows() {
+    const allApps = Object.values(ui.windows ?? {});
+    const artificerApps = allApps.filter((app) => {
+        const id = String(app?.id ?? '');
+        if (id.startsWith('artificer-')) return true;
+        const classes = app?.options?.classes ?? [];
+        return classes.some((c) => String(c).startsWith('window-artificer-') || /\bartificer-.*-window\b/.test(String(c)));
+    });
+    for (const app of artificerApps) {
+        try {
+            await app.close();
+        } catch (_e) {
+            /* ignore close failures */
+        }
+    }
+}
+
+/**
+ * Open one Artificer window at a time with optional token gate.
+ * @param {() => any} createWindow
+ * @param {{ requireToken?: boolean, windowLabel?: string }} [options]
+ * @returns {Promise<void>}
+ */
+async function openArtificerWindow(createWindow, { requireToken = false, windowLabel = 'this window' } = {}) {
+    if (requireToken && !ensureTokenSelectedForWindow(windowLabel)) return;
+    await closeOpenArtificerWindows();
+    const win = createWindow?.();
+    if (win) await win.render(true);
+}
 
 // ================================================================== 
 // ===== BLACKSMITH API INTEGRATION =================================
 // ================================================================== 
-
-// Import Blacksmith API bridge
-import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 // ================================================================== 
 // ===== MODULE INITIALIZATION ======================================
@@ -223,20 +278,14 @@ function registerMenubarIntegration() {
         order: 10,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
-        onClick: function() {
+        onClick: async function() {
             if (!game.user.isGM) return;
             // Open the item creation form
             BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Create Item button clicked`, null, false, false);
             
             try {
-                const form = new ArtificerItemForm();
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: ArtificerItemForm instance created`, null, false, false);
-                
-                form.render(true).then(() => {
-                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Form rendered successfully`, null, false, false);
-                }).catch((error) => {
-                    BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Error rendering form: ${error.message}`, null, true, false);
-                });
+                await openArtificerWindow(() => new ArtificerItemForm(), { windowLabel: 'Create Component' });
+                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Form rendered successfully`, null, false, false);
             } catch (error) {
                 BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Error creating form: ${error.message}`, null, true, false);
             }
@@ -252,10 +301,9 @@ function registerMenubarIntegration() {
         order: 20,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
-        onClick: function() {
+        onClick: async function() {
             if (!game.user.isGM) return;
-            const win = new ArtificerRecipeImportWindow();
-            win.render(true);
+            await openArtificerWindow(() => new ArtificerRecipeImportWindow(), { windowLabel: 'Import Recipes' });
         }
     });
 
@@ -296,10 +344,9 @@ function registerMenubarIntegration() {
         order: 50,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
-        onClick: function() {
+        onClick: async function() {
             if (!game.user.isGM) return;
-            const win = new GatherWindow();
-            win.render(true);
+            await openArtificerWindow(() => new GatherWindow(), { requireToken: true, windowLabel: 'Roll for Components' });
         }
     });
 
@@ -312,9 +359,8 @@ function registerMenubarIntegration() {
         order: 60,
         moduleId: MODULE.ID,
         visible: true,
-        onClick: function() {
-            const win = new SkillsWindow();
-            win.render(true);
+        onClick: async function() {
+            await openArtificerWindow(() => new SkillsWindow(), { requireToken: true, windowLabel: 'Manage Skills' });
         }
     });
 
@@ -327,9 +373,8 @@ function registerMenubarIntegration() {
         order: 70,
         moduleId: MODULE.ID,
         visible: true,
-        onClick: function() {
-            const win = new RecipeBrowserWindow();
-            win.render(true);
+        onClick: async function() {
+            await openArtificerWindow(() => new RecipeBrowserWindow(), { requireToken: true, windowLabel: 'Recipe Browser' });
         }
     });
 
@@ -342,9 +387,8 @@ function registerMenubarIntegration() {
         order: 75,
         moduleId: MODULE.ID,
         visible: true,
-        onClick: function() {
-            const win = new CraftingWindow();
-            win.render(true);
+        onClick: async function() {
+            await openArtificerWindow(() => new CraftingWindow(), { requireToken: true, windowLabel: 'Crafting Station' });
         }
     });
 

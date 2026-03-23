@@ -772,6 +772,27 @@ const CRAFTING_BOUNDS_SETTING = 'windowBoundsCrafting';
  */
 const JOURNAL_OPTION_LOCK_PREFIX = '\u{1F512}\u00A0';
 
+/**
+ * Close open Artificer windows so only one remains when opening another.
+ * @returns {Promise<void>}
+ */
+async function closeOpenArtificerWindowsForCrafting() {
+    const allApps = Object.values(ui.windows ?? {});
+    const artificerApps = allApps.filter((app) => {
+        const id = String(app?.id ?? '');
+        if (id.startsWith('artificer-')) return true;
+        const classes = app?.options?.classes ?? [];
+        return classes.some((c) => String(c).startsWith('window-artificer-') || /\bartificer-.*-window\b/.test(String(c)));
+    });
+    for (const app of artificerApps) {
+        try {
+            await app.close();
+        } catch (_e) {
+            /* ignore close failures */
+        }
+    }
+}
+
 /** Active crafting-style windows keyed by app id for shared delegation. */
 const _craftingWindowRefs = new Map();
 let _craftingDelegationAttached = false;
@@ -1897,14 +1918,20 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return this._getCrafterActor();
     }
 
-    _openInCraftingWindow() {
+    async _openInCraftingWindow() {
         if (!this.selectedRecipe) return;
+        const controlled = canvas?.ready ? (canvas.tokens?.controlled ?? []) : [];
+        if (!controlled[0]?.actor) {
+            ui.notifications?.warn?.('Select a token before opening Crafting Station.');
+            return;
+        }
+        await closeOpenArtificerWindowsForCrafting();
         const win = new CraftingWindow({
             selectedRecipe: this.selectedRecipe,
             filterRecipeJournal: this.filterRecipeJournal,
             filterRecipeSearch: this.filterRecipeSearch
         });
-        win.render(true);
+        await win.render(true);
     }
 
     /** Call render() and restore the components list scroll position so it doesn't jump to top. */

@@ -513,6 +513,12 @@
     margin-top: 8px;
 }
 
+
+
+
+
+
+
 /* Recipe summary: scoreboard tiles (small label, prominent value) */
 .crafting-recipe-stats-scoreboard {
     display: flex;
@@ -522,24 +528,24 @@
     gap: 8px;
     margin-top: 10px;
     padding: 10px 8px;
-    background: rgba(0, 0, 0, 0.28);
-    border-radius: 8px;
-    border: 1px solid var(--craft-border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(0, 255, 0, 0.0);
+    border-radius: 6px;
+    border: 0px solid rgba(255, 255, 255, 0.08);
 }
 
 .crafting-recipe-stat-tile {
     flex: 1 1 0;
-    min-width: 4.5rem;
-    max-width: 9.5rem;
+    min-width: 2.5rem;
+    max-width: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     padding: 8px 6px;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 255, 0, 0.1);
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
 }
 
@@ -555,13 +561,36 @@
 }
 
 .crafting-recipe-stat-value {
-    font-size: clamp(0.85rem, 2.2vw, 1.2rem);
-    font-weight: 700;
+    font-size: 1.2em;
+    font-weight: 900;
     color: rgba(232, 232, 232, 0.98);
     line-height: 1.15;
     word-break: break-word;
     hyphens: auto;
 }
+
+/* Second scoreboard (apparatus, process, costs, etc.) — same tiles; smaller values than top summary */
+.crafting-recipe-stats-scoreboard--metadata {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.crafting-recipe-stats-scoreboard--metadata .crafting-recipe-stat-value {
+    font-size: 0.88em;
+    font-weight: 600;
+}
+
+.crafting-recipe-stats-scoreboard--metadata .crafting-recipe-stat-tile {
+    flex: 1 1 calc(33.333% - 8px);
+    min-width: 7.5rem;
+}
+
+
+
+
+
+
+
 
 .crafting-recipe-traits {
     display: flex;
@@ -595,17 +624,6 @@
     flex-direction: column;
     gap: 4px;
     margin: 8px 0;
-}
-
-/* Requirements under description: tighter, multi-column when space allows */
-.crafting-detail-rows-metadata {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-    gap: 6px 10px;
-}
-
-.crafting-detail-rows-metadata .crafting-detail-row {
-    margin: 0;
 }
 
 .crafting-detail-row {
@@ -871,10 +889,10 @@
 }
 
 
-.crafting-recipe-page-title {
-    font-weight: 600;
-    color: rgba(105, 213, 104, 0.95);
-    font-size: 1.0em;
+.crafting-recipe-detail-page-header .crafting-recipe-page-title {
+    font-weight: 900;
+    color: rgba(203, 202, 202, 0.90);
+    font-size: 1.7em;
     line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -889,14 +907,14 @@
 }
 
 /* Details column: same row as recipe list, not clickable */
-.crafting-recipe-detail-page-header {
+/* Details column: same row as recipe list, not clickable */
+.crafting-recipe-detail-page-header,
+.crafting-recipe-detail-page-header.crafting-recipe-page-selected:hover {
     cursor: default;
     margin-bottom: 8px;
-}
-
-.crafting-recipe-detail-page-header:hover {
-    border-color: var(--craft-border-color);
-    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(0, 0, 0, 0.0);
+    background: rgba(41, 96, 46, 0.0);
+    padding: 0px;
 }
 
 .crafting-recipe-detail-page-header.crafting-recipe-page-selected:hover {

@@ -355,9 +355,12 @@
                     {{#unless selectedRecipeData.recipeHiddenByPerk}}
                     {{#if selectedRecipeMetadata.length}}
                     <hr class="crafting-details-divider" />
-                    <div class="crafting-detail-rows crafting-detail-rows-metadata">
+                    <div class="crafting-recipe-stats-scoreboard crafting-recipe-stats-scoreboard--metadata" role="group" aria-label="Recipe requirements">
                         {{#each selectedRecipeMetadata}}
-                        <div class="crafting-detail-row"><span class="crafting-detail-label">{{this.label}}:</span><span class="crafting-detail-value">{{this.value}}</span></div>
+                        <div class="crafting-recipe-stat-tile">
+                            <span class="crafting-recipe-stat-label">{{this.label}}</span>
+                            <span class="crafting-recipe-stat-value">{{this.value}}</span>
+                        </div>
                         {{/each}}
                     </div>
                     {{/if}}
