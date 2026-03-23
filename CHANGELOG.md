@@ -27,6 +27,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Crafting inventory lists:** Crafting window caches derived ingredient/apparatus/container/tool rows until the crafter’s inventory fingerprint changes, reducing CPU on filter/search re-renders.
 - **Crafting UI delegation:** Document-level handlers prefer the last-focused crafting window before scanning all open crafting windows.
 - **Debug logging:** Recipe journal “cover list state” console output runs only when `CONFIG.debug.coffeePubArtificer.recipeJournalCovers` is true.
+- **Menubar active styling:** Artificer menubar button now uses Blacksmith/Foundry default active styling (removed custom green selected tint).
+- **Crafting/Recipes details panel refresh:**
+  - Replaced top detail rows with a scoreboard-style layout (small label + larger value tiles).
+  - Metadata requirements block (apparatus/container/process/time/cost/work hours) now uses matching tile treatment with smaller values and responsive multi-row wrapping.
+  - Removed redundant detail rows (`Result`, `Skill Kit`, and `DC`) from the default details view.
+- **Journal filter locked marker:** Journal dropdown options now prefix journals that contain perk-locked recipes with a Unicode lock (`🔒`), which works with native select/option rendering.
+- **Crafting bench traits block:** Traits now render inside a dedicated block with the same top-border treatment as other bench rows; the divider block only renders when traits exist.
+- **Crafting bench overflow behavior:** Bench column now scrolls vertically when content exceeds available height, matching the other columns.
+- **Artificer window launch behavior:** Gameplay windows now require a selected token before opening (skills, recipe browser, crafting station, gather roll), and opening one Artificer window closes other open Artificer windows first (single-window behavior).
 
 ### Fixed
 - **Crafting window timer cleanup on close:** `CraftingWindow._preClose()` now clears `_searchDebounceTimer` and `_craftCountdownInterval` and resets pending countdown state to prevent post-close callbacks.
