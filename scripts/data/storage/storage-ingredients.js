@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { ArtificerIngredient } from '../models/model-ingredient.js';
 import { getCacheStatus, getAllRecordsFromCache } from '../../cache/cache-items.js';
 
@@ -118,7 +119,7 @@ export class IngredientStorage {
                     }
                 }
             } catch (error) {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error processing compendium "${compendiumId}"`, error?.message ?? null, true, false);
+                postBlacksmithConsole(MODULE.NAME, `Error processing compendium "${compendiumId}"`, error?.message ?? null, true, false);
             }
         }
     }

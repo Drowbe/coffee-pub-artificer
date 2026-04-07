@@ -1,4 +1,5 @@
 import { MODULE } from './const.js';
+import { postBlacksmithConsole } from './utils/blacksmith-console.js';
 import { getGatheringRulesetFetchUrl, getGatheringRulesetPath } from './config-rulesets.js';
 
 const BIOME_ALIASES = {
@@ -131,10 +132,12 @@ function _reportGatheringMappingFailure(configPath, detail) {
     const title = `${MODULE.TITLE}: Gathering ruleset failed`;
     const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Gathering Ruleset JSON** in module settings, then use Reload (or change the setting) to retry.`;
     console.error(title, detail);
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
-    } else if (game.user?.isGM && typeof ui !== 'undefined') {
-        ui.notifications?.error(`${title}. ${detail}`);
+    const canBsLog =
+        !!game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification ||
+        !!globalThis.BlacksmithUtils?.postConsoleAndNotification;
+    postBlacksmithConsole(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    if (!canBsLog && game.user?.isGM && typeof ui !== 'undefined') {
+        ui.notifications?.error?.(`${title}. ${detail}`);
     }
 }
 

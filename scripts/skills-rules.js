@@ -5,6 +5,7 @@
 // and derives crafting/gathering rules from each perk's optional rules.benefits.
 
 import { MODULE } from './const.js';
+import { postBlacksmithConsole } from './utils/blacksmith-console.js';
 import { getSkillsRulesetFetchUrl, getSkillsRulesetPath } from './config-rulesets.js';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
@@ -27,9 +28,11 @@ function _reportSkillsRulesetFailure(configPath, detail) {
     const title = `${MODULE.TITLE}: Skills ruleset failed`;
     const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Skills Ruleset JSON** in module settings, then change the setting or reload to retry.`;
     console.error(title, detail);
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
-    } else if (game.user?.isGM && typeof ui !== 'undefined') {
+    const canBsLog =
+        !!game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification ||
+        !!globalThis.BlacksmithUtils?.postConsoleAndNotification;
+    postBlacksmithConsole(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    if (!canBsLog && game.user?.isGM && typeof ui !== 'undefined') {
         ui.notifications?.error?.(`${title}. ${detail}`);
     }
 }

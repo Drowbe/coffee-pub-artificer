@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { ESSENCE_AFFINITIES } from '../../schema-essences.js';
 import { INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 
@@ -63,19 +64,19 @@ export class ArtificerEssence {
     _validateAndNormalize() {
         // Validate affinity
         if (!Object.values(ESSENCE_AFFINITIES).includes(this.affinity)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid essence affinity: ${this.affinity}. Defaulting to ${ESSENCE_AFFINITIES.HEAT}`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid essence affinity: ${this.affinity}. Defaulting to ${ESSENCE_AFFINITIES.HEAT}`, null, true, false);
             this.affinity = ESSENCE_AFFINITIES.HEAT;
         }
         
         // Validate rarity
         if (!Object.values(INGREDIENT_RARITIES).includes(this.rarity)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid essence rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid essence rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`, null, true, false);
             this.rarity = INGREDIENT_RARITIES.COMMON;
         }
         
         // Validate tier (1-10)
         if (typeof this.tier !== 'number' || this.tier < 1 || this.tier > 10) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid essence tier: ${this.tier}. Defaulting to 1`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid essence tier: ${this.tier}. Defaulting to 1`, null, true, false);
             this.tier = 1;
         }
         
@@ -109,11 +110,11 @@ export class ArtificerEssence {
      */
     validate() {
         if (!this.id) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerEssence: Missing id', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerEssence: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerEssence: Missing name', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerEssence: Missing name', null, true, false);
             return false;
         }
         return true;

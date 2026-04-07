@@ -6,6 +6,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 import { getTranslationItemFetchUrl, getTranslationItemPath } from '../config-rulesets.js';
 import { LEGACY_FAMILY_TO_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 
@@ -52,9 +53,11 @@ function _reportTranslationItemFailure(configPath, detail) {
     const title = `${MODULE.TITLE}: Item alias file failed`;
     const body = `Configured path: ${configPath}\n${detail}\n\nFix the file or update **Item name aliases JSON** in module settings, then change the setting or reload to retry.`;
     console.error(title, detail);
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, title, body, true, !!game.user?.isGM);
-    } else if (game.user?.isGM && typeof ui !== 'undefined') {
+    const canBsLog =
+        !!game.modules.get('coffee-pub-blacksmith')?.api?.utils?.postConsoleAndNotification ||
+        !!globalThis.BlacksmithUtils?.postConsoleAndNotification;
+    postBlacksmithConsole(MODULE.NAME, title, body, true, !!game.user?.isGM);
+    if (!canBsLog && game.user?.isGM && typeof ui !== 'undefined') {
         ui.notifications?.error?.(`${title}. ${detail}`);
     }
 }
@@ -355,7 +358,7 @@ export async function refreshCache(onProgress) {
                 }
             }
         } catch (err) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Cache: error loading compendium "${cid}"`, err?.message ?? null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Cache: error loading compendium "${cid}"`, err?.message ?? null, true, false);
         }
     }
 
@@ -374,7 +377,7 @@ export async function refreshCache(onProgress) {
             entries
         });
     } catch (e) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Cache: failed to persist', e?.message ?? null, true, false);
+        postBlacksmithConsole(MODULE.NAME, 'Cache: failed to persist', e?.message ?? null, true, false);
     }
 
     _status.building = false;

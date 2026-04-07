@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
 import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
@@ -70,7 +71,7 @@ export class ArtificerRecipe {
     _validateAndNormalize() {
         // Validate type
         if (!Object.values(ITEM_TYPES).includes(this.type)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid recipe type: ${this.type}. Defaulting to ${ITEM_TYPES.CONSUMABLE}`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid recipe type: ${this.type}. Defaulting to ${ITEM_TYPES.CONSUMABLE}`, null, true, false);
             this.type = ITEM_TYPES.CONSUMABLE;
         }
         
@@ -78,7 +79,7 @@ export class ArtificerRecipe {
         const validSkills = getLastKnownEnabledCraftingSkillIds();
         if (validSkills?.length && !validSkills.includes(this.skill)) {
             const fallback = validSkills[0];
-            BlacksmithUtils.postConsoleAndNotification(
+            postBlacksmithConsole(
                 MODULE.NAME,
                 `Invalid recipe skill: ${this.skill}. Defaulting to ${fallback}`,
                 null,
@@ -90,7 +91,7 @@ export class ArtificerRecipe {
         
         // Validate skillLevel (0-20)
         if (typeof this.skillLevel !== 'number' || this.skillLevel < SKILL_LEVEL_MIN || this.skillLevel > SKILL_LEVEL_MAX) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid recipe skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
             this.skillLevel = 1;
         }
         
@@ -295,19 +296,19 @@ export class ArtificerRecipe {
      */
     validate() {
         if (!this.id) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerRecipe: Missing id', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerRecipe: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerRecipe: Missing name', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerRecipe: Missing name', null, true, false);
             return false;
         }
         if (!this.resultItemName) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerRecipe: Missing resultItemName', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerRecipe: Missing resultItemName', null, true, false);
             return false;
         }
         if (this.ingredients.length === 0) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerRecipe: No ingredients specified', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerRecipe: No ingredients specified', null, true, false);
             return false;
         }
         return true;

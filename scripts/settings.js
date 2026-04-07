@@ -508,11 +508,11 @@ export const registerSettings = () => {
 
 
     // *** REPORT SETTINGS LOADED ***
-    // Note: BlacksmithUtils is available globally after importing BlacksmithAPI in the main file
-    if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Settings registered.`, null, false, false);
+    const bsUtils = game.modules.get('coffee-pub-blacksmith')?.api?.utils;
+    if (bsUtils?.postConsoleAndNotification) {
+        bsUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Settings registered.`, null, false, false);
     } else {
-        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `${MODULE.NAME}: Settings registered.`, null, true, false);
+        BlacksmithUtils?.postConsoleAndNotification?.(MODULE.NAME, `${MODULE.NAME}: Settings registered.`, null, false, false);
     }
 };
 

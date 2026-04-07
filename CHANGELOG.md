@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.13]
+
+### Added
+- **`scripts/utils/blacksmith-console.js`:** Shared `getBlacksmithApi()` and `postBlacksmithConsole()` helpers that prefer `game.modules.get('coffee-pub-blacksmith').api.utils.postConsoleAndNotification`, then fall back to optional `globalThis.BlacksmithUtils`, matching Coffee Pub Blacksmith guidance for early `ready` (globals attach later than synchronous `module.api`).
+
+### Changed
+- **`artificer.js`:** Uses the shared Blacksmith console helpers; registers with Blacksmith via `api.registerModule` / `api.ModuleManager.registerModule` when available before falling back to `BlacksmithModuleManager`.
+- **Data models and load path:** `model-ingredient.js`, `model-component.js`, `model-essence.js`, `model-recipe.js`, `model-blueprint.js`, ingredient/recipe/blueprint storage modules, and `parser-recipe.js` / `parser-blueprint.js` now log validation and parse issues through `postBlacksmithConsole` instead of bare `BlacksmithUtils` (safe during `ArtificerAPI.initialize()`).
+- **Ruleset and cache reporting:** `cache/cache-items.js`, `skills-rules.js`, and `manager-gathering-images.js` use the same api-first logging pattern with GM `ui.notifications` fallback when neither API nor globals can log.
+
+### Fixed
+- **`TypeError: Cannot read properties of null (reading 'postConsoleAndNotification')`** when Artificer `ready` or `ArtificerAPI.initialize()` ran before `window.BlacksmithUtils` was wired (Blacksmith `markReadyForConsumers()` ordering).
+- **`settings.js`:** Settings-loaded notification no longer called `BlacksmithUtils` in the `else` branch when utils were unavailable (could throw on `null`).
+- **Fragile guards:** Replaced `typeof BlacksmithUtils !== 'undefined'` checks that still allowed `null` with api-first / optional-chained access for the updated paths.
+
+
 ## [13.0.12]
 
 ### Added

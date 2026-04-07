@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { hashString } from '../../utils/helpers.js';
 import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
@@ -42,7 +43,7 @@ export class ArtificerBlueprint {
         const validSkills = getLastKnownEnabledCraftingSkillIds();
         if (validSkills?.length && !validSkills.includes(this.skill)) {
             const fallback = validSkills[0];
-            BlacksmithUtils.postConsoleAndNotification(
+            postBlacksmithConsole(
                 MODULE.NAME,
                 `Invalid blueprint skill: ${this.skill}. Defaulting to ${fallback}`,
                 null,
@@ -54,7 +55,7 @@ export class ArtificerBlueprint {
 
         // Validate skillLevel (0-20)
         if (typeof this.skillLevel !== 'number' || this.skillLevel < SKILL_LEVEL_MIN || this.skillLevel > SKILL_LEVEL_MAX) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid blueprint skillLevel: ${this.skillLevel}. Defaulting to 1`, null, true, false);
             this.skillLevel = 1;
         }
         
@@ -281,19 +282,19 @@ export class ArtificerBlueprint {
      */
     validate() {
         if (!this.id) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing id', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerBlueprint: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing name', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerBlueprint: Missing name', null, true, false);
             return false;
         }
         if (!this.resultItemUuid) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: Missing resultItemUuid', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerBlueprint: Missing resultItemUuid', null, true, false);
             return false;
         }
         if (this.stages.length === 0) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerBlueprint: No stages specified', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerBlueprint: No stages specified', null, true, false);
             return false;
         }
         return true;

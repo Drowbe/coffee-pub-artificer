@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
 import { buildRecipePageHtml } from '../../utility-artificer-recipe-import.js';
@@ -110,7 +111,7 @@ export class RecipeStorage {
                     }
                 }
             } catch (e) {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Recipe compendiums load error', e?.message ?? String(e), true, false);
+                postBlacksmithConsole(MODULE.NAME, 'Recipe compendiums load error', e?.message ?? String(e), true, false);
             }
         }
 
@@ -138,11 +139,11 @@ export class RecipeStorage {
                         const recipe = await RecipeParser.parseSinglePage(page, rawContent, journal);
                         if (recipe) this._cache.set(recipe.id, recipe);
                     } catch (error) {
-                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
+                        postBlacksmithConsole(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
                     }
                 }
             } catch (error) {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Recipe journal "${uuid}" not found or error`, error?.message ?? String(error), true, false);
+                postBlacksmithConsole(MODULE.NAME, `Recipe journal "${uuid}" not found or error`, error?.message ?? String(error), true, false);
             }
         }
     }

@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../const.js';
+import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 import { extractNameFromUuidLink, normalizePunctuationForStorage } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { ITEM_TYPES, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
@@ -150,14 +151,14 @@ export class RecipeParser {
             // Create recipe object
             const recipe = new ArtificerRecipe(data);
             if (!recipe.validate()) {
-                BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Recipe "${data.name}" failed validation`, null, true, false);
+                postBlacksmithConsole(MODULE.NAME, `Recipe "${data.name}" failed validation`, null, true, false);
                 return null;
             }
             
             return recipe;
             
         } catch (error) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Error parsing recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
+            postBlacksmithConsole(MODULE.NAME, `Error parsing recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
             return null;
         }
     }

@@ -3,6 +3,7 @@
 // ================================================================== 
 
 import { MODULE } from '../../const.js';
+import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { INGREDIENT_FAMILIES, INGREDIENT_RARITIES } from '../../schema-ingredients.js';
 import { getArtificerTypeFromFlags, getFamilyFromFlags, getTraitsFromFlags } from '../../utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, ARTIFICER_FLAG_KEYS } from '../../schema-artificer-item.js';
@@ -110,19 +111,19 @@ export class ArtificerIngredient {
         const legacyFamilies = Object.values(INGREDIENT_FAMILIES);
         const validFamily = componentFamilies.includes(this.family) || legacyFamilies.includes(this.family);
         if (!validFamily) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid ingredient family: ${this.family}. Defaulting to ${INGREDIENT_FAMILIES.HERBS}`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid ingredient family: ${this.family}. Defaulting to ${INGREDIENT_FAMILIES.HERBS}`, null, true, false);
             this.family = INGREDIENT_FAMILIES.HERBS;
         }
         
         // Validate rarity
         if (!Object.values(INGREDIENT_RARITIES).includes(this.rarity)) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid ingredient rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid ingredient rarity: ${this.rarity}. Defaulting to ${INGREDIENT_RARITIES.COMMON}`, null, true, false);
             this.rarity = INGREDIENT_RARITIES.COMMON;
         }
         
         // Validate tier (1-10)
         if (typeof this.tier !== 'number' || this.tier < 1 || this.tier > 10) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Invalid ingredient tier: ${this.tier}. Defaulting to 1`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Invalid ingredient tier: ${this.tier}. Defaulting to 1`, null, true, false);
             this.tier = 1;
         }
         
@@ -139,7 +140,7 @@ export class ArtificerIngredient {
         // Validate tags (2-5 tags total: 1 primary + 1-2 secondary + optional quirk)
         const totalTags = 1 + this.secondaryTags.length + (this.quirk ? 1 : 0);
         if (totalTags < 2 || totalTags > 5) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, `Ingredient ${this.name} has ${totalTags} tags. Should have 2-5 tags.`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `Ingredient ${this.name} has ${totalTags} tags. Should have 2-5 tags.`, null, true, false);
         }
     }
     
@@ -182,15 +183,15 @@ export class ArtificerIngredient {
      */
     validate() {
         if (!this.id) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerIngredient: Missing id', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerIngredient: Missing id', null, true, false);
             return false;
         }
         if (!this.name) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerIngredient: Missing name', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerIngredient: Missing name', null, true, false);
             return false;
         }
         if (!this.primaryTag) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'ArtificerIngredient: Missing primaryTag', null, true, false);
+            postBlacksmithConsole(MODULE.NAME, 'ArtificerIngredient: Missing primaryTag', null, true, false);
             return false;
         }
         return true;
