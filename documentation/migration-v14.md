@@ -28,9 +28,6 @@
 - Per v14 [`ChatMessageData`](https://foundryvtt.com/api/interfaces/foundry.documents.types.ChatMessageData.html), the field for that enum is **`style`**, not the old overloaded **`type`** usage. Document **`type`** is now a **string** subtype from `BaseChatMessage.metadata.types`, separate from chat “style”.
 - **`CONST.CHAT_MESSAGE_STYLES.ROLL`** and **`.WHISPER`** were also removed; infer roll vs whisper from message data (`rolls`, `whisper`) instead.
 
-**Places in this repo (audit when fixing):**
-
-- `scripts/manager-gather.js` — `ChatMessage.create` with `CONST.CHAT_MESSAGE_TYPES.OTHER` (multiple call sites).
-- `scripts/window-crafting.js` — same pattern.
+**Implemented in this module:** `getChatCardPresentationFields()` in `scripts/utils/helpers.js` — spreads into `ChatMessage.create` so v14 uses `{ style }` and v13 uses `{ type }` with the same numeric value (`CHAT_MESSAGE_STYLES.OTHER` or legacy `CHAT_MESSAGE_TYPES.OTHER`). Used by `scripts/manager-gather.js` and `scripts/window-crafting.js`.
 
 **Reference:** [foundryvtt#13436 — Constants / `CHAT_MESSAGE_TYPES`](https://github.com/foundryvtt/foundryvtt/issues/13436).

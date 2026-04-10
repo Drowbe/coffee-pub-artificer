@@ -179,3 +179,18 @@ export function hashString(uuid, prefix = '') {
     const number = Math.abs(hash) % 1000 + 1; // Numbers 1-1000
     return prefix ? `${prefix}${number}` : number.toString();
 }
+
+/**
+ * Fields for ChatMessage.create so HTML “card” messages render as uncategorized chat on both v13 and v14.
+ * v14 removed CONST.CHAT_MESSAGE_TYPES and uses ChatMessageData.style; v13 uses the legacy numeric `type` field.
+ * @returns {{ style: number } | { type: number }}
+ */
+export function getChatCardPresentationFields() {
+    const value =
+        CONST.CHAT_MESSAGE_STYLES?.OTHER ??
+        CONST.CHAT_MESSAGE_TYPES?.OTHER ??
+        0;
+    const gen = typeof game?.release?.generation === 'number' ? game.release.generation : 13;
+    if (gen >= 14) return { style: value };
+    return { type: value };
+}

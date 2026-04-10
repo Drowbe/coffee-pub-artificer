@@ -15,7 +15,7 @@ import {
     flagsMatchRecipeApparatus,
     flagsMatchRecipeContainer
 } from './utility-artificer-item.js';
-import { normalizeItemNameForMatch } from './utils/helpers.js';
+import { normalizeItemNameForMatch, getChatCardPresentationFields } from './utils/helpers.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import {
     buildCraftingKitNameSet,
@@ -167,7 +167,7 @@ async function sendCraftResultCard(actor, lastResult, appliedPerks = []) {
     ChatMessage.create({
         content: html,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        ...getChatCardPresentationFields()
     });
 }
 

@@ -24,6 +24,7 @@ import {
 } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 import { getGatherRuntimeDefaultsSync, resolveGatheringImageForScene } from './manager-gathering-images.js';
+import { getChatCardPresentationFields } from './utils/helpers.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
@@ -342,7 +343,7 @@ function sendExploreResultCard({
     ChatMessage.create({
         content: html,
         speaker: ChatMessage.getSpeaker(),
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        ...getChatCardPresentationFields()
     });
     const rt = _gatherRt();
     _playBlacksmithSound(discovered > 0 ? rt.soundExploreSuccess : rt.soundExploreFail);
@@ -383,7 +384,7 @@ export function sendGatherFailureCard(actor = null, reason = null) {
     ChatMessage.create({
         content: html,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        ...getChatCardPresentationFields()
     });
 }
 
@@ -399,7 +400,7 @@ export function sendGatherNoPoolCard(actor = null) {
     ChatMessage.create({
         content: html,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        ...getChatCardPresentationFields()
     });
 }
 
@@ -451,7 +452,7 @@ export async function sendGatherSuccessCard(actor = null, items = [], appliedPer
     ChatMessage.create({
         content: html,
         speaker,
-        type: CONST.CHAT_MESSAGE_TYPES.OTHER
+        ...getChatCardPresentationFields()
     });
 }
 
