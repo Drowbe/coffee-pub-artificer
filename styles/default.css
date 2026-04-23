@@ -6,9 +6,6 @@
 /* --- Shared ---------------------- */
 @import "shared.css";
 
-/* --- Toolbars ---------------------- */
-@import "menubar.css";
-
 /* --- Forms ---------------------- */
 @import "item-form.css";
 @import "tag-picker.css";

@@ -66,6 +66,15 @@ export const COMPONENT_FAMILY_PIN_TAGS = Object.freeze({
     Plant: 'plant'
 });
 
+const COMPONENT_FAMILY_PIN_TAG_ALIASES = Object.freeze({
+    CreaturePart: ['creature', 'creaturepart', 'creature-part'],
+    Environmental: ['environmental'],
+    Essence: ['essence'],
+    Gem: ['gem'],
+    Mineral: ['mineral'],
+    Plant: ['plant']
+});
+
 /** Fallback tag when family is missing or unknown. */
 export const COMPONENT_PIN_FALLBACK_TAG = 'environmental';
 
@@ -73,12 +82,29 @@ export const COMPONENT_PIN_FALLBACK_TAG = 'environmental';
  * Resolve Blacksmith component-location pin tags for a component family.
  * Always returns at least one taxonomy-safe tag.
  * @param {string} family
+ * @param {{ taxonomyTags?: string[] }} [options]
  * @returns {string[]}
  */
-export function getPinTagsForComponentFamily(family) {
+export function getPinTagsForComponentFamily(family, options = {}) {
     const normalized = String(family ?? '').trim();
-    const tag = COMPONENT_FAMILY_PIN_TAGS[normalized] ?? COMPONENT_PIN_FALLBACK_TAG;
-    return [tag];
+    const configuredTags = Array.isArray(options?.taxonomyTags)
+        ? [...new Set(options.taxonomyTags.map((t) => String(t ?? '').trim().toLowerCase()).filter(Boolean))]
+        : [];
+
+    if (!configuredTags.length) {
+        const fallbackTag = COMPONENT_FAMILY_PIN_TAGS[normalized] ?? COMPONENT_PIN_FALLBACK_TAG;
+        return [fallbackTag];
+    }
+
+    const preferred = String(COMPONENT_FAMILY_PIN_TAGS[normalized] ?? '').toLowerCase();
+    if (preferred && configuredTags.includes(preferred)) return [preferred];
+
+    const aliases = COMPONENT_FAMILY_PIN_TAG_ALIASES[normalized] ?? [];
+    const matchedAlias = aliases.find((candidate) => configuredTags.includes(candidate));
+    if (matchedAlias) return [matchedAlias];
+
+    if (configuredTags.includes(COMPONENT_PIN_FALLBACK_TAG)) return [COMPONENT_PIN_FALLBACK_TAG];
+    return [configuredTags[0]];
 }
 
 /**

@@ -1351,6 +1351,10 @@ async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
             type: pinType
         }) ?? []
     ));
+    const moduleTaxonomy = pins.getModuleTaxonomy?.(MODULE.ID) ?? {};
+    const componentTags = Array.isArray(moduleTaxonomy?.[PIN_TYPE_COMPONENT_LOCATION]?.tags)
+        ? moduleTaxonomy[PIN_TYPE_COMPONENT_LOCATION].tags
+        : [];
     const existingIds = new Set(existingPins.map((p) => String(p.id)));
 
     let created = false;
@@ -1367,7 +1371,7 @@ async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
                 id: nodeId,
                 moduleId: MODULE.ID,
                 type: PIN_CREATE_TYPE,
-                tags: getPinTagsForComponentFamily(family),
+                tags: getPinTagsForComponentFamily(family, { taxonomyTags: componentTags }),
                 x: Number.isFinite(x) ? x : Number(canvas?.dimensions?.sceneX) + 100 || 100,
                 y: Number.isFinite(y) ? y : Number(canvas?.dimensions?.sceneY) + 100 || 100,
                 ownership: { default: 2 },

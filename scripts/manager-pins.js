@@ -150,6 +150,7 @@ export class PinsManager {
                     : [];
                 const targetCount = discoveredNodes.length;
                 const bounds = this._getSpawnBounds(scene);
+                const componentTags = this._getComponentLocationTaxonomyTags();
                 const existingPins = PIN_TRANSITION_TYPES.flatMap((pinType) => (
                     this._pins.list({
                         sceneId,
@@ -194,7 +195,7 @@ export class PinsManager {
                             id: nodeId,
                             moduleId: MODULE.ID,
                             type: PIN_CREATE_TYPE,
-                            tags: getPinTagsForComponentFamily(node?.sourceFamily),
+                            tags: getPinTagsForComponentFamily(node?.sourceFamily, { taxonomyTags: componentTags }),
                             x,
                             y,
                             text: this._getNodePinText(node),
@@ -331,6 +332,12 @@ export class PinsManager {
         if (!family) return PIN_TEXT;
         const label = FAMILY_LABELS?.[family] ?? family;
         return `Gather: ${label}`;
+    }
+
+    static _getComponentLocationTaxonomyTags() {
+        const taxonomy = this._pins?.getModuleTaxonomy?.(MODULE.ID);
+        const typeDef = taxonomy?.[PIN_TYPE_COMPONENT_LOCATION];
+        return Array.isArray(typeDef?.tags) ? typeDef.tags : [];
     }
 
     static _getGatherSpotDefaultDesign() {
