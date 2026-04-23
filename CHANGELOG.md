@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.14]
+
+### Added
+- **Blacksmith pin taxonomy at runtime:** Gather pins resolve `component-location` tags from `pins.getModuleTaxonomy('coffee-pub-artificer')` when available (`manager-pins.js`, `manager-gather.js`), with safe fallbacks if taxonomy is missing.
+- **Secondary bar grouping:** Artificer secondary bar (`artificer-crafting`) uses `groups`, `groupBannerEnabled`, and item `group`/`order` for three sections: **Manage Artificer**, **Craft and Tinker**, **Gather and Harvest** (Blacksmith API only; no custom menubar CSS).
+
+### Changed
+- **Gather pin type (new pins only):** New gather pins use Blacksmith type `component-location` with at least one taxonomy tag; legacy `gather-spot` pins are left unchanged but still listed, synced, cleared, and double-click handled during transition.
+- **Component family → pin tag mapping:** `CreaturePart` maps to taxonomy tag `creature` (and accepts legacy alias `creaturepart` when resolving against live taxonomy); other families unchanged (`environmental`, `essence`, `gem`, `mineral`, `plant`).
+- **Secondary bar labels:** Renamed actions to match UX copy (e.g. Populate Location, Clear Locations, Skill Mapping, Recipes and Blueprints, Request Component Roll, Forage and Scavenge); bar height increased to `42` to fit group banners.
+- **`documentation/guides/guide-pin-migration.md`:** Artificer section documents `component-location`, taxonomy-driven tags, transition behavior, and GM checklist.
+
+### Removed
+- **`styles/menubar.css`:** Removed unused legacy `#artificer-crafting-bar` overrides; dropped `@import "menubar.css"` from `styles/default.css` so menubar/secondary bar appearance stays on Blacksmith defaults and API options.
+
+### Fixed
+- **`PinsManager` sync:** Replaced `foundry.utils.deepEqual` (unavailable in some runtimes) with a local stable comparison for `eventAnimations` so GM pin sync no longer throws.
+
 ## [13.0.13]
 
 ### Added
