@@ -6,10 +6,13 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { requestGatherAndHarvestFromSceneWithOptions } from './manager-gather.js';
 import { resolveGatheringImageForScene } from './manager-gathering-images.js';
-import { FAMILY_LABELS } from './schema-artificer-item.js';
+import { FAMILY_LABELS, getPinTagsForComponentFamily } from './schema-artificer-item.js';
 
 const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
+const PIN_TYPE_COMPONENT_LOCATION = 'component-location';
+const PIN_TRANSITION_TYPES = Object.freeze([PIN_TYPE_GATHER_SPOT, PIN_TYPE_COMPONENT_LOCATION]);
+const PIN_CREATE_TYPE = PIN_TYPE_COMPONENT_LOCATION;
 const PIN_TEXT = 'Gathering Spot';
 const PIN_SIZE = 100;
 const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
@@ -24,6 +27,21 @@ const PIN_EVENT_ANIMATIONS = Object.freeze({
     add: { animation: 'ping', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-02.mp3` },
     delete: { animation: 'dissolve', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-01.mp3` }
 });
+
+function _stableSerialize(value) {
+    if (Array.isArray(value)) {
+        return `[${value.map((v) => _stableSerialize(v)).join(',')}]`;
+    }
+    if (value && typeof value === 'object') {
+        const entries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
+        return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${_stableSerialize(v)}`).join(',')}}`;
+    }
+    return JSON.stringify(value);
+}
+
+function _isEventAnimationEqual(a, b) {
+    return _stableSerialize(a ?? null) === _stableSerialize(b ?? null);
+}
 
 export class PinsManager {
     static _hookManager = null;
@@ -46,6 +64,7 @@ export class PinsManager {
         }
 
         this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_GATHER_SPOT, 'Gathering Spot');
+        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_COMPONENT_LOCATION, 'Component Location');
         this._pins.on('doubleClick', (evt) => this._onPinDoubleClick(evt), { moduleId: MODULE.ID });
         this._log('PinsManager: pin double-click handler registered');
 
@@ -131,11 +150,13 @@ export class PinsManager {
                     : [];
                 const targetCount = discoveredNodes.length;
                 const bounds = this._getSpawnBounds(scene);
-                const existingPins = this._pins.list({
-                    sceneId,
-                    moduleId: MODULE.ID,
-                    type: PIN_TYPE_GATHER_SPOT
-                }) ?? [];
+                const existingPins = PIN_TRANSITION_TYPES.flatMap((pinType) => (
+                    this._pins.list({
+                        sceneId,
+                        moduleId: MODULE.ID,
+                        type: pinType
+                    }) ?? []
+                ));
                 const existingById = new Map(existingPins.map((p) => [String(p.id), p]));
                 const discoveredIdSet = new Set(discoveredNodes.map((n) => String(n.id)));
                 let changed = false;
@@ -172,7 +193,8 @@ export class PinsManager {
                             ...defaultDesign,
                             id: nodeId,
                             moduleId: MODULE.ID,
-                            type: PIN_TYPE_GATHER_SPOT,
+                            type: PIN_CREATE_TYPE,
+                            tags: getPinTagsForComponentFamily(node?.sourceFamily),
                             x,
                             y,
                             text: this._getNodePinText(node),
@@ -202,7 +224,7 @@ export class PinsManager {
                     if (pin?.text !== nextText) {
                         updates.text = nextText;
                     }
-                    if (!foundry.utils.deepEqual(pin?.eventAnimations ?? null, PIN_EVENT_ANIMATIONS)) {
+                    if (!_isEventAnimationEqual(pin?.eventAnimations, PIN_EVENT_ANIMATIONS)) {
                         updates.eventAnimations = PIN_EVENT_ANIMATIONS;
                     }
                     if (!this._isPointInBounds(pin?.x, pin?.y, bounds)) {
@@ -249,7 +271,7 @@ export class PinsManager {
             const type = String(payload?.type ?? '');
             const sceneId = payload?.sceneId ?? null;
             if (moduleId !== MODULE.ID) return;
-            if (type !== PIN_TYPE_GATHER_SPOT) return;
+            if (!PIN_TRANSITION_TYPES.includes(type)) return;
             if (!sceneId || sceneId !== canvas?.scene?.id) return;
             await this._reloadPinsForCurrentScene(sceneId);
         });
@@ -312,7 +334,9 @@ export class PinsManager {
     }
 
     static _getGatherSpotDefaultDesign() {
-        const raw = this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_TYPE_GATHER_SPOT) ?? null;
+        const raw = this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_CREATE_TYPE)
+            ?? this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_TYPE_GATHER_SPOT)
+            ?? null;
         if (!raw || typeof raw !== 'object') return {};
 
         const out = {};
@@ -338,7 +362,7 @@ export class PinsManager {
         const pin = evt?.pin ?? null;
         if (!pin) return;
         if (pin.moduleId !== MODULE.ID) return;
-        if ((pin.type ?? '') !== PIN_TYPE_GATHER_SPOT) return;
+        if (!PIN_TRANSITION_TYPES.includes(pin.type ?? '')) return;
         await requestGatherAndHarvestFromSceneWithOptions({
             sourcePinId: pin.id,
             requirePinProximity: true,

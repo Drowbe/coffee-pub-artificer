@@ -224,9 +224,15 @@ function registerMenubarIntegration() {
         name: 'Artificer Crafting',
         title: 'Artificer Crafting Station',
         icon: 'fa-solid fa-hammer',
-        height: 30, // height
+        height: 42, // taller to fit group banners + button labels
         persistence: 'manual', // Stay open until user closes
-        moduleId: MODULE.ID
+        moduleId: MODULE.ID,
+        groupBannerEnabled: true,
+        groups: {
+            'Manage Artificer': { mode: 'default', order: 10 },
+            'Craft and Tinker': { mode: 'default', order: 20 },
+            'Gather and Harvest': { mode: 'default', order: 30 }
+        }
     });
     
     if (!barRegistered) {
@@ -272,6 +278,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-plus-circle',
         label: 'Create Component',
         title: 'Create Component',
+        group: 'Manage Artificer',
         order: 10,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -295,6 +302,7 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-book-open',
         label: 'Import Recipes',
         title: 'Import Recipes',
+        group: 'Manage Artificer',
         order: 20,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -307,8 +315,9 @@ function registerMenubarIntegration() {
     const populateGatherItemId = 'artificer-populate-spots';
     const populateGatherRegistered = blacksmith.registerSecondaryBarItem(barType, populateGatherItemId, {
         icon: 'fa-solid fa-seedling',
-        label: 'Populate Gathering Spots',
-        title: 'Populate Gathering Spots',
+        label: 'Populate Location',
+        title: 'Populate Location',
+        group: 'Manage Artificer',
         order: 30,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -321,8 +330,9 @@ function registerMenubarIntegration() {
     const clearGatherItemId = 'artificer-clear-spots';
     const clearGatherRegistered = blacksmith.registerSecondaryBarItem(barType, clearGatherItemId, {
         icon: 'fa-solid fa-broom',
-        label: 'Clear Gathering Spots',
-        title: 'Clear Gathering Spots',
+        label: 'Clear Locations',
+        title: 'Clear Locations',
+        group: 'Manage Artificer',
         order: 40,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
@@ -336,9 +346,10 @@ function registerMenubarIntegration() {
     const gatherItemId = 'artificer-roll-components';
     const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
         icon: 'fa-solid fa-leaf',
-        label: 'Request Roll for Components',
-        title: 'Request Roll for Components',
-        order: 50,
+        label: 'Request Component Roll',
+        title: 'Request Component Roll',
+        group: 'Gather and Harvest',
+        order: 10,
         moduleId: MODULE.ID,
         visible: game.user.isGM,
         onClick: async function() {
@@ -351,13 +362,14 @@ function registerMenubarIntegration() {
     const skillsItemId = 'artificer-skills';
     const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
         icon: 'fa-solid fa-seedling',
-        label: 'Manage Skills',
-        title: 'Manage Skills',
-        order: 60,
+        label: 'Skill Mapping',
+        title: 'Skill Mapping',
+        group: 'Craft and Tinker',
+        order: 10,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {
-            await openArtificerWindow(() => new SkillsWindow(), { requireToken: true, windowLabel: 'Manage Skills' });
+            await openArtificerWindow(() => new SkillsWindow(), { requireToken: true, windowLabel: 'Skill Mapping' });
         }
     });
 
@@ -365,13 +377,14 @@ function registerMenubarIntegration() {
     const recipeBrowserItemId = 'artificer-recipes';
     const recipeBrowserRegistered = blacksmith.registerSecondaryBarItem(barType, recipeBrowserItemId, {
         icon: 'fa-solid fa-book-open',
-        label: 'Recipe Browser',
-        title: 'Recipe Browser',
-        order: 70,
+        label: 'Recipes and Blueprints',
+        title: 'Recipes and Blueprints',
+        group: 'Craft and Tinker',
+        order: 20,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {
-            await openArtificerWindow(() => new RecipeBrowserWindow(), { requireToken: true, windowLabel: 'Recipe Browser' });
+            await openArtificerWindow(() => new RecipeBrowserWindow(), { requireToken: true, windowLabel: 'Recipes and Blueprints' });
         }
     });
 
@@ -381,7 +394,8 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-hammer',
         label: 'Crafting Station',
         title: 'Crafting Station',
-        order: 75,
+        group: 'Craft and Tinker',
+        order: 30,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {
@@ -392,9 +406,10 @@ function registerMenubarIntegration() {
     const discoverGatherItemId = 'artificer-discover-spots';
     const discoverGatherRegistered = blacksmith.registerSecondaryBarItem(barType, discoverGatherItemId, {
         icon: 'fa-solid fa-binoculars',
-        label: 'Explore the Area',
-        title: 'Explore the Area',
-        order: 80,
+        label: 'Forage and Scavenge',
+        title: 'Forage and Scavenge',
+        group: 'Gather and Harvest',
+        order: 20,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {
@@ -408,7 +423,8 @@ function registerMenubarIntegration() {
         icon: 'fa-solid fa-seedling',
         label: 'Gather and Harvest',
         title: 'Gather and Harvest',
-        order: 90,
+        group: 'Gather and Harvest',
+        order: 30,
         moduleId: MODULE.ID,
         visible: true,
         onClick: async function() {

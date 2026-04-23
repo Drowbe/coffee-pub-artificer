@@ -293,3 +293,55 @@ await pins.update(pinId, {
 - [ ] Taxonomy JSON updated to v3 format if you ship one
 - [ ] Ownership set explicitly (`NONE` for GM-only, `OBSERVER` for player-visible)
 - [ ] `size.w` and `size.h` set independently if you want non-square pins
+
+---
+
+## 11. Artificer migration policy (component pins)
+
+Artificer now relies on the Blacksmith-maintained master taxonomy JSON for category/tag definitions. For Artificer, use:
+
+- Category/type: `component-location`
+- Tags: `creature`, `environmental`, `essence`, `gem`, `mineral`, `plant`
+
+Current implementation choice:
+
+- New gather pins are created as `type: 'component-location'`.
+- Existing legacy pins with `type: 'gather-spot'` are **not** auto-migrated in place.
+- Runtime list/sync logic reads both `gather-spot` and `component-location` during transition.
+
+Family-to-tag mapping used by Artificer when creating new pins:
+
+| Component family | Pin tag |
+|---|---|
+| `CreaturePart` | `creature` |
+| `Environmental` | `environmental` |
+| `Essence` | `essence` |
+| `Gem` | `gem` |
+| `Mineral` | `mineral` |
+| `Plant` | `plant` |
+| unknown/empty | `environmental` (fallback) |
+
+Example create payload for new Artificer gather pins:
+
+```javascript
+await pins.create({
+    id: nodeId,
+    moduleId: 'coffee-pub-artificer',
+    type: 'component-location',
+    tags: ['plant'], // resolved from sourceFamily mapping
+    text: 'Gather: Plant',
+    ownership: { default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER },
+    x,
+    y
+}, { sceneId });
+```
+
+---
+
+## 12. GM verification checklist for Artificer
+
+- [ ] Create/discover at least one new gather spot and confirm pin `type` is `component-location`.
+- [ ] Confirm each newly created pin has at least one component tag from the taxonomy.
+- [ ] Open Configure Pin and verify category/tag chips are scoped correctly for the pin type.
+- [ ] Confirm existing `gather-spot` pins still double-click to run gather flow.
+- [ ] Confirm clear/sync actions affect both legacy and new pin types.

@@ -8,7 +8,13 @@
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
+import {
+    ARTIFICER_TYPES,
+    FAMILIES_BY_TYPE,
+    FAMILY_LABELS,
+    ARTIFICER_FLAG_KEYS,
+    getPinTagsForComponentFamily
+} from './schema-artificer-item.js';
 import { getFamilyFromFlags } from './utility-artificer-item.js';
 import { addCraftedItemToActor } from './utility-artificer-item.js';
 import { getAllRecordsFromCache, getAllItemsFromCache } from './cache/cache-items.js';
@@ -67,6 +73,9 @@ const GATHER_PIN_CUES = {
     failure: { animation: ['shake'], loops: 1, broadcast: true, sound: 'interface-error-03' }
 };
 const PIN_TYPE_GATHER_SPOT = 'gather-spot';
+const PIN_TYPE_COMPONENT_LOCATION = 'component-location';
+const PIN_TRANSITION_TYPES = Object.freeze([PIN_TYPE_GATHER_SPOT, PIN_TYPE_COMPONENT_LOCATION]);
+const PIN_CREATE_TYPE = PIN_TYPE_COMPONENT_LOCATION;
 const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
 const PIN_EVENT_ANIMATIONS = Object.freeze({
     hover: { animation: 'ripple', sound: `${BLACKSMITH_SOUNDS_BASE}/interface-pop-03.mp3` },
@@ -751,13 +760,17 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     const sceneId = scene.id;
     if (pins?.deleteAllByType) {
-        await pins.deleteAllByType(PIN_TYPE_GATHER_SPOT, { sceneId, moduleId: MODULE.ID });
+        for (const type of PIN_TRANSITION_TYPES) {
+            await pins.deleteAllByType(type, { sceneId, moduleId: MODULE.ID });
+        }
     } else if (pins?.list && pins?.delete) {
-        const existingPins = pins.list({
-            sceneId,
-            moduleId: MODULE.ID,
-            type: PIN_TYPE_GATHER_SPOT
-        }) ?? [];
+        const existingPins = PIN_TRANSITION_TYPES.flatMap((pinType) => (
+            pins.list({
+                sceneId,
+                moduleId: MODULE.ID,
+                type: pinType
+            }) ?? []
+        ));
         for (const pin of existingPins) {
             await pins.delete(pin.id, { sceneId });
         }
@@ -1331,11 +1344,13 @@ async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     if (!pins?.create || !pins?.list) return;
 
-    const existingPins = pins.list({
-        sceneId: scene.id,
-        moduleId: MODULE.ID,
-        type: PIN_TYPE_GATHER_SPOT
-    }) ?? [];
+    const existingPins = PIN_TRANSITION_TYPES.flatMap((pinType) => (
+        pins.list({
+            sceneId: scene.id,
+            moduleId: MODULE.ID,
+            type: pinType
+        }) ?? []
+    ));
     const existingIds = new Set(existingPins.map((p) => String(p.id)));
 
     let created = false;
@@ -1351,7 +1366,8 @@ async function _ensureDiscoveredNodesPinned(scene, discoveredNodes = []) {
             await pins.create({
                 id: nodeId,
                 moduleId: MODULE.ID,
-                type: PIN_TYPE_GATHER_SPOT,
+                type: PIN_CREATE_TYPE,
+                tags: getPinTagsForComponentFamily(family),
                 x: Number.isFinite(x) ? x : Number(canvas?.dimensions?.sceneX) + 100 || 100,
                 y: Number.isFinite(y) ? y : Number(canvas?.dimensions?.sceneY) + 100 || 100,
                 ownership: { default: 2 },

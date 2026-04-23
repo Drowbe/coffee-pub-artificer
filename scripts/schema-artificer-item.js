@@ -54,6 +54,34 @@ export const FAMILY_LABELS = {
 };
 
 /**
+ * Pin taxonomy tags for component-location pins by component family.
+ * Keys match canonical Artificer component family values.
+ */
+export const COMPONENT_FAMILY_PIN_TAGS = Object.freeze({
+    CreaturePart: 'creature',
+    Environmental: 'environmental',
+    Essence: 'essence',
+    Gem: 'gem',
+    Mineral: 'mineral',
+    Plant: 'plant'
+});
+
+/** Fallback tag when family is missing or unknown. */
+export const COMPONENT_PIN_FALLBACK_TAG = 'environmental';
+
+/**
+ * Resolve Blacksmith component-location pin tags for a component family.
+ * Always returns at least one taxonomy-safe tag.
+ * @param {string} family
+ * @returns {string[]}
+ */
+export function getPinTagsForComponentFamily(family) {
+    const normalized = String(family ?? '').trim();
+    const tag = COMPONENT_FAMILY_PIN_TAGS[normalized] ?? COMPONENT_PIN_FALLBACK_TAG;
+    return [tag];
+}
+
+/**
  * Legacy item type (pre-migration) to ARTIFICER_TYPES.
  */
 export const LEGACY_TYPE_TO_ARTIFICER_TYPE = {
