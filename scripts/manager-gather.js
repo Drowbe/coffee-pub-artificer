@@ -835,6 +835,7 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         const family = String(rec?.family ?? '').trim();
         if (!family) break;
         const rarity = _getRecordRarity(rec);
+        const idleImage = await resolveGatheringImageForScene(scene, 'idle', { families: [family] }) || undefined;
         nodes.push({
             id: foundry.utils.randomID(),
             sourceFamily: family,
@@ -842,7 +843,8 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
             rarity,
             biomes: [...context.biomes],
             componentTypes: [family],
-            skillIds: [...context.harvestingSkills]
+            skillIds: [...context.harvestingSkills],
+            idleImage
         });
         rem -= 1;
     }
@@ -901,6 +903,9 @@ async function _populateSequential(scene, existing, nodes) {
         ui.notifications?.warn('Canvas not available for sequential placement.');
         return;
     }
+
+    const priorCursor = view.style.cursor;
+    view.style.cursor = 'crosshair';
 
     const hud = document.createElement('div');
     hud.id = 'artificer-placement-hud';
@@ -965,6 +970,7 @@ async function _populateSequential(scene, existing, nodes) {
     } catch (err) {
         if (err?.name !== 'AbortError') throw err;
     } finally {
+        view.style.cursor = priorCursor;
         hud.remove();
     }
 
@@ -1476,6 +1482,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
             const rarity = _getRecordRarity(rec);
             const point = anchor ? _pickDiscoveryPoint(anchor, radiusUnits, scene, occupiedPoints) : null;
             byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
+            const idleImage = await resolveGatheringImageForScene(scene, 'idle', { families: [family] }) || undefined;
             discovered.push({
                 id: foundry.utils.randomID(),
                 sourceFamily: family,
@@ -1484,6 +1491,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
                 biomes: [...biomes],
                 componentTypes: [family],
                 skillIds: [...harvestingSkills],
+                idleImage,
                 x: Number.isFinite(Number(point?.x)) ? Number(point.x) : null,
                 y: Number.isFinite(Number(point?.y)) ? Number(point.y) : null
             });

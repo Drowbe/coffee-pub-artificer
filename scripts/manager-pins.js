@@ -216,7 +216,9 @@ export class PinsManager {
                     if ((pin?.ownership?.default ?? 0) < 2) {
                         updates.ownership = { default: 2 };
                     }
-                    const resolvedIdleImage = node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE;
+                    // Use the node's stored idleImage if present; otherwise keep the pin's
+                    // current image. Never re-call the random resolver on existing pins.
+                    const resolvedIdleImage = node?.idleImage || pin?.image || PIN_DEFAULT_IMAGE;
                     if (String(pin?.image ?? '') !== String(resolvedIdleImage ?? '')) {
                         updates.image = resolvedIdleImage;
                         updates.shape = 'none';
