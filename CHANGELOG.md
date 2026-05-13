@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.15]
+
+### Changed
+- **Pin type registration:** Removed runtime `registerPinType` call for the legacy `gather-spot` type in `PinsManager.initialize()`. Artificer now only registers `component-location`, which matches the Blacksmith pin taxonomy (`component-location`, `habitat-location`, `skill-location`). New pins have always been created as `component-location`; the legacy type constant is retained in `PIN_TRANSITION_TYPES` for listing any transitional pins during sync.
+- **Scene config tab — duplicate injection guard:** Added a per-app-ID in-flight lock (`_injectPendingAppIds`) to `SceneManager._injectArtificerTab`. Both the `renderSceneConfig` and `renderApplicationV2` hooks route to the same inject path in Foundry v13; the lock ensures the second hook call exits immediately while the first is still awaiting `loadSkillsDetails()`, preventing the tab from being injected more than once per render.
+- **`_injectArtificerTabV2` filter:** Simplified to `appName === 'SceneConfig' || app?.document?.documentName === 'Scene'`, removing the redundant `app?.documentName` instance-getter check (which resolves identically to `app?.document?.documentName` in AppV2).
+
+### Fixed
+- **Scene config tab not appearing:** Regression introduced in 13.0.15 where over-simplifying the `_injectArtificerTabV2` filter to `app?.document?.documentName !== 'Scene'` removed the reliable `appName === 'SceneConfig'` check. In Foundry v13, `renderSceneConfig` may not fire for V2 apps, making `renderApplicationV2` the only injection path; without the class-name check the tab was never injected. Restored `appName === 'SceneConfig'` as the primary guard.
+
+
 ## [13.0.14]
 
 ### Added
