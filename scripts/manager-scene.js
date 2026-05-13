@@ -15,6 +15,7 @@ export class SceneManager {
     static _hookManager = null;
     static _sockets = null;
     static _initialized = false;
+    static _injectPendingAppIds = new Set();
 
     static async initialize() {
         if (this._initialized) return;
@@ -83,12 +84,25 @@ export class SceneManager {
     static _injectArtificerTabV2(app, html) {
         // Foundry v13+ emits renderApplicationV2 for all apps; only target SceneConfig.
         const appName = app?.constructor?.name ?? '';
-        const isSceneConfig = appName === 'SceneConfig' || app?.documentName === 'Scene' || app?.document?.documentName === 'Scene';
+        const isSceneConfig = appName === 'SceneConfig' || app?.document?.documentName === 'Scene';
         if (!isSceneConfig) return;
         void this._injectArtificerTab(app, html);
     }
 
     static async _injectArtificerTab(app, html) {
+        const appId = app?.id ?? null;
+        if (appId != null) {
+            if (this._injectPendingAppIds.has(appId)) return;
+            this._injectPendingAppIds.add(appId);
+        }
+        try {
+            await this._doInjectArtificerTab(app, html);
+        } finally {
+            if (appId != null) this._injectPendingAppIds.delete(appId);
+        }
+    }
+
+    static async _doInjectArtificerTab(app, html) {
         const root = this._resolveRoot(html) || this._resolveRoot(app?.element) || this._resolveRoot(app?._element);
         if (!root) {
             this._log('SceneManager: tab inject skipped (no render root)');
