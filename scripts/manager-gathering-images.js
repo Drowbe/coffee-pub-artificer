@@ -6,9 +6,10 @@ const BIOME_ALIASES = {
     meadow: 'grassland',
     plains: 'grassland'
 };
+// Fallback aliases used only when the gathering ruleset JSON has no "familyAliases" section.
 const FAMILY_ALIASES = Object.freeze({
-    gem: 'mineral',
-    gems: 'mineral',
+    gem: 'gem',
+    gems: 'gem',
     mineral: 'mineral',
     minerals: 'mineral',
     ore: 'mineral',
@@ -17,12 +18,15 @@ const FAMILY_ALIASES = Object.freeze({
     plant: 'plant',
     plants: 'plant',
     environmental: 'environmental',
-    essence: 'environmental',
+    essence: 'essence',
     creaturepart: 'creature parts',
     creatureparts: 'creature parts',
     creature_parts: 'creature parts',
     creature: 'creature parts'
 });
+
+/** Tracks family+biome combos already warned about so the GM isn't spammed. Cleared on cache invalidation. */
+const _warnedMissingImages = new Set();
 
 /** @type {Promise<object>|null} */
 let _mappingPromise = null;
@@ -148,6 +152,7 @@ function _reportGatheringMappingFailure(configPath, detail) {
 export function invalidateGatheringMappingCache() {
     _mappingPromise = null;
     _gatheringMappingErrorReported = false;
+    _warnedMissingImages.clear();
 }
 
 function _normalizeBiomeKey(raw) {
@@ -169,24 +174,30 @@ function _asStringArray(value) {
     return value.map((v) => String(v ?? '').trim()).filter(Boolean);
 }
 
-function _normalizeFamily(raw) {
+function _normalizeFamily(raw, aliases = null) {
     const value = String(raw ?? '').trim().toLowerCase();
     if (!value) return '';
+    // Prefer JSON-sourced aliases; fall back to hardcoded FAMILY_ALIASES if JSON has no section.
+    if (aliases && typeof aliases === 'object') return aliases[value] ?? value;
     return FAMILY_ALIASES[value] ?? value;
 }
 
-function _normalizeFamilies(families = []) {
-    return [...new Set((Array.isArray(families) ? families : [families]).map(_normalizeFamily).filter(Boolean))];
+function _normalizeFamilies(families = [], aliases = null) {
+    return [...new Set(
+        (Array.isArray(families) ? families : [families])
+            .map((f) => _normalizeFamily(f, aliases))
+            .filter(Boolean)
+    )];
 }
 
-function _collectImagesFromBucket(bucket, families = []) {
+function _collectImagesFromBucket(bucket, families = [], aliases = null) {
     if (Array.isArray(bucket)) {
         return _asStringArray(bucket);
     }
 
     const byFamily = bucket?.byFamily ?? {};
     const anyFamily = _asStringArray(bucket?.anyFamily);
-    const normalizedFamilies = _normalizeFamilies(families);
+    const normalizedFamilies = _normalizeFamilies(families, aliases);
     if (!normalizedFamilies.length) {
         if (anyFamily.length) return anyFamily;
         const combined = [];
@@ -280,17 +291,35 @@ export async function resolveGatheringImage({ state = 'idle', biomes = [], famil
     } catch {
         return '';
     }
+
+    const aliases = (mapping?.familyAliases && typeof mapping.familyAliases === 'object' && !Array.isArray(mapping.familyAliases))
+        ? mapping.familyAliases
+        : null;
     const stateMap = mapping?.states?.[state]?.byBiome ?? {};
 
     const normalizedBiomes = [...new Set((Array.isArray(biomes) ? biomes : []).map(_normalizeBiomeKey).filter(Boolean))];
     const pool = [];
     for (const biome of normalizedBiomes) {
-        pool.push(..._collectImagesFromBucket(stateMap[biome], families));
+        pool.push(..._collectImagesFromBucket(stateMap[biome], families, aliases));
     }
     if (!pool.length) {
-        pool.push(..._collectImagesFromBucket(stateMap.any, families));
+        pool.push(..._collectImagesFromBucket(stateMap.any, families, aliases));
     }
-    if (!pool.length) return '';
+
+    if (!pool.length) {
+        if (families.length) {
+            const warnKey = `${_normalizeFamilies(families, aliases).join(',')}|${normalizedBiomes.join(',')}`;
+            if (!_warnedMissingImages.has(warnKey)) {
+                _warnedMissingImages.add(warnKey);
+                postBlacksmithConsole(
+                    MODULE.NAME,
+                    `No gathering images found for family "${families.join(', ')}" in biome(s) "${normalizedBiomes.join(', ') || 'any'}". Add entries to familyAliases and byFamily in your Gathering Ruleset JSON.`,
+                    null, true, !!game?.user?.isGM
+                );
+            }
+        }
+        return '';
+    }
 
     const pick = pool[Math.floor(Math.random() * pool.length)] ?? '';
     return _toModulePath(pick);
