@@ -63,6 +63,7 @@ export class PinsManager {
             throw new Error('Blacksmith Pins API not available');
         }
 
+        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_GATHER_SPOT, 'Gathering Spot');
         this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_COMPONENT_LOCATION, 'Component Location');
         this._pins.on('doubleClick', (evt) => this._onPinDoubleClick(evt), { moduleId: MODULE.ID });
         this._log('PinsManager: pin double-click handler registered');

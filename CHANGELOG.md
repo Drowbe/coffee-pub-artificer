@@ -8,13 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.0.15]
 
+### Added
+- **Sequential gathering spot placement:** "Populate Scene" now asks how spots should be placed before acting. **Random** places all spots immediately at scattered positions (previous behaviour). **Sequential** enters a click-to-place mode: a HUD indicator shows which spot the GM is placing and the count remaining; each left-click on the canvas assigns that position to the next spot; pressing Escape stops early. Any spots already placed in a partial session are saved; unplaced spots are discarded.
+
+### Changed
+- **"Populate Location" renamed to "Populate Scene"** in the Artificer secondary bar to better describe the action scope.
+- **`populateGatheringSpotsForScene`** refactored: node list is now built up-front and then routed to `_populateRandom` or `_populateSequential` based on the GM's choice, keeping both paths on identical node data.
+
 ### Changed
 - **Pin type registration:** Removed runtime `registerPinType` call for the legacy `gather-spot` type in `PinsManager.initialize()`. Artificer now only registers `component-location`, which matches the Blacksmith pin taxonomy (`component-location`, `habitat-location`, `skill-location`). New pins have always been created as `component-location`; the legacy type constant is retained in `PIN_TRANSITION_TYPES` for listing any transitional pins during sync.
 - **Scene config tab — duplicate injection guard:** Added a per-app-ID in-flight lock (`_injectPendingAppIds`) to `SceneManager._injectArtificerTab`. Both the `renderSceneConfig` and `renderApplicationV2` hooks route to the same inject path in Foundry v13; the lock ensures the second hook call exits immediately while the first is still awaiting `loadSkillsDetails()`, preventing the tab from being injected more than once per render.
 - **`_injectArtificerTabV2` filter:** Simplified to `appName === 'SceneConfig' || app?.document?.documentName === 'Scene'`, removing the redundant `app?.documentName` instance-getter check (which resolves identically to `app?.document?.documentName` in AppV2).
 
 ### Fixed
+- **Gather spot cap not updating after external pin deletion:** Pins deleted via right-click or Blacksmith's Manage Pins window did not remove their corresponding entries from `discoveredNodes` in scene flags, so the spot cap counted them as still occupied. Fixed by reconciling `discoveredNodes` against live pins inside `populateGatheringSpotsForScene` before checking the cap — orphaned nodes are stripped and the flags updated at the point where the cap is evaluated, regardless of what hooks did or did not fire.
+- **Ghost pin recreation after harvest with stale nodes:** When externally deleted pins left stale nodes in `discoveredNodes`, harvesting any surviving pin called `_deleteGatherPin` → `_setSceneDiscoveredNodes` with the remaining nodes → `syncScenePins` saw nodes with no live pins and recreated them. Fixed by reconciling remaining nodes against live pins inside `_deleteGatherPin` after removing the harvested node, so any stale entries are cleaned up in the same write rather than being handed back to the sync.
+- **Pin double-click harvest no longer working after 13.0.15:** Removing the `gather-spot` runtime `registerPinType` call broke Blacksmith's event dispatch for existing `gather-spot` test pins — `pins.on('doubleClick', …)` appears to require the type to be registered. Restored `registerPinType` for `gather-spot` for event-callback compatibility; new pins are still created as `component-location` (taxonomy-compliant) and `gather-spot` is not in the taxonomy JSON so it remains hidden from the Manage Pins filter.
 - **Scene config tab not appearing:** Regression introduced in 13.0.15 where over-simplifying the `_injectArtificerTabV2` filter to `app?.document?.documentName !== 'Scene'` removed the reliable `appName === 'SceneConfig'` check. In Foundry v13, `renderSceneConfig` may not fire for V2 apps, making `renderApplicationV2` the only injection path; without the class-name check the tab was never injected. Restored `appName === 'SceneConfig'` as the primary guard.
+- **Scene config Artificer tab blank on reopen when last active:** When the Artificer tab was active on save and the scene config was reopened, the tab appeared empty until switching away and back. Foundry sets `tabs.active = 'artificer'` during `_onRender` but cannot activate it (the injected tab does not exist in the DOM yet) and falls back to showing the first tab. By the time `_syncInjectedTabState` ran, the nav showed the fallback tab as active and that was used to drive `tabs.activate()`, leaving the Artificer panel hidden. Fixed by capturing `tabs.active` before `tabs.bind()` and using it as the authoritative active tab if it was `'artificer'`.
 
 
 ## [13.0.14]

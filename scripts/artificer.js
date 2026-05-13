@@ -315,8 +315,8 @@ function registerMenubarIntegration() {
     const populateGatherItemId = 'artificer-populate-spots';
     const populateGatherRegistered = blacksmith.registerSecondaryBarItem(barType, populateGatherItemId, {
         icon: 'fa-solid fa-seedling',
-        label: 'Populate Location',
-        title: 'Populate Location',
+        label: 'Populate Scene',
+        title: 'Populate Scene',
         group: 'Manage Artificer',
         order: 30,
         moduleId: MODULE.ID,

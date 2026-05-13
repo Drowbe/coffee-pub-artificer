@@ -344,6 +344,18 @@ export class SceneManager {
             ? app._tabs.filter((tabs) => !dataGroup || tabs?.group === dataGroup)
             : [];
 
+        // Capture Foundry's intended active tab BEFORE re-binding. When 'artificer' was the
+        // last active tab, Foundry sets tabs.active = 'artificer' during _onRender but can't
+        // activate it (the element isn't in the DOM yet), then falls back to showing 'basics'.
+        // After bind the DOM shows 'basics' as active, masking the original intent.
+        let preBindActive = null;
+        for (const tabs of tabControllers) {
+            if (typeof tabs?.active === 'string' && tabs.active) {
+                preBindActive = tabs.active;
+                break;
+            }
+        }
+
         // Re-bind tabs so the newly-injected tab/panel pair participates in normal tab logic.
         for (const tabs of tabControllers) {
             if (typeof tabs?.bind === 'function') {
@@ -367,6 +379,7 @@ export class SceneManager {
             const configured = tabOptions.find((tab) => (tab?.group ?? 'sheet') === dataGroup);
             if (typeof configured?.initial === 'string' && configured.initial) activeTab = configured.initial;
         }
+        if (preBindActive === 'artificer') activeTab = 'artificer';
 
         if (activeTab === 'artificer') {
             tabButton.classList.add('active');

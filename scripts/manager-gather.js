@@ -797,8 +797,26 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         return;
     }
 
-    const existing = _getSceneDiscoveredNodes(scene);
-    let remaining = Math.max(0, Number(context.gatherSpots) - existing.length);
+    // Reconcile discoveredNodes against live pins before checking the cap.
+    // Pins deleted externally (right-click, Manage Pins, etc.) may not update scene flags,
+    // so the node list can be stale. Strip orphaned nodes here so the cap is accurate.
+    const rawExisting = _getSceneDiscoveredNodes(scene);
+    const _bsPins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
+    let existing = rawExisting;
+    if (rawExisting.length && _bsPins?.list) {
+        const livePinIds = new Set(
+            PIN_TRANSITION_TYPES.flatMap((t) =>
+                (_bsPins.list({ sceneId: scene.id, moduleId: MODULE.ID, type: t }) ?? []).map((p) => String(p.id))
+            )
+        );
+        const cleaned = rawExisting.filter((n) => livePinIds.has(String(n?.id)));
+        if (cleaned.length !== rawExisting.length) {
+            await _setSceneDiscoveredNodes(scene, cleaned);
+            existing = cleaned;
+        }
+    }
+
+    const remaining = Math.max(0, Number(context.gatherSpots) - existing.length);
     if (remaining <= 0) {
         ui.notifications?.info(`"${scene.name ?? 'Scene'}" is already at gather spot cap.`);
         return;
@@ -810,13 +828,14 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
         return;
     }
 
-    const additions = [];
-    while (remaining > 0) {
+    const nodes = [];
+    let rem = remaining;
+    while (rem > 0) {
         const rec = pickOneGatherRecord(basePool);
         const family = String(rec?.family ?? '').trim();
         if (!family) break;
         const rarity = _getRecordRarity(rec);
-        additions.push({
+        nodes.push({
             id: foundry.utils.randomID(),
             sourceFamily: family,
             maxRarityRank: Math.max(1, _getRarityRank(rarity)),
@@ -825,28 +844,161 @@ export async function populateGatheringSpotsForScene(scene = canvas?.scene ?? nu
             componentTypes: [family],
             skillIds: [...context.harvestingSkills]
         });
-        remaining -= 1;
+        rem -= 1;
     }
 
-    if (!additions.length) {
+    if (!nodes.length) {
         ui.notifications?.warn('Could not populate gathering spots from current pool.');
         return;
     }
 
-    await _setSceneDiscoveredNodes(scene, [...existing, ...additions]);
-    ui.notifications?.info(`Populated ${additions.length} gathering spot(s) in "${scene.name ?? 'scene'}".`);
+    const choice = await _askPlacementMode();
+    if (!choice) return;
+
+    if (choice === 'sequential') {
+        await _populateSequential(scene, existing, nodes);
+    } else {
+        await _populateRandom(scene, existing, nodes);
+    }
+}
+
+async function _askPlacementMode() {
+    try {
+        return await foundry.applications.api.DialogV2.wait({
+            window: { title: 'Populate Scene' },
+            content: '<p>How should gathering spots be placed on the scene?</p>',
+            buttons: [
+                { action: 'random', label: 'Random', icon: 'fa-solid fa-shuffle', default: true },
+                { action: 'sequential', label: 'Sequential', icon: 'fa-solid fa-location-crosshairs' }
+            ],
+            rejectClose: false
+        });
+    } catch {
+        return null;
+    }
+}
+
+async function _populateRandom(scene, existing, nodes) {
+    await _setSceneDiscoveredNodes(scene, [...existing, ...nodes]);
+    ui.notifications?.info(`Populated ${nodes.length} gathering spot(s) in "${scene.name ?? 'scene'}".`);
     const byRarity = {};
-    for (const node of additions) {
+    for (const node of nodes) {
         const rarity = String(node?.rarity ?? 'common');
         byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
     }
     sendExploreResultCard({
         sceneName: scene.name ?? 'Current Scene',
-        discovered: additions.length,
+        discovered: nodes.length,
         byRarity,
         mode: 'populate'
     });
     _playBlacksmithSound(_gatherRt().soundPopulate);
+}
+
+async function _populateSequential(scene, existing, nodes) {
+    const view = canvas.app?.view ?? canvas.app?.renderer?.view ?? null;
+    if (!view) {
+        ui.notifications?.warn('Canvas not available for sequential placement.');
+        return;
+    }
+
+    const hud = document.createElement('div');
+    hud.id = 'artificer-placement-hud';
+    Object.assign(hud.style, {
+        position: 'fixed',
+        top: '70px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: 'rgba(15,15,15,0.9)',
+        color: '#eee',
+        padding: '8px 18px',
+        borderRadius: '5px',
+        zIndex: '9999',
+        pointerEvents: 'none',
+        fontSize: '14px',
+        textAlign: 'center',
+        border: '1px solid rgba(255,255,255,0.15)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+    });
+    document.body.appendChild(hud);
+
+    // Resolves with a canvas point on left-click; rejects with AbortError on Escape.
+    const waitForClick = () => new Promise((resolve, reject) => {
+        const off = () => {
+            view.removeEventListener('pointerdown', onPointerDown);
+            window.removeEventListener('keydown', onKeydown);
+        };
+        const onPointerDown = (event) => {
+            if (event.button !== 0) return;
+            off();
+            const point = canvas.canvasCoordinatesFromClient?.({ x: event.clientX, y: event.clientY })
+                ?? _canvasCoordsFromClient(event.clientX, event.clientY);
+            resolve(point);
+        };
+        const onKeydown = (event) => {
+            if (event.key === 'Escape') { off(); reject(new DOMException('cancelled', 'AbortError')); }
+        };
+        view.addEventListener('pointerdown', onPointerDown);
+        window.addEventListener('keydown', onKeydown);
+    });
+
+    let currentNodes = [...existing];
+    const placed = [];
+
+    try {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            const family = FAMILY_LABELS[node.sourceFamily] ?? node.sourceFamily ?? 'Spot';
+            hud.innerHTML = `<i class="fa-solid fa-map-pin"></i>&nbsp; Click to place: <strong>${family}</strong> &nbsp;(${i + 1} / ${nodes.length})&nbsp;&nbsp;<em style="opacity:0.65">— Esc to stop</em>`;
+
+            const point = await waitForClick();
+            if (!point) continue;
+
+            const placed_node = { ...node, x: Math.round(point.x), y: Math.round(point.y) };
+            placed.push(placed_node);
+            currentNodes = [...currentNodes, placed_node];
+
+            // Save the node and render its pin immediately before prompting for the next.
+            await _setSceneDiscoveredNodes(scene, currentNodes);
+            await _ensureDiscoveredNodesPinned(scene, [placed_node]);
+        }
+    } catch (err) {
+        if (err?.name !== 'AbortError') throw err;
+    } finally {
+        hud.remove();
+    }
+
+    if (!placed.length) return;
+
+    const total = nodes.length;
+    ui.notifications?.info(`Placed ${placed.length}${placed.length < total ? ` of ${total}` : ''} gathering spot(s) in "${scene.name ?? 'scene'}".`);
+    const byRarity = {};
+    for (const node of placed) {
+        const rarity = String(node?.rarity ?? 'common');
+        byRarity[rarity] = (byRarity[rarity] ?? 0) + 1;
+    }
+    sendExploreResultCard({
+        sceneName: scene.name ?? 'Current Scene',
+        discovered: placed.length,
+        byRarity,
+        mode: 'populate'
+    });
+    _playBlacksmithSound(_gatherRt().soundPopulate);
+}
+
+function _canvasCoordsFromClient(clientX, clientY) {
+    try {
+        const view = canvas.app?.view ?? canvas.app?.renderer?.view;
+        if (!view) return null;
+        const rect = view.getBoundingClientRect();
+        const { a: scaleX, d: scaleY, tx, ty } = canvas.stage.transform.worldTransform;
+        return {
+            x: (clientX - rect.left - tx) / scaleX,
+            y: (clientY - rect.top - ty) / scaleY
+        };
+    } catch {
+        return null;
+    }
 }
 
 function _getNodeByPinId(scene = canvas?.scene ?? null, pinId = null) {
@@ -1020,7 +1172,17 @@ async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
         if (sceneId) {
             const scene = game.scenes?.get?.(sceneId) ?? null;
             if (scene) {
-                const nodes = _getSceneDiscoveredNodes(scene).filter((n) => String(n.id) !== String(pinId));
+                // Remove the harvested node, then reconcile remaining against live pins so any
+                // other stale nodes (externally deleted pins) don't trigger ghost recreation.
+                let nodes = _getSceneDiscoveredNodes(scene).filter((n) => String(n.id) !== String(pinId));
+                if (nodes.length && pins?.list) {
+                    const livePinIds = new Set(
+                        PIN_TRANSITION_TYPES.flatMap((t) =>
+                            (pins.list({ sceneId, moduleId: MODULE.ID, type: t }) ?? []).map((p) => String(p.id))
+                        )
+                    );
+                    nodes = nodes.filter((n) => livePinIds.has(String(n?.id)));
+                }
                 await _setSceneDiscoveredNodes(scene, nodes);
             }
         }
