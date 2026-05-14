@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "notes": "Gathering art mapping by biome + family. familyAliases maps Artificer family names (lowercased) to byFamily bucket keys. Use anyFamily as biome fallback and byFamily for explicit family-specific picks.",
+  "version": 3,
+  "notes": "Gathering art mapping. Structure: biomes[biome][state (idle|active)][anyFamily | byFamily[family]]. familyAliases maps Artificer family names (lowercased) to byFamily bucket keys. The 'any' biome is the universal fallback when no explicit biome entry matches.",
 
   "runtimeDefaults": {
     "notes": "Optional overrides for gather pin behavior, discovery, and Blacksmith sound ids (basename, no .mp3). Omitted keys use module builtins.",
@@ -19,6 +19,25 @@
       "rare": 6,
       "very rare": 10,
       "legendary": 14
+    },
+    "pinDesign": {
+      "notes": "When overrideDefaultPinDesign is true, these values replace the Blacksmith registered design. When false, the registered design wins and these are ignored. shape options: 'circle', 'square', 'none' (icon only, no background). textLayout options: 'under' (below pin), 'over' (centered over pin), 'above' (above pin), 'right' (right of pin), 'left' (left of pin), 'arc-above' (curved above), 'arc-below' (curved below). textDisplay options: 'always', 'hover', 'never', 'gm' (GM only).",
+      "overrideDefaultPinDesign": true,
+      "shape": "none",
+      "dropShadow": true,
+      "imageFit": "contain",
+      "imageZoom": 1,
+      "textLayout": "arc-below",
+      "textDisplay": "hover",
+      "textColor": "#ffffff",
+      "textSize": 12,
+      "textMaxLength": 0,
+      "textMaxWidth": 0,
+      "textScaleWithPin": true,
+      "fill": "#0f0f0f",
+      "stroke": "#ffffff",
+      "strokeWidth": 3,
+      "iconColor": "#eaffe5"
     }
   },
 
@@ -40,329 +59,332 @@
     "creature": "creature parts"
   },
 
-  "states": {
-    "idle": {
-      "byBiome": {
+  "biomes": {
 
-        "forest": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-berries-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/herbalism-creatureparts-fur-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "grassland": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-flowers-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/herbalism-creatureparts-fur-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "mountain": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-lichen-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-charcaol-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "arctic": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-lichen-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "planar": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-flowers-02.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-gems-quartz-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "coastal": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-bush-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "swamp": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-moss-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "desert": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-roots-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-charcaol-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "underdark": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-mushrooms-01.webp"],
-            "environmental":  ["images/gathering/cartography-pile-treasure-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-gems-quartz-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "underwater": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-moss-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "urban": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-bush-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-charcaol-01.webp"],
-            "creature parts": ["images/gathering/herbalism-creatureparts-fur-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "hill": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-flowers-01.webp"],
-            "environmental":  ["images/gathering/cartography-pile-treasure-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "any": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-berries-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-charcaol-01.webp"],
-            "creature parts": ["images/gathering/herbalism-creatureparts-fur-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
+    "forest": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
         }
-
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
       }
     },
 
-    "active": {
-      "byBiome": {
-
-        "forest": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "grassland": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "mountain": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "arctic": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "planar": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "coastal": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "swamp": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-moss-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "desert": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "underdark": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/herbalism-plant-mushrooms-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-gems-quartz-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "underwater": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-water-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "urban": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-environmental-charcaol-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/cartography-pile-treasure-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "hill": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-dirt-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-rocks-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
-        },
-
-        "any": {
-          "anyFamily": [],
-          "byFamily": {
-            "plant":          ["images/gathering/cartography-pile-treasure-01.webp"],
-            "environmental":  ["images/gathering/herbalism-pile-leaves-01.webp"],
-            "creature parts": ["images/gathering/cartography-pile-treasure-01.webp"],
-            "mineral":        ["images/gathering/herbalism-minerals-ore-01.webp"],
-            "gem":            ["images/gathering/cartography-pile-treasure-01.webp"],
-            "essence":        ["images/gathering/cartography-pile-treasure-01.webp"]
-          }
+    "grassland": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
         }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
 
+    "mountain": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "arctic": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "planar": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "coastal": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "swamp": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "desert": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "underdark": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "underwater": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "urban": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "hill": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
+      }
+    },
+
+    "any": {
+      "idle": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/plant-berries-01.webp"],
+          "environmental":  ["images/gathering/environmental-charcaol-01.webp"],
+          "creature parts": ["images/gathering/creatureparts-meat-01.webp"],
+          "mineral":        ["images/gathering/minerals-rocks-01.webp"],
+          "gem":            ["images/gathering/gems-quartz-01.webp"],
+          "essence":        ["images/gathering/environmental-water-01.webp"]
+        }
+      },
+      "active": {
+        "anyFamily": ["images/gathering/pile-treasure-01.webp"],
+        "byFamily": {
+          "plant":          ["images/gathering/pile-leaves-01.webp"],
+          "environmental":  ["images/gathering/pile-leaves-01.webp"],
+          "creature parts": ["images/gathering/pile-dirt-01.webp"],
+          "mineral":        ["images/gathering/pile-dirt-01.webp"],
+          "gem":            ["images/gathering/pile-dirt-01.webp"],
+          "essence":        ["images/gathering/pile-treasure-01.webp"]
+        }
       }
     }
+
   }
 }
