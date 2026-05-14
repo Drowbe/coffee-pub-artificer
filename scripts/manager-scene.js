@@ -16,6 +16,7 @@ export class SceneManager {
     static _sockets = null;
     static _initialized = false;
     static _injectPendingAppIds = new Set();
+    static _injectingForms = new WeakSet();
 
     static async initialize() {
         if (this._initialized) return;
@@ -115,7 +116,23 @@ export class SceneManager {
             this._log('SceneManager: tab inject skipped (no tabs nav found)');
             return;
         }
-        if (tabsNav.querySelector('[data-tab="artificer"]')) return;
+
+        // Prevent concurrent injections into the same form (covers null app.id on new unsaved scenes)
+        if (this._injectingForms.has(form)) return;
+        this._injectingForms.add(form);
+        try {
+            await this._doInjectArtificerTabInner(app, form, tabsNav);
+        } finally {
+            this._injectingForms.delete(form);
+        }
+    }
+
+    static async _doInjectArtificerTabInner(app, form, tabsNav) {
+        // Remove stale injected content — in Foundry v13 ApplicationV2 the tab nav is
+        // rebuilt on every render but the tab body container persists, so the nav-button
+        // check alone allows a fresh panel to be appended on each render pass.
+        tabsNav.querySelector('[data-tab="artificer"]')?.remove();
+        form.querySelector('.tab.artificer-scene-tab[data-tab="artificer"]')?.remove();
 
         const firstTabWithGroup = tabsNav.querySelector?.('[data-group]');
         const dataGroup = firstTabWithGroup?.dataset?.group || tabsNav.dataset.group || 'sheet';

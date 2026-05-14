@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.0.16]
+
+### Fixed
+- **Artificer tab injected multiple times in Scene Config for new unsaved scenes:** Two compounding issues caused the Artificer tab content to appear duplicated (up to 4× in Foundry v13). First, for new unsaved scenes `app.id` is null, bypassing the `_injectPendingAppIds` concurrent-call guard entirely and allowing multiple async inject calls to race past the DOM check. Second, Foundry v13 ApplicationV2 rebuilds the tab nav on every render pass but preserves the tab body container, so the stale-nav-button check always passed and a new panel was appended each time. Fixed by adding a `WeakSet` mutex keyed on the `form` DOM element (always available regardless of save state) and unconditionally removing any existing injected nav button and tab panel before re-appending, making injection idempotent.
+
 ## [13.0.15]
 
 ### Added
