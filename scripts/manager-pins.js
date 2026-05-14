@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { requestGatherAndHarvestFromSceneWithOptions } from './manager-gather.js';
-import { resolveGatheringImageForScene } from './manager-gathering-images.js';
+import { resolveGatheringImageForScene, getGatherRuntimeDefaultsSync } from './manager-gathering-images.js';
 import { FAMILY_LABELS, getPinTagsForComponentFamily } from './schema-artificer-item.js';
 
 const PINS_CONTEXT = `${MODULE.ID}-pins-manager`;
@@ -14,8 +14,6 @@ const PIN_TYPE_COMPONENT_LOCATION = 'component-location';
 const PIN_TRANSITION_TYPES = Object.freeze([PIN_TYPE_GATHER_SPOT, PIN_TYPE_COMPONENT_LOCATION]);
 const PIN_CREATE_TYPE = PIN_TYPE_COMPONENT_LOCATION;
 const PIN_TEXT = 'Gathering Spot';
-const PIN_SIZE = 100;
-const PIN_DEFAULT_IMAGE = 'fa-solid fa-seedling';
 const BLACKSMITH_SOUNDS_BASE = 'modules/coffee-pub-blacksmith/sounds';
 const BLACKSMITH_MODULE_ID = 'coffee-pub-blacksmith';
 const BLACKSMITH_PINS_FLAG_KEY = 'pins';
@@ -55,18 +53,32 @@ export class PinsManager {
         if (this._initialized) return;
         this._log('PinsManager: initializing');
 
-        this._hookManager = await BlacksmithAPI.getHookManager();
         const blacksmith = await BlacksmithAPI.get();
         this._pins = blacksmith?.pins ?? null;
 
-        if (!this._pins?.isAvailable?.()) {
+        if (!this._pins) {
             throw new Error('Blacksmith Pins API not available');
         }
 
-        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_GATHER_SPOT, 'Gathering Spot');
-        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_COMPONENT_LOCATION, 'Component Location');
+        // Register the double-click handler on ALL clients — players need this to trigger gather.
         this._pins.on('doubleClick', (evt) => this._onPinDoubleClick(evt), { moduleId: MODULE.ID });
         this._log('PinsManager: pin double-click handler registered');
+
+        this._initialized = true;
+
+        if (!game.user?.isGM) {
+            this._log('PinsManager: initialized (player mode)');
+            return;
+        }
+
+        // GM-only: pin type registration, sync hooks, delete hooks.
+        if (!this._pins.isAvailable?.()) {
+            throw new Error('Blacksmith Pins API not available for GM');
+        }
+
+        this._hookManager = await BlacksmithAPI.getHookManager();
+        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_GATHER_SPOT, 'Gathering Spot');
+        this._pins.registerPinType?.(MODULE.ID, PIN_TYPE_COMPONENT_LOCATION, 'Component Location');
 
         this._hookManager.registerHook({
             name: 'canvasReady',
@@ -89,8 +101,7 @@ export class PinsManager {
         this._log('PinsManager: hook registered (updateScene)');
         this._registerPinDeleteRefreshHook();
 
-        this._initialized = true;
-        this._log('PinsManager: initialized');
+        this._log('PinsManager: initialized (GM mode)');
 
         // Initial sync when module is ready and canvas already active.
         await this.syncActiveScenePins();
@@ -190,6 +201,8 @@ export class PinsManager {
                                 strokeWidth: 3,
                                 iconColor: '#eaffe5'
                             };
+                        const _rt = getGatherRuntimeDefaultsSync();
+                        const _pd = _rt.pinDesign;
                         await this._pins.create({
                             ...defaultDesign,
                             id: nodeId,
@@ -200,13 +213,20 @@ export class PinsManager {
                             y,
                             text: this._getNodePinText(node),
                             ownership: { default: 2 },
-                            image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || PIN_DEFAULT_IMAGE,
+                            image: node?.idleImage || (await resolveGatheringImageForScene(scene, 'idle', { families: [node?.sourceFamily] })) || _rt.pinDefaultImage,
                             shape: defaultDesign.shape ?? 'none',
                             dropShadow: defaultDesign.dropShadow ?? true,
+                            imageFit: defaultDesign.imageFit ?? _pd.imageFit,
+                            imageZoom: defaultDesign.imageZoom ?? _pd.imageZoom,
                             textLayout: defaultDesign.textLayout ?? 'arc-below',
                             textDisplay: defaultDesign.textDisplay ?? 'hover',
+                            textColor: defaultDesign.textColor ?? _pd.textColor,
+                            textSize: defaultDesign.textSize ?? _pd.textSize,
+                            textMaxLength: defaultDesign.textMaxLength ?? _pd.textMaxLength,
+                            textMaxWidth: defaultDesign.textMaxWidth ?? _pd.textMaxWidth,
+                            textScaleWithPin: defaultDesign.textScaleWithPin ?? _pd.textScaleWithPin,
                             eventAnimations: PIN_EVENT_ANIMATIONS,
-                            size: defaultDesign.size ?? { w: PIN_SIZE, h: PIN_SIZE },
+                            size: defaultDesign.size ?? { w: _rt.pinSize, h: _rt.pinSize },
                             style: defaultStyle
                         }, { sceneId });
                         changed = true;
@@ -218,7 +238,7 @@ export class PinsManager {
                     }
                     // Use the node's stored idleImage if present; otherwise keep the pin's
                     // current image. Never re-call the random resolver on existing pins.
-                    const resolvedIdleImage = node?.idleImage || pin?.image || PIN_DEFAULT_IMAGE;
+                    const resolvedIdleImage = node?.idleImage || pin?.image || getGatherRuntimeDefaultsSync().pinDefaultImage;
                     if (String(pin?.image ?? '') !== String(resolvedIdleImage ?? '')) {
                         updates.image = resolvedIdleImage;
                         updates.shape = 'none';
@@ -269,16 +289,62 @@ export class PinsManager {
 
     static _registerPinDeleteRefreshHook() {
         if (this._pinDeletedHookRegistered) return;
+
+        // Single pin deleted — payload includes pinId; remove the matching node directly.
         Hooks.on('blacksmith.pins.deleted', async (payload) => {
             const moduleId = String(payload?.moduleId ?? '');
             const type = String(payload?.type ?? '');
             const sceneId = payload?.sceneId ?? null;
             if (moduleId !== MODULE.ID) return;
             if (!PIN_TRANSITION_TYPES.includes(type)) return;
-            if (!sceneId || sceneId !== canvas?.scene?.id) return;
-            await this._reloadPinsForCurrentScene(sceneId);
+            if (!sceneId) return;
+            if (game.user?.isGM) {
+                const pinId = String(payload?.pinId ?? payload?.id ?? '');
+                if (pinId) await this._removeNodeForPin(sceneId, pinId);
+            }
+            if (sceneId === canvas?.scene?.id) await this._reloadPinsForCurrentScene(sceneId);
         });
+
+        // Bulk deletes carry no per-pin IDs — reconcile via live list comparison.
+        const onBulkDelete = async (payload) => {
+            const moduleId = String(payload?.moduleId ?? '');
+            const sceneId = payload?.sceneId ?? null;
+            if (moduleId !== MODULE.ID) return;
+            if (!sceneId) return;
+            if (game.user?.isGM) await this._reconcileNodesAfterBulkDelete(sceneId);
+            if (sceneId === canvas?.scene?.id) await this._reloadPinsForCurrentScene(sceneId);
+        };
+        Hooks.on('blacksmith.pins.deletedAll', onBulkDelete);
+        Hooks.on('blacksmith.pins.deletedAllByType', onBulkDelete);
+
         this._pinDeletedHookRegistered = true;
+    }
+
+    static async _removeNodeForPin(sceneId, pinId) {
+        const scene = game.scenes?.get?.(sceneId);
+        if (!scene) return;
+        const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
+        const existing = Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY]) ? sceneFlags[DISCOVERY_NODES_FLAG_KEY] : [];
+        if (!existing.length) return;
+        const updated = existing.filter((n) => String(n?.id) !== pinId);
+        if (updated.length === existing.length) return;
+        await scene.setFlag(MODULE.ID, 'scene', { ...sceneFlags, [DISCOVERY_NODES_FLAG_KEY]: updated });
+    }
+
+    static async _reconcileNodesAfterBulkDelete(sceneId) {
+        const scene = game.scenes?.get?.(sceneId);
+        if (!scene || !this._pins?.list) return;
+        const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
+        const existing = Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY]) ? sceneFlags[DISCOVERY_NODES_FLAG_KEY] : [];
+        if (!existing.length) return;
+        const livePinIds = new Set(
+            PIN_TRANSITION_TYPES.flatMap((t) =>
+                (this._pins.list({ sceneId, moduleId: MODULE.ID, type: t }) ?? []).map((p) => String(p.id))
+            )
+        );
+        const updated = existing.filter((n) => livePinIds.has(String(n?.id)));
+        if (updated.length === existing.length) return;
+        await scene.setFlag(MODULE.ID, 'scene', { ...sceneFlags, [DISCOVERY_NODES_FLAG_KEY]: updated });
     }
 
     static _getRandomPointOnCanvas() {
@@ -288,7 +354,7 @@ export class PinsManager {
 
     static _getSpawnBounds(scene = canvas?.scene ?? null) {
         const dims = canvas?.dimensions ?? {};
-        const edgePadding = Math.max(20, Math.floor(PIN_SIZE / 2));
+        const edgePadding = Math.max(20, Math.floor(getGatherRuntimeDefaultsSync().pinSize / 2));
         const sceneX = Number(dims.sceneX);
         const sceneY = Number(dims.sceneY);
         const sceneWidth = Number(dims.sceneWidth);
@@ -343,6 +409,26 @@ export class PinsManager {
     }
 
     static _getGatherSpotDefaultDesign() {
+        const rt = getGatherRuntimeDefaultsSync();
+        const pd = rt.pinDesign;
+
+        if (pd.overrideDefaultPinDesign) {
+            return {
+                shape: pd.shape,
+                dropShadow: pd.dropShadow,
+                imageFit: pd.imageFit,
+                imageZoom: pd.imageZoom,
+                textLayout: pd.textLayout,
+                textDisplay: pd.textDisplay,
+                textColor: pd.textColor,
+                textSize: pd.textSize,
+                textMaxLength: pd.textMaxLength,
+                textMaxWidth: pd.textMaxWidth,
+                textScaleWithPin: pd.textScaleWithPin,
+                style: { fill: pd.fill, stroke: pd.stroke, strokeWidth: pd.strokeWidth, iconColor: pd.iconColor }
+            };
+        }
+
         const raw = this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_CREATE_TYPE)
             ?? this._pins?.getDefaultPinDesign?.(MODULE.ID, PIN_TYPE_GATHER_SPOT)
             ?? null;
@@ -364,14 +450,21 @@ export class PinsManager {
         if (Number.isFinite(Number(raw.textMaxLength))) out.textMaxLength = Number(raw.textMaxLength);
         if (Number.isFinite(Number(raw.textMaxWidth))) out.textMaxWidth = Number(raw.textMaxWidth);
         if (typeof raw.textScaleWithPin === 'boolean') out.textScaleWithPin = raw.textScaleWithPin;
+        if (typeof raw.imageFit === 'string') out.imageFit = raw.imageFit;
+        if (Number.isFinite(Number(raw.imageZoom))) out.imageZoom = Number(raw.imageZoom);
         return out;
     }
 
     static async _onPinDoubleClick(evt) {
         const pin = evt?.pin ?? null;
-        if (!pin) return;
-        if (pin.moduleId !== MODULE.ID) return;
-        if (!PIN_TRANSITION_TYPES.includes(pin.type ?? '')) return;
+        const clickingUserId = evt?.userId ?? null;
+        this._log(`Pin double-click received`, { pinId: pin?.id ?? '(none)', moduleId: pin?.moduleId ?? '(none)', type: pin?.type ?? '(none)', clickingUserId, myUserId: game.user?.id });
+        // pins.on fires on all clients — only the clicking user's client should process the gather.
+        if (clickingUserId && clickingUserId !== game.user?.id) return;
+        if (!pin) { this._log('Pin double-click: no pin in event, ignoring'); return; }
+        if (pin.moduleId !== MODULE.ID) { this._log(`Pin double-click: moduleId mismatch (${pin.moduleId}), ignoring`); return; }
+        if (!PIN_TRANSITION_TYPES.includes(pin.type ?? '')) { this._log(`Pin double-click: type "${pin.type}" not in transition types, ignoring`); return; }
+        this._log(`Pin double-click: launching gather for pin ${pin.id}`);
         await requestGatherAndHarvestFromSceneWithOptions({
             sourcePinId: pin.id,
             requirePinProximity: true,

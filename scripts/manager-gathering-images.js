@@ -67,6 +67,24 @@ export const BUILTIN_GATHER_RUNTIME_DEFAULTS = Object.freeze({
         rare: 6,
         'very rare': 10,
         legendary: 14
+    }),
+    pinDesign: Object.freeze({
+        overrideDefaultPinDesign: false,
+        shape: 'none',
+        dropShadow: true,
+        imageFit: 'contain',
+        imageZoom: 1,
+        textLayout: 'arc-below',
+        textDisplay: 'hover',
+        textColor: '#ffffff',
+        textSize: 12,
+        textMaxLength: 0,
+        textMaxWidth: 0,
+        textScaleWithPin: true,
+        fill: '#0f0f0f',
+        stroke: '#ffffff',
+        strokeWidth: 3,
+        iconColor: '#eaffe5'
     })
 });
 
@@ -92,6 +110,27 @@ function _mergeGatherRuntimeInternal(overrides) {
             if (Number.isFinite(n)) mergedOffsets[key] = n;
         }
     }
+    const bpd = b.pinDesign;
+    const pd = o.pinDesign && typeof o.pinDesign === 'object' && !Array.isArray(o.pinDesign) ? o.pinDesign : {};
+    const _VALID_IMAGE_FIT = ['fill', 'contain', 'cover', 'none', 'scale-down', 'zoom'];
+    const mergedPinDesign = Object.freeze({
+        overrideDefaultPinDesign: typeof pd.overrideDefaultPinDesign === 'boolean' ? pd.overrideDefaultPinDesign : bpd.overrideDefaultPinDesign,
+        shape: typeof pd.shape === 'string' && pd.shape.trim() ? pd.shape.trim() : bpd.shape,
+        dropShadow: typeof pd.dropShadow === 'boolean' ? pd.dropShadow : bpd.dropShadow,
+        imageFit: typeof pd.imageFit === 'string' && _VALID_IMAGE_FIT.includes(pd.imageFit.toLowerCase()) ? pd.imageFit.toLowerCase() : bpd.imageFit,
+        imageZoom: Number.isFinite(Number(pd.imageZoom)) ? Math.max(1, Math.min(2, Number(pd.imageZoom))) : bpd.imageZoom,
+        textLayout: typeof pd.textLayout === 'string' && pd.textLayout.trim() ? pd.textLayout.trim() : bpd.textLayout,
+        textDisplay: typeof pd.textDisplay === 'string' && pd.textDisplay.trim() ? pd.textDisplay.trim() : bpd.textDisplay,
+        textColor: typeof pd.textColor === 'string' && pd.textColor.trim() ? pd.textColor.trim() : bpd.textColor,
+        textSize: Number.isFinite(Number(pd.textSize)) && Number(pd.textSize) > 0 ? Math.floor(Number(pd.textSize)) : bpd.textSize,
+        textMaxLength: Number.isFinite(Number(pd.textMaxLength)) && Number(pd.textMaxLength) >= 0 ? Math.floor(Number(pd.textMaxLength)) : bpd.textMaxLength,
+        textMaxWidth: Number.isFinite(Number(pd.textMaxWidth)) && Number(pd.textMaxWidth) >= 0 ? Math.floor(Number(pd.textMaxWidth)) : bpd.textMaxWidth,
+        textScaleWithPin: typeof pd.textScaleWithPin === 'boolean' ? pd.textScaleWithPin : bpd.textScaleWithPin,
+        fill: typeof pd.fill === 'string' && pd.fill.trim() ? pd.fill.trim() : bpd.fill,
+        stroke: typeof pd.stroke === 'string' && pd.stroke.trim() ? pd.stroke.trim() : bpd.stroke,
+        strokeWidth: Number.isFinite(Number(pd.strokeWidth)) ? Number(pd.strokeWidth) : bpd.strokeWidth,
+        iconColor: typeof pd.iconColor === 'string' && pd.iconColor.trim() ? pd.iconColor.trim() : bpd.iconColor
+    });
     return Object.freeze({
         pinAnimationTimeoutMs: Math.max(100, Math.floor(_num(o.pinAnimationTimeoutMs, b.pinAnimationTimeoutMs))),
         discoveryMinPointSeparationPx: Math.max(1, Math.floor(_num(o.discoveryMinPointSeparationPx, b.discoveryMinPointSeparationPx))),
@@ -107,7 +146,8 @@ function _mergeGatherRuntimeInternal(overrides) {
             typeof o.soundPopulate === 'string' && o.soundPopulate.trim() ? o.soundPopulate.trim() : b.soundPopulate,
         soundClear: typeof o.soundClear === 'string' && o.soundClear.trim() ? o.soundClear.trim() : b.soundClear,
         discoveryRadiusUnits: Math.max(5, Math.floor(_num(o.discoveryRadiusUnits, b.discoveryRadiusUnits))),
-        discoveryRarityOffsets: Object.freeze(mergedOffsets)
+        discoveryRarityOffsets: Object.freeze(mergedOffsets),
+        pinDesign: mergedPinDesign
     });
 }
 
@@ -295,15 +335,15 @@ export async function resolveGatheringImage({ state = 'idle', biomes = [], famil
     const aliases = (mapping?.familyAliases && typeof mapping.familyAliases === 'object' && !Array.isArray(mapping.familyAliases))
         ? mapping.familyAliases
         : null;
-    const stateMap = mapping?.states?.[state]?.byBiome ?? {};
+    const biomeMap = mapping?.biomes ?? {};
 
     const normalizedBiomes = [...new Set((Array.isArray(biomes) ? biomes : []).map(_normalizeBiomeKey).filter(Boolean))];
     const pool = [];
     for (const biome of normalizedBiomes) {
-        pool.push(..._collectImagesFromBucket(stateMap[biome], families, aliases));
+        pool.push(..._collectImagesFromBucket(biomeMap[biome]?.[state], families, aliases));
     }
     if (!pool.length) {
-        pool.push(..._collectImagesFromBucket(stateMap.any, families, aliases));
+        pool.push(..._collectImagesFromBucket(biomeMap.any?.[state], families, aliases));
     }
 
     if (!pool.length) {

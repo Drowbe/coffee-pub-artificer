@@ -35,6 +35,7 @@ import { getChatCardPresentationFields } from './utils/helpers.js';
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
 let _pendingGather = null;
+let _gatherRequestInProgress = false;
 let _blacksmithRollHookRegistered = false;
 let _hookManager = null;
 const _gatherRollBuffers = new Map(); // requestId -> Array<{ actor: Actor|null, outcome: object }>
@@ -756,6 +757,7 @@ export async function clearGatheringSpotsForScene(scene = canvas?.scene ?? null)
         ui.notifications?.warn('No active scene.');
         return;
     }
+    _gatherRequestInProgress = false;
 
     const pins = game.modules.get('coffee-pub-blacksmith')?.api?.pins;
     const sceneId = scene.id;
@@ -1178,8 +1180,6 @@ async function _deleteGatherPin(pinId, sceneId = canvas?.scene?.id ?? null) {
         if (sceneId) {
             const scene = game.scenes?.get?.(sceneId) ?? null;
             if (scene) {
-                // Remove the harvested node, then reconcile remaining against live pins so any
-                // other stale nodes (externally deleted pins) don't trigger ghost recreation.
                 let nodes = _getSceneDiscoveredNodes(scene).filter((n) => String(n.id) !== String(pinId));
                 if (nodes.length && pins?.list) {
                     const livePinIds = new Set(
@@ -1744,6 +1744,13 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
         return;
     }
 
+    if (_gatherRequestInProgress) {
+        ui.notifications?.warn('Complete the current gathering before starting another.');
+        return;
+    }
+    _gatherRequestInProgress = true;
+    try {
+
     const sourcePinId = options?.sourcePinId ?? null;
     const requirePinProximity = !!options?.requirePinProximity;
     const maxDistanceUnits = Number.isFinite(Number(options?.maxDistanceUnits)) ? Number(options.maxDistanceUnits) : 5;
@@ -1895,5 +1902,9 @@ export async function requestGatherAndHarvestFromSceneWithOptions(options = {}) 
     } catch (error) {
         await _stopGatherPinProcessing(requestId, { restoreImage: true });
         throw error;
+    }
+
+    } finally {
+        _gatherRequestInProgress = false;
     }
 }
