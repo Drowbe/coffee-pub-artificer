@@ -238,12 +238,12 @@ async function registerMenubarIntegration() {
         groupBannerEnabled: true,
         // Earth tones — this is a gathering and crafting module. Each group sets
         // its own bannerColor; groupBannerColor is only the fallback for a group
-        // that doesn't, so a future group inherits stone rather than Blacksmith's
-        // indigo default.
-        groupBannerColor: 'rgba(53, 50, 40, 0.9)',
+        // that doesn't, so a future group inherits the sand tone rather than
+        // Blacksmith's indigo default.
+        groupBannerColor: 'rgba(120, 106, 84, 0.9)',
         groups: {
-            'Manage Artificer': { mode: 'default', order: 10, bannerColor: 'rgba(53, 50, 40, 0.9)' },
-            'Craft and Tinker': { mode: 'default', order: 20, bannerColor: 'rgba(49, 16, 16, 0.9)' },
+            'Manage Artificer': { mode: 'default', order: 10, bannerColor: 'rgba(120, 106, 84, 0.9)' },
+            'Craft and Tinker': { mode: 'default', order: 20, bannerColor: 'rgba(68, 100, 89, 0.9)' },
             'Gather and Harvest': { mode: 'default', order: 30, bannerColor: 'rgba(51, 63, 20, 0.9)' }
         }
     });
