@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [13.0.17]
 
+### Changed
+- **Secondary bar now takes the Blacksmith house size:** Removed the hardcoded `height: 42` from `registerSecondaryBarType`. Blacksmith replaced the `height` key with `size` presets (`'default'` 30px / `'large'` 45px / `'xlarge'` 60px); `height` is ignored and logs a warning. Artificer passes no `size` at all, which resolves to the 30px default matching the primary menubar. The 42 added in 13.0.14 was buying room for group banners — banners are now added on top of the bar height instead of subtracted from it, so that room is free and the bar's type no longer has to inflate to get it. Bar height is a master scale factor: every font, icon, gap, and padding inside it derives from that number via `clamp()`, so labels and icons drop from 20px to 12px and match the menubar above.
+- **Group banner colors set to earth tones:** Each group supplies its own `bannerColor` instead of inheriting Blacksmith's indigo default — Manage Artificer `rgba(120, 106, 84, 0.9)` (sand), Craft and Tinker `rgba(68, 100, 89, 0.9)` (verdigris), Gather and Harvest `rgba(51, 63, 20, 0.9)` (moss). Bar-level `groupBannerColor` set to the sand tone so any group added later inherits the palette rather than the indigo.
+- **Secondary bar icons:** Skill Mapping `fa-seedling` → `fa-list`; Request Component Roll `fa-leaf` → `fa-dice-d20`; Forage and Scavenge `fa-binoculars` → `fa-leaf`.
+- **`registerMenubarIntegration` is now async:** `registerSecondaryBarType` is an async method, so the call is awaited and the caller in `initializeModule` handles rejection via `.catch()` like the other initializers.
+- **GM-only secondary bar items use visibility functions:** `visible: game.user.isGM` → `visible: () => game.user.isGM` on all five GM-restricted items. Blacksmith re-evaluates `visible` on every render and supports functions; a bare boolean froze the value at `ready`.
+
+### Fixed
+- **Menubar tool registered into the wrong group slot:** `registerMenubarTool` was passed `groupOrder: null`. Blacksmith only derives the group's order from its name when `groupOrder` is `undefined` — `null` skipped that lookup and then hit the `if (groupOrder < 1) groupOrder = 1` clamp, registering the `utility` group at order 1 (the `combat` slot) instead of 2. The key is now omitted so the name-based default applies.
+- **Dead success guard on secondary bar registration:** `const barRegistered = blacksmith.registerSecondaryBarType(...)` captured a Promise rather than a boolean, so `if (!barRegistered)` was always false and a failed registration could never be reported. Resolved by the `await` above.
+
 ## [13.0.16]
 
 ### Fixed
