@@ -236,10 +236,15 @@ async function registerMenubarIntegration() {
         persistence: 'manual', // Stay open until user closes
         moduleId: MODULE.ID,
         groupBannerEnabled: true,
+        // Earth tones — this is a gathering and crafting module. Each group sets
+        // its own bannerColor; groupBannerColor is only the fallback for a group
+        // that doesn't, so a future group inherits stone rather than Blacksmith's
+        // indigo default.
+        groupBannerColor: 'rgba(53, 50, 40, 0.9)',
         groups: {
-            'Manage Artificer': { mode: 'default', order: 10 },
-            'Craft and Tinker': { mode: 'default', order: 20 },
-            'Gather and Harvest': { mode: 'default', order: 30 }
+            'Manage Artificer': { mode: 'default', order: 10, bannerColor: 'rgba(53, 50, 40, 0.9)' },
+            'Craft and Tinker': { mode: 'default', order: 20, bannerColor: 'rgba(49, 16, 16, 0.9)' },
+            'Gather and Harvest': { mode: 'default', order: 30, bannerColor: 'rgba(51, 63, 20, 0.9)' }
         }
     });
     
@@ -355,7 +360,7 @@ async function registerMenubarIntegration() {
     // Register secondary bar item for Roll for Components (gather) — GM only
     const gatherItemId = 'artificer-roll-components';
     const gatherRegistered = blacksmith.registerSecondaryBarItem(barType, gatherItemId, {
-        icon: 'fa-solid fa-leaf',
+        icon: 'fa-solid fa-dice-d20',
         label: 'Request Component Roll',
         title: 'Request Component Roll',
         group: 'Gather and Harvest',
@@ -371,7 +376,7 @@ async function registerMenubarIntegration() {
     // Register secondary bar item for skills window
     const skillsItemId = 'artificer-skills';
     const skillsRegistered = blacksmith.registerSecondaryBarItem(barType, skillsItemId, {
-        icon: 'fa-solid fa-seedling',
+        icon: 'fa-solid fa-list',
         label: 'Skill Mapping',
         title: 'Skill Mapping',
         group: 'Craft and Tinker',
@@ -415,7 +420,7 @@ async function registerMenubarIntegration() {
 
     const discoverGatherItemId = 'artificer-discover-spots';
     const discoverGatherRegistered = blacksmith.registerSecondaryBarItem(barType, discoverGatherItemId, {
-        icon: 'fa-solid fa-binoculars',
+        icon: 'fa-solid fa-leaf',
         label: 'Forage and Scavenge',
         title: 'Forage and Scavenge',
         group: 'Gather and Harvest',
