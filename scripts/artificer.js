@@ -201,7 +201,9 @@ function initializeModule() {
         postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Pins manager failed to initialize`, error?.message ?? String(error), true, false);
     });
     // Register menubar tool and secondary bar
-    registerMenubarIntegration();
+    registerMenubarIntegration().catch((error) => {
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Menubar integration failed to initialize`, error?.message ?? String(error), true, false);
+    });
     // Inject Artificer section into item sheets + Edit button
     registerItemSheetIntegration();
     postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Module initialized`, null, false, false);
@@ -210,7 +212,7 @@ function initializeModule() {
 /**
  * Register menubar tool and secondary bar with Blacksmith
  */
-function registerMenubarIntegration() {
+async function registerMenubarIntegration() {
     const blacksmith = getBlacksmithApi();
     
     if (!blacksmith) {
@@ -220,11 +222,17 @@ function registerMenubarIntegration() {
     
     // Register secondary bar type first
     const barType = 'artificer-crafting';
-    const barRegistered = blacksmith.registerSecondaryBarType(barType, {
+    const barRegistered = await blacksmith.registerSecondaryBarType(barType, {
         name: 'Artificer Crafting',
         title: 'Artificer Crafting Station',
         icon: 'fa-solid fa-hammer',
-        height: 42, // taller to fit group banners + button labels
+        // No size: this is a row of labelled buttons with nothing that needs the
+        // room, so it takes the house default (30px, matching the primary
+        // menubar). Sizing is a preset — 'default' | 'large' | 'xlarge' — and
+        // there is no pixel option, because bar height scales every font, icon,
+        // gap, and padding inside it. Group banners are added on top of that
+        // height rather than taken out of it, so enabling them costs us nothing
+        // in button size and is not a reason to size up.
         persistence: 'manual', // Stay open until user closes
         moduleId: MODULE.ID,
         groupBannerEnabled: true,
@@ -253,7 +261,9 @@ function registerMenubarIntegration() {
         },
         zone: "middle",
         group: "utility",
-        groupOrder: null,
+        // No groupOrder: Blacksmith derives it from the group name (utility = 2).
+        // Passing null is worse than passing nothing — it skips that lookup and
+        // then clamps to 1, landing us in the combat group's slot.
         order: 1,
         moduleId: MODULE.ID,  
         gmOnly: false,
@@ -281,7 +291,7 @@ function registerMenubarIntegration() {
         group: 'Manage Artificer',
         order: 10,
         moduleId: MODULE.ID,
-        visible: game.user.isGM,
+        visible: () => game.user.isGM,
         onClick: async function() {
             if (!game.user.isGM) return;
             // Open the item creation form
@@ -305,7 +315,7 @@ function registerMenubarIntegration() {
         group: 'Manage Artificer',
         order: 20,
         moduleId: MODULE.ID,
-        visible: game.user.isGM,
+        visible: () => game.user.isGM,
         onClick: async function() {
             if (!game.user.isGM) return;
             await openArtificerWindow(() => new ArtificerRecipeImportWindow(), { windowLabel: 'Import Recipes' });
@@ -320,7 +330,7 @@ function registerMenubarIntegration() {
         group: 'Manage Artificer',
         order: 30,
         moduleId: MODULE.ID,
-        visible: game.user.isGM,
+        visible: () => game.user.isGM,
         onClick: async function() {
             if (!game.user.isGM) return;
             await populateGatheringSpotsForScene(canvas?.scene ?? null);
@@ -335,7 +345,7 @@ function registerMenubarIntegration() {
         group: 'Manage Artificer',
         order: 40,
         moduleId: MODULE.ID,
-        visible: game.user.isGM,
+        visible: () => game.user.isGM,
         onClick: async function() {
             if (!game.user.isGM) return;
             await clearGatheringSpotsForScene(canvas?.scene ?? null);
@@ -351,7 +361,7 @@ function registerMenubarIntegration() {
         group: 'Gather and Harvest',
         order: 10,
         moduleId: MODULE.ID,
-        visible: game.user.isGM,
+        visible: () => game.user.isGM,
         onClick: async function() {
             if (!game.user.isGM) return;
             await openArtificerWindow(() => new GatherWindow(), { requireToken: true, windowLabel: 'Roll for Components' });
