@@ -5,6 +5,7 @@
 // -- Import MODULE variables --
 import { MODULE } from './const.js';
 import { DEFAULT_TRANSLATION_ITEM_PATH } from './config-rulesets.js';
+import { getBlacksmithApi } from './utils/blacksmith-console.js';
 
 
 // ================================================================== 
@@ -61,23 +62,15 @@ function getJournalChoices() {
 }
 
 /**
- * Get compendium choices for dropdowns (Item packs)
+ * Get compendium choices for dropdowns (Item packs).
+ *
+ * Uses Blacksmith's getAllChoices() rather than getChoices(): these settings ask the
+ * GM to nominate a pack for Artificer's own use, not to follow Blacksmith's search
+ * mapping. getChoices() would hide packs the GM deliberately kept out of that mapping.
  * @returns {Object} Object mapping compendium IDs to display labels
  */
 function getCompendiumChoices() {
-    const choices = { "none": "-- None --" };
-    
-    // Get all Item compendiums
-    const itemPacks = game.packs.filter(pack => pack.documentName === 'Item');
-    
-    for (const pack of itemPacks) {
-        // Create readable label: "Package: Compendium Name"
-        const packageLabel = pack.metadata.packageLabel || pack.metadata.package || pack.metadata.packageName || "Unknown";
-        const label = `${packageLabel}: ${pack.metadata.label}`;
-        choices[pack.metadata.id] = label;
-    }
-    
-    return choices;
+    return getBlacksmithApi().compendiums.getAllChoices('Item');
 }
 
 /**
@@ -95,19 +88,37 @@ function getJournalFolderChoices() {
 }
 
 /**
- * Get JournalEntry compendium choices (packs containing journals)
+ * Get JournalEntry compendium choices (packs containing journals).
+ *
+ * See getCompendiumChoices() for why this is getAllChoices() and not getChoices().
+ * The distinction bites hardest here: Blacksmith's search mapping applies an
+ * isPrimaryJournalCompendium() heuristic that a module's data-store journal pack
+ * is not guaranteed to survive.
  * @returns {Object} Object mapping compendium id to display label
  */
 function getJournalCompendiumChoices() {
-    const choices = { "none": "-- None --" };
-    if (!game.packs) return choices;
-    const journalPacks = game.packs.filter(pack => pack.documentName === 'JournalEntry');
-    for (const pack of journalPacks) {
-        const packageLabel = pack.metadata.packageLabel || pack.metadata.package || pack.metadata.packageName || "Unknown";
-        const label = `${packageLabel}: ${pack.metadata.label}`;
-        choices[pack.metadata.id] = label;
-    }
-    return choices;
+    return getBlacksmithApi().compendiums.getAllChoices('JournalEntry');
+}
+
+/**
+ * Artificer's own shipped packs, pre-mapped so a fresh world crafts out of the box.
+ * The enhanced variants are opt-in and are deliberately not defaulted.
+ */
+const DEFAULT_RECIPE_PACKS = [`${MODULE.ID}.recipes-blueprints`];
+const DEFAULT_INGREDIENT_PACKS = [
+    `${MODULE.ID}.components`,
+    `${MODULE.ID}.creations`,
+    `${MODULE.ID}.tools`
+];
+
+/**
+ * Default for priority slot i (1-based), falling back to 'none' past the shipped packs.
+ * @param {string[]} defaults
+ * @param {number} i
+ * @returns {string}
+ */
+function slotDefault(defaults, i) {
+    return defaults[i - 1] ?? 'none';
 }
 
 /**
@@ -125,7 +136,7 @@ function registerRecipeCompendiumSettings() {
             hint: `Journal compendium ${i} (journals in this pack are loaded as recipe sources).`,
             scope: 'world',
             config: true,
-            default: 'none',
+            default: slotDefault(DEFAULT_RECIPE_PACKS, i),
             type: String,
             choices,
             requiresReload: true,
@@ -138,7 +149,7 @@ function registerRecipeCompendiumSettings() {
  * Register ingredient compendium priority settings
  * @param {number} numCompendiums - Number of priority slots to register
  */
-function registerIngredientCompendiumSettings(numCompendiums = 1) {
+function registerIngredientCompendiumSettings(numCompendiums = DEFAULT_INGREDIENT_PACKS.length) {
     const choices = getCompendiumChoices();
     
     // Register priority settings
@@ -155,7 +166,7 @@ function registerIngredientCompendiumSettings(numCompendiums = 1) {
             hint: null,
             scope: 'world',
             config: true,
-            default: 'none',
+            default: slotDefault(DEFAULT_INGREDIENT_PACKS, i),
             type: String,
             choices: choices,
             group: WORKFLOW_GROUPS.COMMON_SETTINGS
@@ -259,7 +270,8 @@ export const registerSettings = () => {
         hint: MODULE.ID + '.numRecipeCompendiums-Hint',
         scope: 'world',
         config: true,
-        default: 0,
+        // Defaults to Artificer's own recipes-blueprints pack (see DEFAULT_RECIPE_PACKS).
+        default: DEFAULT_RECIPE_PACKS.length,
         type: Number,
         range: { min: 0, max: 10, step: 1 },
         requiresReload: true,
@@ -360,7 +372,8 @@ export const registerSettings = () => {
         hint: MODULE.ID + '.numIngredientCompendiums-Hint',
         scope: 'world',
         config: true,
-        default: 1,
+        // Defaults to Artificer's own non-enhanced packs (see DEFAULT_INGREDIENT_PACKS).
+        default: DEFAULT_INGREDIENT_PACKS.length,
         type: Number,
         range: { min: 0, max: 30, step: 1 },
         requiresReload: true,
@@ -368,13 +381,11 @@ export const registerSettings = () => {
 	});
 
     // Register ingredient compendium priority settings
-    // Use default of 1 for initial registration (user can increase and reload)
-    let numCompendiums = 1;
+    let numCompendiums = DEFAULT_INGREDIENT_PACKS.length;
     try {
-        numCompendiums = game.settings.get(MODULE.ID, 'numIngredientCompendiums') ?? 1;
+        numCompendiums = game.settings.get(MODULE.ID, 'numIngredientCompendiums') ?? numCompendiums;
     } catch (error) {
-        // Setting not accessible yet (first load), use default
-        numCompendiums = 1;
+        // Setting not accessible yet (first load), use the shipped-pack count
     }
     registerIngredientCompendiumSettings(numCompendiums);
 
