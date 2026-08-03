@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [13.0.18]
+
+### Changed
+- **Compendium dropdowns now come from the Blacksmith API:** `getCompendiumChoices()` and `getJournalCompendiumChoices()` in `settings.js` were hand-rolled `game.packs.filter(...)` loops that each composed their own `"Package: Label"` display string via a private `packageLabel || package || packageName || "Unknown"` fallback chain. Both are now single calls to `api.compendiums.getAllChoices('Item')` and `getAllChoices('JournalEntry')`, removing ~30 lines and the label logic that could silently diverge from Blacksmith's `getPackPackageLabel()`. Pack IDs, the `none` sentinel, and the `-- None --` label are identical, so existing world settings resolve unchanged; the only visible difference is that entries now arrive sorted by package then pack name instead of in raw `game.packs` order.
+- **`getAllChoices()`, not `getChoices()`:** These settings ask the GM to point Artificer at a specific pack for its own use — they are not meant to follow Blacksmith's search mapping. `getChoices()` returns only packs the GM nominated for name resolution, narrowed further by the enabled-source checkboxes and by content heuristics (a `JournalEntry` pack must pass `isPrimaryJournalCompendium()`). A recipe or ingredient pack deliberately kept out of the search mapping is exactly the pack a GM would want to select here, and `getChoices()` is structurally unable to offer it.
+- **No availability guard on the API call:** Blacksmith is a hard `requires` relationship in `module.json` and publishes `module.api.compendiums` during `init`; `registerSettings()` runs at `ready`. There is no window in which the API is absent while Artificer is active, so no fallback path is carried.
+
+### Added
+- **Artificer's own packs are mapped by default:** A fresh world previously shipped with `numRecipeCompendiums: 0` — meaning no recipe compendium dropdowns were registered at all until the GM raised the count and reloaded — and `numIngredientCompendiums: 1` pointing at `none`. Artificer now crafts out of the box: `recipeCompendium1` defaults to `coffee-pub-artificer.recipes-blueprints`, and ingredient priorities 1–3 default to `coffee-pub-artificer.components`, `.creations`, and `.tools`. The enhanced pack variants remain opt-in, and `user-guide` is not mapped as a recipe source — it is documentation, and loading it would put doc pages through the recipe parser.
+- **Slot defaults derived from the pack list:** `DEFAULT_RECIPE_PACKS` and `DEFAULT_INGREDIENT_PACKS` drive both the slot-count defaults (`default: DEFAULT_INGREDIENT_PACKS.length`) and each slot's individual default via `slotDefault(defaults, i)`, so the count and the mapping cannot drift apart when a pack is added. Raising the count past the number of shipped packs still yields `none` for the extra slots.
+
+### Notes
+- Defaults only apply where a world has never saved a value. Existing worlds keep their current compendium settings and are unaffected.
+- Requires the Blacksmith release that introduces `api.compendiums.getAllPacks()` / `getAllChoices()`. Building against an earlier Blacksmith throws during settings registration.
+
 ## [13.0.17]
 
 ### Changed
