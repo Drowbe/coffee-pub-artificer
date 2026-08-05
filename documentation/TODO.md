@@ -4,6 +4,14 @@
 
 ## Current Focus
 
+### CRITICAL — Migrate Windows to the Blacksmith Window API
+- [ ] Replace Artificer's direct `HandlebarsApplicationMixin(ApplicationV2)` window implementations with the appropriate Blacksmith public base: `api.BlacksmithWindowBaseV2` for full editors/forms and `api.BlacksmithToolWindowBaseV2` only for lightweight persistent canvas tools. Do not deep-link Blacksmith implementation files; resolve the bases through `game.modules.get('coffee-pub-blacksmith').api`. Reference: [Blacksmith Window API](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window).
+- [ ] Audit and migrate every current window: Crafting, Recipe Browser, Skills, Gather, Artificer Item, Recipe Import, and the experimental Crafting panel; document which base and zone layout each one uses.
+- [ ] Register stable window IDs through `api.registerWindow()` for windows opened by Blacksmith bars, macros, or other modules, and route those callers through `api.openWindow()`; retain direct construction only where the Window API explicitly recommends it for ephemeral/multi-instance tools.
+- [ ] Refactor window templates onto Blacksmith's zone contract (option bar, header, tools, body, action bar) while preserving existing actions, forms, scrolling, sizing, remembered positions, and singleton/multi-instance behavior.
+- [ ] Replace Artificer's hardcoded dark window surfaces and field colors with the applicable Blacksmith window variables. For Tool windows, use the `--blacksmith-tool-*` field/content-surface family and verify fields, placeholders, focus rings, open dropdown options, sticky content, hover/selection states, and muted text under Light, Dark, and Glass themes.
+- [ ] Add migration verification for opening every window from each supported entry point, closing/reopening, minimizing, resizing, position persistence, form submission, keyboard/focus behavior, and theme switching.
+
 ### Gather / Pins Reliability
 - [ ] Eliminate the player-driven gather/discovery completion race around request-roll message context and GM-side resolution.
 - [ ] Verify gather-node consume/delete behavior across GM and player clients after harvest success and failure.
