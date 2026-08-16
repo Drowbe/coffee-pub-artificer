@@ -30,7 +30,7 @@ import {
 } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 import { getGatherRuntimeDefaultsSync, resolveGatheringImageForScene } from './manager-gathering-images.js';
-import { buildItemRows, buildPerkParts, plainText, postArtificerCard } from './utils/chat-cards.js';
+import { buildItemRows, buildPerkParts, postArtificerCard } from './utils/chat-cards.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
@@ -329,19 +329,18 @@ async function sendExploreResultCard({
     mode = 'explore'
 } = {}) {
     const title = mode === 'populate' ? 'Populate Gathering Spots' : 'Explore the Area';
-    const scene = plainText(sceneName);
     const parts = [{ part: 'header', icon: 'fa-solid fa-magnifying-glass-location', title }];
     if (discovered > 0) {
         const rarityTiles = Object.entries(byRarity ?? {}).map(([rarity, count]) => ({ label: rarity, value: String(count) }));
         parts.push({ part: 'band', text: `${discovered} gathering spot${discovered === 1 ? '' : 's'} discovered`, tone: 'positive' });
         if (rarityTiles.length) parts.push({ part: 'tiles', items: rarityTiles });
         parts.push({ part: 'prose', blocks: [
-            { type: 'paragraph', text: `The spots were found in **${scene}**. Move to one and double-click it to gather and harvest.` }
+            { type: 'paragraph', text: ['The spots were found in ', { literal: sceneName }, '. Move to one and double-click it to gather and harvest.'] }
         ] });
     } else {
         parts.push({ part: 'band', text: 'Nothing discovered', tone: 'negative' });
         parts.push({ part: 'prose', blocks: [
-            { type: 'paragraph', text: `No gathering spots were discovered in **${scene}**. Try exploring again, changing habitats/component types, or increasing support through perks.` }
+            { type: 'paragraph', text: ['No gathering spots were discovered in ', { literal: sceneName }, '. Try exploring again, changing habitats/component types, or increasing support through perks.'] }
         ] });
     }
     await postArtificerCard({ type: 'explore-result', parts });
@@ -357,9 +356,15 @@ async function sendExploreResultCard({
  * @param {string[]} [perkNames] - Perk title(s) that granted the consolation (e.g. ["Gentle Hand of the Grove"])
  */
 export async function sendGatherConsolationCard(actor = null, items = [], perkNames = []) {
-    const actorPossessive = plainText(actor?.name ? `${actor.name}'s` : 'their');
-    const perkText = plainText(perkNames?.length ? perkNames.join(', ') : 'your perk');
-    const introParagraph = `Your roll **failed**, but thanks to **${perkText}** you still got something. These items have been added to **${actorPossessive}** inventory:`;
+    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
+    const perkText = perkNames?.length ? perkNames.join(', ') : 'your perk';
+    const introParagraph = [
+        'Your roll **failed**, but thanks to ',
+        { literal: perkText },
+        ' you still got something. These items have been added to ',
+        { literal: actorPossessive },
+        ' inventory:'
+    ];
     const consolationPerks = perkNames.map((p) => ({
         perkTitle: p,
         benefitTitle: '',
@@ -380,7 +385,7 @@ export async function sendGatherFailureCard(actor = null, reason = null) {
             { part: 'header', icon: 'fa-solid fa-leaf', title: GATHER_CARD_TITLE },
             { part: 'band', text: 'Nothing found', tone: 'negative' },
             { part: 'prose', blocks: [
-                { type: 'paragraph', text: plainText(reason) || 'You didn\'t find anything.' }
+                { type: 'paragraph', text: reason ? { literal: reason } : "You didn't find anything." }
             ] }
         ]
     });
@@ -410,12 +415,12 @@ export async function sendGatherNoPoolCard(actor = null) {
  * @param {Actor|null} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
  * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied (for success) or consolation perk(s) for display
- * @param {{ introParagraph?: string }} [options] - Optional intro text (card marks, not HTML). When set (e.g. consolation), used instead of default "Foraging has paid off..."
+ * @param {{ introParagraph?: string|Array }} [options] - Optional intro text: a string of card marks, or literal segments. When set (e.g. consolation), used instead of default "Foraging has paid off..."
  */
 export async function sendGatherSuccessCard(actor = null, items = [], appliedPerks = [], options = {}) {
-    const actorPossessive = plainText(actor?.name ? `${actor.name}'s` : 'their');
+    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
     const introParagraph = options.introParagraph
-        ?? `Foraging has paid off. These items have been added to **${actorPossessive}** inventory:`;
+        ?? ['Foraging has paid off. These items have been added to ', { literal: actorPossessive }, ' inventory:'];
 
     const parts = [
         { part: 'header', icon: 'fa-solid fa-leaf', title: GATHER_CARD_TITLE },
@@ -1007,7 +1012,9 @@ async function _notifyGMSceneGatherNotConfigured(scene) {
             whisper: gmRecipients,
             parts: [
                 { part: 'header', icon: 'fa-solid fa-triangle-exclamation', title: 'Gathering Not Configured' },
-                { part: 'prose', blocks: [{ type: 'paragraph', text: plainText(gmMessage) }] }
+                { part: 'prose', blocks: [{ type: 'paragraph', text: [
+                    'Artificer gathering is not configured for "', { literal: sceneName }, '". Configure Artificer Scene settings (Habitats, Component Types, and Gather Spots).'
+                ] }] }
             ]
         });
     } catch {

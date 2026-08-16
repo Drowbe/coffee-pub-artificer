@@ -47,7 +47,8 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 
 ### Blacksmith Chat Cards API Collaboration
 - [x] Migrated every Artificer chat card to `chatCards.post` parts (gather success/consolation/failure/empty, explore/populate, craft result, GM "not configured" whisper). No card HTML, theme class, or local card CSS remains in this module.
-- [ ] Ask Blacksmith for a way to pass consumer text that must NOT be read as inline marks. Item, actor, and perk names are interpolated into `prose` paragraphs and `rows` labels, and `processText` applies `**bold**` / `*italic*` after escaping with no escape hatch, so a name containing an asterisk breaks the rest of the sentence. Artificer currently strips `*` in `scripts/utils/chat-cards.js` (`plainText`), which mangles the name rather than rendering it. A literal-text wrapper (or a documented escape) would remove the workaround.
+- [x] Asked Blacksmith for literal text; they shipped `{ literal }` plus array segments (2026-08-15). Artificer now passes every item, actor, scene and perk name as a literal segment and `plainText()` is deleted.
+- [ ] Report to Blacksmith: the `rows` uuid path still interpolates the label into `@UUID[...]{...}` before enriching, and `escapeHtml` does not escape `}`. An item name containing `}` closes the link early and the remainder reaches the enricher — the same class of hole `{ literal }` just closed, on the one text path that bypasses `processText`.
 
 ### Content / Pack Data Integrity
 Measured 2026-08-07 against the `burden-of-knowledge` world and the shipped packs.

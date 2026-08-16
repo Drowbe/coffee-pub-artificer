@@ -19,17 +19,6 @@ export function getChatCardsApi() {
 }
 
 /**
- * Neutralise inline-mark characters in consumer text (item, actor and perk names).
- * Card text fields read `**bold**` and `*italic*`, so a stray asterisk in a name
- * would otherwise swallow the rest of the sentence.
- * @param {unknown} value
- * @returns {string}
- */
-export function plainText(value) {
-    return String(value ?? '').replace(/\*/g, '');
-}
-
-/**
  * Post an Artificer chat card.
  * @param {object} options
  * @param {string} options.type - Artificer card type id, stored on the message.
@@ -55,14 +44,17 @@ export async function postArtificerCard({ type, parts, actor = null, whisper = n
 }
 
 /**
- * `rows` items for a list of items granted to an actor. Supplying `uuid` makes
- * Blacksmith render a real document link, so nothing is escaped or linked here.
+ * `rows` items for a list of items granted to an actor.
+ *
+ * With a `uuid` the label is the display text of a document link, which Blacksmith
+ * escapes itself; without one it is ordinary consumer text and goes through the
+ * full pipeline, so the name travels as a literal.
  * @param {Array<{ name?: string, uuid?: string, img?: string }>} items
  * @returns {Array<object>}
  */
 export function buildItemRows(items = []) {
     return (items ?? []).map((item) => ({
-        label: item?.name ?? '',
+        label: item?.uuid ? (item?.name ?? '') : { literal: item?.name ?? '' },
         ...(item?.img ? { img: item.img } : {}),
         ...(item?.uuid ? { uuid: item.uuid } : {})
     }));
@@ -86,8 +78,8 @@ export function buildPerkParts({ icon, perks = [], emptyText, label = 'Perks App
             plain: true,
             items: perks.map((perk) => ({
                 icon,
-                label: plainText(perk?.label),
-                ...(perk?.sublabel ? { sublabel: plainText(perk.sublabel) } : {})
+                label: { literal: perk?.label ?? '' },
+                ...(perk?.sublabel ? { sublabel: { literal: perk.sublabel } } : {})
             }))
         });
     } else {

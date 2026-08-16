@@ -12,6 +12,23 @@ export function getBlacksmithApi() {
 }
 
 /**
+ * Is Blacksmith's global debug mode on?
+ *
+ * `postConsoleAndNotification(..., blnDebug: true, ...)` already suppresses debug
+ * lines when this is off, so callers only need this to skip BUILDING a diagnostic
+ * that costs something to produce.
+ * @returns {boolean}
+ */
+export function isBlacksmithDebugOn() {
+    try {
+        return !!game?.settings?.get(BLACKSMITH_MODULE_ID, 'globalDebugMode');
+    } catch {
+        // Setting not registered yet (early init) or Blacksmith absent.
+        return false;
+    }
+}
+
+/**
  * @param {string} moduleShortName
  * @param {string} message
  * @param {unknown} [result]
