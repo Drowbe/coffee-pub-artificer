@@ -30,7 +30,7 @@ import {
 } from './skills-rules.js';
 import { getFromCache } from './cache/cache-items.js';
 import { getGatherRuntimeDefaultsSync, resolveGatheringImageForScene } from './manager-gathering-images.js';
-import { getChatCardPresentationFields } from './utils/helpers.js';
+import { buildItemRows, buildPerkParts, plainText, postArtificerCard } from './utils/chat-cards.js';
 
 /** @typedef {{ dc: number, biomes: string[], componentTypes: string[], skillIds?: string[], sourcePinId?: string|null, sourceSceneId?: string|null, sourceFamily?: string|null, maxRarityRank?: number|null }} PendingGather */
 
@@ -293,22 +293,8 @@ export async function addGatherItemToActor(actor, item) {
     return addCraftedItemToActor(actor, data);
 }
 
-/**
- * Build HTML for a simple chat card (Blacksmith-style if API available).
- * @param {string} title - Card title
- * @param {string} bodyHtml - Body content (safe HTML)
- * @param {'card'|'announcement'} [themeType] - Prefer card or announcement theme
- * @returns {string}
- */
-function buildChatCardHtml(title, bodyHtml, themeType = 'card') {
-    const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
-    const themeClassName = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
-    if (chatCardsAPI?.getAnnouncementThemeChoices && themeType === 'announcement') {
-        const ann = chatCardsAPI.getTheme('announcement-green');
-        if (ann) return `<div class="blacksmith-card ${ann.className}"><div class="card-header">${title}</div><div class="section-content">${bodyHtml}</div></div>`;
-    }
-    return `<div class="blacksmith-card ${themeClassName}"><div class="card-header">${title}</div><div class="section-content">${bodyHtml}</div></div>`;
-}
+/** Title shared by every gather chat card. */
+const GATHER_CARD_TITLE = 'Forage for components';
 
 async function _playBlacksmithSound(soundName) {
     const sound = String(soundName ?? '').trim();
@@ -336,44 +322,44 @@ function _resolveBlacksmithSoundPath(sound) {
     return `modules/coffee-pub-blacksmith/sounds/${sound}.mp3`;
 }
 
-function sendExploreResultCard({
+async function sendExploreResultCard({
     sceneName = 'Current Scene',
     discovered = 0,
     byRarity = {},
     mode = 'explore'
 } = {}) {
     const title = mode === 'populate' ? 'Populate Gathering Spots' : 'Explore the Area';
-    const raritySummary = Object.entries(byRarity ?? {})
-        .map(([rarity, count]) => `${count} ${rarity}`)
-        .join(', ');
-    const body = discovered > 0
-        ? `<p><strong>${discovered}</strong> gathering spot(s) were discovered in <strong>${sceneName}</strong>${raritySummary ? `: ${raritySummary}` : ''}.</p><p>Next step: move to a spot and double-click it to gather and harvest.</p>`
-        : `<p>No gathering spots were discovered in <strong>${sceneName}</strong>.</p><p>Try exploring again, changing habitats/component types, or increasing support through perks.</p>`;
-    const html = buildChatCardHtml(title, body, 'card');
-    ChatMessage.create({
-        content: html,
-        speaker: ChatMessage.getSpeaker(),
-        ...getChatCardPresentationFields()
-    });
+    const scene = plainText(sceneName);
+    const parts = [{ part: 'header', icon: 'fa-solid fa-magnifying-glass-location', title }];
+    if (discovered > 0) {
+        const rarityTiles = Object.entries(byRarity ?? {}).map(([rarity, count]) => ({ label: rarity, value: String(count) }));
+        parts.push({ part: 'band', text: `${discovered} gathering spot${discovered === 1 ? '' : 's'} discovered`, tone: 'positive' });
+        if (rarityTiles.length) parts.push({ part: 'tiles', items: rarityTiles });
+        parts.push({ part: 'prose', blocks: [
+            { type: 'paragraph', text: `The spots were found in **${scene}**. Move to one and double-click it to gather and harvest.` }
+        ] });
+    } else {
+        parts.push({ part: 'band', text: 'Nothing discovered', tone: 'negative' });
+        parts.push({ part: 'prose', blocks: [
+            { type: 'paragraph', text: `No gathering spots were discovered in **${scene}**. Try exploring again, changing habitats/component types, or increasing support through perks.` }
+        ] });
+    }
+    await postArtificerCard({ type: 'explore-result', parts });
     const rt = _gatherRt();
     _playBlacksmithSound(discovered > 0 ? rt.soundExploreSuccess : rt.soundExploreFail);
 }
 
 /**
  * Send gather result when the roll failed but a perk granted consolation item(s).
- * Uses the same card-results-gather.hbs template with a custom intro paragraph.
+ * Same composition as the success card, with a custom intro paragraph.
  * @param {Actor|null} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Consolation item(s) granted
  * @param {string[]} [perkNames] - Perk title(s) that granted the consolation (e.g. ["Gentle Hand of the Grove"])
  */
 export async function sendGatherConsolationCard(actor = null, items = [], perkNames = []) {
-    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
-    const escapeHtml = (s) => {
-        if (s == null) return '';
-        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    };
-    const perkText = perkNames?.length ? perkNames.join(', ') : 'your perk';
-    const introParagraph = `Your roll <strong>failed</strong>, but thanks to <strong>${escapeHtml(perkText)}</strong> you still got something. These items have been added to <strong>${escapeHtml(actorPossessive)}</strong> inventory:`;
+    const actorPossessive = plainText(actor?.name ? `${actor.name}'s` : 'their');
+    const perkText = plainText(perkNames?.length ? perkNames.join(', ') : 'your perk');
+    const introParagraph = `Your roll **failed**, but thanks to **${perkText}** you still got something. These items have been added to **${actorPossessive}** inventory:`;
     const consolationPerks = perkNames.map((p) => ({
         perkTitle: p,
         benefitTitle: '',
@@ -386,15 +372,17 @@ export async function sendGatherConsolationCard(actor = null, items = [], perkNa
  * Send "You didn't find anything" chat card (failed roll or no actor).
  * @param {Actor} [actor] - Optional actor (for speaker)
  */
-export function sendGatherFailureCard(actor = null, reason = null) {
-    const title = 'Forage for components';
-    const body = `<p>${reason || 'You didn\'t find anything.'}</p>`;
-    const html = buildChatCardHtml(title, body, 'card');
-    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-    ChatMessage.create({
-        content: html,
-        speaker,
-        ...getChatCardPresentationFields()
+export async function sendGatherFailureCard(actor = null, reason = null) {
+    await postArtificerCard({
+        type: 'gather-failure',
+        actor,
+        parts: [
+            { part: 'header', icon: 'fa-solid fa-leaf', title: GATHER_CARD_TITLE },
+            { part: 'band', text: 'Nothing found', tone: 'negative' },
+            { part: 'prose', blocks: [
+                { type: 'paragraph', text: plainText(reason) || 'You didn\'t find anything.' }
+            ] }
+        ]
     });
 }
 
@@ -402,68 +390,55 @@ export function sendGatherFailureCard(actor = null, reason = null) {
  * Send "You searched but found no matching components here." (roll succeeded but pool empty).
  * @param {Actor} [actor] - Optional actor (for speaker)
  */
-export function sendGatherNoPoolCard(actor = null) {
-    const title = 'Forage for components';
-    const body = '<p>You searched the area but found no components of the types you were looking for here.</p>';
-    const html = buildChatCardHtml(title, body, 'card');
-    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-    ChatMessage.create({
-        content: html,
-        speaker,
-        ...getChatCardPresentationFields()
+export async function sendGatherNoPoolCard(actor = null) {
+    await postArtificerCard({
+        type: 'gather-empty',
+        actor,
+        parts: [
+            { part: 'header', icon: 'fa-solid fa-leaf', title: GATHER_CARD_TITLE },
+            { part: 'band', text: 'Nothing found', tone: 'negative' },
+            { part: 'prose', blocks: [
+                { type: 'paragraph', text: 'You searched the area but found no components of the types you were looking for here.' }
+            ] }
+        ]
     });
 }
 
 /**
- * Send gather result chat card using card-results-gather.hbs (success or consolation).
- * Same template and layout; only the intro paragraph and optional perks list differ.
+ * Send the gather result chat card (success or consolation).
+ * Same composition; only the intro paragraph and optional perks list differ.
  * @param {Actor|null} [actor]
  * @param {Array<{ name: string, uuid: string, img?: string }>} items - Items added (name, uuid, img for display)
  * @param {Array<{ perkTitle: string, benefitTitle: string, description: string }>} [appliedPerks] - Perks that applied (for success) or consolation perk(s) for display
- * @param {{ introParagraph?: string }} [options] - Optional intro HTML. When set (e.g. consolation), used instead of default "Foraging has paid off..."
+ * @param {{ introParagraph?: string }} [options] - Optional intro text (card marks, not HTML). When set (e.g. consolation), used instead of default "Foraging has paid off..."
  */
 export async function sendGatherSuccessCard(actor = null, items = [], appliedPerks = [], options = {}) {
-    const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
-    const cardTheme = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
+    const actorPossessive = plainText(actor?.name ? `${actor.name}'s` : 'their');
+    const introParagraph = options.introParagraph
+        ?? `Foraging has paid off. These items have been added to **${actorPossessive}** inventory:`;
 
-    const escapeHtml = (s) => {
-        if (s == null) return '';
-        const str = String(s);
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    };
+    const parts = [
+        { part: 'header', icon: 'fa-solid fa-leaf', title: GATHER_CARD_TITLE },
+        { part: 'section', icon: 'fa-solid fa-leafy-green', label: 'Results' },
+        { part: 'prose', blocks: [{ type: 'paragraph', text: introParagraph }] }
+    ];
 
-    const itemsData = items?.length
-        ? items.map((it) => {
-            const name = it.name ?? '';
-            const uuid = it.uuid ?? '';
-            const img = it.img ?? '';
-            const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(name)}}` : escapeHtml(name);
-            return { img: img || null, link };
-        })
-        : [];
+    if (items?.length) {
+        parts.push({ part: 'rows', items: buildItemRows(items) });
+    } else {
+        parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: 'Nothing was recovered.' }] });
+    }
 
-    const actorPossessive = actor?.name ? `${actor.name}'s` : 'their';
+    parts.push(...buildPerkParts({
+        icon: 'fa-solid fa-seedling',
+        perks: (appliedPerks ?? []).map((perk) => ({
+            label: [perk?.perkTitle, perk?.benefitTitle].filter(Boolean).join(' '),
+            sublabel: perk?.description ?? ''
+        })),
+        emptyText: 'No applicable perks were available to be applied. Consider investing in your gathering skills.'
+    }));
 
-    const html = await renderTemplate('modules/coffee-pub-artificer/templates/card-results-gather.hbs', {
-        cardTheme,
-        title: 'Forage for components',
-        icon: 'leaf',
-        resultTitle: 'Results',
-        resultIcon: 'leafy-green',
-        actorPossessive,
-        introParagraph: options.introParagraph ?? null,
-        items: itemsData,
-        perkTitle: 'Perks applied',
-        perkIcon: 'seedling',
-        perks: appliedPerks?.length ? appliedPerks : null
-    });
-
-    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-    ChatMessage.create({
-        content: html,
-        speaker,
-        ...getChatCardPresentationFields()
-    });
+    await postArtificerCard({ type: 'gather-result', parts, actor });
 }
 
 /**
@@ -1027,10 +1002,13 @@ async function _notifyGMSceneGatherNotConfigured(scene) {
     const gmRecipients = (game.users?.contents ?? game.users ?? []).filter((u) => u?.isGM).map((u) => u.id);
     if (!gmRecipients.length) return;
     try {
-        await ChatMessage.create({
-            content: gmMessage,
+        await postArtificerCard({
+            type: 'gather-not-configured',
             whisper: gmRecipients,
-            speaker: ChatMessage.getSpeaker()
+            parts: [
+                { part: 'header', icon: 'fa-solid fa-triangle-exclamation', title: 'Gathering Not Configured' },
+                { part: 'prose', blocks: [{ type: 'paragraph', text: plainText(gmMessage) }] }
+            ]
         });
     } catch {
         // ignore chat delivery errors; user already received a warning

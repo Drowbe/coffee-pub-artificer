@@ -15,7 +15,8 @@ import {
     flagsMatchRecipeApparatus,
     flagsMatchRecipeContainer
 } from './utility-artificer-item.js';
-import { normalizeItemNameForMatch, getChatCardPresentationFields } from './utils/helpers.js';
+import { normalizeItemNameForMatch } from './utils/helpers.js';
+import { buildItemRows, buildPerkParts, plainText, postArtificerCard } from './utils/chat-cards.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import {
     buildCraftingKitNameSet,
@@ -101,74 +102,57 @@ function injectWrongComponents(recipeIngredients, _skillId, count) {
 }
 
 /**
- * Send craft result chat card (Blacksmith Chat Cards API + section-header).
+ * Send craft result chat card through the Blacksmith Chat Cards API.
  * @param {Actor} [actor]
  * @param {{ success: boolean, item: Item|null, name: string, quality: string }} lastResult
  * @param {Array<{ perkName: string, effect: string }>} [appliedPerks]
  */
 async function sendCraftResultCard(actor, lastResult, appliedPerks = []) {
     if (!lastResult) return;
-    const chatCardsAPI = game.modules.get('coffee-pub-blacksmith')?.api?.chatCards;
-    const cardTheme = chatCardsAPI?.getThemeClassName?.('default') ?? 'theme-default';
-
-    const escapeHtml = (s) => {
-        if (s == null) return '';
-        const str = String(s);
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    };
 
     const success = !!lastResult.success && !!lastResult.item;
-    let resultName = '';
-    let resultItems = [];
-    let failureMessage = '';
-    let issues = Array.isArray(lastResult.issues) ? lastResult.issues : (lastResult.name ? [lastResult.name] : []);
+    // `name` already carries the headline failure; issues are the extra detail beside it.
+    const issues = Array.isArray(lastResult.issues) ? lastResult.issues : [];
     const ingredientsKept = Array.isArray(lastResult.ingredientsKept) ? lastResult.ingredientsKept : [];
 
+    const parts = [
+        { part: 'header', icon: 'fa-solid fa-hammer', title: 'Crafting Result' },
+        { part: 'section', icon: 'fa-solid fa-wand-magic-sparkles', label: 'Results' }
+    ];
+
     if (success) {
-        const it = lastResult.item;
-        resultName = lastResult.name ?? it.name ?? '';
-        const uuid = it.uuid ?? '';
-        const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? resultName)}}` : escapeHtml(it.name ?? resultName);
-        resultItems = [{ img: it.img ?? '', link }];
+        const item = lastResult.item;
+        const resultName = lastResult.name ?? item.name ?? '';
+        parts.push({ part: 'band', text: 'Crafted', tone: 'positive' });
+        parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: `Created: **${plainText(resultName)}**` }] });
+        parts.push({ part: 'rows', items: buildItemRows([{ name: item.name ?? resultName, uuid: item.uuid, img: item.img }]) });
+        parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: 'Added to your inventory.' }] });
     } else {
-        failureMessage = lastResult.name ?? 'Craft failed.';
+        parts.push({ part: 'band', text: 'Craft failed', tone: 'negative' });
         // When they received sludge, show it as the "result" item so they see what they got
         if (lastResult.item && lastResult.sludgeCreated) {
-            const it = lastResult.item;
-            const uuid = it.uuid ?? '';
-            const link = uuid ? `@UUID[${escapeHtml(uuid)}]{${escapeHtml(it.name ?? '')}}` : escapeHtml(it.name ?? '');
-            resultItems = [{ img: it.img ?? '', link }];
+            const item = lastResult.item;
+            parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: 'Received:' }] });
+            parts.push({ part: 'rows', items: buildItemRows([{ name: item.name ?? '', uuid: item.uuid, img: item.img }]) });
+        } else {
+            parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: plainText(lastResult.name) || 'Craft failed.' }] });
+        }
+        if (issues.length) {
+            parts.push({ part: 'notes', items: issues.map((issue) => ({ icon: 'fa-solid fa-triangle-exclamation', text: plainText(issue) })) });
+        }
+        if (ingredientsKept.length) {
+            const kept = ingredientsKept.map((ing) => plainText(ing?.name ?? ing)).filter(Boolean).join(', ');
+            parts.push({ part: 'prose', blocks: [{ type: 'paragraph', text: `**Not lost (half-loss perk):** ${kept}` }] });
         }
     }
 
-    const perks = (appliedPerks ?? []).map((p) => ({
-        perkName: p.perkName ?? '',
-        effect: p.effect ?? ''
+    parts.push(...buildPerkParts({
+        icon: 'fa-solid fa-star',
+        perks: (appliedPerks ?? []).map((perk) => ({ label: perk?.perkName ?? '', sublabel: perk?.effect ?? '' })),
+        emptyText: 'No perks applied.'
     }));
 
-    const html = await renderTemplate('modules/coffee-pub-artificer/templates/card-results-craft.hbs', {
-        cardTheme,
-        title: 'Crafting result',
-        icon: 'hammer',
-        resultTitle: 'Results',
-        resultIcon: 'wand-magic-sparkles',
-        success,
-        resultName,
-        resultItems,
-        failureMessage,
-        issues,
-        ingredientsKept,
-        perkTitle: 'Perks applied',
-        perkIcon: 'star',
-        perks
-    });
-
-    const speaker = actor ? ChatMessage.getSpeaker({ actor }) : ChatMessage.getSpeaker();
-    ChatMessage.create({
-        content: html,
-        speaker,
-        ...getChatCardPresentationFields()
-    });
+    await postArtificerCard({ type: 'craft-result', parts, actor });
 }
 
 /**

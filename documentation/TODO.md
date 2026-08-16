@@ -45,6 +45,10 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 - [ ] Request a renderer lifecycle guarantee that deleting a pin removes all render artifacts on every client.
 - [ ] Request a render-finalized delete hook (for example `blacksmith.pins.deletedRendered`) for deterministic follow-up work.
 
+### Blacksmith Chat Cards API Collaboration
+- [x] Migrated every Artificer chat card to `chatCards.post` parts (gather success/consolation/failure/empty, explore/populate, craft result, GM "not configured" whisper). No card HTML, theme class, or local card CSS remains in this module.
+- [ ] Ask Blacksmith for a way to pass consumer text that must NOT be read as inline marks. Item, actor, and perk names are interpolated into `prose` paragraphs and `rows` labels, and `processText` applies `**bold**` / `*italic*` after escaping with no escape hatch, so a name containing an asterisk breaks the rest of the sentence. Artificer currently strips `*` in `scripts/utils/chat-cards.js` (`plainText`), which mangles the name rather than rendering it. A literal-text wrapper (or a documented escape) would remove the workaround.
+
 ### Content / Pack Data Integrity
 Measured 2026-08-07 against the `burden-of-knowledge` world and the shipped packs.
 
