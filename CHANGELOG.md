@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.1.0]
+
+### Changed
+- **Every chat card is now posted through the Blacksmith Chat Cards API:** All six posting sites — the explore/populate result, gather failure, gather empty-pool, gather result (success and perk consolation), craft result, and the GM "gathering not configured" whisper — call `chatCards.post({ moduleId, type, parts })` and describe the card as data instead of building HTML. Artificer no longer composes a card wrapper, passes a theme class, or escapes anything itself; Blacksmith owns the wrapper, the theme, escaping, the enrich pipeline, and per-client re-rendering, so a card posted now improves whenever the parts do. Each card carries a `type` (`explore-result`, `gather-failure`, `gather-empty`, `gather-result`, `craft-result`, `gather-not-configured`) stored on the message.
+- **Card layouts rebuilt out of parts:** The four `gather-result-*` classes were invented before a list part existed and are replaced by `rows`, which also supplies the document link — supplying a `uuid` makes Blacksmith build the anchor, so the hand-written `@UUID[...]{...}` strings and the local `escapeHtml` are gone. The explore card's rarity breakdown moved from a comma-joined sentence into `tiles`, craft failure reasons into `notes`, and outcomes ("Nothing found", "Crafted", "Craft failed") into tinted `band` parts. Perks are a `section` divider plus one `rows` entry each, shared by the gather and craft cards.
+- **Untrusted names travel as literal segments:** Item, actor, scene and perk names now reach the card as `{ literal: name }` inside an array of text segments rather than being interpolated into a string. Card text reads `**bold**` and `*italic*` and runs Foundry's enricher, so a name containing an asterisk previously swallowed the rest of the sentence and one containing `@UUID[...]` or `[[/r 1d20]]` was obeyed. A literal is escaped and shown exactly as given. Because a mark cannot open and close across a segment boundary, names are no longer emboldened in card prose — the emphasis was markup, and withholding markup is the point.
+
+### Fixed
+- **Cover scan no longer spams the console:** The `Cover scan` diagnostic in `window-crafting.js` passed `blnDebug: false`, which Blacksmith reads as "always print", so it emitted one line per recipe journal on every render of the crafting window — every open, filter toggle, and recipe selection. It is now gated behind `isBlacksmithDebugOn()` and passes `true`, matching its sibling `Cover scan failed`. The page walk that built the message moved into a `logCoverScan` helper, so the `DOMParser` sweep over every text page of every journal only runs when debug mode is on rather than on every render.
+- **Craft failure no longer prints its reason twice:** `issues` fell back to `[lastResult.name]` when the caller supplied no array, so the headline failure appeared both as the failure line and as an "issue" beneath it. `name` carries the headline; `issues` carries only what the caller actually supplied.
+
+### Added
+- **`scripts/utils/chat-cards.js`:** `postArtificerCard()` resolves the API, sets the speaker from an optional actor, and stamps the module id and card type; `buildItemRows()` and `buildPerkParts()` hold the two compositions the gather and craft cards share. `buildItemRows()` passes a plain string label when a row carries a `uuid` (Blacksmith builds the anchor text itself) and a literal when it does not.
+- **`isBlacksmithDebugOn()` in `utils/blacksmith-console.js`:** Reads Blacksmith's `globalDebugMode` setting behind a try/catch, returning `false` when the setting is not yet registered or Blacksmith is absent. For skipping the construction of a diagnostic that costs something to build — `postConsoleAndNotification` already suppresses the printing.
+
+### Removed
+- **`templates/card-results-gather.hbs` and `templates/card-results-craft.hbs`**, along with their `loadTemplates` entries. Their structure is now a parts composition.
+- **The `gather-result-*` chat-card block in `styles/window-gather.css`** (~43 lines). Card styling belongs to the theme.
+- **`buildChatCardHtml()` in `manager-gather.js`**, including its dead `announcement` branch. Blacksmith removed announcement themes on 2026-08-14; the branch had never run in any case, because all three call sites passed `'card'`.
+- **`getChatCardPresentationFields()` in `utils/helpers.js`.** It existed to set the v13/v14 message style field by hand; `chatCards.post` sets `style` itself.
+- **`plainText()`**, a stopgap that stripped asterisks from names. It rendered a name that was not the name and did nothing about enricher syntax; `{ literal }` replaces it properly.
+
+### Notes
+- Requires the Blacksmith release providing `chatCards.post` with `{ literal }` and segment text. Artificer already declares Blacksmith as a hard `requires`, so no fallback path is carried; a missing API logs and skips the post rather than throwing.
+- Cards are visually different — theme-owned rows in place of the custom green item boxes, tinted outcome bands, and names in plain weight. Worth a look at each of the six before shipping.
+- Two defects found in Blacksmith during the migration were reported and fixed upstream: inline marks had no escape hatch (now `{ literal }`), and the `rows` uuid path interpolated the label into `@UUID[...]` before enriching, so a name containing `}` closed the link early and the remainder was enriched. Artificer's usage needed no change for either. See `documentation/TODO.md`.
 
 ## [13.0.18]
 
