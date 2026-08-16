@@ -48,7 +48,9 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 ### Blacksmith Chat Cards API Collaboration
 - [x] Migrated every Artificer chat card to `chatCards.post` parts (gather success/consolation/failure/empty, explore/populate, craft result, GM "not configured" whisper). No card HTML, theme class, or local card CSS remains in this module.
 - [x] Asked Blacksmith for literal text; they shipped `{ literal }` plus array segments (2026-08-15). Artificer now passes every item, actor, scene and perk name as a literal segment and `plainText()` is deleted.
-- [ ] Report to Blacksmith: the `rows` uuid path still interpolates the label into `@UUID[...]{...}` before enriching, and `escapeHtml` does not escape `}`. An item name containing `}` closes the link early and the remainder reaches the enricher — the same class of hole `{ literal }` just closed, on the one text path that bypasses `processText`.
+- [x] Reported the `rows` uuid injection to Blacksmith; they shipped `documentLinkOrText` + `escapeEnricherLabel`.
+- [x] Follow-up accepted: the brace encoding could not work, because `enrichHTML` decodes entities at `innerHTML` (foundry.mjs:31520) before the content-link regex runs over text nodes (foundry.mjs:31592). Blacksmith now builds the anchor with `doc.toAnchor({ name })`, so no enricher syntax is written at all, and our hostile-name fixture is a permanent regression case in their repo.
+- [x] Audited Artificer for the same construction: we build no `@UUID[...]` anywhere (the migration removed the last of it), and the recipe parser strips link syntax on import via `extractNameFromUuidLink`, so no card receives enricher syntax from recipe data. Nothing to change.
 
 ### Content / Pack Data Integrity
 Measured 2026-08-07 against the `burden-of-knowledge` world and the shipped packs.
