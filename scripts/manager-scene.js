@@ -7,6 +7,7 @@ import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
+import { postBlacksmithConsole } from './utils/blacksmith-console.js';
 
 const SCENE_SOCKET_EVENT = `${MODULE.ID}.sceneArtificerUpdated`;
 const SCENE_CONTEXT = `${MODULE.ID}-scene-manager`;
@@ -521,9 +522,17 @@ export class SceneManager {
         this._decorateSceneDirectory(directoryRoot);
     }
 
-    static _log(message, details = null, isError = false, notify = false) {
-        if (typeof BlacksmithUtils !== 'undefined' && BlacksmithUtils.postConsoleAndNotification) {
-            BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, message, details, isError, notify);
-        }
+    /**
+     * @param {string} message
+     * @param {unknown} [details]
+     * @param {boolean} [debug] Blacksmith's `blnDebug`: true prints ONLY in global debug mode.
+     *                          It is not an error flag, which is how it was previously named.
+     * @param {boolean} [notify]
+     */
+    static _log(message, details = null, debug = false, notify = false) {
+        // Routed through the shared helper rather than window.BlacksmithUtils directly: that
+        // global is unset whenever Blacksmith's ready chain bails, which is exactly when this
+        // manager fails and exactly when its log lines matter.
+        postBlacksmithConsole(MODULE.NAME, message, details, debug, notify);
     }
 }

@@ -163,7 +163,7 @@ Hooks.once('ready', async () => {
             });
             postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Registered with Blacksmith successfully`, null, false, false);
         } else {
-            postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Blacksmith not available`, null, true, false);
+            postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Blacksmith not available`, null, false, false);
         }
         
         // Create and expose API so macros and external callers can use it even if init fails later
@@ -176,7 +176,7 @@ Hooks.once('ready', async () => {
         initializeModule();
         
     } catch (error) {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Error during initialization`, error?.message ?? String(error), true, true);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Error during initialization`, error?.message ?? String(error), false, true);
         console.error(`${MODULE.NAME}: Error during initialization`, error);
     }
 });
@@ -190,17 +190,17 @@ Hooks.once('ready', async () => {
  */
 function initializeModule() {
     initializeGatherSockets().catch((error) => {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Gather sockets failed to initialize`, error?.message ?? String(error), true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Gather sockets failed to initialize`, error?.message ?? String(error), false, false);
     });
     SceneManager.initialize().catch((error) => {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Scene manager failed to initialize`, error?.message ?? String(error), true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Scene manager failed to initialize`, error?.message ?? String(error), false, false);
     });
     PinsManager.initialize().catch((error) => {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Pins manager failed to initialize`, error?.message ?? String(error), true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Pins manager failed to initialize`, error?.message ?? String(error), false, false);
     });
     // Register menubar tool and secondary bar
     registerMenubarIntegration().catch((error) => {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Menubar integration failed to initialize`, error?.message ?? String(error), true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Menubar integration failed to initialize`, error?.message ?? String(error), false, false);
     });
     // Inject Artificer section into item sheets + Edit button
     registerItemSheetIntegration();
@@ -214,7 +214,7 @@ async function registerMenubarIntegration() {
     const blacksmith = getBlacksmithApi();
     
     if (!blacksmith) {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Blacksmith API not available for menubar integration`, null, true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Blacksmith API not available for menubar integration`, null, false, false);
         return;
     }
     
@@ -247,7 +247,7 @@ async function registerMenubarIntegration() {
     });
     
     if (!barRegistered) {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register secondary bar type`, null, true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register secondary bar type`, null, false, false);
         return;
     }
     
@@ -281,7 +281,7 @@ async function registerMenubarIntegration() {
     });
     
     if (!toolRegistered) {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register menubar tool`, null, true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register menubar tool`, null, false, false);
         return;
     }
     
@@ -304,7 +304,7 @@ async function registerMenubarIntegration() {
                 await openArtificerWindow(() => new ArtificerItemForm(), { windowLabel: 'Create Component' });
                 postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Form rendered successfully`, null, false, false);
             } catch (error) {
-                postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Error creating form: ${error.message}`, null, true, false);
+                postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Error creating form: ${error.message}`, null, false, false);
             }
         }
     });
@@ -448,7 +448,7 @@ async function registerMenubarIntegration() {
     if (craftingRegistered && recipeBrowserRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
         postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
     } else {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, recipe-browser: ${recipeBrowserRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, true, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, recipe-browser: ${recipeBrowserRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, false, false);
     }
 }
 

@@ -41,5 +41,19 @@ export function postBlacksmithConsole(moduleShortName, message, result, debug, n
         utils.postConsoleAndNotification(moduleShortName, message, result, debug, notification);
         return;
     }
-    globalThis.BlacksmithUtils?.postConsoleAndNotification?.(moduleShortName, message, result, debug, notification);
+    const globalUtils = globalThis.BlacksmithUtils;
+    if (globalUtils?.postConsoleAndNotification) {
+        globalUtils.postConsoleAndNotification(moduleShortName, message, result, debug, notification);
+        return;
+    }
+
+    // Blacksmith's logger is unreachable — it is absent, or its ready chain bailed before
+    // window.BlacksmithUtils was assigned. That is precisely when Artificer is most likely
+    // to be failing, and routing those reports into a logger that does not exist is why a
+    // broken boot has repeatedly presented to the GM as "no errors anywhere".
+    if (debug && !isBlacksmithDebugOn()) return;
+    const line = `${moduleShortName} | ${message}`;
+    const write = notification ? console.warn : console.log;
+    if (result === null || result === undefined) write(line);
+    else write(line, result);
 }
