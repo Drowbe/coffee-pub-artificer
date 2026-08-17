@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [13.1.1]
 
 ### Fixed
 - **Artificer tab missing from Scene Configuration:** Tab injection ran as an `async` render-hook callback that awaited the skills ruleset before appending anything. Foundry v13 replaces every template part on each render pass (`HandlebarsApplicationMixin#_replaceHTML` calls `priorElement.replaceWith`), so a render that landed during that await detached the nav and body nodes captured beforehand — the tab was then appended to orphaned DOM and never appeared, while the concurrency guard kept the newer render from injecting at all. Nothing threw and nothing logged. Injection is now synchronous end to end: the ruleset's harvesting skill ids are loaded and cached at `initialize()`, and the dual `renderSceneConfig`/`renderApplicationV2` registrations are deduped by checking for a live nav button *and* panel instead of by an in-flight mutex.
