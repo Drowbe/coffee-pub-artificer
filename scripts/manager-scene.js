@@ -15,21 +15,20 @@ export class SceneManager {
     static _hookManager = null;
     static _sockets = null;
     static _initialized = false;
-    static _injectPendingAppIds = new Set();
-    static _injectingForms = new WeakSet();
+    /** @type {string[]} Harvesting skill ids from the ruleset, cached so tab injection stays synchronous. */
+    static _defaultHarvestingSkills = [];
+    /** @type {Promise<string[]>|null} */
+    static _harvestingSkillsPromise = null;
 
     static async initialize() {
         if (this._initialized) return;
         this._log('SceneManager: initializing');
 
         this._hookManager = await BlacksmithAPI.getHookManager();
-        this._sockets = await BlacksmithAPI.getSockets();
-        await this._sockets.waitForReady();
 
-        await this._sockets.register(SCENE_SOCKET_EVENT, (payload) => {
-            Hooks.callAll(SCENE_SOCKET_EVENT, payload);
-        });
-        this._log(`SceneManager: socket registered (${SCENE_SOCKET_EVENT})`);
+        // Warm the ruleset-derived harvesting skill ids up front so the render hook below
+        // never has to await anything (see _injectArtificerTab).
+        this._refreshHarvestingSkillDefaults();
 
         this._hookManager.registerHook({
             name: 'renderSceneConfig',
@@ -37,7 +36,7 @@ export class SceneManager {
             context: SCENE_CONTEXT,
             key: `${SCENE_CONTEXT}-render-scene-config`,
             priority: 3,
-            callback: (app, html) => void this._injectArtificerTab(app, html)
+            callback: (app, html) => this._injectArtificerTab(app, html)
         });
         this._log('SceneManager: hook registered (renderSceneConfig)');
         this._hookManager.registerHook({
@@ -46,7 +45,7 @@ export class SceneManager {
             context: SCENE_CONTEXT,
             key: `${SCENE_CONTEXT}-render-application-v2-scene-config`,
             priority: 3,
-            callback: (app, html) => void this._injectArtificerTabV2(app, html)
+            callback: (app, html) => this._injectArtificerTabV2(app, html)
         });
         this._log('SceneManager: hook registered (renderApplicationV2)');
 
@@ -70,7 +69,41 @@ export class SceneManager {
         this._log('SceneManager: hook registered (renderSceneDirectory)');
 
         this._initialized = true;
+
+        // Sockets are set up AFTER the render hooks on purpose. These awaits sit on
+        // Blacksmith's socket handshake, and when that never settles everything below it
+        // is skipped — which used to include the Scene Config tab, leaving it missing with
+        // nothing logged. Cross-client broadcast is the only thing worth stalling here.
+        this._sockets = await BlacksmithAPI.getSockets();
+        await this._sockets.waitForReady();
+        await this._sockets.register(SCENE_SOCKET_EVENT, (payload) => {
+            Hooks.callAll(SCENE_SOCKET_EVENT, payload);
+        });
+        this._log(`SceneManager: socket registered (${SCENE_SOCKET_EVENT})`);
+
         this._log('SceneManager: initialized');
+    }
+
+    /**
+     * Load and cache the ruleset's default harvesting skill ids.
+     * Deliberately off the injection path: a failure leaves the list empty and retries on a
+     * later render rather than blocking it or poisoning the cache for the session.
+     * @returns {Promise<string[]>}
+     */
+    static _refreshHarvestingSkillDefaults() {
+        if (!this._harvestingSkillsPromise) {
+            this._harvestingSkillsPromise = loadSkillsDetails()
+                .then((details) => {
+                    this._defaultHarvestingSkills = resolveGatherDefaults(details).harvestingSkillIds ?? [];
+                    return this._defaultHarvestingSkills;
+                })
+                .catch(() => {
+                    // Strict loader already notified the GM; allow a later render to retry.
+                    this._harvestingSkillsPromise = null;
+                    return this._defaultHarvestingSkills;
+                });
+        }
+        return this._harvestingSkillsPromise;
     }
 
     static _resolveRoot(html) {
@@ -87,23 +120,20 @@ export class SceneManager {
         const appName = app?.constructor?.name ?? '';
         const isSceneConfig = appName === 'SceneConfig' || app?.document?.documentName === 'Scene';
         if (!isSceneConfig) return;
-        void this._injectArtificerTab(app, html);
+        this._injectArtificerTab(app, html);
     }
 
-    static async _injectArtificerTab(app, html) {
-        const appId = app?.id ?? null;
-        if (appId != null) {
-            if (this._injectPendingAppIds.has(appId)) return;
-            this._injectPendingAppIds.add(appId);
-        }
-        try {
-            await this._doInjectArtificerTab(app, html);
-        } finally {
-            if (appId != null) this._injectPendingAppIds.delete(appId);
-        }
-    }
-
-    static async _doInjectArtificerTab(app, html) {
+    /**
+     * Inject the Artificer tab. Synchronous end to end, on purpose.
+     *
+     * This runs inside a render hook, and Foundry v13 rebuilds every template part on each
+     * render pass (HandlebarsApplicationMixin#_replaceHTML calls priorElement.replaceWith).
+     * Awaiting anything here means the nav and body nodes captured beforehand can be detached
+     * by a later pass before the tab is appended — the tab then lands on orphaned DOM and is
+     * simply absent, with nothing thrown and nothing logged. Every input it needs is cached
+     * ahead of time so that window never opens.
+     */
+    static _injectArtificerTab(app, html) {
         const root = this._resolveRoot(html) || this._resolveRoot(app?.element) || this._resolveRoot(app?._element);
         if (!root) {
             this._log('SceneManager: tab inject skipped (no render root)');
@@ -117,17 +147,16 @@ export class SceneManager {
             return;
         }
 
-        // Prevent concurrent injections into the same form (covers null app.id on new unsaved scenes)
-        if (this._injectingForms.has(form)) return;
-        this._injectingForms.add(form);
-        try {
-            await this._doInjectArtificerTabInner(app, form, tabsNav);
-        } finally {
-            this._injectingForms.delete(form);
-        }
+        // renderSceneConfig and renderApplicationV2 both fire for the same render pass;
+        // whichever lands second is a no-op while both halves are still present. A re-render
+        // replaces the nav without the button, so this correctly falls through and re-injects.
+        if (tabsNav.querySelector('[data-tab="artificer"]')
+            && form.querySelector('.tab.artificer-scene-tab[data-tab="artificer"]')) return;
+
+        this._doInjectArtificerTabInner(app, form, tabsNav);
     }
 
-    static async _doInjectArtificerTabInner(app, form, tabsNav) {
+    static _doInjectArtificerTabInner(app, form, tabsNav) {
         // Remove stale injected content — in Foundry v13 ApplicationV2 the tab nav is
         // rebuilt on every render but the tab body container persists, so the nav-button
         // check alone allows a fresh panel to be appended on each render pass.
@@ -164,12 +193,9 @@ export class SceneManager {
             ? currentComponentTypes
             : componentFamilies;
         const selectedComponentTypes = new Set(rawComponentTypes.map((s) => String(s).trim()).filter(Boolean));
-        let defaultHarvestingSkills = [];
-        try {
-            defaultHarvestingSkills = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
-        } catch {
-            /* skills mapping unavailable — leave checkboxes empty */
-        }
+        // Cached at initialize(); see _injectArtificerTab for why this must not await.
+        const defaultHarvestingSkills = this._defaultHarvestingSkills;
+        if (!defaultHarvestingSkills.length) this._refreshHarvestingSkillDefaults();
         const currentHarvestingSkills = normalizeList(sceneFlags.harvestingSkills);
         const rawHarvestingSkills = currentHarvestingSkills.length
             ? currentHarvestingSkills
@@ -431,7 +457,7 @@ export class SceneManager {
         if (changedSceneData == null) return;
         if (userId !== game.user.id) return;
 
-        this._sockets.emit(SCENE_SOCKET_EVENT, {
+        this._sockets?.emit(SCENE_SOCKET_EVENT, {
             sceneId: scene?.id ?? null,
             userId,
             changed: changedSceneData
