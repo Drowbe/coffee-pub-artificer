@@ -5,7 +5,12 @@
 ## Current Focus
 
 ### CRITICAL — Migrate Windows to the Blacksmith Window API
-- [ ] Replace Artificer's direct `HandlebarsApplicationMixin(ApplicationV2)` window implementations with the appropriate Blacksmith public base: `api.BlacksmithWindowBaseV2` for full editors/forms and `api.BlacksmithToolWindowBaseV2` only for lightweight persistent canvas tools. Do not deep-link Blacksmith implementation files; resolve the bases through `game.modules.get('coffee-pub-blacksmith').api`. Reference: [Blacksmith Window API](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window).
+- [ ] Replace Artificer's direct `HandlebarsApplicationMixin(ApplicationV2)` window implementations with the appropriate Blacksmith public base: `BlacksmithWindowBaseV2` for full editors/forms and `BlacksmithToolWindowBaseV2` only for lightweight persistent canvas tools. Reference: [Blacksmith Window API](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window).
+  - **Import the bases from the bridge, NOT from `module.api`** (corrected 2026-08-22; the previous instruction here said the opposite and would have broken a live world):
+    ```js
+    import { BlacksmithWindowBaseV2, BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
+    ```
+    `extends` is evaluated when our module script is evaluated, and `game` does not exist yet — a top-level `game.modules.get('coffee-pub-blacksmith')` throws `Cannot read properties of undefined (reading 'get')`, and ES modules cache a failed evaluation, so the throw disables Artificer for the entire session instead of being retried. Merchant hit this on 2026-08-19. `BLACKSMITH_WINDOW_STYLES`, `BLACKSMITH_TOOL_TITLEBARS` and `BLACKSMITH_TOOL_THEMES` come from the same path and are the same objects as `api.windowStyles` / `api.toolTitlebars` / `api.toolThemes`. `scripts/` paths are still not the contract; the bridge is. `module.api` stays correct for anything resolved after `init`.
 - [ ] Audit and migrate every current window: Crafting, Recipe Browser, Skills, Gather, Artificer Item, Recipe Import, and the experimental Crafting panel; document which base and zone layout each one uses.
 - [ ] Register stable window IDs through `api.registerWindow()` for windows opened by Blacksmith bars, macros, or other modules, and route those callers through `api.openWindow()`; retain direct construction only where the Window API explicitly recommends it for ephemeral/multi-instance tools.
 - [ ] Refactor window templates onto Blacksmith's zone contract (option bar, header, tools, body, action bar) while preserving existing actions, forms, scrolling, sizing, remembered positions, and singleton/multi-instance behavior.
@@ -13,7 +18,9 @@
 - [ ] Add migration verification for opening every window from each supported entry point, closing/reopening, minimizing, resizing, position persistence, form submission, keyboard/focus behavior, and theme switching.
 
 ### CRITICAL — Migrate item grants to the Blacksmith Inventory API
-Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grantCurrency`, `transferItem`, `transferCurrency`. Only **`grantItem`** applies to us — `addCraftedItemToActor` has no source actor, it creates an item on an actor from item data, which `transferItem` cannot express. Expected to land soon; do not start until it ships.
+Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grantCurrency`, `transferItem`, `transferCurrency`. Only **`grantItem`** applies to us — `addCraftedItemToActor` has no source actor, it creates an item on an actor from item data, which `transferItem` cannot express.
+
+**Shipped as of 2026-08-22**, along with a merge-predicate fix: it was comparing the submitted payload against the created row, but creation fills schema defaults, writes `system.identifier` from the name, and normalises `properties` — so constructed `itemData` could never merge into a row built from that same data. That unblocks the "do not start until it ships" gate. It does **not** answer our mixed-`compendiumSource` question below, which is still the thing to settle first.
 
 - [ ] **Blocked on Blacksmith:** get a decision on the **mixed `compendiumSource` case** before migrating. Their merge rule is "compare `compendiumSource` when both items have one, never require it," and an item with a source and one without deliberately do **not** merge. That case is not an edge case for us — it is the default state of a configured world (see *Content / Pack Data Integrity* below). We asked for: merge when flags match and **at most one** side has a source; treat a missing source as *unknown*, not as *different*. Without that, gathering the same component twice can randomly produce two non-merging rows.
 - [ ] Rewrite `addCraftedItemToActor` ([scripts/utility-artificer-item.js](../scripts/utility-artificer-item.js) L169-186) as a thin wrapper: resolve the actor UUID, call `blacksmith.inventory.grantItem({ targetActorUuid, itemData, quantity, stack: 'merge' })`, and **keep the existing return contract** (`Item|null`) so no caller changes.
@@ -25,6 +32,12 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 **Two live bugs this migration fixes as a side effect** (measured 2026-08-07; both currently latent, do not patch locally unless they start losing data in play):
 - [ ] **Flag-blind stacking.** `addCraftedItemToActor` matches on `name` + `type` only, so an item whose Artificer flags differ from one the actor holds is merged into it and the incoming variant's flags are discarded silently. Verified latent: quirk is set on 1 of 95 shipped components, affinity is empty everywhere, base and `-enhanced` packs are flag-identical, and no runtime path generates quirk or affinity — every grant copies a source item verbatim. Safe to let the migration fix this.
 - [ ] **`uses.spent` loss.** The merge ignores `system.uses.spent`, so a partially-consumed item stacks into a full one and the spent charges vanish. **This is the one most likely to produce a real report** — 42 of 178 shipped creations have `uses.max > 1`. Currently latent only because no actor holds a partially-consumed Artificer item yet.
+
+### Migrate recipe import to the Blacksmith Importer API
+`api.importer` went public on 2026-08-22: `registerKind`, `getKind`, `openWindow`, `parsePayload`, `attachButton`. We supply `onValidateEntry` and `onImportEntry`, so we keep document construction and Blacksmith never learns our data model. See [API: Importer](https://github.com/Drowbe/coffee-pub-blacksmith/wiki) on the wiki.
+
+- [ ] Register a recipe kind and move [scripts/utility-artificer-recipe-import.js](../scripts/utility-artificer-recipe-import.js) behind `onValidateEntry` / `onImportEntry`. [scripts/parsers/parser-recipe.js](../scripts/parsers/parser-recipe.js) stays ours.
+- [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
 
 ### Gather / Pins Reliability
 - [ ] Eliminate the player-driven gather/discovery completion race around request-roll message context and GM-side resolution.
