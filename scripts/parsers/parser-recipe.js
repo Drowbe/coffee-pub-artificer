@@ -37,6 +37,12 @@ export class RecipeParser {
                 journalPageId: page.id
             };
             
+            // Whether an "Apparatus:" label appeared at all, regardless of its value.
+            // This distinguishes a modern page with a blank apparatus from a legacy page
+            // that predates the split and only ever had "Container:" -- see the container
+            // branch below. Checking the parsed VALUE conflates the two.
+            let sawApparatusLabel = false;
+
             // Parse all paragraphs
             const paragraphs = doc.querySelectorAll('p');
             for (const p of paragraphs) {
@@ -86,6 +92,7 @@ export class RecipeParser {
                     const sec = this._parseTimeToSeconds(value);
                     if (sec != null) data.time = sec;
                 } else if (labelLower === 'apparatus') {
+                    sawApparatusLabel = true;
                     const uuidMatch = value.match(/@UUID\[(.*?)\]{(.*?)}/);
                     if (uuidMatch) {
                         data.apparatusName = normalizePunctuationForStorage(uuidMatch[2].trim());
@@ -97,7 +104,11 @@ export class RecipeParser {
                     const val = uuidMatch ? uuidMatch[2].trim() : value.trim();
                     if (val) {
                         const normalized = normalizePunctuationForStorage(val);
-                        if (!data.apparatusName) data.apparatusName = normalized;
+                        // Apparatus and container were once one field, labelled "Container".
+                        // A page with no Apparatus label at all is from before that split, so
+                        // its container IS the apparatus. A page that has the label -- even
+                        // blank -- is post-split and means what it says.
+                        if (!sawApparatusLabel) data.apparatusName = normalized;
                         else data.containerName = normalized;
                     }
                 } else if (labelLower === 'tool' || labelLower === 'skill kit') {

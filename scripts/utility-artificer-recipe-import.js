@@ -93,7 +93,11 @@ export async function validateRecipePayload(payload) {
         return { valid: false, error: `Recipe "${payload.name}" requires a "description" field (string)` };
     }
     const skill = payload.skill ?? getSyncFallbackRecipeSkillId();
-    const apparatusName = payload.apparatusName ?? payload.containerName ?? payload.container ?? null;
+    // `container` is the legacy single-field spelling from before apparatus and container
+    // were split, so it still falls back to apparatus. `containerName` deliberately does NOT:
+    // it is the current, distinct field, and treating it as an apparatus fallback duplicated
+    // a payload's container into both slots.
+    const apparatusName = payload.apparatusName ?? payload.container ?? null;
     const containerName = payload.containerName ?? null;
     const skillKit = payload.skillKit ?? payload.toolName ?? payload.tool ?? null;
     const rawSkillLevel = payload.skillLevel ?? 1;
