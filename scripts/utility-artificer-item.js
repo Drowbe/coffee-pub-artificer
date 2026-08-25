@@ -231,7 +231,7 @@ function buildItemSystem(payload) {
         },
         source: {
             value: payload.system?.source?.value ?? payload.system?.source?.custom ?? '',
-            custom: payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer',
+            custom: payload.system?.source?.custom ?? payload.system?.source?.value ?? '',
             license: payload.system?.source?.license ?? ''
         },
         quantity: payload.system?.quantity ?? 1,
@@ -273,7 +273,11 @@ function buildItemSystem(payload) {
             autoDestroy,
             recovery: usesIn.recovery ?? [{ period: recoveryPeriodVal }]
         };
-        defaults.activities = Array.isArray(payload.system?.activities) ? [...payload.system.activities] : [];
+        // dnd5e stores activities as an object keyed by activity id (never an array)
+        const incomingActivities = payload.system?.activities;
+        defaults.activities = (incomingActivities && typeof incomingActivities === 'object' && !Array.isArray(incomingActivities))
+            ? { ...incomingActivities }
+            : {};
         // Magical: D&D 5e uses properties set with "mgc"
         const existingProps = Array.isArray(payload.system?.properties) ? payload.system.properties : [];
         defaults.properties = isMagical && !existingProps.includes('mgc') ? [...existingProps, 'mgc'] : existingProps.length ? existingProps : (isMagical ? ['mgc'] : []);
@@ -287,14 +291,15 @@ function buildItemSystem(payload) {
         system = defaults;
     }
 
-    // Explicitly ensure source.value, source.custom, and source.license are set (Configure Source dialog)
+    // Normalize source into the shape the Configure Source dialog expects.
+    // Never invent a value: a blank source stays blank so the author's intent survives.
     const sourceValue = payload.system?.source?.value ?? payload.system?.source?.custom ?? '';
-    const sourceCustom = payload.system?.source?.custom ?? payload.system?.source?.value ?? 'Artificer';
+    const sourceCustom = payload.system?.source?.custom ?? payload.system?.source?.value ?? '';
     const sourceLicense = payload.system?.source?.license ?? '';
     system.source = {
         ...(typeof system.source === 'object' ? system.source : {}),
         value: sourceValue || system.source?.value || '',
-        custom: sourceCustom || system.source?.custom || 'Artificer',
+        custom: sourceCustom || system.source?.custom || '',
         license: sourceLicense || system.source?.license || ''
     };
 

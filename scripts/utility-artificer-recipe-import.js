@@ -132,7 +132,7 @@ export async function validateRecipePayload(payload) {
         workHours: payload.workHours != null ? Number(payload.workHours) : null,
         successDC: payload.successDC != null ? Math.max(1, Math.min(30, Math.round(Number(payload.successDC)))) : null,
         rarity: _normalizeRarity(payload.rarity),
-        source: normalizePunctuationForStorage(_str(payload.source ?? payload.Source) || 'Artificer'),
+        source: normalizePunctuationForStorage(_str(payload.source ?? payload.Source)),
         license: normalizePunctuationForStorage(_str(payload.license ?? payload.License))
     };
     const recipe = new ArtificerRecipe({ ...data, id: `temp-${foundry.utils.randomID()}` });
