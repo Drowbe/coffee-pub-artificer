@@ -110,6 +110,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
     /** Append a blank ingredient row. */
     static async _onAddIngredient(event) {
         event.preventDefault();
+        await this.submit();
         const ingredients = Array.from(this.document.system.ingredients ?? []).map(i => ({ ...i }));
         ingredients.push({ type: ARTIFICER_TYPES.COMPONENT, family: '', name: '', quantity: 1 });
         await this.document.update({ 'system.ingredients': ingredients });
@@ -120,10 +121,30 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         event.preventDefault();
         const index = Number(target?.dataset?.index);
         if (!Number.isInteger(index)) return;
+        await this.submit();
         const ingredients = Array.from(this.document.system.ingredients ?? [])
             .map(i => ({ ...i }))
             .filter((_, i) => i !== index);
         await this.document.update({ 'system.ingredients': ingredients });
+    }
+
+    /** @inheritDoc */
+    _prepareSubmitData(event, form, formData, updateData) {
+        const data = super._prepareSubmitData(event, form, formData, updateData);
+
+        // `<string-tags>` submits a comma-separated STRING in some Foundry builds and
+        // an ARRAY in others. `traits` is an ArrayField, so the string form fails
+        // validation -- and a failed field rejects the ENTIRE document update, which
+        // looks like "nothing saved" rather than "one field was wrong".
+        const raw = foundry.utils.getProperty(data, 'system.traits');
+        if (raw !== undefined) {
+            const traits = typeof raw === 'string'
+                ? raw.split(',').map(t => t.trim()).filter(Boolean)
+                : Array.isArray(raw) ? raw.map(t => String(t).trim()).filter(Boolean) : [];
+            foundry.utils.setProperty(data, 'system.traits', traits);
+        }
+
+        return data;
     }
 
     /** @inheritDoc */
@@ -172,7 +193,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             ${row('License', system.license)}
         </section>`;
 
-        context.content = block + (context.content ?? '');
+        context.text.enriched = block + (context.text.enriched || '');
         return context;
     }
 }

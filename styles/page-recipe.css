@@ -3,101 +3,216 @@
 /* ------------------------------------ */
 /* Sheet for the coffee-pub-artificer.recipe journal page subtype. The page's
    description is stock ProseMirror content; everything here styles the
-   structured fields above it (edit) and the rendered block (view). */
+   structured fields above it (edit) and the rendered block (view).
 
-/* --- Edit: the fields fieldset ------ */
+   Layout is a label/control grid rather than Foundry's .form-group: inside a
+   journal page part .form-group stacks label, control and hint full-width, and
+   eighteen fields become a very tall column. */
+
+/* ==================================== */
+/* === EDIT ========================== */
+/* ==================================== */
 
 .artificer-recipe-page .artificer-recipe-fields {
-    border: 1px solid var(--color-border-light-tertiary, #b5b3a4);
-    border-radius: 4px;
-    padding: 0.5rem 0.75rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
     margin-bottom: 0.75rem;
 }
 
-.artificer-recipe-page .artificer-recipe-fields legend {
+/* --- Sections ----------------------- */
+
+.artificer-recipe-page .arf-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.artificer-recipe-page .arf-heading {
+    margin: 0 0 0.1rem;
+    padding-bottom: 0.15rem;
+    border-bottom: 1px solid var(--color-border-light-tertiary, #7a7971);
+    font-size: var(--font-size-11, 0.7rem);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    font-size: var(--font-size-12, 0.75rem);
-    padding: 0 0.35rem;
+    letter-spacing: 0.08em;
+    opacity: 0.6;
 }
 
-.artificer-recipe-page .form-group.stacked {
+/* --- The label / control grid ------- */
+
+.artificer-recipe-page .arf-field {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    gap: 0.15rem 0.6rem;
+    align-items: center;
+}
+
+.artificer-recipe-page .arf-field > label {
+    grid-column: 1;
+    text-align: right;
+    font-weight: 600;
+    font-size: var(--font-size-13, 0.8rem);
+    line-height: 1.3;
+}
+
+.artificer-recipe-page .arf-field > input,
+.artificer-recipe-page .arf-field > select,
+.artificer-recipe-page .arf-field > string-tags,
+.artificer-recipe-page .arf-field > .arf-inline,
+.artificer-recipe-page .arf-field > .arf-ingredients {
+    grid-column: 2;
+    min-width: 0;
+}
+
+/* Hints sit under the control, in the control column, and stay quiet. */
+.artificer-recipe-page .arf-hint {
+    grid-column: 2;
+    margin: 0;
+    font-size: var(--font-size-11, 0.7rem);
+    line-height: 1.35;
+    opacity: 0.55;
+}
+
+/* Ingredients need the full width, so the label goes above rather than beside. */
+.artificer-recipe-page .arf-field-wide {
+    grid-template-columns: 1fr;
+}
+
+.artificer-recipe-page .arf-field-wide > label {
+    grid-column: 1;
+    text-align: left;
+}
+
+.artificer-recipe-page .arf-field-wide > .arf-ingredients {
+    grid-column: 1;
+}
+
+/* --- Fields sharing one row --------- */
+
+.artificer-recipe-page .arf-inline {
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+}
+
+.artificer-recipe-page .arf-inline > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+/* Numeric entries never need the width a name does. */
+.artificer-recipe-page .arf-inline > input[type="number"] {
+    flex: 0 0 5rem;
+    text-align: center;
+}
+
+/* --- Ingredient rows ---------------- */
+
+.artificer-recipe-page .arf-ingredients {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
+    gap: 0.25rem;
 }
 
-/* --- Edit: ingredient rows ---------- */
-
-.artificer-recipe-page .artificer-ingredient-rows {
+.artificer-recipe-page .arf-ingredient-rows {
     list-style: none;
-    margin: 0 0 0.35rem;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
 }
 
-.artificer-recipe-page .artificer-ingredient-row {
+.artificer-recipe-page .arf-ingredient-row {
     display: flex;
     gap: 0.25rem;
     align-items: center;
 }
 
-/* Name is the field that varies most in length, so it takes the slack. */
-.artificer-recipe-page .artificer-ingredient-row input[name$=".name"] {
-    flex: 2 1 auto;
+.artificer-recipe-page .arf-ingredient-row select {
+    flex: 0 0 7.5rem;
 }
 
-.artificer-recipe-page .artificer-ingredient-row input[name$=".family"] {
-    flex: 1 1 auto;
+.artificer-recipe-page .arf-ingredient-row input[name$=".family"] {
+    flex: 1 1 0;
+    min-width: 0;
 }
 
-.artificer-recipe-page .artificer-ingredient-row input[name$=".quantity"] {
-    flex: 0 0 4rem;
+/* Name varies most in length, so it takes the slack. */
+.artificer-recipe-page .arf-ingredient-row input[name$=".name"] {
+    flex: 2 1 0;
+    min-width: 0;
 }
 
-.artificer-recipe-page .artificer-ingredient-row select {
-    flex: 0 0 8rem;
+.artificer-recipe-page .arf-ingredient-row input[name$=".quantity"] {
+    flex: 0 0 3.5rem;
+    text-align: center;
 }
 
-.artificer-recipe-page .artificer-ingredient-row button {
-    flex: 0 0 auto;
+.artificer-recipe-page .arf-icon-button {
+    flex: 0 0 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
     line-height: 1;
+    opacity: 0.6;
 }
 
-/* --- View: the rendered recipe block --- */
+.artificer-recipe-page .arf-icon-button:hover {
+    opacity: 1;
+}
+
+.artificer-recipe-page .arf-add {
+    align-self: flex-start;
+    width: auto;
+    padding: 0 0.6rem;
+    font-size: var(--font-size-12, 0.75rem);
+}
+
+.artificer-recipe-page .arf-empty {
+    margin: 0;
+    font-size: var(--font-size-12, 0.75rem);
+    font-style: italic;
+    opacity: 0.5;
+}
+
+/* ==================================== */
+/* === VIEW ========================== */
+/* ==================================== */
 
 .artificer-recipe-block {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+    gap: 0.2rem 0.75rem;
+    align-items: baseline;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--color-border-light-tertiary, #b5b3a4);
+    border-bottom: 1px solid var(--color-border-light-tertiary, #7a7971);
 }
 
+/* The row is a grid contents wrapper: label and value are the real grid items,
+   so every value lines up in one column regardless of label length. */
 .artificer-recipe-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: baseline;
+    display: contents;
 }
 
 .artificer-recipe-label {
-    flex: 0 0 8rem;
+    grid-column: 1;
+    text-align: right;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-size: var(--font-size-11, 0.7rem);
-    opacity: 0.75;
+    opacity: 0.55;
 }
 
 .artificer-recipe-value {
-    flex: 1 1 auto;
+    grid-column: 2;
 }
 
 .artificer-recipe-ingredients {
-    flex: 1 1 auto;
+    grid-column: 2;
     margin: 0;
     padding-left: 1.1rem;
 }
