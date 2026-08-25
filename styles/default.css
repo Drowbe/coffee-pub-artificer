@@ -31,6 +31,9 @@
 /* --- Scene Config Integration ---- */
 @import "scene-config.css";
 
+/* --- Recipe Page Subtype --------- */
+@import "page-recipe.css";
+
 
 
 

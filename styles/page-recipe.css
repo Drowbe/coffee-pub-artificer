@@ -1,0 +1,103 @@
+/* ------------------------------------ */
+/* --- ARTIFICER RECIPE PAGE ---------- */
+/* ------------------------------------ */
+/* Sheet for the coffee-pub-artificer.recipe journal page subtype. The page's
+   description is stock ProseMirror content; everything here styles the
+   structured fields above it (edit) and the rendered block (view). */
+
+/* --- Edit: the fields fieldset ------ */
+
+.artificer-recipe-page .artificer-recipe-fields {
+    border: 1px solid var(--color-border-light-tertiary, #b5b3a4);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.artificer-recipe-page .artificer-recipe-fields legend {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: var(--font-size-12, 0.75rem);
+    padding: 0 0.35rem;
+}
+
+.artificer-recipe-page .form-group.stacked {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+/* --- Edit: ingredient rows ---------- */
+
+.artificer-recipe-page .artificer-ingredient-rows {
+    list-style: none;
+    margin: 0 0 0.35rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.artificer-recipe-page .artificer-ingredient-row {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+/* Name is the field that varies most in length, so it takes the slack. */
+.artificer-recipe-page .artificer-ingredient-row input[name$=".name"] {
+    flex: 2 1 auto;
+}
+
+.artificer-recipe-page .artificer-ingredient-row input[name$=".family"] {
+    flex: 1 1 auto;
+}
+
+.artificer-recipe-page .artificer-ingredient-row input[name$=".quantity"] {
+    flex: 0 0 4rem;
+}
+
+.artificer-recipe-page .artificer-ingredient-row select {
+    flex: 0 0 8rem;
+}
+
+.artificer-recipe-page .artificer-ingredient-row button {
+    flex: 0 0 auto;
+    line-height: 1;
+}
+
+/* --- View: the rendered recipe block --- */
+
+.artificer-recipe-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--color-border-light-tertiary, #b5b3a4);
+}
+
+.artificer-recipe-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.artificer-recipe-label {
+    flex: 0 0 8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: var(--font-size-11, 0.7rem);
+    opacity: 0.75;
+}
+
+.artificer-recipe-value {
+    flex: 1 1 auto;
+}
+
+.artificer-recipe-ingredients {
+    flex: 1 1 auto;
+    margin: 0;
+    padding-left: 1.1rem;
+}

@@ -22,6 +22,8 @@ import { initializeGatherSockets } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 import { PinsManager } from './manager-pins.js';
 import { getBlacksmithApi, postBlacksmithConsole } from './utils/blacksmith-console.js';
+import { RECIPE_PAGE_TYPE, RecipePageModel } from './data/models/model-recipe-page.js';
+import { RecipePageSheet } from './sheets/sheet-recipe-page.js';
 
 /**
  * Return the actor for the first controlled token, if any.
@@ -85,6 +87,25 @@ async function openArtificerWindow(createWindow, { requireToken = false, windowL
 // ================================================================== 
 
 Hooks.once('init', async () => {
+    // The recipe page subtype: data model + sheet.
+    //
+    // This MUST be `init`, not `ready`. Foundry validates documents as the world
+    // loads, before ready -- a page whose `type` names a subtype nobody has
+    // registered fails validation, one console error per page, and the page will
+    // not render. Registering late is indistinguishable from not registering.
+    //
+    // Existing recipes are all plain `text` pages and keep working through
+    // RecipeParser; nothing is converted here. See
+    // documentation/plans/plan-recipe-data-model.md.
+    Object.assign(CONFIG.JournalEntryPage.dataModels, {
+        [RECIPE_PAGE_TYPE]: RecipePageModel
+    });
+    foundry.applications.apps.DocumentSheetConfig.registerSheet(JournalEntryPage, MODULE.ID, RecipePageSheet, {
+        types: [RECIPE_PAGE_TYPE],
+        makeDefault: true,
+        label: 'Artificer Recipe'
+    });
+
     // Preload templates (v13+: global loadTemplates deprecated; removed in v15)
     await foundry.applications.handlebars.loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
@@ -94,6 +115,7 @@ Hooks.once('init', async () => {
         'modules/coffee-pub-artificer/templates/window-recipes.hbs',
         'modules/coffee-pub-artificer/templates/window-skills.hbs',
         'modules/coffee-pub-artificer/templates/window-gather.hbs',
+        'modules/coffee-pub-artificer/templates/page-recipe-fields-edit.hbs',
         'modules/coffee-pub-artificer/templates/partials/form-field.hbs',
         'modules/coffee-pub-artificer/templates/partials/toggle.hbs'
     ]);

@@ -58,6 +58,7 @@
     "scripts/data/models/model-component.js",
     "scripts/data/models/model-essence.js",
     "scripts/data/models/model-recipe.js",
+    "scripts/data/models/model-recipe-page.js",
     "scripts/data/models/model-blueprint.js",
     "scripts/data/potion-brewing-recipe-data.js",
     "scripts/data/storage/storage-ingredients.js",
@@ -91,6 +92,7 @@
     "scripts/window-gather.js",
     "scripts/api-artificer.js",
     "scripts/migrations/migrate-artificer-flags.js",
+    "scripts/sheets/sheet-recipe-page.js",
     "scripts/artificer.js"
   ],
   "packs": [
@@ -193,5 +195,10 @@
       }
     ]
   },
-  "flags": {}
+  "flags": {},
+  "documentTypes": {
+    "JournalEntryPage": {
+      "recipe": {}
+    }
+  }
 }

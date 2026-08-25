@@ -14,8 +14,17 @@ deleted.
 
 - [`scripts/data/models/model-recipe-page.js`](../../scripts/data/models/model-recipe-page.js)
   — `RecipePageModel` and `RECIPE_PAGE_TYPE`. Field-for-field with `ArtificerRecipe` minus
-  `id`, `journalPageId` and `source`-as-journal-UUID. Not registered, not imported by
-  anything, changes nothing at runtime.
+  `id`, `journalPageId` and `source`-as-journal-UUID.
+- [`scripts/sheets/sheet-recipe-page.js`](../../scripts/sheets/sheet-recipe-page.js) and
+  [`templates/page-recipe-fields-edit.hbs`](../../templates/page-recipe-fields-edit.hbs) —
+  extends the concrete `JournalEntryPageProseMirrorSheet`, so the description keeps stock
+  editing and the structured fields sit above it.
+- Registered at `init` in [`scripts/artificer.js`](../../scripts/artificer.js), with
+  `documentTypes` in `module.json`.
+
+**Nothing is converted.** Existing recipes are all plain `text` pages and still read through
+`RecipeParser`; the subtype is available but unused until step 4. Syntax-checked only — not
+yet opened in a live world.
 
 Two shape decisions worth knowing before the rest is built:
 
@@ -28,17 +37,17 @@ Two shape decisions worth knowing before the rest is built:
 
 ## What is left, in order
 
-1. **Register the subtype.** `documentTypes: { JournalEntryPage: { "recipe": {} } }` in
+1. ~~**Register the subtype.**~~ **DONE 2026-08-25.** `documentTypes: { JournalEntryPage: { "recipe": {} } }` in
    `module.json`, and `CONFIG.JournalEntryPage.dataModels` assignment in an `init` hook.
    **Must be `init`, not `ready`** — Foundry validates documents as the world loads, and a
    page naming an unregistered subtype fails validation and will not render. Registering
    late is indistinguishable from not registering.
 
-2. **A sheet.** Until one exists the pages render with Foundry's default, which for a
+2. ~~**A sheet.**~~ **DONE 2026-08-25.** Until one exists the pages render with Foundry's default, which for a
    subtype with no sheet is not usable. `DocumentSheetConfig.registerSheet` with
    `types: [RECIPE_PAGE_TYPE]`, `makeDefault: true`.
 
-3. **Read path first, write path second.** Point `manager-recipes` at `page.system` when the
+3. **Read path first, write path second.** ← NEXT Point `manager-recipes` at `page.system` when the
    page is a recipe subtype, falling back to `RecipeParser` for `text` pages. Both paths
    live at once — this is the writer-retires-first rule applied to ourselves, and it is what
    makes step 4 safe.

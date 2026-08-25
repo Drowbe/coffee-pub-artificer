@@ -17,7 +17,6 @@ import {
 } from './utility-artificer-item.js';
 import { normalizeItemNameForMatch } from './utils/helpers.js';
 import { buildItemRows, buildPerkParts, postArtificerCard } from './utils/chat-cards.js';
-import { isBlacksmithDebugOn } from './utils/blacksmith-console.js';
 import { getCacheStatus, refreshCache, getAllRecordsFromCache } from './cache/cache-items.js';
 import {
     buildCraftingKitNameSet,
@@ -295,52 +294,6 @@ function getRecipeJournalUuid(recipe) {
  * @param {Set<string>|string[]|null} [enabledSkillIds] - optional set/array of skill ids (lowercased) the actor has enabled (e.g. has kit); when provided, only journals containing recipes for these skills are included
  * @returns {Promise<{ allOption: { value: string, label: string, selected: boolean }, groups: Array<{ label: string, options: Array<{ value: string, label: string, selected: boolean }> }>, nameToUuids: Map<string, Set<string>>, journalByUuid: Map<string, string>, journalCoverByUuid: Map<string, { author: string, description: string, coverImage: string, skillIds: string[], hasCoverPage: boolean }> }>}
  */
-/**
- * Describe how a journal's Cover page was (or was not) detected.
- *
- * Debug-only, and kept out of the scan loop on purpose: every lookup here walks the
- * journal's pages and the content match parses each text page, which is far too much
- * work to do on every render for a line that is normally suppressed.
- * @param {string} uuid
- * @param {string} journalName
- * @param {JournalEntry|null} doc
- * @param {{ hasCoverPage?: boolean, coverImage?: string, author?: string, description?: string }} cover
- * @param {string} coverSource
- */
-function logCoverScan(uuid, journalName, doc, cover, coverSource) {
-    const pages = doc?.pages?.contents ?? [];
-    const sorted = [...pages].sort((a, b) => (a?.sort ?? 0) - (b?.sort ?? 0));
-    const pageTitle = (p) => String(p?.name ?? p?.title ?? p?.text?.title ?? '');
-
-    const pageList = sorted
-        .map((p) => `${pageTitle(p) || '(untitled)'}<${p?.type ?? '?'}>`)
-        .slice(0, 6)
-        .join(', ');
-
-    const matched = sorted.find((p) => /^\d*\s*cover page$/.test(pageTitle(p).replace(/\s+/g, ' ').trim().toLowerCase()));
-
-    const matchedByContent = sorted.find((p) => {
-        if (p?.type !== 'text') return false;
-        const raw = String(p?.text?.content ?? p?.text?.markdown ?? '');
-        if (!raw) return false;
-        let txt = raw;
-        try {
-            txt = new DOMParser().parseFromString(raw, 'text/html').body?.textContent ?? '';
-        } catch (_e) {
-            txt = raw;
-        }
-        return /\bcover\s*page\b/i.test(txt.replace(/\s+/g, ' ').trim());
-    });
-
-    BlacksmithUtils.postConsoleAndNotification(
-        MODULE.NAME,
-        'Cover scan',
-        `journal="${journalName}" uuid="${uuid}" hasCoverPage=${!!cover?.hasCoverPage} coverImage=${!!(cover?.coverImage ?? '').trim()} author=${!!(cover?.author ?? '').trim()} description=${!!(cover?.description ?? '').trim()} pages=${pages.length} coverSource="${coverSource}" matchedCoverTitle="${pageTitle(matched)}" matchedCoverByContent="${pageTitle(matchedByContent)}" samplePages="${pageList}"`,
-        true,
-        false
-    );
-}
-
 async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, enabledSkillIds = null) {
     let recipesToUse = recipes;
     if (enabledSkillIds != null && (enabledSkillIds instanceof Set ? enabledSkillIds.size : enabledSkillIds.length) > 0) {
@@ -550,13 +503,9 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
         try {
             const doc = await getFullJournalDoc(uuid, journalDocByUuid.get(uuid) ?? null);
             let cover = await getJournalCoverData(doc);
-            let coverSource = `primary:${uuid}`;
             if (!cover?.hasCoverPage) {
                 const fallback = await findCoverByNameFallback(journalByUuid.get(uuid) ?? '', uuid);
-                if (fallback?.cover?.hasCoverPage) {
-                    cover = fallback.cover;
-                    coverSource = fallback.source;
-                }
+                if (fallback?.cover?.hasCoverPage) cover = fallback.cover;
             }
             journalCoverByUuid.set(uuid, {
                 author: cover.author ?? '',
@@ -565,12 +514,6 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
                 skillIds: cover.skillIds ?? [],
                 hasCoverPage: !!cover.hasCoverPage
             });
-            // Cover-detection diagnostic, built only under Blacksmith debug mode: this
-            // scan re-runs on every render of the window, and describing what matched
-            // parses every text page of every journal.
-            if (isBlacksmithDebugOn()) {
-                logCoverScan(uuid, journalByUuid.get(uuid) ?? '', doc, cover, coverSource);
-            }
         } catch (_e) {
             journalCoverByUuid.set(uuid, { author: '', description: '', coverImage: '', skillIds: [], hasCoverPage: false });
             BlacksmithUtils.postConsoleAndNotification(
