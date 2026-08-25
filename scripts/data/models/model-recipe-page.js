@@ -14,10 +14,10 @@
 // edited with ProseMirror through the standard journal machinery — the same
 // split Librarian's CodexPageModel uses for Expanded Details.
 //
-// This model is NOT YET REGISTERED. Registering a subtype must happen at
-// `init` (a page whose type nobody registered fails validation at world load,
-// one console error per page, and will not render), and existing recipes are
-// all `text` pages that need converting. See
+// Registered at `init` in artificer.js -- it must be `init`, because a page
+// whose type nobody has registered fails validation at world load, one console
+// error per page, and will not render. NOTHING IS CONVERTED YET: existing
+// recipes are all `text` pages and still read through RecipeParser. See
 // documentation/plans/plan-recipe-data-model.md for the sequence.
 // ==================================================================
 
@@ -52,7 +52,12 @@ export class RecipePageModel extends foundry.abstract.TypeDataModel {
             // recipe for an item that does not exist yet stays valid and starts
             // working the moment that item is added. Same reasoning as the
             // `related` field on Librarian's CodexPageModel.
-            resultItemName: new fields.StringField({ required: true, blank: false }),
+            // Blank-permitting on purpose. A page created from the Create Page dialog
+            // has no fields yet, and a schema that refuses to hold an incomplete recipe
+            // cannot be used to author one. "Required" belongs to the IMPORTER, which
+            // rejects a payload without it, not to the model, which has to be able to
+            // represent a half-written page.
+            resultItemName: new fields.StringField({ required: false, blank: true, initial: '' }),
 
             // Modifier traits driving recipe/ingredient matching. NOT the shared
             // tags fragment — a wrong trait breaks crafting rather than
@@ -66,7 +71,9 @@ export class RecipePageModel extends foundry.abstract.TypeDataModel {
             ingredients: new fields.ArrayField(new fields.SchemaField({
                 type: new fields.StringField({ required: false, blank: true, initial: 'Component' }),
                 family: new fields.StringField({ required: false, blank: true, initial: '' }),
-                name: new fields.StringField({ required: true, blank: false }),
+                // Blank for the same reason: "Add ingredient" appends an empty row for
+                // the author to fill in, and a required name would reject it on click.
+                name: new fields.StringField({ required: false, blank: true, initial: '' }),
                 quantity: new fields.NumberField({ required: false, integer: false, min: 0, initial: 1 })
             }), { initial: [] }),
 
@@ -101,8 +108,11 @@ export class RecipePageModel extends foundry.abstract.TypeDataModel {
                 choices: Object.values(ITEM_TYPES)
             }),
             category: new fields.StringField({ required: false, blank: true, initial: '' }),
+            // Blank means "not stated". Deliberately NOT nullable with a null initial:
+            // null is not in `choices`, so the field would fail its own validation on a
+            // freshly created page -- the same trap as the required fields above.
             rarity: new fields.StringField({
-                required: false, blank: true, initial: null, nullable: true, choices: [...RECIPE_RARITIES, '']
+                required: false, blank: true, initial: '', choices: [...RECIPE_RARITIES, '']
             }),
 
             // NO `choices` HERE, DELIBERATELY. Valid crafting skill ids come from
