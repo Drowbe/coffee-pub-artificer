@@ -13,6 +13,22 @@
    Intensity is expressed in the MOTION as well as the colour -- a level 1 craft
    and a level 3 craft should differ at a glance, not just in hue.
 
+   THE OVERSCAN RULE. Any motion that moves, rotates or shrinks the image inside
+   its container MUST pre-zoom it so the image never pulls away from an edge. The
+   moment a gap opens between the icon and its frame, the effect stops reading as
+   motion and starts reading as a broken layout.
+
+   In practice, at roughly 48px:
+     - translating by N px needs about (size + 2N) / size of extra scale;
+       3px of travel wants ~1.14
+     - any keyframe that scales DOWN must still land at or above 1.0
+     - rotating a square needs headroom for its corners, ~1.08 at a few degrees
+
+   Each motion that moves the image records its resting zoom in
+   `--artificer-anim-overscan`, so the number is visible rather than buried in a
+   keyframe. Motions that only animate an overlay -- sweep, shimmer, ring -- do not
+   need it, because the image never moves.
+
    Each also sets --artificer-anim-registered, which is how the loader proves the
    CSS behind a manifest entry actually shipped. An entry with no block here is
    dropped and reported rather than silently doing nothing. */
@@ -29,57 +45,79 @@
 /* === STRIKE ========================= */
 /* ==================================== */
 /* Hammer, chisel, facet. Distinct from `shake`: shake is continuous agitation,
-   strike is a discrete blow with recovery between. Faster at higher levels. */
+   strike is a discrete blow with recovery between. Faster at higher levels.
+
+   ZOOM AND SLAM, not travel. An earlier version moved the image upward, which in a
+   fixed bordered slot just slid it under the frame -- the blow read as the picture
+   escaping rather than as force. Scaling stays inside the box at every size. */
 
 .crafting-bench-apparatus-slot.artificer-anim-strike .crafting-container-img,
 .crafting-bench-apparatus-slot.artificer-anim-strike .crafting-bench-container-empty i {
-    transform-origin: 50% 70%;
-    animation: artificer-anim-strike-blow calc(1.1s - 0.4s * var(--process-level, 0)) cubic-bezier(0.2, 0, 0.1, 1) infinite;
+    /* The blow SHRINKS on impact, so the resting zoom has to be high enough that
+       the smallest frame still lands above 1.0. See the overscan rule above. */
+    --artificer-anim-overscan: 1.10;
+    transform-origin: 50% 55%;
+    animation: artificer-anim-strike-blow calc(1.1s - 0.4s * var(--process-level, 0)) cubic-bezier(0.3, 0, 0.2, 1) infinite;
 }
 
 @keyframes artificer-anim-strike-blow {
-    0%   { transform: translateY(calc(-2px - 3px * var(--process-level, 0))); }
-    12%  { transform: translateY(0) scale(calc(1 + 0.03 * var(--process-level, 0))); }
-    22%  { transform: translateY(0) scale(1); }
-    100% { transform: translateY(calc(-2px - 3px * var(--process-level, 0))); }
+    /* Slow rise: the arm coming up. */
+    0%   { transform: scale(1.10); }
+    55%  { transform: scale(calc(1.10 + 0.12 * var(--process-level, 0))); }
+    /* The blow -- fast, and well past resting, but never below 1.02. */
+    64%  { transform: scale(calc(1.02 + 0.02 * var(--process-level, 0))); }
+    /* Settle back. */
+    76%  { transform: scale(calc(1.06 + 0.02 * var(--process-level, 0))); }
+    100% { transform: scale(1.10); }
 }
 
-/* The flash lands with the blow rather than running independently. */
+/* The flash lands ON the blow, at 64%, rather than running independently. */
 .crafting-bench-apparatus-slot.artificer-anim-strike::after {
     content: "";
     position: absolute;
     inset: 8px;
     pointer-events: none;
     border-radius: 12px;
-    background: radial-gradient(circle at 50% 70%, var(--process-color, #ffffff), transparent 60%);
+    background: radial-gradient(circle at 50% 55%, var(--process-color, #ffffff), transparent 60%);
     mix-blend-mode: screen;
     opacity: 0;
     animation: artificer-anim-strike-flash calc(1.1s - 0.4s * var(--process-level, 0)) linear infinite;
 }
 
 @keyframes artificer-anim-strike-flash {
-    0%, 10%   { opacity: 0; }
-    13%       { opacity: calc(0.5 * var(--process-level, 0)); }
-    30%, 100% { opacity: 0; }
+    0%, 60%   { opacity: 0; }
+    64%       { opacity: calc(0.55 * var(--process-level, 0)); }
+    80%, 100% { opacity: 0; }
 }
 
 /* ==================================== */
 /* === SWIRL ========================== */
 /* ==================================== */
 /* Stir, blend, simmer, tan. No jitter and no particles -- that is what separates
-   it from `shake`, which reads as violence where this reads as patience. */
+   it from `shake`, which reads as violence where this reads as patience.
+
+   THE IMAGE ORBITS, IT DOES NOT SPIN. Rotating a square icon inside a round-cornered
+   frame drags its corners through the border and looks broken. A small circular
+   translation reads as contents being moved around a vessel, which is the actual
+   fiction, and never leaves the box. The conic wash does the spinning. */
 
 .crafting-bench-apparatus-slot.artificer-anim-swirl .crafting-container-img,
 .crafting-bench-apparatus-slot.artificer-anim-swirl .crafting-bench-container-empty i {
-    transform-origin: 50% 60%;
-    animation: artificer-anim-swirl-turn calc(4s - 1.6s * var(--process-level, 0)) linear infinite;
+    /* Covers the 3px maximum orbit, so the translation never pulls an edge away
+       from the frame. See the overscan rule above. */
+    --artificer-anim-overscan: 1.14;
+    animation: artificer-anim-swirl-orbit calc(4s - 1.6s * var(--process-level, 0)) linear infinite;
 }
 
-@keyframes artificer-anim-swirl-turn {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+@keyframes artificer-anim-swirl-orbit {
+    0%   { transform: scale(1.14) translate(calc(1px + 2px * var(--process-level, 0)), 0); }
+    25%  { transform: scale(1.14) translate(0, calc(1px + 2px * var(--process-level, 0))); }
+    50%  { transform: scale(1.14) translate(calc(-1px - 2px * var(--process-level, 0)), 0); }
+    75%  { transform: scale(1.14) translate(0, calc(-1px - 2px * var(--process-level, 0))); }
+    100% { transform: scale(1.14) translate(calc(1px + 2px * var(--process-level, 0)), 0); }
 }
 
+/* The wash is round, so it CAN rotate without showing corners. */
 .crafting-bench-apparatus-slot.artificer-anim-swirl::after {
     content: "";
     position: absolute;
