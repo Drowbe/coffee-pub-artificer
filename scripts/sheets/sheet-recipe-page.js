@@ -226,6 +226,12 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
      * in the editor. `resync` is the documented way past that guard, and it is safe
      * here precisely because `submit()` has just captured the editor's content into
      * the same update.
+     *
+     * It must also be the ONLY render. `_processSubmitData` below suppresses the
+     * update's automatic one, because two renders detach the <prose-mirror> element
+     * while its async `#activateEditor` is still running -- the editor finishes,
+     * ProseMirrorMenu.render looks its own node up by id, finds nothing, and throws
+     * on `null.replaceWith`.
      */
     async #stage(changes) {
         this.#staged = changes;
@@ -482,6 +488,17 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                 }
             });
         }
+    }
+
+    /**
+     * @inheritDoc
+     * While an action is staging, this sheet owns the render: the update is told not
+     * to trigger one so `#stage` can issue a single `resync` render instead. Two
+     * renders race the editor's asynchronous activation. See `#stage`.
+     */
+    async _processSubmitData(event, form, submitData, options = {}) {
+        const updateOptions = this.#staged ? { ...options, render: false } : options;
+        return super._processSubmitData(event, form, submitData, updateOptions);
     }
 
     /** @inheritDoc */

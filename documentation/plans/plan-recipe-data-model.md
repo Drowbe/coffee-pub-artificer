@@ -47,12 +47,17 @@ Two shape decisions worth knowing before the rest is built:
    subtype with no sheet is not usable. `DocumentSheetConfig.registerSheet` with
    `types: [RECIPE_PAGE_TYPE]`, `makeDefault: true`.
 
-3. **Read path first, write path second.** ← NEXT Point `manager-recipes` at `page.system` when the
+3. **A Process is an item.** ← NEXT **This is the gate**, not a cleanup. Every other field in a
+   recipe now resolves to an item you drag or a skill from the world's mapping; `processType`
+   is the only one whose vocabulary still lives in our source, so it is the last thing between
+   this sheet and a GM authoring recipes without us. Detail below.
+
+4. **Read path first, write path second.** Point `manager-recipes` at `page.system` when the
    page is a recipe subtype, falling back to `RecipeParser` for `text` pages. Both paths
    live at once — this is the writer-retires-first rule applied to ourselves, and it is what
-   makes step 4 safe.
+   makes conversion safe.
 
-4. **Conversion.** Split into its own plan — see
+5. **Conversion.** Split into its own plan — see
    [`plan-recipe-migration.md`](plan-recipe-migration.md). The short version: the ~161 shipped
    compendium recipes are a *build step*, not a migration, and converting them first exercises
    the converter against real content at zero risk. Only user-authored world recipes need an
@@ -61,14 +66,14 @@ Two shape decisions worth knowing before the rest is built:
    **This is the step that touches live worlds and it needs its own decision, not just its
    own commit.**
 
-5. **Declare it to Blacksmith** as a mapped profile, and delete our import window, parser,
+6. **Declare it to Blacksmith** as a mapped profile, and delete our import window, parser,
    normalisers, `resolveItemByName` and result reporting.
 
-6. ~~**Fix the blank-apparatus round trip before step 5, not after.**~~ **DONE 2026-08-25.** A blank `Apparatus:`
+7. ~~**Fix the blank-apparatus round trip before conversion, not after.**~~ **DONE 2026-08-25.** A blank `Apparatus:`
    with a filled `Container:` round-tripped with the container as the apparatus
    (`parser-recipe.js`, `utility-artificer-recipe-import.js`). Fixed in the model
    already by keeping the two fields separate; the fix also had to land in the parser,
-   because the parser is what reads the pages being converted in step 4. Converting with the
+   because the parser is what reads the pages being converted. Converting with the
    bug live would have written the wrong apparatus into the new schema permanently, where it
    stops being a parser bug and becomes data.
 
@@ -82,24 +87,119 @@ Two shape decisions worth knowing before the rest is built:
    **Conversion is now unblocked.** More generally: a conversion inherits every defect of
    the reader that feeds it, so this ordering holds for any text-to-subtype conversion.
 
-## Open: methods are hardcoded, and there will be more of them
+## Step 3 in detail: a Process is an item
 
 `processType` is a fixed `['heat', 'grind']` in `schema-recipes.js`, and `HEAT_LEVELS` /
-`GRIND_LEVELS` are two hardcoded label maps selected by an `if`. Inscription (quill and
-parchment) is already anticipated, and its intensity vocabulary is neither of those.
+`GRIND_LEVELS` are two hardcoded label maps selected by an `if`. Ferment, smith, write and
+inscribe are all wanted, and none of their intensity vocabularies is either of those.
 
-This is the same mistake as filtering the vessel slots by `family === 'Apparatus'`: encoding
-what shipped as though it were a rule. The intensity vocabulary has to travel **with** the
-method, so a method wants to be data alongside the skills mapping rather than a constant —
-`{ id, label, levels: [...] }`.
+**A Process should be an Artificer item, dragged into the recipe like everything else.**
+It reads as a stretch until you list what a process actually is, and it is four things:
 
-Not scheduled: it touches the crafting engine, not just the sheet. Recorded so the sheet is
-not read as an endorsement of two methods.
+| | |
+|---|---|
+| **Method name** | `heat`, `grind`, `ferment`, `smith`, `write` — free text, not an enum |
+| **Levels** | three positions, each with a name and a colour. `Off/Low/Medium/High` and `Off/Coarse/Medium/Fine` are just two sets of words bound to the same three positions |
+| **Animation** | today `heating` and `grinding`; should be an agnostic named set the author picks from |
+| **Colour flow** | the selected level's colour is passed to the animation |
+
+That is the whole definition. It is data, it has no behaviour, and it is exactly the shape of
+an item flag block. Making it an item means a GM can author any number of processes without
+touching code, and the recipe sheet's Process field becomes a drop slot like the others —
+which also deletes the `if (processType === 'grind')` branching in both the sheet and the view.
+
+**This one slot DOES need a type check, and that is not a contradiction.** Apparatus and
+container are *roles* any item can fill — a sack is a container if the GM says so, which is
+why those slots filter nothing. A process is not a role; it is a definition object, and an
+item that carries no process flags has no method, no levels and no animation to offer. So the
+process slot rejects items without the flag, and it rejects them because they cannot function,
+not because of what they are called.
+
+**Related, worth a pass of its own:** we have no flag that marks *what kind of Artificer thing*
+an item is beyond `artificerType` (Component/Creation/Tool). Adding Process means adding a
+fourth, and it is worth auditing the existing item data at the same time — what is actually
+tagged, what is inconsistent, and whether the drop slots that legitimately do need a check
+have anything reliable to check against.
+
+### The shape
+
+Store the process the same way every other item reference is stored: **by name, plus a level
+index**. `processType: 'heat'` becomes `processName: 'Heat'`; `processLevel: 0-3` is unchanged
+and now indexes the levels the process item declares.
+
+### The migration is nearly free, because of that
+
+Ship **Heat** and **Grind** as Process items carrying today's level names and colours, then map
+legacy `processType: 'heat'` to the item named `Heat`. `HEAT_LEVELS` and `GRIND_LEVELS` delete
+outright rather than earning a compatibility branch — the constants become two shipped items.
+Same writer-retires-the-field shape as everything else in this plan.
+
+### Honest scope
+
+Small in the sheet and the view; not sheet-only. It reaches the crafting engine, which reads
+`processType`/`processLevel`, and the animation layer, which currently picks its effect from a
+hardcoded boolean. Those are the two places to check before calling it done.
+
+### Order within step 3
+
+**3a. Nail down recipe and item creation.** Finish the authoring pass in flight. Everything
+after this assumes a GM can build a recipe and the items it references without our help.
+
+**3b. Create the animation choices.** *Before* the item system, because a Process item has to
+NAME an animation — the vocabulary is a dependency of the schema, not a follow-up to it.
+
+The current effects already take exactly the two inputs the level model provides, which is the
+good news: `styles/window-crafting.css` drives the heat effect from a `--heat` variable in the
+0-1 range, and colours it with a hardcoded `rgba(255, 180, 90, ...)`; the grind effect is a
+sibling class with hardcoded `rgba(235, 225, 205, ...)` dust. So the work is:
+
+- Rename `--heat` to a process-agnostic level variable, still 0-1.
+- Replace both hardcoded colours with the level's colour, passed in as a variable.
+- Turn `crafting-bench-apparatus-grinding` from a boolean class into a named-animation class,
+  applied from data rather than from `isGrinding: this.processType === 'grind'`
+  (`window-crafting.js:1435`).
+- Then author additional named effects. That part is design, not engineering.
+
+Note `data-unstable` at high heat (`window-crafting.js:1415`) is a *heat* concept, not a
+universal one. Either it becomes a per-animation option or it stays with the effects that want
+it; it should not silently apply to fermenting.
+
+**3c. Extend the item system and migrate the two hardcoded processes.** Add the Process flag
+block, ship **Heat** and **Grind** as items carrying today's level names and colours, map
+legacy `processType` to them, and delete `HEAT_LEVELS` / `GRIND_LEVELS`.
+
+This is also the natural moment for the item-data audit noted above: adding a fourth
+`artificerType` is the first time a drop slot legitimately needs something reliable to check
+against.
+
+**3d. Then AI authoring, through Blacksmith's importer.** This is what the sequence is for, and
+it is strictly downstream.
+
+**Import mirrors the native path; it cannot lead it.** An import produces the same documents
+the UI produces. If a GM cannot create a Process item and craft with it by hand, a JSON payload
+describing one fails for the identical reason — the failure is in the item system, and import
+is just a second way to reach it. So no import work starts until the system is functional
+without import. **That makes step 3c the last body of work before the system stands on its
+own.**
+
+**No coordination is needed for the vocabulary change.** Under `registerFieldGroup` the group
+is ours: we declare the values, the per-field guidance, the JSON shape and the preamble, and
+Blacksmith derives the template, validation, prompt and export from that declaration. Adding
+Process to `artificerType` and giving it its Process-only fields is an edit to
+[`declaration-artificer-field-group.md`](declaration-artificer-field-group.md), not a message
+to anyone. That is precisely the boundary the field group exists to draw — Blacksmith hosts
+none of our vocabulary, so changing it is not an event on their side.
+
+The one thing genuinely worth watching is that Process-only fields are the conditional-*fields*
+case, a step past the conditional-*vocabulary* case Blacksmith is already designing for
+`artificerFamily` and `skill`. If `requiresOption` and the rules vocabulary cannot express
+"these fields exist only when artificerType is Process", that is a real gap — but it is one we
+will discover by declaring it, not by predicting it.
 
 ## Sequencing against Blacksmith
 
-Steps 1-4 are ours alone and block nothing of theirs. Step 5 needs their step 8. The
-dynamic-vocabulary mechanism for `skill` needs designing before step 5 but not before step 4,
+Steps 1-5 are ours alone and block nothing of theirs. Step 6 needs their step 8. The
+dynamic-vocabulary mechanism for `skill` needs designing before step 6 but not before,
 and they have it recorded.
 
 Nothing here needs to wait for the item field group — different kind, different registry.

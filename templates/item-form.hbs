@@ -5,7 +5,10 @@
             <div class="item-form-header-icon">
                 <i class="fa-solid fa-hammer"></i>
             </div>
-            <div class="item-form-header-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} {{itemTypeName}}</div>
+            {{!-- Not "Create Component": the Type dropdown below chooses Component,
+                  Creation or Tool, so naming one of them in the title contradicts the
+                  form the moment the author changes it. --}}
+            <div class="item-form-header-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} Artificer Item</div>
         </div>
     </header>
 

@@ -116,7 +116,6 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const mergedContext = {
             isEditMode: this.isEditMode,
             itemType: artificerType,
-            itemTypeName: artificerType,
             isComponent: artificerType === ARTIFICER_TYPES.COMPONENT,
             isEssenceFamily: selectedFamily === 'Essence',
             artificerTypeOptions,

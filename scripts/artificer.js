@@ -334,8 +334,8 @@ async function registerMenubarIntegration() {
     const createItemItemId = 'artificer-create-item';
     const createItemRegistered = blacksmith.registerSecondaryBarItem(barType, createItemItemId, {
         icon: 'fa-solid fa-plus-circle',
-        label: 'Create Component',
-        title: 'Create Component',
+        label: 'Create Artificer Item',
+        title: 'Create an Artificer Component, Creation, or Tool',
         group: 'Manage Artificer',
         order: 10,
         moduleId: MODULE.ID,
@@ -346,7 +346,7 @@ async function registerMenubarIntegration() {
             postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Create Item button clicked`, null, false, false);
             
             try {
-                await openArtificerWindow(() => new ArtificerItemForm(), { windowLabel: 'Create Component' });
+                await openArtificerWindow(() => new ArtificerItemForm(), { windowLabel: 'Create Artificer Item' });
                 postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Form rendered successfully`, null, false, false);
             } catch (error) {
                 postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Error creating form: ${error.message}`, null, false, false);
