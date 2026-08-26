@@ -242,15 +242,26 @@ wearing a contract's clothes, and enforcing it is most of the point of declaring
    or the prompt unless the family calls for it.
 
    `requiresOption` is close but wrong — it gates on an import OPTION the author ticks, and
-   this gates on another FIELD's value. If the model gains a `requiresWhen`-style gate, these
-   four are its first real use. Until then they are harmless: declared, optional, defaulted,
-   and simply blank on every non-Process item. That is a worse authoring experience than it
-   needs to be, not a correctness problem.
+   this gates on another FIELD's value.
+
+   **The notation for it already exists** (Blacksmith, 2026-08-26): `field:value` references in
+   the rule vocabulary mean "this field has this value", and that reference gained scalar
+   support when we reported it was array-only. So a field-level `requiresWhen:
+   'artificerFamily:Process'` reuses what is already there rather than inventing a second way
+   to say the same thing. These four fields are its first real use.
+
+   Until it lands they are harmless: declared, optional, defaulted, and simply blank on every
+   non-Process item. That is a worse authoring experience than it needs to be, not a
+   correctness problem.
 
 6. **`artificerProcessAnimation` has no `values` list, deliberately.** The animation vocabulary
    is `resources/process-animations.json`, a manifest an art pack can extend by shipping CSS
-   plus an entry. So the allowed set is not known at declaration time — the same shape as
-   `skill` reading ids from a user-configurable mapping. The ten we ship are named in the
+   plus an entry. So the allowed set is not known at declaration time.
+
+   It is NOT the same source as `skill`, which Blacksmith noted when collecting the cases:
+   `skill` is per-world config, answerable from the world. This is per-installed-content, and
+   not answerable at all until you look at what is installed. Both are runtime sets; only one
+   of them the world can answer. The ten we ship are named in the
    guidance so an author has something concrete, but a fixed list would reject a valid entry
    from a pack we have never seen.
 
