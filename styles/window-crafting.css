@@ -2198,6 +2198,15 @@
    `none` is a valid animation and deliberately has no rules: a process that
    should look inert names it rather than being special-cased. */
 
+/* Each animation declares itself so the manifest can be checked against reality.
+   `resources/process-animations.json` lists what a Process item may choose; this
+   marker is what proves the CSS behind an entry actually shipped. Without it a
+   manifest could offer "Bubble", a GM could pick it, and nothing would happen with
+   no error anywhere. */
+.artificer-anim-none { --artificer-anim-registered: 1; }
+.artificer-anim-pulse { --artificer-anim-registered: 1; }
+.artificer-anim-shake { --artificer-anim-registered: 1; }
+
 .crafting-bench-apparatus-slot.artificer-anim-none {
     /* Intentionally empty. Named so the absence is a choice, not an omission. */
 }

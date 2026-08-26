@@ -146,7 +146,8 @@ const DND_CONSUMABLE_FAMILY = {
  * Build a lightweight cache record from an Item
  * @param {Item} item
  * @param {string} source - compendium id or 'world'
- * @returns {{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null, biomes: string[] }}
+ * @returns {{ name: string, uuid: string, img: string, type: string, dndType: string, family: string, tags: string[], tier: number, rarity: string, source: string, artificerType: string|null, biomes: string[], processLevels: object[]|null,
+ *          processAnimation: string|null, processSound: string|null, processUnstableAtMax: boolean }}
  */
 function itemToRecord(item, source) {
     const flags = item.flags?.artificer ?? item.flags?.[MODULE.ID] ?? {};
@@ -179,7 +180,16 @@ function itemToRecord(item, source) {
         rarity: (item.system?.rarity ?? 'Common').trim() || 'Common',
         source,
         artificerType: flags[ARTIFICER_FLAG_KEYS.TYPE] ?? flags.type ?? null,
-        biomes
+        biomes,
+        // Process items only. Carried on the record because the crafting bench
+        // resolves a process DURING RENDER and the cache is the only synchronous
+        // source -- loading the item document would make every consumer async for
+        // the sake of four fields.
+        processLevels: Array.isArray(flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS])
+            ? flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS] : null,
+        processAnimation: flags[ARTIFICER_FLAG_KEYS.PROCESS_ANIMATION] ?? null,
+        processSound: flags[ARTIFICER_FLAG_KEYS.PROCESS_SOUND] ?? null,
+        processUnstableAtMax: flags[ARTIFICER_FLAG_KEYS.PROCESS_UNSTABLE] ?? false
     };
 }
 

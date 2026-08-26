@@ -1,0 +1,21 @@
+{
+  "name": "Artificer Core Animations",
+  "description": "The crafting-bench effects a Process item can choose from. Each entry is an INDEX of CSS that must already exist: an id here means a stylesheet somewhere provides `.artificer-anim-<id>`, reading `--process-level` (0-1) and `--process-color`. Names describe the motion, not the process, so a ferment can pulse and a sieve can shake.",
+  "animations": [
+    {
+      "id": "none",
+      "label": "None",
+      "description": "No motion. For processes that should look inert while running."
+    },
+    {
+      "id": "pulse",
+      "label": "Pulse",
+      "description": "A slow swell and settle, brightening with intensity. Suits heat, ferment, infusion — anything that builds."
+    },
+    {
+      "id": "shake",
+      "label": "Shake",
+      "description": "A fast rotate and press with a drifting particle field. Suits grind, sift, mill — anything abrasive or agitated."
+    }
+  ]
+}

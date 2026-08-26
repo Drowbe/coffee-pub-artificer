@@ -158,13 +158,16 @@ biomes and quirk only for Component, and traits already have a proper picker. Wh
 | ~~**Not on the Blacksmith Window API**~~ | **DONE for this window.** Extends `BlacksmithWindowBaseV2` via the API bridge; fields carry `blacksmith-input` / `blacksmith-select` / `blacksmith-textarea`. The rest of Artificer's windows remain on the CRITICAL list in `TODO.md`. |
 | ~~**Two trait controls**~~ **DONE.** | This window's picker (input, live suggestions, removable pills) is better than the `+ Existing trait...` select on the recipe sheet. Converged on `scripts/systems/trait-picker.js`, used by both. The port also fixed a real limitation: the item window only committed a trait on Enter when it **matched an existing candidate**, so inventing a new trait there was impossible. |
 
-**3b. Create the animation choices.** ← IN PROGRESS. The seam is built:
+**3b. Create the animation choices.** ~~IN PROGRESS~~ **DONE 2026-08-25, verified in a live world.** The seam is built:
 [`scripts/systems/process-definitions.js`](../../scripts/systems/process-definitions.js) holds
 `heat` and `grind` as data (label, levels with colours, animation id, sound,
 `unstableAtMax`), and the crafting bench now reads definitions instead of branching on
 the id. CSS hooks are `artificer-anim-<id>` driven by `--process-level` and
-`--process-color`. Authoring further effects is next, then 3c swaps `getProcess()`
-from constants to items.
+`--process-color`. Authoring further effects is deliberately NOT part of this step: only
+`heat` and `grind` exist, and they use `pulse` and `shake`. An effect with no process
+using it is a speculative consumer — the same reason the JSON manifest waits. New
+effects arrive in 3c, when a GM-authored process actually calls for one. Adding one is
+a CSS block plus an entry in `process-definitions.js`, with no JavaScript change.
 
 Original note: *Before* the item system, because a Process item has to
 NAME an animation — the vocabulary is a dependency of the schema, not a follow-up to it.
@@ -208,7 +211,7 @@ element at load, so an unbacked entry reports itself.
 does not exist yet. Writing a loader with nothing reading it is the speculative-consumer
 mistake — the same one that got a compatibility layer deleted in the importer work.
 
-**3c. Extend the item system and migrate the two hardcoded processes.** Add the Process flag
+**3c. Extend the item system and migrate the two hardcoded processes.** ← NEXT Add the Process flag
 block, ship **Heat** and **Grind** as items carrying today's level names and colours, map
 legacy `processType` to them, and delete `HEAT_LEVELS` / `GRIND_LEVELS`.
 

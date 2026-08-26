@@ -6,7 +6,8 @@ import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { OFFICIAL_BIOMES } from './schema-ingredients.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } from './schema-artificer-item.js';
+import { getProcessAnimations, PROCESS_LEVEL_MAX } from './systems/process-definitions.js';
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
@@ -19,6 +20,22 @@ import { bindTraitPicker } from './systems/trait-picker.js';
 import { BlacksmithWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 const ITEM_FORM_BOUNDS_SETTING = 'windowBoundsItemForm';
+
+/**
+ * A CSS colour as `#rrggbb`, for an `<input type="color">` which accepts nothing else.
+ * Anything unparseable falls back to white rather than to an empty value, because a
+ * blank colour input silently reports `#000000` and would write black.
+ */
+function toHexColor(value) {
+    const raw = String(value ?? '').trim();
+    if (/^#[0-9a-f]{6}$/i.test(raw)) return raw;
+    const rgb = raw.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i);
+    if (!rgb) return '#ffffff';
+    const hex = rgb.slice(1, 4)
+        .map(n => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, '0'))
+        .join('');
+    return `#${hex}`;
+}
 
 /** Module-level ref for document delegation (activateListeners may not run with PARTS) */
 let _currentItemFormRef = null;
@@ -123,7 +140,47 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         const skillLevel = Math.max(1, Math.min(20, Math.floor(
             this._formState?.skillLevel ?? flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1)));
 
+        // --- Process family fields ------------------------------------------
+        // Colour inputs speak hex; the flag stores whatever CSS colour was authored.
+        // Converting only for DISPLAY keeps an authored rgba() intact until someone
+        // actually picks a new colour.
+        const isProcessFamily = selectedFamily === PROCESS_FAMILY;
+        const storedLevels = flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS];
+        const levelDefaults = ['Off', 'Low', 'Medium', 'High'];
+        const processLevels = Array.from({ length: PROCESS_LEVEL_MAX + 1 }, (_, index) => {
+            const stored = Array.isArray(storedLevels) ? storedLevels[index] : null;
+            const fromState = this._formState?.processLevels?.[index];
+            return {
+                index,
+                label: fromState?.label ?? stored?.label ?? '',
+                placeholder: levelDefaults[index] ?? `Level ${index}`,
+                colorHex: toHexColor(fromState?.color ?? stored?.color)
+            };
+        });
+
+        let animations = [];
+        if (isProcessFamily) {
+            try {
+                animations = await getProcessAnimations();
+            } catch {
+                // Reported by the loader; an empty list degrades to no choice rather
+                // than blocking the form.
+            }
+        }
+        const selectedAnimation = this._formState?.processAnimation
+            ?? flags[ARTIFICER_FLAG_KEYS.PROCESS_ANIMATION] ?? 'none';
+
         const mergedContext = {
+            isProcessFamily,
+            processLevels,
+            animationOptions: animations.map(a => ({
+                value: a.id, label: a.label, selected: a.id === selectedAnimation
+            })),
+            animationDescription: animations.find(a => a.id === selectedAnimation)?.description ?? '',
+            processSound: this._formState?.processSound
+                ?? flags[ARTIFICER_FLAG_KEYS.PROCESS_SOUND] ?? '',
+            processUnstable: this._formState?.processUnstable
+                ?? flags[ARTIFICER_FLAG_KEYS.PROCESS_UNSTABLE] ?? false,
             // Required by the Blacksmith zone contract: it is the root element id.
             appId: this.id,
             windowTitle: this.isEditMode ? 'Edit Artificer Item' : 'Create Artificer Item',
@@ -231,6 +288,20 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
 
         const affinity = value('#affinity');
         if (affinity !== undefined) state.affinity = affinity;
+
+        const animation = value('#processAnimation');
+        if (animation !== undefined) state.processAnimation = animation;
+        const sound = value('#processSound');
+        if (sound !== undefined) state.processSound = sound;
+        const unstable = root.querySelector('#processUnstable');
+        if (unstable) state.processUnstable = unstable.checked;
+        const levelRows = root.querySelectorAll('.artificer-process-level');
+        if (levelRows.length) {
+            state.processLevels = Array.from(levelRows).map(row => ({
+                label: row.querySelector('input[type="text"]')?.value ?? '',
+                color: row.querySelector('input[type="color"]')?.value ?? '#ffffff'
+            }));
+        }
 
         const biomes = value('#artificer-biomes-hidden');
         if (biomes !== undefined) {
@@ -541,6 +612,24 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             skillLevel: Math.max(1, Math.min(20, parseInt(formObject.skillLevel, 10) || 1)),
             rarity: 'Common'
         };
+
+        if (family === PROCESS_FAMILY) {
+            // Levels are indexed form fields rather than one blob: four labelled rows
+            // an author can see is a better control than a JSON textarea, and the flag
+            // shape stays an array either way.
+            const levels = [];
+            for (let index = 0; index <= PROCESS_LEVEL_MAX; index++) {
+                levels.push({
+                    label: (formObject[`processLevelLabel${index}`] ?? '').trim(),
+                    color: formObject[`processLevelColor${index}`] ?? '#ffffff'
+                });
+            }
+            artificerData.processLevels = levels;
+            artificerData.processAnimation = formObject.processAnimation || 'none';
+            const sound = (formObject.processSound ?? '').trim();
+            if (sound) artificerData.processSound = sound;
+            artificerData.processUnstableAtMax = Boolean(formObject.processUnstable);
+        }
 
         if (this.itemType === ARTIFICER_TYPES.COMPONENT) {
             const rawBiomes = formObject.biomes

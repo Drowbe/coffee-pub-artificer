@@ -33,7 +33,13 @@ export const FAMILIES_BY_TYPE = {
     ],
     [ARTIFICER_TYPES.TOOL]: [
         'Apparatus',
-        'Container'
+        'Container',
+        // A Process is not a vessel you hold, but it IS part of the apparatus of
+        // crafting, and the Tools browser already groups by family. A family here
+        // rather than a fourth ARTIFICER_TYPE keeps the top-level vocabulary at
+        // three and reuses the family-gated field pattern that Essence/affinity
+        // established. See plan-recipe-data-model.md, "a Process is an item".
+        'Process'
     ]
 };
 
@@ -50,7 +56,8 @@ export const FAMILY_LABELS = {
     Poison: 'Poison',
     Potion: 'Potion',
     Apparatus: 'Apparatus',
-    Container: 'Container'
+    Container: 'Container',
+    Process: 'Process'
 };
 
 /**
@@ -175,8 +182,18 @@ export const ARTIFICER_FLAG_KEYS = {
     SKILL_LEVEL: 'artificerSkillLevel',
     BIOMES: 'artificerBiomes',
     QUIRK: 'artificerQuirk',
-    AFFINITY: 'artificerAffinity'
+    AFFINITY: 'artificerAffinity',
+    // Process family only. A process is four things and no behaviour: what to call
+    // its intensity at each of four positions, what colour each is, which named
+    // animation the bench plays, and whether it destabilises at full.
+    PROCESS_LEVELS: 'artificerProcessLevels',
+    PROCESS_ANIMATION: 'artificerProcessAnimation',
+    PROCESS_SOUND: 'artificerProcessSound',
+    PROCESS_UNSTABLE: 'artificerProcessUnstableAtMax'
 };
+
+/** The Tool family whose items define a crafting process. */
+export const PROCESS_FAMILY = 'Process';
 
 /**
  * @typedef {Object} ArtificerItemFlags
@@ -187,6 +204,11 @@ export const ARTIFICER_FLAG_KEYS = {
  * @property {string[]} [artificerBiomes] - Biomes (components only)
  * @property {string} [artificerAffinity] - Essence Affinity (Heat|Cold|Electric|...). Essence family only.
  * @property {string} [artificerQuirk] - Optional quirk (e.g. Found in Battlefields). Components only.
+ * @property {Array<{label: string, color: string}>} [artificerProcessLevels] - Four intensity
+ *           positions, index 0 always "off". Process family only.
+ * @property {string} [artificerProcessAnimation] - Named animation id the bench plays. Process only.
+ * @property {string} [artificerProcessSound] - Sound played while crafting. Process only.
+ * @property {boolean} [artificerProcessUnstableAtMax] - Whether full intensity destabilises. Process only.
  * @property {string} [type] - (legacy) Use artificerType
  * @property {string} [family] - (legacy) Use artificerFamily
  * @property {string[]} [traits] - (legacy) Use artificerTraits

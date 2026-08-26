@@ -348,6 +348,16 @@ function buildArtificerFlags(artificerData) {
         if (artificerData.quirk) flags[ARTIFICER_FLAG_KEYS.QUIRK] = String(artificerData.quirk).trim();
     }
     if (artificerData.affinity) flags[ARTIFICER_FLAG_KEYS.AFFINITY] = artificerData.affinity;
+
+    // Process family. Written only when levels exist: an item in the Process family
+    // whose fields were never filled in is incomplete, and storing empty levels would
+    // make it resolve as a process that renders nothing.
+    if (Array.isArray(artificerData.processLevels) && artificerData.processLevels.length) {
+        flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS] = artificerData.processLevels;
+        flags[ARTIFICER_FLAG_KEYS.PROCESS_ANIMATION] = artificerData.processAnimation ?? 'none';
+        flags[ARTIFICER_FLAG_KEYS.PROCESS_UNSTABLE] = Boolean(artificerData.processUnstableAtMax);
+        if (artificerData.processSound) flags[ARTIFICER_FLAG_KEYS.PROCESS_SOUND] = artificerData.processSound;
+    }
     return flags;
 }
 

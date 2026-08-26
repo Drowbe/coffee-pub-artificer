@@ -19,6 +19,9 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
+import { getAllRecordsFromCache } from '../cache/cache-items.js';
+import { ARTIFICER_TYPES, PROCESS_FAMILY } from '../schema-artificer-item.js';
+import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 
 /**
  * Named animations the crafting bench can play.
@@ -85,22 +88,127 @@ export const BUILTIN_PROCESSES = [
 /** Used when a recipe names a process nothing can resolve. */
 const FALLBACK_PROCESS = BUILTIN_PROCESSES[0];
 
+/** Animation manifest, loaded once. */
+let _animations = null;
+
 /**
- * Resolve a process by id.
+ * Turn a Process ITEM's flags into a definition.
  *
- * Step 3c extends this to look in the item cache first, so a GM-authored
- * process wins over a built-in of the same name. Callers do not change.
+ * A process authored by a GM and one Artificer ships are the same shape by the
+ * time anything reads them, which is the point: nothing downstream knows or
+ * cares which it got.
+ * @param {object} record - Item cache record.
+ * @returns {object|null}
+ */
+function processFromRecord(record) {
+    const levels = record?.processLevels;
+    // No levels means no process. An item in the Process family that never had its
+    // fields filled in is incomplete, not a process with defaults.
+    if (!Array.isArray(levels) || !levels.length) return null;
+    return {
+        id: String(record.name ?? '').trim().toLowerCase(),
+        label: record.name,
+        animation: record.processAnimation || PROCESS_ANIMATIONS.NONE,
+        sound: record.processSound || '',
+        unstableAtMax: Boolean(record.processUnstableAtMax),
+        levels: levels.map(l => ({ label: l?.label ?? '', color: l?.color ?? 'transparent' }))
+    };
+}
+
+/** Every Process item currently in the cache. */
+function authoredProcesses() {
+    const found = [];
+    for (const record of getAllRecordsFromCache()) {
+        if (record?.artificerType !== ARTIFICER_TYPES.TOOL) continue;
+        if (record?.family !== PROCESS_FAMILY) continue;
+        const process = processFromRecord(record);
+        if (process) found.push(process);
+    }
+    return found;
+}
+
+/**
+ * Resolve a process by id, or by an item's name.
+ *
+ * AUTHORED WINS. A GM who makes a process called "Heat" is overriding ours on
+ * purpose; silently preferring the built-in would make their item inert with no
+ * way to tell. Falls back to the built-ins, then to the first of them, so a
+ * recipe naming something that no longer exists still crafts rather than throwing.
  * @param {string} id
  * @returns {object} A process definition; never null.
  */
 export function getProcess(id) {
     const key = String(id ?? '').trim().toLowerCase();
-    return BUILTIN_PROCESSES.find(p => p.id === key) ?? FALLBACK_PROCESS;
+    return authoredProcesses().find(p => p.id === key)
+        ?? BUILTIN_PROCESSES.find(p => p.id === key)
+        ?? FALLBACK_PROCESS;
 }
 
-/** Every process that can currently be chosen. */
+/**
+ * Every process that can currently be chosen, authored ones first.
+ * A built-in is hidden when an authored process shares its id, for the same
+ * reason `getProcess` prefers it.
+ */
 export function getAllProcesses() {
-    return BUILTIN_PROCESSES.slice();
+    const authored = authoredProcesses();
+    const taken = new Set(authored.map(p => p.id));
+    return [...authored, ...BUILTIN_PROCESSES.filter(p => !taken.has(p.id))];
+}
+
+/**
+ * The animations a Process item may choose from.
+ *
+ * The manifest is an INDEX of CSS, not a definition of it -- an entry means a
+ * stylesheet provides `.artificer-anim-<id>`. Entries with no CSS behind them are
+ * dropped and reported: offering an animation that silently does nothing is worse
+ * than offering fewer.
+ * @returns {Promise<Array<{id: string, label: string, description: string}>>}
+ */
+export async function getProcessAnimations() {
+    if (_animations) return _animations;
+
+    let declared = [];
+    try {
+        const response = await fetch(`modules/${MODULE.ID}/resources/process-animations.json`);
+        const data = await response.json();
+        declared = Array.isArray(data?.animations) ? data.animations : [];
+    } catch (error) {
+        postBlacksmithConsole(MODULE.NAME, 'Could not read the process animation manifest', error?.message ?? String(error), true, false);
+        _animations = [];
+        return _animations;
+    }
+
+    // Probe: an animation's CSS sets `--artificer-anim-registered`. A manifest
+    // entry whose class sets nothing has no stylesheet behind it.
+    const probe = document.createElement('div');
+    probe.style.display = 'none';
+    document.body.appendChild(probe);
+    const backed = [];
+    const missing = [];
+    try {
+        for (const animation of declared) {
+            if (!animation?.id) continue;
+            probe.className = `artificer-anim-${animation.id}`;
+            const registered = getComputedStyle(probe).getPropertyValue('--artificer-anim-registered').trim();
+            (registered ? backed : missing).push(animation);
+        }
+    } finally {
+        probe.remove();
+    }
+
+    if (missing.length) {
+        postBlacksmithConsole(MODULE.NAME,
+            `Process animations declared with no CSS behind them: ${missing.map(a => a.id).join(', ')}`,
+            null, true, false);
+    }
+
+    _animations = backed;
+    return _animations;
+}
+
+/** Drop the cached manifest (settings change, module reload). */
+export function invalidateProcessAnimations() {
+    _animations = null;
 }
 
 /**

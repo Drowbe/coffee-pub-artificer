@@ -316,3 +316,47 @@
     line-height: 1.35;
     opacity: 0.55;
 }
+
+/* ------------------------------------ */
+/* --- PROCESS FAMILY FIELDS ---------- */
+/* ------------------------------------ */
+/* Shown only when the Tool family is Process. Four intensity positions, each a
+   label and a colour, plus the animation the crafting bench plays. */
+
+.artificer-item-form .artificer-process-levels {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.artificer-item-form .artificer-process-level {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* The position number is the one thing an author cannot change: 0 is always off. */
+.artificer-item-form .artificer-process-level-index {
+    flex: 0 0 1.25rem;
+    text-align: center;
+    font-size: 0.75em;
+    opacity: 0.5;
+}
+
+.artificer-item-form .artificer-process-level input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.artificer-item-form .artificer-process-level-color {
+    flex: 0 0 2.25rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid var(--craft-border-color);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+}

@@ -65,6 +65,48 @@
                 </div>
                 
             </div>
+            {{#if isProcessFamily}}
+            {{!-- Process family only. A process is four things and no behaviour:
+                  what its intensity is called at each position, what colour each
+                  paints with, which named animation the bench plays, and whether
+                  full intensity destabilises. --}}
+            <div class="artificer-form-group">
+                <label class="blacksmith-field-label">Intensity Levels</label>
+                <ol class="artificer-process-levels">
+                    {{#each processLevels}}
+                    <li class="artificer-process-level">
+                        <span class="artificer-process-level-index">{{this.index}}</span>
+                        <input type="text" class="blacksmith-input" name="processLevelLabel{{this.index}}"
+                            value="{{this.label}}" placeholder="{{this.placeholder}}" aria-label="Level {{this.index}} label" />
+                        <input type="color" class="artificer-process-level-color" name="processLevelColor{{this.index}}"
+                            value="{{this.colorHex}}" aria-label="Level {{this.index}} colour" />
+                    </li>
+                    {{/each}}
+                </ol>
+                <p class="artificer-form-hint">Position 0 is always "off". The colour of the selected level is what the animation paints with.</p>
+            </div>
+            <div class="artificer-form-group">
+                <label class="blacksmith-field-label" for="processAnimation">Animation</label>
+                <select id="processAnimation" name="processAnimation" class="blacksmith-select">
+                    {{#each animationOptions}}
+                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                    {{/each}}
+                </select>
+                <p class="artificer-form-hint">{{animationDescription}}</p>
+            </div>
+            <div class="artificer-form-group">
+                <label class="blacksmith-field-label" for="processSound">Sound</label>
+                <input type="text" class="blacksmith-input" id="processSound" name="processSound"
+                    value="{{processSound}}" placeholder="modules/coffee-pub-artificer/sounds/…" />
+                <p class="artificer-form-hint">Played while the craft runs. Leave blank for silence.</p>
+            </div>
+            <div class="artificer-form-group">
+                <label class="blacksmith-field-label" for="processUnstable">Unstable at full intensity</label>
+                <input type="checkbox" id="processUnstable" name="processUnstable" {{#if processUnstable}}checked{{/if}} />
+                <p class="artificer-form-hint">Heat flickers when it runs away; a ferment does not. Off unless the process should look dangerous at maximum.</p>
+            </div>
+            {{/if}}
+
             {{#if isComponent}}
             <div class="artificer-form-group artificer-biomes-group">
                 <label class="blacksmith-field-label">Habitat</label>

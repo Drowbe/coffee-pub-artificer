@@ -18,10 +18,11 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { ITEM_TYPES, PROCESS_TYPES, HEAT_LEVELS, GRIND_LEVELS, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { getProcess, getProcessLevel, PROCESS_LEVEL_MAX } from '../systems/process-definitions.js';
 import { RECIPE_RARITIES, GENERATED_PREPARATION_ATTR, RECIPE_SECTIONS } from '../data/models/model-recipe-page.js';
 import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, PROCESS_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
 import { bindTraitPicker } from '../systems/trait-picker.js';
 
@@ -112,17 +113,16 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         }));
 
         context.itemTypes = toOptions(Object.values(ITEM_TYPES), system.type);
-        context.processTypes = toOptions(PROCESS_TYPES, system.processType);
+
         context.rarities = toOptions(RECIPE_RARITIES, system.rarity);
 
-        // The process level vocabulary depends on the process type -- heat is
-        // Off/Low/Medium/High, grind is Off/Coarse/Medium/Fine. Same value, two
-        // meanings, so the labels have to follow the type rather than be fixed.
-        const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
-        context.processLevels = Object.entries(levels).map(([value, label]) => ({
-            value: Number(value),
-            label: `${value} — ${label}`,
-            selected: Number(value) === system.processLevel
+        // The intensity vocabulary belongs to the PROCESS, not to a branch on its
+        // name: Off/Low/Medium/High and Off/Coarse/Medium/Fine were two hardcoded
+        // maps chosen by an `if`. A process item supplies its own four labels.
+        context.processLevels = process.levels.map((level, index) => ({
+            value: index,
+            label: `${index} — ${level.label}`,
+            selected: index === system.processLevel
         }));
 
         context.skillLevels = Array.from(
@@ -150,12 +150,16 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         context.kitOptions = toOptions(kitNames, system.skillKit);
         context.kitIsUnknown = Boolean(system.skillKit) && !kitNames.includes(system.skillKit);
 
-        // EVERY item-valued field is a drop slot, and none of them filters what may
-        // be dropped. "Family is Apparatus" describes what shipped, not a rule -- a GM
-        // dropping a Sack as a container should just work, and the set of methods
-        // (heat, grind, and whatever comes next) will want vessels nobody has named yet.
-        // Filtering here would bake today's compendium into tomorrow's constraint.
+        // Every item-valued field is a drop slot. Result, apparatus and container
+        // filter NOTHING -- "family is Apparatus" describes what shipped, not a rule,
+        // and a GM dropping a Sack as a container should just work.
+        //
+        // The PROCESS slot is the one exception, and it is not a contradiction. Those
+        // three are ROLES any item can fill. A process is a definition object: an item
+        // without process flags has no levels, no animation and no intensity to offer,
+        // so it is rejected because it cannot function, not because of what it is.
         const images = cachedImages();
+        const process = getProcess(system.processType);
         const slot = (name) => ({
             name: name ?? '',
             img: name ? (images.get(name) ?? '') : '',
@@ -165,6 +169,9 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         context.resultSlot = slot(system.resultItemName);
         context.apparatusSlot = slot(system.apparatusName);
         context.containerSlot = slot(system.containerName);
+        // Labelled with the process's own display name, so a slot holding a legacy
+        // `heat` string still reads as "Heat" rather than as a raw id.
+        context.processSlot = { ...slot(system.processType), label: system.processType ? process.label : '' };
 
         // Category is free text by design, but the Creation families are what it
         // almost always holds, so they are offered as suggestions rather than rules.
@@ -307,8 +314,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         }
 
         if (system.processType) {
-            const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
-            const intensity = levels[system.processLevel];
+            const intensity = getProcessLevel(system.processType, system.processLevel).label;
             const how = intensity && intensity !== 'Off'
                 ? `on ${escapeHtml(String(intensity).toLowerCase())}`
                 : '';
@@ -463,6 +469,23 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                     if (!doc?.name) return;
 
                     const target = zone.dataset.drop;
+
+                    // The ONE slot that checks what it is given. See the note in
+                    // _preparePartContext: an item with no process flags has no levels,
+                    // no animation and no intensity to offer, so accepting it would
+                    // produce a recipe that silently cannot craft.
+                    if (target === 'processType') {
+                        const flags = doc.flags?.[MODULE.ID] ?? {};
+                        const levels = flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS];
+                        const isProcess = flags[ARTIFICER_FLAG_KEYS.FAMILY] === PROCESS_FAMILY
+                            && Array.isArray(levels) && levels.length > 0;
+                        if (!isProcess) {
+                            ui.notifications.warn(`${doc.name} is not a Process. Drop a Tool from the Process family.`);
+                            return;
+                        }
+                        await this.#stage({ 'system.processType': doc.name });
+                        return;
+                    }
 
                     if (target !== 'ingredient') {
                         await this.#stage({ [`system.${target}`]: doc.name });
@@ -643,10 +666,10 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
 
         // --- Method summary, only when it is not already obvious --------------
         if (system.processType) {
-            const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
-            const intensity = levels[system.processLevel];
+            const intensity = getProcessLevel(system.processType, system.processLevel).label;
             const detail = intensity && intensity !== 'Off' ? ` on ${String(intensity).toLowerCase()}` : '';
-            parts.push(`<div class="arv-method">${escapeHtml(system.processType)}${escapeHtml(detail)}</div>`);
+            // The process's own display name, not the stored id.
+            parts.push(`<div class="arv-method">${escapeHtml(getProcess(system.processType).label)}${escapeHtml(detail)}</div>`);
         }
 
         const traits = splitTraits(system.traits);

@@ -125,12 +125,17 @@
             <div class="arf-inline">
                 <span class="arf-sub">
                     <span class="arf-sub-label">Method</span>
-                    <select id="recipe-process-type" name="system.processType">
-                        <option value="">(any)</option>
-                        {{#each processTypes}}
-                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                        {{/each}}
-                    </select>
+                    <div class="arf-slot{{#if processSlot.empty}} arf-slot-empty{{/if}}" id="recipe-process-type" data-drop="processType">
+                        {{#if processSlot.empty}}
+                        <span class="arf-slot-prompt"><i class="fas fa-hand-pointer"></i> Drag a Process here</span>
+                        {{else}}
+                        {{#if processSlot.img}}<img class="arf-slot-img" src="{{processSlot.img}}" alt="" />{{/if}}
+                        <span class="arf-slot-name">{{processSlot.label}}</span>
+                        <button type="button" class="arf-icon-button" data-action="clearSlot"
+                            data-field="processType" data-tooltip="Clear" aria-label="Clear"><i class="fas fa-times"></i></button>
+                        {{/if}}
+                        <input type="hidden" name="system.processType" value="{{processSlot.name}}" />
+                    </div>
                 </span>
                 <span class="arf-sub">
                     <span class="arf-sub-label">Intensity</span>
@@ -145,7 +150,7 @@
                     <input type="number" name="system.time" value="{{system.time}}" min="0" max="120" />
                 </span>
             </div>
-            <p class="arf-hint">Seconds is how long the process runs, separate from the crafter's work hours below.</p>
+            <p class="arf-hint">The intensity labels come from the Process itself. Seconds is how long it runs, separate from the crafter's work hours below.</p>
         </div>
 
         <div class="arf-field">
