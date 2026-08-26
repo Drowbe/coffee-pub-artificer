@@ -110,7 +110,7 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             selected: f === selectedFamily
         }));
 
-        const affinityVal = flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity ?? '';
+        const affinityVal = this._formState?.affinity ?? flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity ?? '';
         const affinityOptions = Object.values(ESSENCE_AFFINITIES).map(a => ({
             value: a,
             label: a,
@@ -119,7 +119,8 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
 
         const tagManager = getTagManager();
         const traitCandidates = tagManager.getAllTags();
-        const skillLevel = Math.max(1, Math.min(20, Math.floor(flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1)));
+        const skillLevel = Math.max(1, Math.min(20, Math.floor(
+            this._formState?.skillLevel ?? flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1)));
 
         const mergedContext = {
             // Required by the Blacksmith zone contract: it is the root element id.
@@ -132,7 +133,8 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             isEssenceFamily: selectedFamily === 'Essence',
             artificerTypeOptions,
             familyOptions,
-            itemName: (this.itemData?.name ?? this.existingItem?.name) ?? '',
+            itemName: this._formState?.itemName
+                ?? (this.itemData?.name ?? this.existingItem?.name) ?? '',
             // Falls back to Foundry's own default rather than a path we invent -- an
             // icon that does not exist renders as a broken image, which is worse than
             // the generic bag.
@@ -140,7 +142,7 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
                 ?? this.itemData?.img
                 ?? this.existingItem?.img
                 ?? (foundry.documents.BaseItem?.DEFAULT_ICON ?? 'icons/svg/item-bag.svg'),
-            traitsValue: existingTraits.join(','),
+            traitsValue: this._formState?.traits ?? existingTraits.join(','),
             traitCandidates,
             skillLevel,
             skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
@@ -193,6 +195,50 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         await picker.browse();
     }
 
+    /**
+     * Snapshot every live field into `_formState`.
+     *
+     * `getData` rebuilds the form from the item's FLAGS. That is correct on first
+     * open and wrong on every re-render, because a re-render happens while the
+     * author is mid-edit -- changing Type rebuilds the Family list and used to take
+     * the typed name, chosen image, traits and skill level with it. Anything the
+     * form can hold has to survive a render, so it is captured here first.
+     */
+    _captureFormState() {
+        const root = this._getItemFormRoot();
+        this._formState = this._formState ?? {};
+        if (!root) return this._formState;
+
+        const value = (selector) => root.querySelector(selector)?.value;
+        const state = this._formState;
+
+        const name = value('#itemName');
+        if (name !== undefined) state.itemName = name;
+
+        const img = value('#artificer-item-img');
+        if (img !== undefined) state.img = img;
+
+        // The pills are the source of truth for traits; the hidden input mirrors them.
+        const traits = value('#artificer-traits-hidden');
+        if (traits !== undefined) state.traits = traits;
+
+        const skillLevel = value('#skillLevel');
+        if (skillLevel !== undefined) state.skillLevel = Number(skillLevel);
+
+        const quirk = value('#artificer-quirk');
+        if (quirk !== undefined) state.quirk = (quirk ?? '').trim();
+
+        const affinity = value('#affinity');
+        if (affinity !== undefined) state.affinity = affinity;
+
+        const biomes = value('#artificer-biomes-hidden');
+        if (biomes !== undefined) {
+            state.selectedBiomes = String(biomes).split(',').map(b => b.trim()).filter(Boolean);
+        }
+
+        return state;
+    }
+
     _getItemFormRoot() {
         return document.getElementById(this.id) ?? this.element ?? null;
     }
@@ -236,19 +282,10 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
                 w.close();
                 return;
             }
-            if (e.target?.closest?.('[data-action="submit"]')) {
-                e.preventDefault();
-                e.stopPropagation();
-                const form = w.form ?? w.element;
-                if (form && typeof w.submit === 'function') {
-                    w.submit().catch((err) => {
-                        ui.notifications?.error?.(err?.message ?? 'Submit failed');
-                        BlacksmithUtils.postConsoleAndNotification(MODULE.NAME, 'Artificer Item Form submit error', err?.message ?? String(err), true, false);
-                    });
-                } else if (form) {
-                    w._handleSubmit(new FormData(form));
-                }
-            }
+            // NOTE: `submit` is deliberately NOT handled here. It is registered in
+            // DEFAULT_OPTIONS.actions, so ApplicationV2 already runs it on click --
+            // handling it here as well fired the form twice and created two items.
+            // Only actions with no entry in `actions` belong in this delegation.
         });
 
         document.addEventListener('change', (e) => {
@@ -259,14 +296,18 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             const el = e.target;
             if (el.id === 'artificerType') {
                 const newType = el.value;
+                // Snapshot FIRST. Changing the type re-renders to rebuild the family
+                // list, and everything the form holds that is not in `_formState` is
+                // rebuilt from the item's flags -- which wiped the name, image, traits
+                // and skill level the author had just typed.
+                w._captureFormState();
                 w.itemType = newType;
-                w._formState = w._formState ?? {};
                 w._formState.artificerType = newType;
                 const families = FAMILIES_BY_TYPE[newType] ?? [];
                 if (w._formState.family && !families.includes(w._formState.family)) w._formState.family = '';
                 w.render();
             } else if (el.id === 'family') {
-                w._formState = w._formState ?? {};
+                w._captureFormState();
                 w._formState.family = el.value || '';
                 w.render();
             }
