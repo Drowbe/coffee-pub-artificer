@@ -23,6 +23,7 @@ import { RECIPE_RARITIES, GENERATED_PREPARATION_ATTR, RECIPE_SECTIONS } from '..
 import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
+import { bindTraitPicker } from '../systems/trait-picker.js';
 
 const JournalEntryPageProseMirrorSheet = foundry.applications.sheets.journal.JournalEntryPageProseMirrorSheet;
 
@@ -81,7 +82,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         actions: {
             removeIngredient: RecipePageSheet._onRemoveIngredient,
             clearSlot: RecipePageSheet._onClearSlot,
-            addTrait: RecipePageSheet._onAddTrait,
             removeTrait: RecipePageSheet._onRemoveTrait,
             generateInstructions: RecipePageSheet._onGenerateInstructions
         }
@@ -193,7 +193,9 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                 if (trait && !used.has(trait)) vocabulary.add(trait);
             }
         }
-        context.traitVocabulary = Array.from(vocabulary).sort((a, b) => a.localeCompare(b));
+        // Held on the instance as well: the picker's callback reads it after render.
+        this.#traitVocabulary = Array.from(vocabulary).sort((a, b) => a.localeCompare(b));
+        context.traitVocabulary = this.#traitVocabulary;
 
         // Chips are rendered by us rather than by <string-tags>: the element puts its
         // chips inside its own box, which forced the trait row to span the width and
@@ -214,6 +216,9 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
      * @type {object|null}
      */
     #staged = null;
+
+    /** Known traits, rebuilt each render and read live by the trait picker. */
+    #traitVocabulary = [];
 
     /**
      * Stage a change and flush the form in a single update, then force a re-render.
@@ -243,16 +248,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         await this.render({ resync: true });
     }
 
-    /** Add the trait typed into the custom box. */
-    static async _onAddTrait(event) {
-        event.preventDefault();
-        const input = this.element?.querySelector('.arf-trait-custom');
-        const trait = (input?.value ?? '').trim();
-        if (!trait) return;
-        if (input) input.value = '';
-        await this.#addTrait(trait);
-    }
-
     /** Remove one trait chip. */
     static async _onRemoveTrait(event, target) {
         event.preventDefault();
@@ -262,7 +257,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         await this.#stage({ 'system.traits': traits });
     }
 
-    /** Shared by the picker and the custom box. */
+    /** Shared by the picker and any future caller. */
     async #addTrait(trait) {
         const traits = splitTraits(this.document.system.traits);
         if (traits.includes(trait)) return;
@@ -417,22 +412,22 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
     }
 
     /**
-     * The "add an existing trait" select beside the traits field.
+     * The trait input beside the chips.
      *
-     * Writes through the document rather than poking at <string-tags> internals:
-     * the element's chip state is private, and going through an update keeps this
-     * identical to how ingredients are added.
+     * The SAME control as the Artificer Item window -- see systems/trait-picker.js.
+     * Writes through the document rather than manipulating the chip markup: the
+     * chips are rendered from context, so staging an update and re-rendering keeps
+     * one source of truth.
      */
     #bindTraitPicker() {
-        const select = this.element?.querySelector('.arf-trait-picker');
-        if (!select || select.dataset.pickerBound) return;
-        select.dataset.pickerBound = 'true';
-
-        select.addEventListener('change', async () => {
-            const trait = select.value;
-            select.value = '';
-            if (!trait) return;
-            await this.#addTrait(trait);
+        const root = this.element;
+        bindTraitPicker({
+            input: root?.querySelector('#arf-trait-input'),
+            suggestionsEl: root?.querySelector('#arf-trait-suggestions'),
+            clearButton: root?.querySelector('.arf-trait-picker .artificer-tag-input-clear'),
+            candidates: () => this.#traitVocabulary,
+            selected: () => splitTraits(this.document.system.traits),
+            onAdd: (trait) => { void this.#addTrait(trait); }
         });
     }
 

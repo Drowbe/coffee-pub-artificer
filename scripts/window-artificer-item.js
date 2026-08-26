@@ -10,6 +10,7 @@ import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArt
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
+import { bindTraitPicker } from './systems/trait-picker.js';
 // Imported from the API BRIDGE, never read off `game.modules.get(...)`.
 // `extends` evaluates when this module is evaluated, before `game` exists, and ES
 // modules cache a failed evaluation -- so reading it from the api object would
@@ -337,10 +338,18 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
     }
 
     /**
-     * Activate listeners (document delegation + tag picker).
+     * Wire the delegation and the tag picker after every render.
+     *
+     * MUST be `_onRender`, not `activateListeners`. `activateListeners` is the
+     * ApplicationV1 lifecycle method and ApplicationV2 never calls it -- which is
+     * why the document-level delegation below exists in the first place. The tag
+     * picker was wired there too, so it had never run: the visible trait input has
+     * no `name`, so nothing it contained reached the form, and the only traits that
+     * ever saved were the ones already on the item. Suggestions and pills were both
+     * dead for the same reason.
      */
-    activateListeners(html) {
-        super.activateListeners(html);
+    _onRender(context, options) {
+        super._onRender?.(context, options);
         this._attachItemFormDelegationOnce();
         const root = this._getItemFormRoot();
         if (root) this._setupTagPicker(root);
@@ -406,53 +415,26 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             const unique = [...new Set(tags)];
             hiddenInput.value = unique.join(',');
             this._renderPills(pillsEl, hiddenInput, unique, removeTag);
-            this._renderSuggestions(suggestionsEl, input, unique, candidates);
-        };
-
-        const addTag = (tag) => {
-            const current = getSelectedTags();
-            if (tag && !current.includes(tag)) {
-                setSelectedTags([...current, tag]);
-                input.value = '';
-            }
         };
 
         const removeTag = (tag) => {
             setSelectedTags(getSelectedTags().filter(t => t !== tag));
         };
 
-        input.addEventListener('focus', () => {
-            this._renderSuggestions(suggestionsEl, input, getSelectedTags(), candidates);
-            suggestionsEl.classList.add('visible');
-        });
-        input.addEventListener('blur', () => {
-            setTimeout(() => suggestionsEl.classList.remove('visible'), 150);
-        });
-        input.addEventListener('input', () => {
-            this._renderSuggestions(suggestionsEl, input, getSelectedTags(), candidates);
-            suggestionsEl.classList.add('visible');
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const val = input.value.trim();
-                const match = candidates.find(c => c.toLowerCase() === val.toLowerCase());
-                if (match) addTag(match);
+        // Shared with the recipe page sheet -- see systems/trait-picker.js. Note it
+        // now commits a TYPED trait that matches nothing, which this control used to
+        // discard: Enter only fired when the text matched an existing candidate, so
+        // inventing a trait here was impossible.
+        bindTraitPicker({
+            input,
+            suggestionsEl,
+            clearButton: clearBtn,
+            candidates: () => candidates,
+            selected: getSelectedTags,
+            onAdd: (trait) => {
+                const current = getSelectedTags();
+                if (!current.includes(trait)) setSelectedTags([...current, trait]);
             }
-        });
-
-        if (clearBtn) {
-            clearBtn.addEventListener('click', () => {
-                input.value = '';
-                input.focus();
-            });
-        }
-
-        suggestionsEl.addEventListener('mousedown', (e) => e.preventDefault());
-        suggestionsEl.addEventListener('click', (e) => {
-            e.preventDefault();
-            const tag = e.target?.closest('[data-tag]')?.getAttribute('data-tag');
-            if (tag) addTag(tag);
         });
 
         let initialTags = getSelectedTags();
@@ -478,24 +460,6 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
                 onRemove(tag);
             });
             pillsEl.appendChild(pill);
-        }
-    }
-
-    _renderSuggestions(suggestionsEl, input, selected, candidates) {
-        const filter = (input?.value ?? '').toLowerCase().trim();
-        const available = candidates.filter(c => !selected.includes(c) && (!filter || c.toLowerCase().includes(filter)));
-        suggestionsEl.innerHTML = '';
-        if (available.length === 0) {
-            suggestionsEl.classList.remove('visible');
-            return;
-        }
-        for (const tag of available) {
-            const opt = document.createElement('div');
-            opt.className = 'artificer-tag-suggestion';
-            opt.setAttribute('data-tag', tag);
-            opt.setAttribute('role', 'option');
-            opt.textContent = tag;
-            suggestionsEl.appendChild(opt);
         }
     }
 

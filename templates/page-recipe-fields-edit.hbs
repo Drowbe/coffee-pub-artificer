@@ -68,15 +68,15 @@
                     {{/each}}
                 </div>
                 {{/if}}
-                <div class="arf-trait-controls">
-                    <select class="arf-trait-picker" aria-label="Add an existing trait">
-                        <option value="">+ Existing trait...</option>
-                        {{#each traitVocabulary}}
-                        <option value="{{this}}">{{this}}</option>
-                        {{/each}}
-                    </select>
-                    <input type="text" class="arf-trait-custom" placeholder="New trait" aria-label="New trait" />
-                    <button type="button" class="arf-trait-add" data-action="addTrait">Add</button>
+                {{!-- Same control as the Artificer Item window: type to filter, click a
+                      suggestion or press Enter. Wired by systems/trait-picker.js. --}}
+                <div class="artificer-tag-picker arf-trait-picker">
+                    <div class="artificer-tag-input-wrap">
+                        <input type="text" class="artificer-tag-input" id="arf-trait-input"
+                            placeholder="Type a trait, or pick one" autocomplete="off" aria-label="Add a trait" />
+                        <button type="button" class="artificer-tag-input-clear" title="Clear" aria-label="Clear"><i class="fa-solid fa-times"></i></button>
+                    </div>
+                    <div class="artificer-tag-suggestions" id="arf-trait-suggestions" role="listbox"></div>
                 </div>
             </div>
             <p class="arf-hint">Traits drive ingredient matching &mdash; don't repeat the type or category.</p>

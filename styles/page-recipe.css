@@ -61,7 +61,6 @@
 
 .artificer-recipe-page .arf-field > input,
 .artificer-recipe-page .arf-field > select,
-.artificer-recipe-page .arf-field > string-tags,
 .artificer-recipe-page .arf-field > .arf-inline,
 .artificer-recipe-page .arf-field > .arf-ingredients {
     grid-column: 2;
@@ -135,35 +134,17 @@
 
 /* --- Traits ------------------------- */
 
-/* The chip box no longer spans the row on its own: a full-width empty box reads
-   as free text, and the picker beside it is what says "these are a set". */
-.artificer-recipe-page .arf-traits {
-    grid-column: 2;
-    display: flex;
-    gap: 0.5rem;
-    align-items: flex-start;
-}
-
-.artificer-recipe-page .arf-traits > string-tags {
-    flex: 1 1 auto;
-    min-width: 0;
-}
-
-.artificer-recipe-page .arf-trait-picker {
-    flex: 0 0 12rem;
-}
-
-/* --- Traits ------------------------- */
-
-/* Chips on their own line, left-justified, with the controls beneath. The old
-   <string-tags> kept its chips inside the input box, which forced the field to
-   span the row and made an empty one read as free text. */
+/* Chips on their own line, left-justified, with the shared picker beneath.
+   An earlier revision left TWO `.arf-traits` blocks here -- one from the
+   <string-tags> version and one from its replacement -- which is what happens
+   when a control is swapped by adding rules rather than removing them. */
 .artificer-recipe-page .arf-traits {
     grid-column: 2;
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
     align-items: flex-start;
+    width: 100%;
 }
 
 .artificer-recipe-page .arf-trait-chips {
@@ -198,22 +179,11 @@
     opacity: 1;
 }
 
-.artificer-recipe-page .arf-trait-controls {
-    display: flex;
-    gap: 0.35rem;
-    align-items: center;
+/* The picker is the shared `.artificer-tag-picker` from tag-picker.css: input,
+   clear button and an absolutely-positioned suggestion list. Only its width in
+   this layout is ours. */
+.artificer-recipe-page .arf-trait-picker {
     width: 100%;
-}
-
-.artificer-recipe-page .arf-trait-picker,
-.artificer-recipe-page .arf-trait-custom {
-    flex: 1 1 0;
-    min-width: 0;
-}
-
-.artificer-recipe-page .arf-trait-add {
-    flex: 0 0 4rem;
-    width: auto;
 }
 
 /* --- Instructions section ----------- */

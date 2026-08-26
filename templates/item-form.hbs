@@ -43,13 +43,14 @@
                 <label class="blacksmith-field-label" for="artificer-tag-input">Traits</label>
                 <div class="artificer-tag-picker">
                     <div class="artificer-tag-input-wrap">
-                        <input type="text" id="artificer-tag-input" class="artificer-tag-input blacksmith-input" placeholder="e.g. Medicinal, Floral" autocomplete="off" />
+                        <input type="text" id="artificer-tag-input" class="artificer-tag-input blacksmith-input" placeholder="Type a trait, or pick one" autocomplete="off" />
                         <button type="button" class="artificer-tag-input-clear" title="Clear" aria-label="Clear"><i class="fa-solid fa-times"></i></button>
                     </div>
                     <div class="artificer-tag-suggestions" id="artificer-tag-suggestions" role="listbox"></div>
                     <div class="artificer-tag-pills" id="artificer-tag-pills"></div>
                     <input type="hidden" name="traits" id="artificer-traits-hidden" value="{{traitsValue}}" />
                 </div>
+                <p class="artificer-form-hint">Traits drive recipe matching. Don't repeat the type or family.</p>
             </div>
             <div class="artificer-form-group artificer-skill-slider-group">
                 <label class="blacksmith-field-label" for="skillLevel" title="Minimum crafting skill level required to create or use this item.">Required Skill Level: <span class="artificer-skill-current-value">{{skillLevel}}</span></label>
