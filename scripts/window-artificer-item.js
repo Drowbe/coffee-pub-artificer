@@ -10,8 +10,12 @@ import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArt
 import { INGREDIENT_RARITIES } from './schema-ingredients.js';
 import { ESSENCE_AFFINITIES } from './schema-essences.js';
 import { getTagManager } from './systems/tag-manager.js';
-
-const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+// Imported from the API BRIDGE, never read off `game.modules.get(...)`.
+// `extends` evaluates when this module is evaluated, before `game` exists, and ES
+// modules cache a failed evaluation -- so reading it from the api object would
+// disable Artificer for the whole session rather than retrying. Merchant hit that
+// on 2026-08-19. The bridge is a real ES module and resolves at evaluation time.
+import { BlacksmithWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 const ITEM_FORM_BOUNDS_SETTING = 'windowBoundsItemForm';
 
@@ -23,11 +27,15 @@ let _itemFormDelegationAttached = false;
  * Item Creation Form - ApplicationV2 implementation
  * Unified form for creating ingredients, components, and essences
  */
-export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2) {
+export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
     static DEFAULT_OPTIONS = foundry.utils.mergeObject(foundry.utils.mergeObject({}, super.DEFAULT_OPTIONS ?? {}), {
         id: 'artificer-item-form',
+        // Deliberately NOT adding `blacksmith-window` here: mergeObject overwrites
+        // arrays rather than concatenating, so a subclass declaring `classes` drops
+        // whatever the base declared. The base applies its own class after render.
         classes: ['window-artificer-item', 'artificer-item-form'],
-        position: { width: 600, height: 560 },
+        position: { width: 600, height: 620 },
+        windowSizeConstraints: { minWidth: 480, minHeight: 480 },
         window: { title: 'Artificer Item', resizable: true, minimizable: true },
         tag: 'form',
         form: {
@@ -114,6 +122,10 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const skillLevel = Math.max(1, Math.min(20, Math.floor(flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1)));
 
         const mergedContext = {
+            // Required by the Blacksmith zone contract: it is the root element id.
+            appId: this.id,
+            windowTitle: this.isEditMode ? 'Edit Artificer Item' : 'Create Artificer Item',
+            headerIcon: 'fa-solid fa-hammer',
             isEditMode: this.isEditMode,
             itemType: artificerType,
             isComponent: artificerType === ARTIFICER_TYPES.COMPONENT,
@@ -121,6 +133,13 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             artificerTypeOptions,
             familyOptions,
             itemName: (this.itemData?.name ?? this.existingItem?.name) ?? '',
+            // Falls back to Foundry's own default rather than a path we invent -- an
+            // icon that does not exist renders as a broken image, which is worse than
+            // the generic bag.
+            itemImg: this._formState?.img
+                ?? this.itemData?.img
+                ?? this.existingItem?.img
+                ?? (foundry.documents.BaseItem?.DEFAULT_ICON ?? 'icons/svg/item-bag.svg'),
             traitsValue: existingTraits.join(','),
             traitCandidates,
             skillLevel,
@@ -149,6 +168,31 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         return foundry.utils.mergeObject(base, await this.getData(options));
     }
 
+    /**
+     * Browse for an item image.
+     *
+     * Writes straight into the field and the preview rather than re-rendering: the
+     * form holds unsaved state (traits, biomes, the name being typed) that a render
+     * would rebuild from flags and discard.
+     */
+    async _pickImage() {
+        const root = this._getItemFormRoot();
+        const input = root?.querySelector('#artificer-item-img');
+        const preview = root?.querySelector('.artificer-image-preview');
+        const current = (input?.value || '').trim();
+
+        const picker = new foundry.applications.apps.FilePicker.implementation({
+            type: 'image',
+            current: current || undefined,
+            callback: (path) => {
+                if (input) input.value = path;
+                if (preview) preview.src = path;
+                this._formState = { ...(this._formState ?? {}), img: path };
+            }
+        });
+        await picker.browse();
+    }
+
     _getItemFormRoot() {
         return document.getElementById(this.id) ?? this.element ?? null;
     }
@@ -172,6 +216,12 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                 e.preventDefault();
                 e.stopPropagation();
                 w._toggleBiome(biomeBtn.dataset.biome);
+                return;
+            }
+            if (e.target?.closest?.('[data-action="pickImage"]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                w._pickImage();
                 return;
             }
             if (e.target?.closest?.('[data-action="deleteArtificer"]')) {
@@ -461,7 +511,7 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
         const itemData = {
             name: (formObject.itemName || '').trim() || 'Unnamed Item',
             type: derived.type,
-            img: '',
+            img: (formObject.img || '').trim(),
             system: {
                 description: { value: '', chat: '', unidentified: '' },
                 source: { value: SOURCE_LABEL, custom: SOURCE_LABEL, license: SOURCE_LICENSE }
@@ -497,6 +547,23 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
             if (quirkVal) artificerData.quirk = quirkVal;
         }
         
+        // Rules the prompt has always stated and nothing has ever enforced. Checked
+        // HERE rather than in validateArtificerData so the message can name the field
+        // the author is looking at; the schema-level check stays where it is.
+        const ruleFailure = (() => {
+            if (artificerData.type === ARTIFICER_TYPES.COMPONENT && !(artificerData.biomes ?? []).length) {
+                return 'Choose at least one Habitat. A Component with no habitat can never be gathered.';
+            }
+            if (family === 'Essence' && !artificerData.affinity) {
+                return 'Choose an Essence Affinity. An Essence without one cannot be matched by a recipe.';
+            }
+            return null;
+        })();
+        if (ruleFailure) {
+            ui.notifications.warn(ruleFailure);
+            return;
+        }
+
         try {
             validateArtificerData(artificerData);
 
@@ -512,7 +579,10 @@ export class ArtificerItemForm extends HandlebarsApplicationMixin(ApplicationV2)
                     systemMerge.type = { value: derived.subtype, subtype: '', baseItem: '' };
                 }
                 itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, systemMerge);
-                itemData.img = this.existingItem.img || itemData.img;
+                // The FORM wins now that the image is editable. Falling back to the
+                // existing image only when the field was cleared keeps an accidental
+                // blank from wiping an icon, while still letting an edit stick.
+                itemData.img = itemData.img || this.existingItem.img || '';
                 await updateArtificerItem(this.existingItem, itemData, artificerData);
                 await this.close();
                 ui.notifications.info(`Updated ${itemData.name}`);

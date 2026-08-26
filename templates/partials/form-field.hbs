@@ -19,7 +19,7 @@
         {{else if isNumber}}
         <input type="number" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}" {{#if min}}min="{{min}}"{{/if}} {{#if max}}max="{{max}}"{{/if}} {{#if step}}step="{{step}}"{{/if}}>
         {{else}}
-        <input type="{{type}}" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}">
+        <input type="{{type}}" name="{{name}}" id="{{name}}" value="{{value}}" placeholder="{{placeholder}}"{{#if inputClass}} class="{{inputClass}}"{{/if}}>
         {{/if}}
     </div>
 </div>

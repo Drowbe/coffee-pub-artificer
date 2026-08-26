@@ -145,6 +145,19 @@ hardcoded boolean. Those are the two places to check before calling it done.
 **3a. Nail down recipe and item creation.** Finish the authoring pass in flight. Everything
 after this assumes a GM can build a recipe and the items it references without our help.
 
+The window itself is sound — Family is scoped by Type, affinity appears only for Essence,
+biomes and quirk only for Component, and traits already have a proper picker. What it needs:
+
+| | |
+|---|---|
+| ~~Title said "Create Component"~~ | **DONE.** It interpolated the selected type while the Type dropdown sat below it, so it contradicted the form the moment you changed it. Worse with a fourth type coming. |
+| ~~**Skill slider disagrees with itself**~~ **DONE.** | Markup is `min="0"` with a `0` label; the fill math is `((skillLevel - 1) / 19) * 100`, a 1-20 range; both read paths clamp with `Math.max(1, ...)`. So 0 is offered, silently becomes 1, and the fill is offset from the thumb throughout. Items cannot be level 0 — recipes can, which is where the 0 came from. |
+| ~~**Stated rules are unenforced**~~ **DONE.** | A Component can be saved with no habitat and an Essence with no affinity. These are the two `requires` rules in the field group declaration; they are prose in the prompt and nothing checks them. |
+| ~~**No image**~~ **DONE.** | Items are created with `img: ''`. Now that recipe slots, ingredient rows and the browser all render icons, every new component is a blank square. |
+| ~~**No description**~~ **REVERTED.** | Tried, and wrong. The description is a ProseMirror block with embedded HTML on the real item sheet; a raw textarea here invites mangling it, and `buildItemSystem` prefers `payload.description` over the existing value, so saving would have flattened formatted prose. This window manages the **Artificer flags** — it is not a second copy of the item sheet, and we are not replicating Details, Activities or Effects either. The second trip is correct. |
+| ~~**Not on the Blacksmith Window API**~~ | **DONE for this window.** Extends `BlacksmithWindowBaseV2` via the API bridge; fields carry `blacksmith-input` / `blacksmith-select` / `blacksmith-textarea`. The rest of Artificer's windows remain on the CRITICAL list in `TODO.md`. |
+| **Two trait controls** | This window's picker (input, live suggestions, removable pills) is better than the `+ Existing trait...` select on the recipe sheet. Converge on this one — follow-up, not part of 3a. |
+
 **3b. Create the animation choices.** *Before* the item system, because a Process item has to
 NAME an animation — the vocabulary is a dependency of the schema, not a follow-up to it.
 

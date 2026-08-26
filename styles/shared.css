@@ -146,10 +146,19 @@
     gap: 8px;
 }
 
-.artificer-form-fields input[type="text"],
-.artificer-form-fields input[type="number"],
-.artificer-form-fields select,
-.artificer-form-fields textarea {
+/* THESE ARE THE RULES THAT MADE MIGRATED WINDOWS LOOK FOREIGN.
+   Three `!important` declarations plus a hard `height: 22px` beat
+   `.blacksmith-input` / `.blacksmith-select` / `.blacksmith-textarea` at any
+   specificity and any load order -- which is why a field could carry the shared
+   class and still render short, cramped and differently coloured.
+
+   They stay for the windows still on Artificer's own styling, and stand down for
+   any field that has adopted a Blacksmith shared class. Delete them outright once
+   every window is migrated. */
+.artificer-form-fields input[type="text"]:not(.blacksmith-input),
+.artificer-form-fields input[type="number"]:not(.blacksmith-input),
+.artificer-form-fields select:not(.blacksmith-select),
+.artificer-form-fields textarea:not(.blacksmith-textarea) {
     width: 100%;
     border-radius: 3px;
     flex: 1;
@@ -163,28 +172,28 @@
     caret-color: rgba(255, 47, 47, 1.0);
 }
 
-.artificer-form-fields input[type="text"],
-.artificer-form-fields input[type="number"],
-.artificer-form-fields select {
+.artificer-form-fields input[type="text"]:not(.blacksmith-input),
+.artificer-form-fields input[type="number"]:not(.blacksmith-input),
+.artificer-form-fields select:not(.blacksmith-select) {
     height: 22px;
 }
 
-.artificer-form-fields textarea {
+.artificer-form-fields textarea:not(.blacksmith-textarea) {
     resize: vertical;
     min-height: 30px;
 }
 
-.artificer-form-fields input[type="text"]:focus,
-.artificer-form-fields input[type="number"]:focus,
-.artificer-form-fields select:focus,
-.artificer-form-fields textarea:focus {
+.artificer-form-fields input[type="text"]:not(.blacksmith-input):focus,
+.artificer-form-fields input[type="number"]:not(.blacksmith-input):focus,
+.artificer-form-fields select:not(.blacksmith-select):focus,
+.artificer-form-fields textarea:not(.blacksmith-textarea):focus {
     outline: none;
     border-color: rgba(255, 100, 0, 0.8) !important;
 }
 
-.artificer-form-fields input[type="text"]::placeholder,
-.artificer-form-fields input[type="number"]::placeholder,
-.artificer-form-fields textarea:focus::placeholder {
+.artificer-form-fields input[type="text"]:not(.blacksmith-input)::placeholder,
+.artificer-form-fields input[type="number"]:not(.blacksmith-input)::placeholder,
+.artificer-form-fields textarea:not(.blacksmith-textarea):focus::placeholder {
     color: rgba(255, 255, 255, 0.2) !important;
 }
 

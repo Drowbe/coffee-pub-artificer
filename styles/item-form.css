@@ -106,26 +106,36 @@
     margin-bottom: 0;
 }
 
-.item-form-crafting-style .artificer-form-group label {
+/* Labels carry `blacksmith-field-label`. This only covers any that do not yet. */
+.item-form-crafting-style .artificer-form-group label:not(.blacksmith-field-label) {
     color: rgba(201, 201, 201, 0.95);
     font-size: 0.85em;
 }
 
-.item-form-crafting-style .artificer-form-fields input[type="text"],
-.item-form-crafting-style .artificer-form-fields input[type="number"],
-.item-form-crafting-style .artificer-form-fields select,
-.item-form-crafting-style .artificer-form-fields textarea {
-    background: rgba(0, 0, 0, 0.3) !important;
-    border: 1px solid var(--craft-border-color) !important;
+/* Fields are Blacksmith's now: `blacksmith-input` / `blacksmith-select` /
+   `blacksmith-textarea` from window-form-controls.css carry background, border,
+   focus ring and -- the part we could never do ourselves -- `option` colours.
+   A bare <option> is painted by the browser, which is why this window's closed
+   select looked dark and its open list looked like a grey OS menu.
+
+   These rules stay only for elements that have no shared class yet, and they
+   dropped their `!important`: it was beating the shared class and reinstating
+   exactly the mismatch we are removing. */
+.item-form-crafting-style .artificer-form-fields input[type="text"]:not(.blacksmith-input),
+.item-form-crafting-style .artificer-form-fields input[type="number"]:not(.blacksmith-input),
+.item-form-crafting-style .artificer-form-fields select:not(.blacksmith-select),
+.item-form-crafting-style .artificer-form-fields textarea:not(.blacksmith-textarea) {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--craft-border-color);
     border-radius: 4px;
     color: #e0e0e0;
     font-size: 0.9em;
 }
 
-.item-form-crafting-style .artificer-form-fields input:focus,
-.item-form-crafting-style .artificer-form-fields select:focus,
-.item-form-crafting-style .artificer-form-fields textarea:focus {
-    border-color: rgba(255, 100, 0, 0.6) !important;
+.item-form-crafting-style .artificer-form-fields input:not(.blacksmith-input):focus,
+.item-form-crafting-style .artificer-form-fields select:not(.blacksmith-select):focus,
+.item-form-crafting-style .artificer-form-fields textarea:not(.blacksmith-textarea):focus {
+    border-color: rgba(255, 100, 0, 0.6);
     outline: none;
 }
 
@@ -156,7 +166,7 @@
     gap: 8px;
 }
 
-.item-form-crafting-style .item-form-btn-delete {
+.item-form-crafting-style .item-form-btn-delete:not(.blacksmith-window-btn-critical) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -171,14 +181,17 @@
     text-transform: uppercase;
 }
 
-.item-form-crafting-style .item-form-btn-delete:hover {
+.item-form-crafting-style .item-form-btn-delete:not(.blacksmith-window-btn-critical):hover {
     background: rgba(160, 50, 50, 0.9);
     border-color: rgba(220, 80, 80, 0.9);
     color: #fff;
 }
 
-.item-form-crafting-style .item-form-btn-primary,
-.item-form-crafting-style .item-form-btn-secondary {
+/* Buttons defer to `blacksmith-window-btn-*`. These two-class selectors beat the
+   single-class shared styles at any load order, which is the mechanism that made
+   this window read as foreign. They now apply only to buttons with no shared class. */
+.item-form-crafting-style .item-form-btn-primary:not(.blacksmith-window-btn-primary),
+.item-form-crafting-style .item-form-btn-secondary:not(.blacksmith-window-btn-secondary) {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -191,19 +204,19 @@
     text-transform: uppercase;
 }
 
-.item-form-crafting-style .item-form-btn-primary {
+.item-form-crafting-style .item-form-btn-primary:not(.blacksmith-window-btn-primary) {
     background: rgba(41, 94, 47, 0.9);
     color: #fff;
 }
 
-.item-form-crafting-style .item-form-btn-secondary {
+.item-form-crafting-style .item-form-btn-secondary:not(.blacksmith-window-btn-secondary) {
     background: rgba(33, 40, 46, 0.9);
     border-color: rgba(255, 255, 255, 0.1);
     color: #e0e0e0;
 }
 
-.item-form-crafting-style .item-form-btn-primary:hover,
-.item-form-crafting-style .item-form-btn-secondary:hover {
+.item-form-crafting-style .item-form-btn-primary:not(.blacksmith-window-btn-primary):hover,
+.item-form-crafting-style .item-form-btn-secondary:not(.blacksmith-window-btn-secondary):hover {
     background: rgba(255, 100, 0, 0.6);
     border-color: rgba(255, 100, 0, 0.6);
     color: #fff;
@@ -252,59 +265,54 @@
 .item-form-crafting-style .artificer-skill-slider-group {
     margin: 12px 0px 16px 0px;
 }
-.item-form-crafting-style .artificer-skill-slider-row {
+/* The slider shell, track and thumb come from `blacksmith-slider` in
+   window-form-controls.css -- our hand-rolled versions were a second, slightly
+   different implementation of the same control, which is exactly why this window
+   read as foreign next to other Blacksmith windows. Only the fill variable and
+   the end labels are ours, because the fill is Artificer-specific. */
+.item-form-crafting-style .artificer-skill-slider-label {
+    color: rgba(201, 201, 201, 0.6);
+    font-size: 0.75em;
+    flex-shrink: 0;
+}
+
+
+/* ------------------------------------ */
+/* --- IMAGE AND DESCRIPTION ---------- */
+/* ------------------------------------ */
+/* Added with the 3a authoring pass: items used to be created with img: '' and no
+   description, which meant a blank square everywhere the recipe sheet and browser
+   render icons, plus a second trip to the item sheet for the prose. */
+
+.artificer-item-form .artificer-image-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin: 8px 0px 0px 0px;
-}
-.item-form-crafting-style .artificer-skill-slider-label {
-    font-size: 1.0em;
-    font-weight: 900;
-    color: rgba(201, 201, 201, 0.7);
+    gap: 0.5rem;
 }
 
-.item-form-crafting-style .artificer-skill-slider {
-  flex: 1;
-  width: 100%;
-  height: 18px;              /* gives room for the thumb */
-  background: transparent;   /* don't style the input itself */
-  -webkit-appearance: none;
-  appearance: none;
+.artificer-item-form .artificer-image-preview {
+    flex: 0 0 3rem;
+    width: 3rem;
+    height: 3rem;
+    object-fit: cover;
+    border: 1px solid var(--color-border-light-tertiary, #7a7971);
+    border-radius: 4px;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.2);
 }
 
-/* Track */
-.item-form-crafting-style .artificer-skill-slider::-webkit-slider-runnable-track {
-  height: 12px;
-  border-radius: 4px;
-  background: rgba(100, 100, 100, 0.4);
-  border: 1px solid rgba(0, 0, 0, 0.9);
+.artificer-item-form .artificer-image-preview:hover {
+    border-color: var(--color-shadow-primary, #ff6400);
 }
 
-/* Thumb */
-.item-form-crafting-style .artificer-skill-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(172, 138, 84, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.9);
-  cursor: pointer;
-
-  /* center 18px thumb on 12px track */
-  margin-top: -3px;
+.artificer-item-form .artificer-image-row input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.item-form-crafting-style .artificer-skill-slider::-webkit-slider-thumb:hover {
-  background: rgba(171, 98, 19, 0.95);
-}
-
-
-
-.item-form-crafting-style .artificer-skill-current-value {
-    display: inline;
-    margin-left: 4px;
-    font-size: 1.25em;
-    font-weight: 900;
-    color: rgba(98, 195, 97, 0.9);
+.artificer-item-form .artificer-form-hint {
+    margin: 0.15rem 0 0;
+    font-size: var(--font-size-11, 0.7rem);
+    line-height: 1.35;
+    opacity: 0.55;
 }

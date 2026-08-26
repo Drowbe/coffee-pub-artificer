@@ -1,14 +1,17 @@
-<div class="artificer-window artificer-item-form item-form-crafting-style">
+{{!-- Zones per Blacksmith's window contract: header, body, action bar. No option
+      bar or tools bar -- this is a form, not a browser. `appId` is required by the
+      contract and is the root element id. --}}
+<div class="artificer-window artificer-item-form item-form-crafting-style" id="{{appId}}">
     {{!-- Header (matches crafting window) --}}
     <header class="item-form-header">
         <div class="item-form-header-content">
             <div class="item-form-header-icon">
-                <i class="fa-solid fa-hammer"></i>
+                <i class="{{headerIcon}}"></i>
             </div>
             {{!-- Not "Create Component": the Type dropdown below chooses Component,
                   Creation or Tool, so naming one of them in the title contradicts the
                   form the moment the author changes it. --}}
-            <div class="item-form-header-title">{{#if isEditMode}}Edit{{else}}Create{{/if}} Artificer Item</div>
+            <div class="item-form-header-title">{{windowTitle}}</div>
         </div>
     </header>
 
@@ -17,22 +20,30 @@
         {{!-- Core item fields only; price, weight, rarity, source, and license are hard-coded or set in the item sheet after creation. --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
-            {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name"}}
+            {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name" inputClass="blacksmith-input"}}
+            <div class="artificer-form-group artificer-image-group">
+                <label class="blacksmith-field-label" for="artificer-item-img">Image</label>
+                <div class="artificer-image-row">
+                    <img class="artificer-image-preview" src="{{itemImg}}" alt="" data-action="pickImage" data-tooltip="Choose an image" />
+                    <input type="text" class="blacksmith-input" name="img" id="artificer-item-img" value="{{itemImg}}" placeholder="icons/svg/item-bag.svg" />
+                </div>
+                <p class="artificer-form-hint">Shown in recipe slots, ingredient rows and the browser. Click the preview to browse.</p>
+            </div>
         </section>
 
         {{!-- Artificer Properties: Type > Family > Traits + Skill Level --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
-            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions selectClass="crafting-zone-select"}}
-            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions selectClass="crafting-zone-select"}}
+            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions selectClass="blacksmith-select"}}
+            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions selectClass="blacksmith-select"}}
             {{#if isEssenceFamily}}
-            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="crafting-zone-select"}}
+            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="blacksmith-select"}}
             {{/if}}
             <div class="artificer-form-group artificer-tag-picker-group">
-                <label for="artificer-tag-input">Traits</label>
+                <label class="blacksmith-field-label" for="artificer-tag-input">Traits</label>
                 <div class="artificer-tag-picker">
                     <div class="artificer-tag-input-wrap">
-                        <input type="text" id="artificer-tag-input" class="artificer-tag-input" placeholder="e.g. Medicinal, Floral" autocomplete="off" />
+                        <input type="text" id="artificer-tag-input" class="artificer-tag-input blacksmith-input" placeholder="e.g. Medicinal, Floral" autocomplete="off" />
                         <button type="button" class="artificer-tag-input-clear" title="Clear" aria-label="Clear"><i class="fa-solid fa-times"></i></button>
                     </div>
                     <div class="artificer-tag-suggestions" id="artificer-tag-suggestions" role="listbox"></div>
@@ -41,17 +52,21 @@
                 </div>
             </div>
             <div class="artificer-form-group artificer-skill-slider-group">
-                <label for="skillLevel" title="Minimum crafting skill level required to create or use this item.">Required Skill Level: <span class="artificer-skill-current-value">{{skillLevel}}</span></label>
-                <div class="artificer-skill-slider-row">
-                    <span class="artificer-skill-slider-label">0</span>
-                    <input type="range" name="skillLevel" id="skillLevel" class="artificer-skill-slider" min="0" max="20" value="{{skillLevel}}" step="1" aria-label="Skill level 0-20" style="--skill-fill: {{skillLevelFillPercent}}%;" />
+                <label class="blacksmith-field-label" for="skillLevel" title="Minimum crafting skill level required to create or use this item.">Required Skill Level: <span class="artificer-skill-current-value">{{skillLevel}}</span></label>
+                <div class="artificer-skill-slider-row blacksmith-slider">
+                    {{!-- 1, not 0. The fill math is ((level - 1) / 19) and both read
+                          paths clamp with Math.max(1, ...), so a 0 here was offered,
+                          silently stored as 1, and left the fill offset from the thumb.
+                          Recipes allow level 0; Artificer items do not. --}}
+                    <span class="artificer-skill-slider-label">1</span>
+                    <input type="range" name="skillLevel" id="skillLevel" class="artificer-skill-slider" min="1" max="20" value="{{skillLevel}}" step="1" aria-label="Skill level 1-20" style="--skill-fill: {{skillLevelFillPercent}}%;" />
                     <span class="artificer-skill-slider-label">20</span>
                 </div>
                 
             </div>
             {{#if isComponent}}
             <div class="artificer-form-group artificer-biomes-group">
-                <label>Habitat</label>
+                <label class="blacksmith-field-label">Habitat</label>
                 <div class="artificer-biomes-grid">
                     {{#each biomeOptions}}
                     <button type="button" class="artificer-biome-btn {{#if selected}}active{{/if}}" data-biome="{{name}}" data-action="toggleBiome">{{name}}</button>
@@ -60,8 +75,8 @@
                 <input type="hidden" name="biomes" id="artificer-biomes-hidden" value="{{biomesValue}}" />
             </div>
             <div class="artificer-form-group">
-                <label for="artificer-quirk">Quirk</label>
-                <input type="text" name="quirk" id="artificer-quirk" value="{{quirk}}" placeholder="e.g. Found in Battlefields" />
+                <label class="blacksmith-field-label" for="artificer-quirk">Quirk</label>
+                <input type="text" class="blacksmith-input" name="quirk" id="artificer-quirk" value="{{quirk}}" placeholder="e.g. Found in Battlefields" />
             </div>
             {{/if}}
         </section>
@@ -72,16 +87,16 @@
         <div class="item-form-action-bar">
             <div class="item-form-action-left">
                 {{#if isEditMode}}
-                <button type="button" data-action="deleteArtificer" class="item-form-btn-delete" title="Remove Artificer tags and properties from this item">
+                <button type="button" data-action="deleteArtificer" class="item-form-btn-delete blacksmith-window-btn-critical" title="Remove Artificer tags and properties from this item">
                     <i class="fa-solid fa-trash"></i> Delete Artificer
                 </button>
                 {{/if}}
             </div>
             <div class="item-form-action-right">
-                <button type="button" class="item-form-btn-secondary" data-action="cancel">
+                <button type="button" class="item-form-btn-secondary blacksmith-window-btn-secondary" data-action="cancel">
                     <i class="fa-solid fa-times"></i> Cancel
                 </button>
-                <button type="button" data-action="submit" class="item-form-btn-primary">
+                <button type="button" data-action="submit" class="item-form-btn-primary blacksmith-window-btn-primary">
                     <i class="fa-solid fa-check"></i> {{#if isEditMode}}Save Changes{{else}}Create Item{{/if}}
                 </button>
             </div>
