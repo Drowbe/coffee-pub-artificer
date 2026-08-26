@@ -81,6 +81,20 @@ Two shape decisions worth knowing before the rest is built:
    **Conversion is now unblocked.** More generally: a conversion inherits every defect of
    the reader that feeds it, so this ordering holds for any text-to-subtype conversion.
 
+## Open: methods are hardcoded, and there will be more of them
+
+`processType` is a fixed `['heat', 'grind']` in `schema-recipes.js`, and `HEAT_LEVELS` /
+`GRIND_LEVELS` are two hardcoded label maps selected by an `if`. Inscription (quill and
+parchment) is already anticipated, and its intensity vocabulary is neither of those.
+
+This is the same mistake as filtering the vessel slots by `family === 'Apparatus'`: encoding
+what shipped as though it were a rule. The intensity vocabulary has to travel **with** the
+method, so a method wants to be data alongside the skills mapping rather than a constant —
+`{ id, label, levels: [...] }`.
+
+Not scheduled: it touches the crafting engine, not just the sheet. Recorded so the sheet is
+not read as an endorsement of two methods.
+
 ## Sequencing against Blacksmith
 
 Steps 1-4 are ours alone and block nothing of theirs. Step 5 needs their step 8. The

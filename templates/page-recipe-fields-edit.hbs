@@ -4,7 +4,10 @@
 
       Layout is a label/control grid defined in styles/page-recipe.css rather than
       Foundry's .form-group, which stacks full-width inside a journal page part and
-      turns eighteen fields into a very tall column. --}}
+      turns eighteen fields into a very tall column.
+
+      Every field is individually labelled. Where several share a row they each get
+      their own sub-label, because three unlabelled number boxes is a guessing game. --}}
 <div class="artificer-recipe-fields">
 
     <section class="arf-section">
@@ -12,34 +15,60 @@
 
         <div class="arf-field">
             <label for="recipe-result">Result item</label>
-            <input type="text" id="recipe-result" name="system.resultItemName" value="{{system.resultItemName}}" placeholder="Item this recipe produces" />
+            <div class="arf-slot{{#if resultSlot.empty}} arf-slot-empty{{/if}}" id="recipe-result" data-drop="resultItemName">
+                {{#if resultSlot.empty}}
+                <span class="arf-slot-prompt"><i class="fas fa-hand-pointer"></i> Drag the item this recipe produces here</span>
+                {{else}}
+                {{#if resultSlot.img}}<img class="arf-slot-img" src="{{resultSlot.img}}" alt="" />{{/if}}
+                <span class="arf-slot-name">{{resultSlot.name}}</span>
+                <button type="button" class="arf-icon-button" data-action="clearSlot"
+                    data-field="resultItemName" data-tooltip="Clear" aria-label="Clear"><i class="fas fa-times"></i></button>
+                {{/if}}
+                <input type="hidden" name="system.resultItemName" value="{{resultSlot.name}}" />
+            </div>
+            <p class="arf-hint">The item must exist before the recipe can produce it. Matched by name at craft time, so it survives the item moving compendium.</p>
         </div>
 
         <div class="arf-field">
-            <label for="recipe-type">Type</label>
+            <label for="recipe-type">Result type</label>
             <div class="arf-inline">
-                <select id="recipe-type" name="system.type">
-                    {{#each itemTypes}}
-                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                    {{/each}}
-                </select>
-                <input type="text" name="system.category" value="{{system.category}}" placeholder="Category" />
-                <select name="system.rarity" aria-label="Rarity">
-                    <option value="">(rarity)</option>
-                    {{#each rarities}}
-                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                    {{/each}}
-                </select>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Type</span>
+                    <select id="recipe-type" name="system.type">
+                        {{#each itemTypes}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Category</span>
+                    <input type="text" name="system.category" value="{{system.category}}"
+                        list="arf-categories" placeholder="Potion" />
+                </span>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Rarity</span>
+                    <select name="system.rarity">
+                        <option value="">(not stated)</option>
+                        {{#each rarities}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
             </div>
         </div>
 
         <div class="arf-field">
             <label for="recipe-traits">Traits</label>
-            {{!-- Omit `value` entirely when there are no traits. <string-tags> splits the
-                  attribute on commas, so an empty string becomes one blank tag and the
-                  element rejects it with "Tags may not be blank". --}}
-            <string-tags id="recipe-traits" name="system.traits"{{#if traitsString}} value="{{traitsString}}"{{/if}}></string-tags>
-            <p class="arf-hint">Drives ingredient matching. Don't repeat the type or category.</p>
+            <div class="arf-traits">
+                <string-tags id="recipe-traits" name="system.traits"{{#if traitsString}} value="{{traitsString}}"{{/if}}></string-tags>
+                <select class="arf-trait-picker" aria-label="Add an existing trait">
+                    <option value="">+ Existing trait…</option>
+                    {{#each traitVocabulary}}
+                    <option value="{{this}}">{{this}}</option>
+                    {{/each}}
+                </select>
+            </div>
+            <p class="arf-hint">Pick an existing trait, or type a new one in the box and press Enter. Traits drive ingredient matching — don't repeat the type or category.</p>
         </div>
     </section>
 
@@ -48,60 +77,96 @@
 
         <div class="arf-field arf-field-wide">
             <label>Ingredients</label>
-            <div class="arf-ingredients">
+            <div class="arf-ingredients arf-dropzone" data-drop="ingredient">
                 {{#if ingredients.length}}
                 <ol class="arf-ingredient-rows">
                     {{#each ingredients}}
                     <li class="arf-ingredient-row">
-                        <select name="system.ingredients.{{this.index}}.type" aria-label="Artificer type">
-                            {{#each this.typeOptions}}
-                            <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                            {{/each}}
-                        </select>
-                        <input type="text" name="system.ingredients.{{this.index}}.family" value="{{this.family}}" placeholder="Family" />
-                        <input type="text" name="system.ingredients.{{this.index}}.name" value="{{this.name}}" placeholder="Item name" />
-                        <input type="number" name="system.ingredients.{{this.index}}.quantity" value="{{this.quantity}}" min="0" step="1" aria-label="Quantity" />
-                        <button type="button" class="arf-icon-button" data-action="removeIngredient" data-index="{{this.index}}" data-tooltip="Remove" aria-label="Remove ingredient">
+                        {{#if this.img}}<img class="arf-slot-img" src="{{this.img}}" alt="" />{{/if}}
+                        <span class="arf-ingredient-name">{{this.name}}</span>
+                        {{!-- Type and family are read from the dropped item's flags, so they
+                              are shown rather than edited: they explain WHY this matches. An
+                              item with no Artificer flags shows nothing and matches by name. --}}
+                        <span class="arf-ingredient-qualifier">{{this.qualifier}}</span>
+                        <input type="number" name="system.ingredients.{{this.index}}.quantity"
+                            value="{{this.quantity}}" min="0" step="1" aria-label="Quantity" />
+                        <button type="button" class="arf-icon-button" data-action="removeIngredient"
+                            data-index="{{this.index}}" data-tooltip="Remove" aria-label="Remove ingredient">
                             <i class="fas fa-times"></i>
                         </button>
+                        {{!-- The matcher rides along hidden so the array round-trips intact;
+                              only quantity is authored here. --}}
+                        <input type="hidden" name="system.ingredients.{{this.index}}.name" value="{{this.name}}" />
+                        <input type="hidden" name="system.ingredients.{{this.index}}.type" value="{{this.type}}" />
+                        <input type="hidden" name="system.ingredients.{{this.index}}.family" value="{{this.family}}" />
                     </li>
                     {{/each}}
                 </ol>
                 {{else}}
-                <p class="arf-empty">No ingredients yet.</p>
+                <p class="arf-empty"><i class="fas fa-hand-pointer"></i> Drag items here to add them as ingredients.</p>
                 {{/if}}
-                <button type="button" class="arf-add" data-action="addIngredient">
-                    <i class="fas fa-plus"></i> Add ingredient
-                </button>
             </div>
+            <p class="arf-hint">Dropping an item reads its Artificer type and family. Set the quantity per row.</p>
         </div>
 
         <div class="arf-field">
             <label for="recipe-process-type">Process</label>
             <div class="arf-inline">
-                <select id="recipe-process-type" name="system.processType">
-                    <option value="">(any)</option>
-                    {{#each processTypes}}
-                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                    {{/each}}
-                </select>
-                <select name="system.processLevel" aria-label="Process level">
-                    {{#each processLevels}}
-                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                    {{/each}}
-                </select>
-                <input type="number" name="system.time" value="{{system.time}}" min="0" max="120" placeholder="Seconds" aria-label="Process time in seconds" />
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Method</span>
+                    <select id="recipe-process-type" name="system.processType">
+                        <option value="">(any)</option>
+                        {{#each processTypes}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Intensity</span>
+                    <select name="system.processLevel">
+                        {{#each processLevels}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
+                <span class="arf-sub arf-sub-narrow">
+                    <span class="arf-sub-label">Seconds</span>
+                    <input type="number" name="system.time" value="{{system.time}}" min="0" max="120" />
+                </span>
             </div>
-            <p class="arf-hint">Level is Off/Low/Medium/High for heat, Off/Coarse/Medium/Fine for grind. Time is the process running, in seconds.</p>
+            <p class="arf-hint">Seconds is how long the process runs, separate from the crafter's work hours below.</p>
         </div>
 
         <div class="arf-field">
-            <label for="recipe-apparatus">Vessels</label>
-            <div class="arf-inline">
-                <input type="text" id="recipe-apparatus" name="system.apparatusName" value="{{system.apparatusName}}" placeholder="Apparatus (Mixing Bowl)" />
-                <input type="text" name="system.containerName" value="{{system.containerName}}" placeholder="Container (Vial)" />
+            <label for="recipe-apparatus">Apparatus</label>
+            <div class="arf-slot{{#if apparatusSlot.empty}} arf-slot-empty{{/if}}" id="recipe-apparatus" data-drop="apparatusName">
+                {{#if apparatusSlot.empty}}
+                <span class="arf-slot-prompt"><i class="fas fa-hand-pointer"></i> Drag any item here</span>
+                {{else}}
+                {{#if apparatusSlot.img}}<img class="arf-slot-img" src="{{apparatusSlot.img}}" alt="" />{{/if}}
+                <span class="arf-slot-name">{{apparatusSlot.name}}</span>
+                <button type="button" class="arf-icon-button" data-action="clearSlot"
+                    data-field="apparatusName" data-tooltip="Clear" aria-label="Clear"><i class="fas fa-times"></i></button>
+                {{/if}}
+                <input type="hidden" name="system.apparatusName" value="{{apparatusSlot.name}}" />
             </div>
-            <p class="arf-hint">Crafted in the apparatus, which is not consumed. The container holds the result and one is consumed per craft.</p>
+            <p class="arf-hint">The vessel crafted in. Not consumed. Any item can serve — it need not be tagged as an apparatus.</p>
+        </div>
+
+        <div class="arf-field">
+            <label for="recipe-container">Container</label>
+            <div class="arf-slot{{#if containerSlot.empty}} arf-slot-empty{{/if}}" id="recipe-container" data-drop="containerName">
+                {{#if containerSlot.empty}}
+                <span class="arf-slot-prompt"><i class="fas fa-hand-pointer"></i> Drag any item here</span>
+                {{else}}
+                {{#if containerSlot.img}}<img class="arf-slot-img" src="{{containerSlot.img}}" alt="" />{{/if}}
+                <span class="arf-slot-name">{{containerSlot.name}}</span>
+                <button type="button" class="arf-icon-button" data-action="clearSlot"
+                    data-field="containerName" data-tooltip="Clear" aria-label="Clear"><i class="fas fa-times"></i></button>
+                {{/if}}
+                <input type="hidden" name="system.containerName" value="{{containerSlot.name}}" />
+            </div>
+            <p class="arf-hint">The vessel the result goes into. One is consumed per craft. Any item can serve — a sack is a container if you say so.</p>
         </div>
     </section>
 
@@ -111,29 +176,59 @@
         <div class="arf-field">
             <label for="recipe-skill">Skill</label>
             <div class="arf-inline">
-                <select id="recipe-skill" name="system.skill">
-                    <option value="">(none)</option>
-                    {{#if skillIsUnknown}}
-                    <option value="{{system.skill}}" selected>{{system.skill}} — not in this world</option>
-                    {{/if}}
-                    {{#each skillOptions}}
-                    <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                    {{/each}}
-                </select>
-                <input type="number" name="system.skillLevel" value="{{system.skillLevel}}" min="0" max="20" placeholder="Lvl" aria-label="Skill level" />
-                <input type="text" name="system.skillKit" value="{{system.skillKit}}" placeholder="Kit (Herbalism Kit)" />
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Crafting skill</span>
+                    <select id="recipe-skill" name="system.skill">
+                        <option value="">(none)</option>
+                        {{#if skillIsUnknown}}
+                        <option value="{{system.skill}}" selected>{{system.skill}} — not in this world</option>
+                        {{/if}}
+                        {{#each skillOptions}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
+                <span class="arf-sub arf-sub-narrow">
+                    <span class="arf-sub-label">Level</span>
+                    <select name="system.skillLevel">
+                        {{#each skillLevels}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Required kit</span>
+                    <select name="system.skillKit">
+                        <option value="">(none)</option>
+                        {{#if kitIsUnknown}}
+                        <option value="{{system.skillKit}}" selected>{{system.skillKit}} — not in this world</option>
+                        {{/if}}
+                        {{#each kitOptions}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </span>
             </div>
-            <p class="arf-hint">Skill options come from this world's mapping. The actor must hold the kit to craft.</p>
+            <p class="arf-hint">Skills and kits come from this world's skills mapping. The actor must hold the kit to craft.</p>
         </div>
 
         <div class="arf-field">
-            <label for="recipe-dc">Cost</label>
+            <label for="recipe-dc">Difficulty</label>
             <div class="arf-inline">
-                <input type="number" id="recipe-dc" name="system.successDC" value="{{system.successDC}}" min="1" max="30" placeholder="DC" aria-label="Success DC" />
-                <input type="number" name="system.goldCost" value="{{system.goldCost}}" min="0" placeholder="Gold" aria-label="Gold cost" />
-                <input type="number" name="system.workHours" value="{{system.workHours}}" min="0" step="0.5" placeholder="Hours" aria-label="Work hours" />
+                <span class="arf-sub arf-sub-narrow">
+                    <span class="arf-sub-label">Success DC</span>
+                    <input type="number" id="recipe-dc" name="system.successDC" value="{{system.successDC}}" min="1" max="30" />
+                </span>
+                <span class="arf-sub arf-sub-narrow">
+                    <span class="arf-sub-label">Gold cost</span>
+                    <input type="number" name="system.goldCost" value="{{system.goldCost}}" min="0" />
+                </span>
+                <span class="arf-sub arf-sub-narrow">
+                    <span class="arf-sub-label">Work hours</span>
+                    <input type="number" name="system.workHours" value="{{system.workHours}}" min="0" step="0.5" />
+                </span>
             </div>
-            <p class="arf-hint">Work hours is the crafter's in-game time, separate from the process time above.</p>
+            <p class="arf-hint">Gold is spent on top of the ingredients. Work hours is the crafter's in-game time.</p>
         </div>
     </section>
 
@@ -141,12 +236,24 @@
         <h4 class="arf-heading">Provenance</h4>
 
         <div class="arf-field">
-            <label for="recipe-source">Source</label>
+            <label for="recipe-source">Credit</label>
             <div class="arf-inline">
-                <input type="text" id="recipe-source" name="system.source" value="{{system.source}}" placeholder="Sourcebook or homebrew credit" />
-                <input type="text" name="system.license" value="{{system.license}}" placeholder="License" />
+                <span class="arf-sub">
+                    <span class="arf-sub-label">Source</span>
+                    <input type="text" id="recipe-source" name="system.source"
+                        value="{{system.source}}" placeholder="Sourcebook or homebrew" />
+                </span>
+                <span class="arf-sub">
+                    <span class="arf-sub-label">License</span>
+                    <input type="text" name="system.license" value="{{system.license}}" />
+                </span>
             </div>
         </div>
     </section>
+
+    {{!-- Suggestion lists. `list=` leaves the field free text, so a name the cache
+          has not seen is still accepted — these narrow the guessing, they do not
+          constrain what a recipe may name. --}}
+    <datalist id="arf-categories">{{#each categorySuggestions}}<option value="{{this}}"></option>{{/each}}</datalist>
 
 </div>

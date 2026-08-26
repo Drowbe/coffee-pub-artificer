@@ -16,8 +16,8 @@
 .artificer-recipe-page .artificer-recipe-fields {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 0.75rem;
+    gap: 0.9rem;
+    padding: 0.75rem 1rem 1rem;
 }
 
 /* --- Sections ----------------------- */
@@ -25,12 +25,12 @@
 .artificer-recipe-page .arf-section {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
+    gap: 0.5rem;
 }
 
 .artificer-recipe-page .arf-heading {
-    margin: 0 0 0.1rem;
-    padding-bottom: 0.15rem;
+    margin: 0;
+    padding-bottom: 0.2rem;
     border-bottom: 1px solid var(--color-border-light-tertiary, #7a7971);
     font-size: var(--font-size-11, 0.7rem);
     font-weight: 700;
@@ -44,12 +44,15 @@
 .artificer-recipe-page .arf-field {
     display: grid;
     grid-template-columns: 7rem 1fr;
-    gap: 0.15rem 0.6rem;
-    align-items: center;
+    gap: 0.2rem 0.75rem;
+    align-items: start;
 }
 
 .artificer-recipe-page .arf-field > label {
     grid-column: 1;
+    /* Nudged down so a label reads as level with its input rather than its
+       sub-label, now that inline groups stack a caption above each control. */
+    padding-top: 0.3rem;
     text-align: right;
     font-weight: 600;
     font-size: var(--font-size-13, 0.8rem);
@@ -81,10 +84,12 @@
 
 .artificer-recipe-page .arf-field-wide > label {
     grid-column: 1;
+    padding-top: 0;
     text-align: left;
 }
 
-.artificer-recipe-page .arf-field-wide > .arf-ingredients {
+.artificer-recipe-page .arf-field-wide > .arf-ingredients,
+.artificer-recipe-page .arf-field-wide > .arf-hint {
     grid-column: 1;
 }
 
@@ -92,19 +97,128 @@
 
 .artificer-recipe-page .arf-inline {
     display: flex;
-    gap: 0.3rem;
-    align-items: center;
+    gap: 0.5rem;
+    align-items: flex-end;
 }
 
-.artificer-recipe-page .arf-inline > * {
+/* Each control in a shared row carries its own caption. Three unlabelled
+   number boxes is a guessing game; this is the fix for that. */
+.artificer-recipe-page .arf-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
     flex: 1 1 0;
     min-width: 0;
 }
 
-/* Numeric entries never need the width a name does. */
-.artificer-recipe-page .arf-inline > input[type="number"] {
-    flex: 0 0 5rem;
+.artificer-recipe-page .arf-sub-narrow {
+    flex: 0 0 6.5rem;
+}
+
+.artificer-recipe-page .arf-sub-label {
+    font-size: var(--font-size-10, 0.65rem);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.5;
+    line-height: 1.2;
+}
+
+.artificer-recipe-page .arf-sub > input,
+.artificer-recipe-page .arf-sub > select {
+    width: 100%;
+    min-width: 0;
+}
+
+.artificer-recipe-page .arf-sub-narrow > input {
     text-align: center;
+}
+
+/* --- Traits ------------------------- */
+
+/* The chip box no longer spans the row on its own: a full-width empty box reads
+   as free text, and the picker beside it is what says "these are a set". */
+.artificer-recipe-page .arf-traits {
+    grid-column: 2;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+}
+
+.artificer-recipe-page .arf-traits > string-tags {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.artificer-recipe-page .arf-trait-picker {
+    flex: 0 0 12rem;
+}
+
+/* --- Drop targets ------------------- */
+
+.artificer-recipe-page [data-drop] {
+    transition: box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.artificer-recipe-page .arf-drag-active {
+    box-shadow: 0 0 0 2px var(--color-shadow-primary, #ff6400);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.artificer-recipe-page .arf-dropzone {
+    border: 1px dashed transparent;
+    border-radius: 4px;
+    padding: 0.35rem;
+}
+
+.artificer-recipe-page .arf-dropzone:hover {
+    border-color: var(--color-border-light-tertiary, #7a7971);
+}
+
+/* --- Item slots --------------------- */
+
+/* Every item-valued field is a slot. Nothing filters what may be dropped, so the
+   control says "put an item here" rather than "choose from these". */
+.artificer-recipe-page .arf-slot {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2rem;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid var(--color-border-light-tertiary, #7a7971);
+    border-radius: 4px;
+}
+
+.artificer-recipe-page .arf-slot-empty {
+    border-style: dashed;
+    opacity: 0.75;
+}
+
+.artificer-recipe-page .arf-slot-prompt {
+    font-size: var(--font-size-12, 0.75rem);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.artificer-recipe-page .arf-slot-prompt i {
+    margin-right: 0.25rem;
+}
+
+.artificer-recipe-page .arf-slot-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artificer-recipe-page .arf-slot-img {
+    flex: 0 0 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: cover;
+    border: none;
+    border-radius: 3px;
 }
 
 /* --- Ingredient rows ---------------- */
@@ -112,7 +226,8 @@
 .artificer-recipe-page .arf-ingredients {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.3rem;
+    min-height: 3rem;
 }
 
 .artificer-recipe-page .arf-ingredient-rows {
@@ -126,23 +241,28 @@
 
 .artificer-recipe-page .arf-ingredient-row {
     display: flex;
-    gap: 0.25rem;
+    gap: 0.5rem;
     align-items: center;
+    padding: 0.2rem 0.4rem;
+    border: 1px solid var(--color-border-light-tertiary, #7a7971);
+    border-radius: 4px;
 }
 
-.artificer-recipe-page .arf-ingredient-row select {
-    flex: 0 0 7.5rem;
-}
-
-.artificer-recipe-page .arf-ingredient-row input[name$=".family"] {
-    flex: 1 1 0;
+.artificer-recipe-page .arf-ingredient-name {
+    flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-/* Name varies most in length, so it takes the slack. */
-.artificer-recipe-page .arf-ingredient-row input[name$=".name"] {
-    flex: 2 1 0;
-    min-width: 0;
+/* Type and family: shown to explain the match, never competing with the name. */
+.artificer-recipe-page .arf-ingredient-qualifier {
+    flex: 0 0 auto;
+    font-size: var(--font-size-11, 0.7rem);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.5;
 }
 
 .artificer-recipe-page .arf-ingredient-row input[name$=".quantity"] {
@@ -151,30 +271,28 @@
 }
 
 .artificer-recipe-page .arf-icon-button {
-    flex: 0 0 1.75rem;
-    width: 1.75rem;
-    height: 1.75rem;
+    flex: 0 0 1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
     line-height: 1;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .artificer-recipe-page .arf-icon-button:hover {
     opacity: 1;
 }
 
-.artificer-recipe-page .arf-add {
-    align-self: flex-start;
-    width: auto;
-    padding: 0 0.6rem;
-    font-size: var(--font-size-12, 0.75rem);
-}
-
 .artificer-recipe-page .arf-empty {
     margin: 0;
+    padding: 0.5rem 0.4rem;
     font-size: var(--font-size-12, 0.75rem);
     font-style: italic;
     opacity: 0.5;
+}
+
+.artificer-recipe-page .arf-empty i {
+    margin-right: 0.25rem;
 }
 
 /* ==================================== */

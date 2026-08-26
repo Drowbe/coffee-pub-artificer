@@ -11,13 +11,18 @@
 // stock ProseMirror editing and view rendering. Everything else is a
 // schema field on page.system and is edited through the recipe fields
 // part inserted above the editor.
+//
+// Every vocabulary offered here comes from real data -- the world's skills
+// mapping and the Artificer item cache -- rather than a hardcoded list, so
+// the dropdowns cannot drift from what the world actually contains.
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { ITEM_TYPES, PROCESS_TYPES, HEAT_LEVELS, GRIND_LEVELS } from '../schema-recipes.js';
+import { ITEM_TYPES, PROCESS_TYPES, HEAT_LEVELS, GRIND_LEVELS, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 import { RECIPE_RARITIES } from '../data/models/model-recipe-page.js';
-import { getLastKnownEnabledCraftingSkillIds } from '../skills-rules.js';
-import { ARTIFICER_TYPES } from '../schema-artificer-item.js';
+import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
+import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
+import { getAllRecordsFromCache } from '../cache/cache-items.js';
 
 const JournalEntryPageProseMirrorSheet = foundry.applications.sheets.journal.JournalEntryPageProseMirrorSheet;
 
@@ -27,6 +32,20 @@ function escapeHtml(str) {
     const div = document.createElement('div');
     div.textContent = String(str);
     return div.innerHTML;
+}
+
+/**
+ * name -> img for everything in the item cache, for rendering a filled slot.
+ * Deliberately NOT a filter or a vocabulary: a recipe may name any item, so this
+ * only decorates what an author already chose. A name the cache has not seen
+ * simply gets no icon.
+ */
+function cachedImages() {
+    const images = new Map();
+    for (const record of getAllRecordsFromCache()) {
+        if (record?.name && !images.has(record.name)) images.set(record.name, record.img ?? '');
+    }
+    return images;
 }
 
 /**
@@ -42,8 +61,8 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
     static DEFAULT_OPTIONS = {
         classes: ['artificer-recipe-page'],
         actions: {
-            addIngredient: RecipePageSheet._onAddIngredient,
-            removeIngredient: RecipePageSheet._onRemoveIngredient
+            removeIngredient: RecipePageSheet._onRemoveIngredient,
+            clearSlot: RecipePageSheet._onClearSlot
         }
     };
 
@@ -68,13 +87,12 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         // has no `eq` helper here and neither Foundry nor this module registers one,
         // so a template-side comparison would silently render every option unselected.
         const toOptions = (values, current) => values.map(v => ({
-            value: v, label: v, selected: v === current
+            value: v, label: v, selected: String(v) === String(current)
         }));
 
         context.itemTypes = toOptions(Object.values(ITEM_TYPES), system.type);
         context.processTypes = toOptions(PROCESS_TYPES, system.processType);
         context.rarities = toOptions(RECIPE_RARITIES, system.rarity);
-        context.artificerTypes = Object.values(ARTIFICER_TYPES);
 
         // The process level vocabulary depends on the process type -- heat is
         // Off/Low/Medium/High, grind is Off/Coarse/Medium/Fine. Same value, two
@@ -82,9 +100,14 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
         context.processLevels = Object.entries(levels).map(([value, label]) => ({
             value: Number(value),
-            label: `${value} - ${label}`,
+            label: `${value} — ${label}`,
             selected: Number(value) === system.processLevel
         }));
+
+        context.skillLevels = Array.from(
+            { length: SKILL_LEVEL_MAX - SKILL_LEVEL_MIN + 1 },
+            (_, i) => SKILL_LEVEL_MIN + i
+        ).map(n => ({ value: n, label: String(n), selected: n === system.skillLevel }));
 
         // Skill ids come from the user's configured mapping, so this list differs
         // per world and can change while the world is live. Deliberately not a
@@ -95,25 +118,74 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         // rather than silently re-pointing the recipe at whatever is first in the list.
         context.skillIsUnknown = Boolean(system.skill) && !skillIds.includes(system.skill);
 
-        // Each row carries its own type options so the selected value is per-row.
+        // Kits are the `skillKit` of each enabled skill plus its declared extras.
+        let kitNames = [];
+        try {
+            kitNames = Array.from(buildCraftingKitNameSet(await loadSkillsDetails())).sort();
+        } catch {
+            // A broken skills mapping is reported to the GM elsewhere; an empty kit
+            // list degrades the field to free text rather than blocking the sheet.
+        }
+        context.kitOptions = toOptions(kitNames, system.skillKit);
+        context.kitIsUnknown = Boolean(system.skillKit) && !kitNames.includes(system.skillKit);
+
+        // EVERY item-valued field is a drop slot, and none of them filters what may
+        // be dropped. "Family is Apparatus" describes what shipped, not a rule -- a GM
+        // dropping a Sack as a container should just work, and the set of methods
+        // (heat, grind, and whatever comes next) will want vessels nobody has named yet.
+        // Filtering here would bake today's compendium into tomorrow's constraint.
+        const images = cachedImages();
+        const slot = (name) => ({
+            name: name ?? '',
+            img: name ? (images.get(name) ?? '') : '',
+            empty: !name
+        });
+
+        context.resultSlot = slot(system.resultItemName);
+        context.apparatusSlot = slot(system.apparatusName);
+        context.containerSlot = slot(system.containerName);
+
+        // Category is free text by design, but the Creation families are what it
+        // almost always holds, so they are offered as suggestions rather than rules.
+        context.categorySuggestions = FAMILIES_BY_TYPE[ARTIFICER_TYPES.CREATION] ?? [];
+
+        // Type and family are DERIVED from the dropped item's flags, not authored.
+        // They stay visible because they explain why an ingredient matches, and they
+        // ride along as hidden inputs so the array round-trips intact on submit.
+        // An item with no Artificer flags leaves both blank and matches by name only,
+        // which the model already supports.
         context.ingredients = (system.ingredients ?? []).map((ing, index) => ({
             ...ing,
             index,
-            typeOptions: toOptions(Object.values(ARTIFICER_TYPES), ing.type)
+            img: images.get(ing.name) ?? '',
+            qualifier: [ing.type, ing.family].filter(Boolean).join(' · ')
         }));
+
+        // Traits an author can pick rather than retype, gathered from what the
+        // world's Artificer items actually carry. Ones already on this recipe are
+        // dropped so the picker only ever offers something new.
+        const used = new Set(system.traits ?? []);
+        const vocabulary = new Set();
+        for (const record of getAllRecordsFromCache()) {
+            for (const tag of record?.tags ?? []) {
+                const trait = String(tag).trim();
+                if (trait && !used.has(trait)) vocabulary.add(trait);
+            }
+        }
+        context.traitVocabulary = Array.from(vocabulary).sort((a, b) => a.localeCompare(b));
 
         // <string-tags> takes a comma-joined string, not the array.
         context.traitsString = (system.traits ?? []).join(', ');
         return context;
     }
 
-    /** Append a blank ingredient row. */
-    static async _onAddIngredient(event) {
+    /** Empty an item slot. */
+    static async _onClearSlot(event, target) {
         event.preventDefault();
+        const field = target?.dataset?.field;
+        if (!field) return;
         await this.submit();
-        const ingredients = Array.from(this.document.system.ingredients ?? []).map(i => ({ ...i }));
-        ingredients.push({ type: ARTIFICER_TYPES.COMPONENT, family: '', name: '', quantity: 1 });
-        await this.document.update({ 'system.ingredients': ingredients });
+        await this.document.update({ [`system.${field}`]: '' });
     }
 
     /** Remove one ingredient row by index. */
@@ -126,6 +198,92 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             .map(i => ({ ...i }))
             .filter((_, i) => i !== index);
         await this.document.update({ 'system.ingredients': ingredients });
+    }
+
+    /** @inheritDoc */
+    _onRender(context, options) {
+        super._onRender?.(context, options);
+        this.#bindDropZones();
+        this.#bindTraitPicker();
+    }
+
+    /**
+     * The "add an existing trait" select beside the traits field.
+     *
+     * Writes through the document rather than poking at <string-tags> internals:
+     * the element's chip state is private, and going through an update keeps this
+     * identical to how ingredients are added.
+     */
+    #bindTraitPicker() {
+        const select = this.element?.querySelector('.arf-trait-picker');
+        if (!select || select.dataset.pickerBound) return;
+        select.dataset.pickerBound = 'true';
+
+        select.addEventListener('change', async () => {
+            const trait = select.value;
+            select.value = '';
+            if (!trait) return;
+            await this.submit();
+            const traits = Array.from(this.document.system.traits ?? []);
+            if (traits.includes(trait)) return;
+            traits.push(trait);
+            await this.document.update({ 'system.traits': traits });
+        });
+    }
+
+    /**
+     * Wire drag-and-drop onto every element marked `data-drop`.
+     *
+     * `data-drop="ingredient"` appends a row carrying the dropped item's Artificer
+     * type and family, which is what recipe matching needs; any other value names
+     * the system field to fill with the dropped item's name. Names rather than
+     * UUIDs, because recipes resolve by name at craft time.
+     */
+    #bindDropZones() {
+        for (const zone of this.element?.querySelectorAll('[data-drop]') ?? []) {
+            if (zone.dataset.dropBound) continue;
+            zone.dataset.dropBound = 'true';
+
+            zone.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'copy';
+                zone.classList.add('arf-drag-active');
+            });
+            zone.addEventListener('dragleave', () => zone.classList.remove('arf-drag-active'));
+
+            zone.addEventListener('drop', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                zone.classList.remove('arf-drag-active');
+                try {
+                    const TextEditor = foundry.applications.ux.TextEditor.implementation;
+                    const data = TextEditor?.getDragEventData?.(event)
+                        ?? JSON.parse(event.dataTransfer.getData('text/plain'));
+                    const doc = data?.uuid ? await fromUuid(data.uuid) : null;
+                    if (!doc?.name) return;
+
+                    await this.submit();
+                    const target = zone.dataset.drop;
+
+                    if (target !== 'ingredient') {
+                        await this.document.update({ [`system.${target}`]: doc.name });
+                        return;
+                    }
+
+                    const flags = doc.flags?.[MODULE.ID] ?? {};
+                    const ingredients = Array.from(this.document.system.ingredients ?? []).map(i => ({ ...i }));
+                    ingredients.push({
+                        type: flags.artificerType ?? ARTIFICER_TYPES.COMPONENT,
+                        family: flags.artificerFamily ?? '',
+                        name: doc.name,
+                        quantity: 1
+                    });
+                    await this.document.update({ 'system.ingredients': ingredients });
+                } catch (error) {
+                    console.error(`${MODULE.ID} | Error handling recipe sheet drop:`, error);
+                }
+            });
+        }
     }
 
     /** @inheritDoc */
@@ -163,7 +321,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
 
         const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
         const processLabel = system.processType
-            ? `${system.processType} - ${levels[system.processLevel] ?? system.processLevel}`
+            ? `${system.processType} — ${levels[system.processLevel] ?? system.processLevel}`
             : '';
 
         const ingredients = (system.ingredients ?? []).map(ing => {
