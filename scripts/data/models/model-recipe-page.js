@@ -22,7 +22,7 @@
 // ==================================================================
 
 import { MODULE } from '../../const.js';
-import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX, HEAT_MAX } from '../../schema-recipes.js';
+import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX, PROCESS_LEVEL_MAX } from '../../schema-recipes.js';
 
 /**
  * The page subtype id. MUST agree exactly with the module.json documentTypes
@@ -107,13 +107,16 @@ export class RecipePageModel extends foundry.abstract.TypeDataModel {
                 quantity: new fields.NumberField({ required: false, integer: false, min: 0, initial: 1 })
             }), { initial: [] }),
 
-            processType: new fields.StringField({
-                required: false, blank: true, initial: 'heat', choices: [...PROCESS_TYPES, '']
-            }),
-            // 0-3. Meaning depends on processType: heat is Off/Low/Medium/High,
-            // grind is Off/Coarse/Medium/Fine.
+            // NO `choices` HERE, DELIBERATELY -- same reason as `skill` below.
+            // A process is an ITEM now, so the valid values are process item names,
+            // which differ per world and change while a world is live. The old fixed
+            // list of ['heat', 'grind'] rejected every GM-authored process with
+            // "Heat is not a valid choice". Resolved through getProcess() at use.
+            processType: new fields.StringField({ required: false, blank: true, initial: 'heat' }),
+            // 0-3. The MEANING of each position belongs to the process: it supplies
+            // its own four labels, so nothing here needs to know them.
             processLevel: new fields.NumberField({
-                required: false, integer: true, min: 0, max: HEAT_MAX, initial: 0
+                required: false, integer: true, min: 0, max: PROCESS_LEVEL_MAX, initial: 0
             }),
             // SECONDS of process time. Distinct from workHours and not a
             // translation of it — one is the machine running, the other is the

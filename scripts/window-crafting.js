@@ -3,7 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
-import { getProcess, getProcessLevel, getProcessSliderLabels, PROCESS_LEVEL_MAX } from './systems/process-definitions.js';
+import { getProcess, getProcessLevel, getProcessSliderLabels, getAllProcesses } from './systems/process-definitions.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
@@ -30,7 +30,7 @@ import {
 } from './skills-rules.js';
 import { getJournalCoverData } from './parsers/parser-journal-cover.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, LEGACY_FAMILY_TO_FAMILY } from './schema-artificer-item.js';
-import { HEAT_LEVELS, HEAT_MAX, GRIND_LEVELS, PROCESS_TYPES } from './schema-recipes.js';
+import { PROCESS_LEVEL_MAX } from './schema-recipes.js';
 
 /** D&D consumable subtype → family when item has no artificer flags */
 const DND_CONSUMABLE_FAMILY = {
@@ -818,9 +818,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedApparatus = null;
         this.selectedContainer = null;
         this.selectedTool = null;
-        this.heatValue = options.heatValue ?? 0;
-        this.grindValue = options.grindValue ?? 0;
-        /** @type {'heat'|'grind'} */
+        // ONE level, not one field per process. `heatValue`/`grindValue` meant a
+        // third process had nowhere to put its value; the level belongs to whichever
+        // process is selected, and the process supplies what each position is called.
+        this.processLevel = options.processLevel ?? options.heatValue ?? 0;
+        /** @type {string} The active process, by id or item name. Not a fixed pair. */
         this.processType = options.processType ?? 'heat';
         this.timeValue = options.timeValue ?? 0;
         this.lastResult = null;
@@ -1402,12 +1404,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             showApparatusOnly,
             showContainerOnly,
             showToolOnly,
-            heatValue: this.heatValue,
-            grindValue: this.grindValue,
+            processLevelValue: this.processLevel,
             processType: this.processType,
             processLevelNormalized: this._processIntensity(),
             heat: (() => {
-                const base = this.heatValue / HEAT_MAX;
+                const base = this.processLevel / PROCESS_LEVEL_MAX;
                 if (this._craftingCountdownRemaining == null) return base;
                 const total = Math.max(1, this.timeValue);
                 const remaining = this._craftingCountdownRemaining;
@@ -1418,10 +1419,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             // held at full intensity is not unstable; heat is.
             heatUnstable: getProcess(this.processType).unstableAtMax && this._processIntensity() >= 1,
             timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
-            heatFillPercent: HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0,
-            heatLabel: HEAT_LEVELS[this.heatValue] ?? 'Off',
-            grindFillPercent: HEAT_MAX > 0 ? (this.grindValue / HEAT_MAX) * 100 : 0,
-            grindLabel: GRIND_LEVELS[this.grindValue] ?? 'Off',
+
             // Read from the process DEFINITION rather than branching on its id.
             // Every `processType === 'heat' ? a : b` here was a place a third
             // process would have had to be added by hand. See
@@ -1431,7 +1429,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             processFillPercent: PROCESS_LEVEL_MAX > 0 ? (this._processLevelValue() / PROCESS_LEVEL_MAX) * 100 : 0,
             processLeftLabel: getProcessSliderLabels(this.processType).left,
             processRightLabel: getProcessSliderLabels(this.processType).right,
-            isHeatProcess: this.processType === 'heat',
+            // The process names itself and lists its own positions. The tooltip used
+            // to spell out "Heat: Off, Low, Medium, High" in the template, which a
+            // third process could never be added to.
+            processName: getProcess(this.processType).label,
+            processLevelNames: getProcess(this.processType).levels.map(l => l.label).join(', '),
             // The animation the bench should play, and the colour it paints with.
             // Named, not boolean: `isGrinding` could only ever describe two states.
             processAnimation: getProcess(this.processType).animation,
@@ -1525,8 +1527,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedRecipe = null;
         this.lastResult = null;
         this.lastCraftTags = [];
-        this.heatValue = 0;
-        this.grindValue = 0;
+        this.processLevel = 0;
         this.processType = 'heat';
         this.timeValue = 0;
         this.render();
@@ -1725,8 +1726,13 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                const idx = PROCESS_TYPES.indexOf(w.processType);
-                w.processType = PROCESS_TYPES[(idx - 1 + PROCESS_TYPES.length) % PROCESS_TYPES.length];
+                // Cycles through every process that exists, authored ones included,
+                // rather than a fixed pair. Level resets: position 2 of Heat and
+                // position 2 of Ferment are unrelated values.
+                const ids = getAllProcesses().map(p => p.id);
+                const idx = ids.indexOf(String(w.processType ?? '').toLowerCase());
+                w.processType = ids[(idx - 1 + ids.length) % ids.length] ?? ids[0];
+                w.processLevel = 0;
                 w.render();
                 return;
             }
@@ -1735,8 +1741,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 e.preventDefault();
                 e.stopPropagation();
                 e.stopImmediatePropagation();
-                const idx = PROCESS_TYPES.indexOf(w.processType);
-                w.processType = PROCESS_TYPES[(idx + 1) % PROCESS_TYPES.length];
+                const ids = getAllProcesses().map(p => p.id);
+                const idx = ids.indexOf(String(w.processType ?? '').toLowerCase());
+                w.processType = ids[(idx + 1) % ids.length] ?? ids[0];
+                w.processLevel = 0;
                 w.render();
                 return;
             }
@@ -1788,9 +1796,10 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const min = parseFloat(slider.getAttribute('data-craft-setting-min')) || 0;
                 const max = parseFloat(slider.getAttribute('data-craft-setting-max')) || 100;
                 const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
-                if (key === 'heat') w.heatValue = val;
-                else if (key === 'grind') w.grindValue = val;
-                else if (key === 'time') w.timeValue = val;
+                // The slider is keyed by the ACTIVE PROCESS name, so there is one
+                // handler rather than one branch per process.
+                if (key === 'time') w.timeValue = val;
+                else w.processLevel = val;
                 w.render();
             }
         });
@@ -1818,12 +1827,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const min = parseFloat(slider.getAttribute('data-craft-setting-min')) || 0;
                 const max = parseFloat(slider.getAttribute('data-craft-setting-max')) || 100;
                 const val = Math.max(min, Math.min(max, parseInt(slider.value, 10) || min));
-                if (key === 'heat') {
-                    w.heatValue = val;
-                    const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
-                    slider.style?.setProperty?.('--heat-fill', `${pct}%`);
-                } else if (key === 'grind') {
-                    w.grindValue = val;
+                if (key !== 'time') {
+                    w.processLevel = val;
                     const pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
                     slider.style?.setProperty?.('--heat-fill', `${pct}%`);
                 } else if (key === 'time') {
@@ -2102,16 +2107,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = matchByName(actor?.items, recipe.containerName, isContainer);
         this.selectedTool = matchByName(actor?.items, recipe.skillKit);
 
-        this.processType = recipe.processType === 'grind' ? 'grind' : 'heat';
+        // Whatever the recipe names, verbatim. Coercing to 'heat'/'grind' here is
+        // what made a GM-authored process uncraftable.
+        this.processType = recipe.processType || 'heat';
         const rawLevel = recipe.processLevel != null ? Number(recipe.processLevel) : (recipe.heat != null ? Number(recipe.heat) : null);
-        const level = (rawLevel != null && rawLevel >= 0 && rawLevel <= HEAT_MAX) ? Math.round(rawLevel) : (rawLevel != null && rawLevel <= 100 ? Math.min(HEAT_MAX, Math.round((rawLevel / 100) * HEAT_MAX)) : 0);
-        if (this.processType === 'heat') this.heatValue = level;
-        else this.grindValue = level;
-        if (recipe.heat != null && recipe.processLevel == null) {
-            const rawHeat = Number(recipe.heat);
-            if (rawHeat >= 0 && rawHeat <= HEAT_MAX) this.heatValue = Math.round(rawHeat);
-            else if (rawHeat <= 100) this.heatValue = Math.min(HEAT_MAX, Math.round((rawHeat / 100) * HEAT_MAX));
-        }
+        // A legacy page could store 0-100 as a percentage; 0-3 is the real range.
+        const level = (rawLevel != null && rawLevel >= 0 && rawLevel <= PROCESS_LEVEL_MAX)
+            ? Math.round(rawLevel)
+            : (rawLevel != null && rawLevel <= 100 ? Math.min(PROCESS_LEVEL_MAX, Math.round((rawLevel / 100) * PROCESS_LEVEL_MAX)) : 0);
+        this.processLevel = level;
         const baseTime = (recipe.time != null && recipe.time >= 0) ? Number(recipe.time) : 0;
         this.timeValue = Math.max(0, Math.min(120, Math.ceil(baseTime * effectiveCraftTimeMultiplier)));
 
@@ -2239,8 +2243,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedContainer = null;
         this.selectedTool = null;
         this.selectedRecipe = null;
-        this.heatValue = 0;
-        this.grindValue = 0;
+        this.processLevel = 0;
         this.processType = 'heat';
         this.timeValue = 0;
         this.render();
@@ -2251,7 +2254,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
      * @returns {number} 0-3
      */
     _processLevelValue() {
-        return this.processType === 'grind' ? this.grindValue : this.heatValue;
+        return this.processLevel;
     }
 
     /**
@@ -2432,17 +2435,19 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             if (actualTime !== wantTime) issues.push(`Wrong process time. This recipe requires ${wantTime}s.`);
         }
 
-        /** Process type (heat vs grind) must match. */
-        if (recipe.processType === 'grind' && this.processType !== 'grind') issues.push('Wrong process. This recipe requires grinding.');
-        if (recipe.processType === 'heat' && this.processType !== 'heat') issues.push('Wrong process. This recipe requires heat.');
+        /** The process must match, by NAME -- not against a fixed pair. */
+        const wantProcess = String(recipe.processType ?? '').trim().toLowerCase();
+        const haveProcess = String(this.processType ?? '').trim().toLowerCase();
+        if (wantProcess && wantProcess !== haveProcess) {
+            issues.push(`Wrong process. This recipe requires ${getProcess(recipe.processType).label}.`);
+        }
 
-        /** Process level (heat/grind 0–3) must match. */
+        /** Level 0-3 must match, named by the PROCESS rather than a hardcoded map. */
         if (recipe.processLevel != null) {
-            const wantLevel = Math.max(0, Math.min(HEAT_MAX, Math.round(Number(recipe.processLevel))));
-            const actualLevel = this.processType === 'heat' ? this.heatValue : this.grindValue;
-            if (actualLevel !== wantLevel) {
-                const label = this.processType === 'heat' ? (HEAT_LEVELS[wantLevel] ?? `level ${wantLevel}`) : (GRIND_LEVELS[wantLevel] ?? `level ${wantLevel}`);
-                issues.push(`Wrong ${this.processType} level. This recipe requires ${label}.`);
+            const wantLevel = Math.max(0, Math.min(PROCESS_LEVEL_MAX, Math.round(Number(recipe.processLevel))));
+            if (this.processLevel !== wantLevel) {
+                const label = getProcessLevel(recipe.processType, wantLevel).label || `level ${wantLevel}`;
+                issues.push(`Wrong ${getProcess(recipe.processType).label} level. This recipe requires ${label}.`);
             }
         }
 

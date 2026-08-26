@@ -163,7 +163,7 @@ function buildArtificerSection(item, flags, editable) {
     if (isProcess) {
         if (Array.isArray(processLevels) && processLevels.length) {
             rows.push({
-                label: 'Intensity',
+                label: 'Levels',
                 value: processLevels.map((l, i) => `${i} ${l?.label || '—'}`).join(', ')
             });
         }

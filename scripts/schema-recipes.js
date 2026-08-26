@@ -72,3 +72,14 @@ export const HEAT_MAX = 3;
 /** Process types for crafting (heat vs grind); used with processLevel 0–3 */
 export const PROCESS_TYPES = ['heat', 'grind'];
 
+/**
+ * The four intensity positions every process has, 0-3. Index 0 is always "off".
+ *
+ * Lives HERE rather than in systems/process-definitions.js because the recipe data
+ * model needs it and loads at `init`; importing the process module would drag the
+ * item cache in with it for the sake of one number. Same value as HEAT_MAX, which
+ * is the legacy name for the same idea.
+ */
+export const PROCESS_LEVEL_MIN = 0;
+export const PROCESS_LEVEL_MAX = 3;
+

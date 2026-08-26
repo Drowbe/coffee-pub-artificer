@@ -22,6 +22,7 @@ import { MODULE } from '../const.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
 import { ARTIFICER_TYPES, PROCESS_FAMILY } from '../schema-artificer-item.js';
 import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
+import { PROCESS_LEVEL_MIN, PROCESS_LEVEL_MAX } from '../schema-recipes.js';
 
 /**
  * Named animations the crafting bench can play.
@@ -40,9 +41,13 @@ export const PROCESS_ANIMATIONS = {
     SHAKE: 'shake'
 };
 
-/** Four level positions, 0-3. Index 0 is always "off". */
-export const PROCESS_LEVEL_MIN = 0;
-export const PROCESS_LEVEL_MAX = 3;
+/**
+ * Four level positions, 0-3. Index 0 is always "off".
+ * Re-exported from schema-recipes so consumers can take it from either place --
+ * it is defined there because the recipe data model needs it without pulling in
+ * the item cache. One definition, two doors.
+ */
+export { PROCESS_LEVEL_MIN, PROCESS_LEVEL_MAX } from '../schema-recipes.js';
 
 /**
  * The processes Artificer ships.

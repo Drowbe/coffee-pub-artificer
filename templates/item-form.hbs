@@ -77,13 +77,13 @@
                   paints with, which named animation the bench plays, and whether
                   full intensity destabilises. --}}
             <div class="artificer-form-group">
-                <label class="blacksmith-field-label">Intensity Levels</label>
+                <label class="blacksmith-field-label">Levels</label>
                 <ol class="artificer-process-levels">
                     {{#each processLevels}}
                     <li class="artificer-process-level">
                         <span class="artificer-process-level-index">{{this.index}}</span>
                         <input type="text" class="blacksmith-input" name="processLevelLabel{{this.index}}"
-                            value="{{this.label}}" placeholder="{{this.placeholder}}" aria-label="Level {{this.index}} label" />
+                            value="{{this.label}}" placeholder="{{this.placeholder}}" aria-label="Level {{this.index}} name" />
                         <input type="color" class="artificer-process-level-color" name="processLevelColor{{this.index}}"
                             value="{{this.colorHex}}" aria-label="Level {{this.index}} colour" />
                     </li>

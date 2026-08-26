@@ -138,7 +138,7 @@
                     </div>
                 </span>
                 <span class="arf-sub">
-                    <span class="arf-sub-label">Intensity</span>
+                    <span class="arf-sub-label">Level</span>
                     <select name="system.processLevel">
                         {{#each processLevels}}
                         <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
@@ -150,7 +150,7 @@
                     <input type="number" name="system.time" value="{{system.time}}" min="0" max="120" />
                 </span>
             </div>
-            <p class="arf-hint">The intensity labels come from the Process itself. Seconds is how long it runs, separate from the crafter's work hours below.</p>
+            <p class="arf-hint">The level names come from the Process itself. Seconds is how long it runs, separate from the crafter's work hours below.</p>
         </div>
 
         <div class="arf-field">
