@@ -220,9 +220,10 @@
                         </div>
                     </div>
                 </div>
-                {{!-- Row 3: Process widget (heat / grind) with cycle arrows --}}
+                {{!-- Row 3: Process widget with cycle arrows. The process is whichever item is
+                     selected, so nothing here names a fixed pair. --}}
                 <div class="crafting-bench-process-row">
-                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessPrev" title="Previous process (heat / grind)" aria-label="Previous process">
+                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessPrev" title="Previous process" aria-label="Previous process">
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
                     <div class="crafting-bench-process-slider-wrap widget-{{processType}}" title="{{processName}}: {{processLevelNames}}">
@@ -235,7 +236,7 @@
                             <div class="crafting-bench-process-slider-right">{{processRightLabel}}</div>
                         </div>
                     </div>
-                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessNext" title="Next process (heat / grind)" aria-label="Next process">
+                    <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessNext" title="Next process" aria-label="Next process">
                         <i class="fa-solid fa-chevron-right"></i>
                     </button>
                 </div>

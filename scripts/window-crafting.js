@@ -2274,7 +2274,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     /**
-     * Validate that the current bench state exactly matches the selected recipe (ingredients, apparatus, container, time, heat/grind).
+     * Validate that the current bench state exactly matches the selected recipe (ingredients, apparatus, container, time, process and level).
      * Returns a list of all issues found (so we can show them in details).
      * @returns {Promise<{ valid: boolean, issues: string[] }>}
      */

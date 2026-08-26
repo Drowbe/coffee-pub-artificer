@@ -1342,8 +1342,10 @@
 .crafting-bench-process-row {
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 12px;
+    /* Full width of the parent. The arrows sit at the ends and the slider takes
+       everything between, so the control does not resize per process. */
+    width: 100%;
     padding: 12px 0;
     border-top: 1px solid var(--craft-border-color);
 }
@@ -1374,7 +1376,12 @@
     flex-direction: column;
     align-items: center;
     gap: 4px;
-    min-width: 200px;
+    /* Fills the row rather than sizing to its content. With `min-width: 200px` and
+       a centred row, the control grew and shrank as you cycled processes -- a long
+       name like "Assemble: Secure" made it wider than a short one, so the arrows
+       moved under the cursor between clicks. */
+    flex: 1 1 auto;
+    min-width: 0;
     border: 1px solid rgba(68, 68, 68, 0.9);
     border-radius: 12px;
     padding: 6px 6px 6px 6px;

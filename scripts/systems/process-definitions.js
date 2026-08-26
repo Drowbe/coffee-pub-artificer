@@ -171,7 +171,11 @@ export function findProcess(id) {
 export function getAllProcesses() {
     const authored = authoredProcesses();
     const taken = new Set(authored.map(p => p.id));
-    return [...authored, ...BUILTIN_PROCESSES.filter(p => !taken.has(p.id))];
+    // Alphabetical by label. The cycler steps through this list, and cache order is
+    // arbitrary -- so without a sort the arrows walked processes in whatever order
+    // the item cache happened to hold them, which changes between rebuilds.
+    return [...authored, ...BUILTIN_PROCESSES.filter(p => !taken.has(p.id))]
+        .sort((a, b) => String(a.label).localeCompare(String(b.label)));
 }
 
 /**
