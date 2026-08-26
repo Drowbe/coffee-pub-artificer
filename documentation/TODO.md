@@ -1,6 +1,6 @@
 # TODO - Active Backlog
 
-**Progress overview:** Current release **v13.0.12**. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
+**Progress overview:** Current release **v13.1.1**; **13.2.0** in progress. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
 
 ## Current Focus
 
@@ -11,10 +11,11 @@
     import { BlacksmithWindowBaseV2, BlacksmithToolWindowBaseV2 } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
     ```
     `extends` is evaluated when our module script is evaluated, and `game` does not exist yet — a top-level `game.modules.get('coffee-pub-blacksmith')` throws `Cannot read properties of undefined (reading 'get')`, and ES modules cache a failed evaluation, so the throw disables Artificer for the entire session instead of being retried. Merchant hit this on 2026-08-19. `BLACKSMITH_WINDOW_STYLES`, `BLACKSMITH_TOOL_TITLEBARS` and `BLACKSMITH_TOOL_THEMES` come from the same path and are the same objects as `api.windowStyles` / `api.toolTitlebars` / `api.toolThemes`. `scripts/` paths are still not the contract; the bridge is. `module.api` stays correct for anything resolved after `init`.
-- [ ] Audit and migrate every current window: Crafting, Recipe Browser, Skills, Gather, Artificer Item, Recipe Import, and the experimental Crafting panel; document which base and zone layout each one uses.
+- [x] ~~Artificer Item window~~ — **DONE 13.2.0.** Extends `BlacksmithWindowBaseV2` via the bridge, uses the zone contract, and its fields carry `blacksmith-input` / `blacksmith-select` / `blacksmith-textarea`. It is the reference for the rest.
+- [ ] Audit and migrate the remaining windows: Crafting, Recipe Browser, Skills, Gather, Recipe Import, and the experimental Crafting panel; document which base and zone layout each one uses.
 - [ ] Register stable window IDs through `api.registerWindow()` for windows opened by Blacksmith bars, macros, or other modules, and route those callers through `api.openWindow()`; retain direct construction only where the Window API explicitly recommends it for ephemeral/multi-instance tools.
 - [ ] Refactor window templates onto Blacksmith's zone contract (option bar, header, tools, body, action bar) while preserving existing actions, forms, scrolling, sizing, remembered positions, and singleton/multi-instance behavior.
-- [ ] Replace Artificer's hardcoded dark window surfaces and field colors with the applicable Blacksmith window variables. For Tool windows, use the `--blacksmith-tool-*` field/content-surface family and verify fields, placeholders, focus rings, open dropdown options, sticky content, hover/selection states, and muted text under Light, Dark, and Glass themes.
+- [ ] Replace Artificer's hardcoded dark window surfaces and field colors with the applicable Blacksmith window variables. **Note from the Artificer Item migration:** the blockers are `!important` rules and a fixed `height: 22px` in `shared.css` plus per-window overrides, which beat the shared classes at any specificity. Stand them down with `:not(.blacksmith-…)` rather than deleting — unmigrated windows still depend on them. For Tool windows, use the `--blacksmith-tool-*` field/content-surface family and verify fields, placeholders, focus rings, open dropdown options, sticky content, hover/selection states, and muted text under Light, Dark, and Glass themes.
 - [ ] Add migration verification for opening every window from each supported entry point, closing/reopening, minimizing, resizing, position persistence, form submission, keyboard/focus behavior, and theme switching.
 
 ### CRITICAL — Migrate item grants to the Blacksmith Inventory API
@@ -36,8 +37,28 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 ### Migrate recipe import to the Blacksmith Importer API
 `api.importer` went public on 2026-08-22: `registerKind`, `getKind`, `openWindow`, `parsePayload`, `attachButton`. We supply `onValidateEntry` and `onImportEntry`, so we keep document construction and Blacksmith never learns our data model. See [API: Importer](https://github.com/Drowbe/coffee-pub-blacksmith/wiki) on the wiki.
 
-- [ ] Register a recipe kind and move [scripts/utility-artificer-recipe-import.js](../scripts/utility-artificer-recipe-import.js) behind `onValidateEntry` / `onImportEntry`. [scripts/parsers/parser-recipe.js](../scripts/parsers/parser-recipe.js) stays ours.
+**Superseded in part by the declaration model.** Blacksmith replaced the `onValidateEntry` / `onImportEntry`
+callback contract with declared profiles (2026-08-25). Recipes are now a mapped foreign subtype rather than a
+callback consumer — see [plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) step 6, which is
+blocked on their step 8 (Journal). Do not build against the callback contract.
+
+- [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/declaration-recipe-field-mappings.md](plans/declaration-recipe-field-mappings.md).
 - [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
+
+### Recipes and Processes
+Recipes are a real data model and processes are items as of 13.2.0 — see
+[plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) for what shipped and what is left.
+
+- [ ] Add the Process family to the Artificer item field-group declaration
+      ([plans/declaration-artificer-field-group.md](plans/declaration-artificer-field-group.md)): the Tool
+      family vocabulary grows to three, and the Process-only fields are the conditional-*fields* case
+      Blacksmith has not designed for yet. Needed before AI authoring works for processes.
+- [ ] Send Blacksmith what `onReplace: { preserve: [...] }` actually needed to hold. Answered from the
+      recipe conversion rather than predicted: `_id`, `sort`, `ownership`, `title`.
+- [ ] Decide whether the `settle` motion is distinguishable from `none` in play. Only Dry uses it; the CSS
+      says to drop it if not.
+- [ ] Delete the world copies of the Process items now that they ship in the Tools compendium. The
+      `itemLookupOrder` de-dupe handles them, but two copies can silently diverge.
 
 ### Gather / Pins Reliability
 - [ ] Eliminate the player-driven gather/discovery completion race around request-roll message context and GM-side resolution.

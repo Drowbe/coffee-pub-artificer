@@ -12,16 +12,21 @@
 **Item data hierarchy (organizing principle):**
 - **TYPE** → **FAMILY** → **TRAITS**
 - **TYPE:** Component | Creation | Tool (the top-level bucket)
-- **FAMILY:** Identity within the type (e.g. Plant, Mineral, Potion, Apparatus); depends on TYPE
+- **FAMILY:** Identity within the type (e.g. Plant, Mineral, Potion, Apparatus, Process); depends on TYPE
 - **TRAITS:** Modifiers that refine behavior/variant/quality (e.g. Floral, Medicinal, Arcane); do not repeat type or family
 
 **Example:** `[COMPONENT] > [PLANT] > [FLORAL, MEDICINAL, ARCANE]`
 
 **Traits** determine crafting outcome (item category, elemental effects, behavior, variant). Traits may be revealed progressively (e.g. after N uses) for discovery.
 
+**Processes are items.** What the bench does to the ingredients — heat, grind, scribe, imbue — is a Tool of
+family Process supplying its own level names, colours, animation and sound, so a GM can author new ones
+without code. See 7.2.1.
+
 **Three crafting methods:**
 1. **Experimentation** — Free-form; tag combination rules; may produce sludge if no match
-2. **Recipes** — Structured journal entries; predictable outcomes; reduced cost, quality bonus
+2. **Recipes** — Journal pages of subtype `coffee-pub-artificer.recipe` with schema-validated fields;
+   predictable outcomes; reduced cost, quality bonus. See 7.2.
 3. **Blueprints** — Multi-stage journal entries; narrative-driven; staged assembly
 
 *For detailed user-facing explanation, see `documentation/overview.md`.*
@@ -92,9 +97,16 @@ All Artificer items are organized by a single, non-redundant hierarchy. **Family
 - Food, Material, Poison, Potion
 
 **Tools:**
-- Apparatus, Container
+- Apparatus, Container, Process
 
 *Terminology:* Use **Creature Part** (singular) or **Creature Parts** for components harvested from creatures.
+
+**Process is a family, not a fourth TYPE.** A process is part of the apparatus of crafting, the Tools
+browser already groups by family, and family-gated fields already existed for Essence/affinity. It carries
+fields no other item has — four level positions with names and colours, a named animation, a sound, and
+whether full intensity destabilises — declared in `schema-artificer-item.js` under
+`ARTIFICER_FLAG_KEYS.PROCESS_*`. A Process is never an ingredient and is never crafted, so it has no traits
+and its skill level is unread.
 
 ### 3.3 TRAITS
 
@@ -231,6 +243,46 @@ Recipes provide:
 - guaranteed variant unlocks  
 
 Sources include books, NPCs, scrolls, dungeons, and discoveries.
+
+**Recipes are journal pages of subtype `coffee-pub-artificer.recipe`.** Fields are schema-validated in
+`page.system` (`scripts/data/models/model-recipe-page.js`); the description is the page's native
+`text.content`, so it keeps stock ProseMirror editing. The subtype is registered at `init` in
+`artificer.js` — it must be `init`, because Foundry validates documents as the world loads and a page
+naming an unregistered subtype will not render.
+
+`RecipeParser.fromPage()` (`scripts/parsers/parser-recipe.js`) is the single entry point for reading a
+recipe: a subtype page is read straight from `page.system`, a legacy `text` page is parsed from its HTML.
+**Both paths are live.** The legacy path exists for worlds that have not converted, and for anything
+`cleanAndRewriteRecipePages` / `applyPotionBrewingData` touch — those rewrite HTML and are text-only by
+design.
+
+Item references — result, apparatus, container, ingredients, kit — are stored **by name, never by UUID**,
+and resolved at craft time against compendia then world per the `itemLookupOrder` setting. That is what
+lets a recipe survive an item moving compendium, and lets a recipe name something that does not exist yet.
+
+The legacy format stored a recipe as HTML that was *both* its rendering and its storage: labels like
+`<p><strong>Result:</strong> …</p>` were written by a builder and read back by the parser. That made the
+template a schema — renaming a label silently dropped that field from every recipe, with no error.
+Conversion tooling lives in `macros/convert-recipes-to-subtype-macro.js`.
+
+### 7.2.1 Processes
+
+A **process** is what the crafting bench does to the ingredients — heat, grind, scribe, imbue. It is four
+things and no behaviour: a name, four level positions each with a label and a colour, a named animation,
+and a sound.
+
+`scripts/systems/process-definitions.js` resolves them. Authored Process **items** win over the two
+built-in fallbacks, and duplicates (an item present in both a compendium and the world) are collapsed
+honouring `itemLookupOrder`. `getProcess()` always returns something so an animation can always be drawn;
+`findProcess()` returns null and is what anything user-facing must use — a fallback shown as a label
+misreports the recipe.
+
+Animations are named for the **motion, not the process**, so one serves many: a ferment can pulse and a
+sieve can shake. Each is a CSS block in `styles/process-animations.css` reading two custom properties —
+`--process-level` (0-1, ramping as a craft runs down) and `--process-color` (the selected level's colour).
+`resources/process-animations.json` is an *index* of that CSS, not a definition of it; each block sets a
+marker property and the loader probes for it, so a manifest entry with no stylesheet behind it is dropped
+and reported rather than silently doing nothing.
 
 ### 7.3 Blueprints
 Blueprints are multi-step, narrative-driven crafting requirements.
