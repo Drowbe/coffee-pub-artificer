@@ -15,20 +15,19 @@ file.
 | Where | `packs/recipes-blueprints` and `packs/recipies` | journals in each GM's world |
 | Volume | ~161 recipe pages across ~9 journals | unknown, per world |
 | Owner | us | them |
-| Mechanism | **regenerate the pack at build time** | **in-world migration** |
-| Risk | none to live worlds | irreversible |
-| Reversible | yes — don't ship it | only from a backup |
+| Mechanism | **authoring round trip** — import keeping ids, convert, export keeping ids | **in-world migration** |
+| Risk | none to anyone else's world | irreversible |
+| Reversible | yes — don't ship the pack | only from a backup |
 
-**The shipped content is not a migration.** It is a build step: parse the existing pages with
-`RecipeParser` offline, emit subtype pages, rebuild the pack, ship it. It can be run a hundred
-times, diffed, and thrown away. Nothing in a GM's world is touched, and if the output is wrong
-we fix it and ship again.
+**The shipped content is converted through the normal authoring round trip.** Import the
+recipe journals to the world keeping ids, run the converter, export back keeping ids. It can
+be redone from the compendium as often as needed, and nothing reaches a GM until the pack
+ships.
 
 Do this one first. It converts the largest body of content, and it is the best possible test
 of the converter — 161 real recipes written over months, including whatever malformed ones
-accumulated. Any defect the converter has will surface here, offline, where it costs nothing.
-
-Only then run the same converter in-world, where it will already have been exercised.
+accumulated. Any defect the converter has surfaces here, against our own content, before it
+meets anyone else's.
 
 ---
 
@@ -61,7 +60,23 @@ Only then run the same converter in-world, where it will already have been exerc
    must not become visible. This is Librarian's `onReplace: { preserve: [...] }` case, and we
    hit it first — whatever this needs to hold is what we send Blacksmith.
 
-### The one real decision: do UUIDs survive?
+### Decided: UUIDs survive, and the pack conversion happens in-world
+
+**The pack is converted through the normal authoring round trip**, not offline: import
+the recipe journals to the world keeping ids, run the converter, export back keeping ids.
+An earlier draft of this plan called for an offline build step, which had a hole — the
+packs are LevelDB and building valid subtype pages needs Foundry's registered data model.
+The round trip keeps it all inside Foundry where validation actually runs, and still
+exercises the converter against ~161 real recipes before it meets anyone's own content.
+
+**Pages are recreated with `keepId: true`.** A page's `type` cannot be changed by update,
+so conversion deletes and recreates. Without `keepId` every `@UUID` link a GM wrote to a
+recipe page breaks silently. `sort` and `ownership` come across for the same reason: a
+hidden recipe must not become visible, and a mixed journal must not reorder.
+
+Implemented in [`macros/convert-recipes-to-subtype-macro.js`](../../macros/convert-recipes-to-subtype-macro.js).
+
+### Why, in full
 
 A page's `type` cannot be changed by update, so the page must be recreated. Two orders:
 
@@ -73,11 +88,9 @@ own `journalPageId` references need rewriting.
 where the page exists only in memory, and a crash inside that window loses it — recoverable
 only from the backup.
 
-**Recommendation: `keepId`, given non-negotiable 2.** Link preservation is a certain, universal
-benefit; the crash window is a narrow, unlikely one that the backup already covers. Silently
-breaking every link a GM wrote is a worse outcome than a recoverable crash. But this is the
-call worth making deliberately rather than defaulting into, so it should be a flag with
-`keepId` as the default and create-then-delete available.
+**Settled on `keepId`, given non-negotiable 2.** Link preservation is a certain, universal
+benefit; the crash window is a narrow, unlikely one the backup already covers. Silently
+breaking every link a GM wrote is worse than a recoverable crash.
 
 ### Order of operations, per journal
 
@@ -115,10 +128,14 @@ thirty.
 
 ## Sequence
 
-1. Build the converter as a **pure function**: page HTML in, subtype page data out. No document
-   writes. This is what both populations use and what the tests test.
-2. Run it over the shipped packs offline. Diff the output. Fix until clean.
-3. Ship the regenerated packs.
-4. Build the in-world runner around the same function: dry run, backup, convert, verify.
-5. Run it on a copy of a real world before it goes near a live one.
-6. Send Blacksmith what `onReplace: { preserve: [...] }` actually needed to hold.
+1. ~~Build the converter.~~ **DONE** —
+   [`macros/convert-recipes-to-subtype-macro.js`](../../macros/convert-recipes-to-subtype-macro.js).
+   Dry run by default, backup before any write, verify after each recreate, stop the journal on
+   the first mismatch.
+2. Import the shipped recipe journals to a world keeping ids. Dry-run the converter and read
+   the report: what converts, what is skipped and why, what fails.
+3. Convert with `APPLY = true`. Spot-check pages, especially ones the report called unusual.
+4. Export back to the compendium keeping ids. Ship it.
+5. Only then point it at a GM's own world, on a copy first.
+6. Send Blacksmith what `onReplace: { preserve: [...] }` actually needed to hold — currently
+   `_id`, `sort`, `ownership` and `title`.
