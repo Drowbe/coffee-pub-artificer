@@ -119,6 +119,9 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         // The intensity vocabulary belongs to the PROCESS, not to a branch on its
         // name: Off/Low/Medium/High and Off/Coarse/Medium/Fine were two hardcoded
         // maps chosen by an `if`. A process item supplies its own four labels.
+        // Declared here, above its first use -- it is also read by the process slot
+        // further down, which is where it was mistakenly declared.
+        const process = getProcess(system.processType);
         context.processLevels = process.levels.map((level, index) => ({
             value: index,
             label: `${index} — ${level.label}`,
@@ -159,7 +162,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         // without process flags has no levels, no animation and no intensity to offer,
         // so it is rejected because it cannot function, not because of what it is.
         const images = cachedImages();
-        const process = getProcess(system.processType);
         const slot = (name) => ({
             name: name ?? '',
             img: name ? (images.get(name) ?? '') : '',

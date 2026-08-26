@@ -146,7 +146,9 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         // actually picks a new colour.
         const isProcessFamily = selectedFamily === PROCESS_FAMILY;
         const storedLevels = flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS];
-        const levelDefaults = ['Off', 'Low', 'Medium', 'High'];
+        // `e.g.` prefixed for the same reason as every other placeholder here: a bare
+        // "Off" in placeholder grey reads as a value already set, not as a suggestion.
+        const levelDefaults = ['e.g. Off', 'e.g. Low', 'e.g. Medium', 'e.g. High'];
         const processLevels = Array.from({ length: PROCESS_LEVEL_MAX + 1 }, (_, index) => {
             const stored = Array.isArray(storedLevels) ? storedLevels[index] : null;
             const fromState = this._formState?.processLevels?.[index];
@@ -236,79 +238,47 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
      * would rebuild from flags and discard.
      */
     async _pickImage() {
+        return this._pickFile({
+            type: 'image',
+            inputSelector: '#artificer-item-img',
+            stateKey: 'img',
+            previewSelector: '.artificer-image-preview'
+        });
+    }
+
+    /** Browse for the sound a Process plays while crafting. */
+    async _pickSound() {
+        return this._pickFile({
+            type: 'audio',
+            inputSelector: '#processSound',
+            stateKey: 'processSound'
+        });
+    }
+
+    /**
+     * Browse for a file and write it straight into the field.
+     *
+     * Deliberately does NOT re-render: the form holds unsaved state -- traits,
+     * biomes, process levels, the name being typed -- that a render would rebuild
+     * from flags and discard.
+     * @param {{type: string, inputSelector: string, stateKey: string, previewSelector?: string}} config
+     */
+    async _pickFile({ type, inputSelector, stateKey, previewSelector }) {
         const root = this._getItemFormRoot();
-        const input = root?.querySelector('#artificer-item-img');
-        const preview = root?.querySelector('.artificer-image-preview');
+        const input = root?.querySelector(inputSelector);
+        const preview = previewSelector ? root?.querySelector(previewSelector) : null;
         const current = (input?.value || '').trim();
 
         const picker = new foundry.applications.apps.FilePicker.implementation({
-            type: 'image',
+            type,
             current: current || undefined,
             callback: (path) => {
                 if (input) input.value = path;
                 if (preview) preview.src = path;
-                this._formState = { ...(this._formState ?? {}), img: path };
+                this._formState = { ...(this._formState ?? {}), [stateKey]: path };
             }
         });
         await picker.browse();
-    }
-
-    /**
-     * Snapshot every live field into `_formState`.
-     *
-     * `getData` rebuilds the form from the item's FLAGS. That is correct on first
-     * open and wrong on every re-render, because a re-render happens while the
-     * author is mid-edit -- changing Type rebuilds the Family list and used to take
-     * the typed name, chosen image, traits and skill level with it. Anything the
-     * form can hold has to survive a render, so it is captured here first.
-     */
-    _captureFormState() {
-        const root = this._getItemFormRoot();
-        this._formState = this._formState ?? {};
-        if (!root) return this._formState;
-
-        const value = (selector) => root.querySelector(selector)?.value;
-        const state = this._formState;
-
-        const name = value('#itemName');
-        if (name !== undefined) state.itemName = name;
-
-        const img = value('#artificer-item-img');
-        if (img !== undefined) state.img = img;
-
-        // The pills are the source of truth for traits; the hidden input mirrors them.
-        const traits = value('#artificer-traits-hidden');
-        if (traits !== undefined) state.traits = traits;
-
-        const skillLevel = value('#skillLevel');
-        if (skillLevel !== undefined) state.skillLevel = Number(skillLevel);
-
-        const quirk = value('#artificer-quirk');
-        if (quirk !== undefined) state.quirk = (quirk ?? '').trim();
-
-        const affinity = value('#affinity');
-        if (affinity !== undefined) state.affinity = affinity;
-
-        const animation = value('#processAnimation');
-        if (animation !== undefined) state.processAnimation = animation;
-        const sound = value('#processSound');
-        if (sound !== undefined) state.processSound = sound;
-        const unstable = root.querySelector('#processUnstable');
-        if (unstable) state.processUnstable = unstable.checked;
-        const levelRows = root.querySelectorAll('.artificer-process-level');
-        if (levelRows.length) {
-            state.processLevels = Array.from(levelRows).map(row => ({
-                label: row.querySelector('input[type="text"]')?.value ?? '',
-                color: row.querySelector('input[type="color"]')?.value ?? '#ffffff'
-            }));
-        }
-
-        const biomes = value('#artificer-biomes-hidden');
-        if (biomes !== undefined) {
-            state.selectedBiomes = String(biomes).split(',').map(b => b.trim()).filter(Boolean);
-        }
-
-        return state;
     }
 
     _getItemFormRoot() {
@@ -340,6 +310,12 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
                 e.preventDefault();
                 e.stopPropagation();
                 w._pickImage();
+                return;
+            }
+            if (e.target?.closest?.('[data-action="pickSound"]')) {
+                e.preventDefault();
+                e.stopPropagation();
+                w._pickSound();
                 return;
             }
             if (e.target?.closest?.('[data-action="deleteArtificer"]')) {
@@ -578,8 +554,16 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         this.itemType = formObject.artificerType || this.itemType || ARTIFICER_TYPES.COMPONENT;
         const family = formObject.family || '';
 
-        // Derive D&D 5e type/subtype from Artificer type + family
-        const derived = deriveItemTypeFromArtificer(this.itemType, family);
+        // Derive D&D 5e type/subtype from Artificer type + family.
+        //
+        // NULL means "no mapping for this family". On CREATE that falls back to a
+        // plain loot item; on EDIT the document keeps the type it already has.
+        // Changing a document's type is not this form's job -- it manages Artificer
+        // flags -- and dnd5e rejects a type change made through a normal update
+        // anyway ("the type of a Document can be changed only if the system field
+        // is force-replaced"), which is what a missing mapping used to trigger.
+        const derived = deriveItemTypeFromArtificer(this.itemType, family)
+            ?? { type: this.existingItem?.type ?? 'loot' };
 
         // Core item fields only; source and license hard-coded. Price, rarity, weight not set (user can set in item sheet).
         const SOURCE_LABEL = 'Artificer';
@@ -672,6 +656,10 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
                 } else if (derived.type === 'loot' && derived.subtype) {
                     systemMerge.type = { value: derived.subtype, subtype: '', baseItem: '' };
                 }
+                // Preserve the document's own type. A family whose mapping differs
+                // from what the item already is would otherwise attempt a retype and
+                // fail the whole save.
+                itemData.type = this.existingItem.type;
                 itemData.system = foundry.utils.mergeObject(this.existingItem.system ?? {}, systemMerge);
                 // The FORM wins now that the image is editable. Falling back to the
                 // existing image only when the field was cleared keeps an accidental

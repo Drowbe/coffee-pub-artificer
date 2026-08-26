@@ -10,7 +10,7 @@ import {
     getFamilyFromFlags,
     getTraitsFromFlags
 } from './utility-artificer-item.js';
-import { ARTIFICER_TYPES, FAMILY_LABELS, ARTIFICER_FLAG_KEYS } from './schema-artificer-item.js';
+import { ARTIFICER_TYPES, FAMILY_LABELS, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } from './schema-artificer-item.js';
 
 /**
  * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
@@ -150,11 +150,34 @@ function buildArtificerSection(item, flags, editable) {
     const affinity = flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity ?? '';
     const skillLevel = flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1;
 
+    // A Process is a definition, not a craftable thing: it has no traits (it is never
+    // matched as an ingredient) and no skill level (it is never crafted). Showing
+    // either would invite an author to set a value nothing reads.
+    const isProcess = family === PROCESS_FAMILY;
+    const processLevels = flags[ARTIFICER_FLAG_KEYS.PROCESS_LEVELS];
+
     const rows = [];
     if (artificerType) rows.push({ label: 'Type', value: artificerType });
     if (familyLabel) rows.push({ label: 'Family', value: familyLabel });
-    if (traitsStr) rows.push({ label: 'Traits', value: traitsStr });
-    rows.push({ label: 'Skill Level', value: String(skillLevel) });
+
+    if (isProcess) {
+        if (Array.isArray(processLevels) && processLevels.length) {
+            rows.push({
+                label: 'Intensity',
+                value: processLevels.map((l, i) => `${i} ${l?.label || '—'}`).join(', ')
+            });
+        }
+        rows.push({ label: 'Animation', value: flags[ARTIFICER_FLAG_KEYS.PROCESS_ANIMATION] || 'none' });
+        const sound = flags[ARTIFICER_FLAG_KEYS.PROCESS_SOUND];
+        if (sound) rows.push({ label: 'Sound', value: String(sound).split('/').pop() });
+        if (flags[ARTIFICER_FLAG_KEYS.PROCESS_UNSTABLE]) {
+            rows.push({ label: 'At Full', value: 'Unstable' });
+        }
+    } else {
+        if (traitsStr) rows.push({ label: 'Traits', value: traitsStr });
+        rows.push({ label: 'Skill Level', value: String(skillLevel) });
+    }
+
     if (affinity && family === 'Essence') rows.push({ label: 'Essence Affinity', value: affinity });
     if (quirk) rows.push({ label: 'Quirk', value: quirk });
     if (artificerType === ARTIFICER_TYPES.COMPONENT && biomesStr) rows.push({ label: 'Biomes', value: biomesStr });

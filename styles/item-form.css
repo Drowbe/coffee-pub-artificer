@@ -310,11 +310,17 @@
     min-width: 0;
 }
 
+/* Hints must not read as content. Muted alone was not enough -- an italic,
+   indented line under a field says "this is about the field" where a plain
+   paragraph in the same colour as a value says "this is a value". */
 .artificer-item-form .artificer-form-hint {
-    margin: 0.15rem 0 0;
+    margin: 0.2rem 0 0;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--craft-border-color, #444);
     font-size: var(--font-size-11, 0.7rem);
+    font-style: italic;
     line-height: 1.35;
-    opacity: 0.55;
+    opacity: 0.5;
 }
 
 /* ------------------------------------ */
@@ -359,4 +365,12 @@
     border-radius: 4px;
     background: none;
     cursor: pointer;
+}
+
+.artificer-item-form .artificer-file-browse {
+    flex: 0 0 2.25rem;
+    width: 2.25rem;
+    height: 1.75rem;
+    padding: 0;
+    line-height: 1;
 }

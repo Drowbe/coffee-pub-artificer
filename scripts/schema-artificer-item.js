@@ -152,12 +152,19 @@ export function deriveItemTypeFromArtificer(artificerType, family) {
         },
         [ARTIFICER_TYPES.TOOL]: {
             Apparatus: { type: 'tool', toolType: '' },
-            Container: { type: 'container' }
+            Container: { type: 'container' },
+            // A Process is not a usable tool, but `tool` is the closest dnd5e type
+            // and it keeps a Process in the Tools bucket where the browser groups it.
+            Process: { type: 'tool', toolType: '' }
         }
     };
     const byType = map[artificerType];
-    const entry = byType?.[family] ?? { type: 'consumable', subtype: 'trinket' };
-    return entry;
+    // NULL for an unknown family, not a guess. This used to fall through to
+    // `{ type: 'consumable', subtype: 'trinket' }`, which meant adding a family
+    // silently RETYPED the document -- a Tool became a consumable, and dnd5e
+    // rejects the update with "the type of a Document can be changed only if the
+    // system field is force-replaced". Callers preserve the existing type instead.
+    return byType?.[family] ?? null;
 }
 
 /**

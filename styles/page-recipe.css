@@ -68,12 +68,17 @@
 }
 
 /* Hints sit under the control, in the control column, and stay quiet. */
+/* Same treatment as the item window: muted alone reads as content, so hints get
+   an italic, rule-marked indent that says "this is about the field above". */
 .artificer-recipe-page .arf-hint {
     grid-column: 2;
-    margin: 0;
+    margin: 0.2rem 0 0;
+    padding-left: 0.6rem;
+    border-left: 2px solid var(--color-border-light-tertiary, #7a7971);
     font-size: var(--font-size-11, 0.7rem);
+    font-style: italic;
     line-height: 1.35;
-    opacity: 0.55;
+    opacity: 0.5;
 }
 
 /* Ingredients need the full width, so the label goes above rather than beside. */

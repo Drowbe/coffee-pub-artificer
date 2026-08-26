@@ -25,7 +25,7 @@
                 <label class="blacksmith-field-label" for="artificer-item-img">Image</label>
                 <div class="artificer-image-row">
                     <img class="artificer-image-preview" src="{{itemImg}}" alt="" data-action="pickImage" data-tooltip="Choose an image" />
-                    <input type="text" class="blacksmith-input" name="img" id="artificer-item-img" value="{{itemImg}}" placeholder="icons/svg/item-bag.svg" />
+                    <input type="text" class="blacksmith-input" name="img" id="artificer-item-img" value="{{itemImg}}" placeholder="e.g. icons/svg/item-bag.svg" />
                 </div>
                 <p class="artificer-form-hint">Shown in recipe slots, ingredient rows and the browser. Click the preview to browse.</p>
             </div>
@@ -39,6 +39,10 @@
             {{#if isEssenceFamily}}
             {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="blacksmith-select" labelClass="blacksmith-field-label"}}
             {{/if}}
+            {{!-- Neither applies to a Process. Traits drive INGREDIENT matching and a
+                  process is never an ingredient; skill level gates crafting difficulty
+                  and a process is never crafted. --}}
+            {{#unless isProcessFamily}}
             <div class="artificer-form-group artificer-tag-picker-group">
                 <label class="blacksmith-field-label" for="artificer-tag-input">Traits</label>
                 <div class="artificer-tag-picker">
@@ -65,6 +69,8 @@
                 </div>
                 
             </div>
+            {{/unless}}
+
             {{#if isProcessFamily}}
             {{!-- Process family only. A process is four things and no behaviour:
                   what its intensity is called at each position, what colour each
@@ -96,8 +102,13 @@
             </div>
             <div class="artificer-form-group">
                 <label class="blacksmith-field-label" for="processSound">Sound</label>
-                <input type="text" class="blacksmith-input" id="processSound" name="processSound"
-                    value="{{processSound}}" placeholder="modules/coffee-pub-artificer/sounds/…" />
+                <div class="artificer-image-row">
+                    <button type="button" class="artificer-file-browse" data-action="pickSound" data-tooltip="Browse for a sound">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </button>
+                    <input type="text" class="blacksmith-input" id="processSound" name="processSound"
+                        value="{{processSound}}" placeholder="e.g. modules/coffee-pub-artificer/sounds/fire-boil-01.mp3" />
+                </div>
                 <p class="artificer-form-hint">Played while the craft runs. Leave blank for silence.</p>
             </div>
             <div class="artificer-form-group">
