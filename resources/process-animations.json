@@ -16,6 +16,41 @@
       "id": "shake",
       "label": "Shake",
       "description": "A fast rotate and press with a drifting particle field. Suits grind, sift, mill — anything abrasive or agitated."
+    },
+    {
+      "id": "strike",
+      "label": "Strike",
+      "description": "A discrete blow with recovery between, flashing on impact. Suits hammering, chiselling, faceting."
+    },
+    {
+      "id": "swirl",
+      "label": "Swirl",
+      "description": "Smooth continuous rotation with a trailing wash. Suits stirring, blending, simmering, tanning."
+    },
+    {
+      "id": "sweep",
+      "label": "Sweep",
+      "description": "A stroke passing across the item, which stays still and legible. Suits scribing, drawing, inking, embossing."
+    },
+    {
+      "id": "shimmer",
+      "label": "Shimmer",
+      "description": "Light drifting over a motionless item. Suits imbuing, attuning, illuminating."
+    },
+    {
+      "id": "settle",
+      "label": "Settle",
+      "description": "Fades toward still, reading as work subsiding rather than continuing. Suits quenching, curing, drying."
+    },
+    {
+      "id": "ring",
+      "label": "Ring",
+      "description": "Expanding rings radiating outward. Suits enchanting, activating, resonating."
+    },
+    {
+      "id": "blur",
+      "label": "Blur",
+      "description": "The item loses definition beneath a colour wash. Suits dissolving, vaporising, transmuting."
     }
   ]
 }

@@ -31,6 +31,9 @@
 /* --- Scene Config Integration ---- */
 @import "scene-config.css";
 
+/* --- Process Motions ------------- */
+@import "process-animations.css";
+
 /* --- Recipe Page Subtype --------- */
 @import "page-recipe.css";
 
