@@ -143,10 +143,24 @@ function authoredProcesses() {
  * @returns {object} A process definition; never null.
  */
 export function getProcess(id) {
+    return findProcess(id) ?? FALLBACK_PROCESS;
+}
+
+/**
+ * Resolve a process, or NULL when nothing matches.
+ *
+ * Use this anywhere the answer is shown to a person. `getProcess` falls back to
+ * the first built-in so something can always be animated, but that fallback LIES
+ * when displayed: a recipe storing "Forge" would render as "Heat" and the author
+ * would have no way to tell the name had not resolved.
+ * @param {string} id
+ * @returns {object|null}
+ */
+export function findProcess(id) {
     const key = String(id ?? '').trim().toLowerCase();
     return authoredProcesses().find(p => p.id === key)
         ?? BUILTIN_PROCESSES.find(p => p.id === key)
-        ?? FALLBACK_PROCESS;
+        ?? null;
 }
 
 /**

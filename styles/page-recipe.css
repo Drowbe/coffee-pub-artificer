@@ -229,6 +229,13 @@
     padding: 0 0.5rem;
 }
 
+/* A stored process name the item cache cannot resolve. Marked rather than
+   silently replaced with a fallback's label, which would misreport the recipe. */
+.artificer-recipe-page .arf-slot-unresolved {
+    color: var(--color-level-warning, #d9a441);
+    font-style: italic;
+}
+
 /* --- Drop targets ------------------- */
 
 .artificer-recipe-page [data-drop] {

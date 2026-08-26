@@ -19,7 +19,7 @@
 
 import { MODULE } from '../const.js';
 import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
-import { getProcess, getProcessLevel, PROCESS_LEVEL_MAX } from '../systems/process-definitions.js';
+import { getProcess, findProcess, getProcessLevel, PROCESS_LEVEL_MAX } from '../systems/process-definitions.js';
 import { RECIPE_RARITIES, GENERATED_PREPARATION_ATTR, RECIPE_SECTIONS } from '../data/models/model-recipe-page.js';
 import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, PROCESS_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
@@ -173,7 +173,16 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         context.containerSlot = slot(system.containerName);
         // Labelled with the process's own display name, so a slot holding a legacy
         // `heat` string still reads as "Heat" rather than as a raw id.
-        context.processSlot = { ...slot(system.processType), label: system.processType ? process.label : '' };
+        // Show the STORED name when it does not resolve, flagged -- never the
+        // fallback's label, which would claim the recipe uses Heat when it says Forge.
+        const resolvedProcess = findProcess(system.processType);
+        context.processSlot = {
+            ...slot(system.processType),
+            label: system.processType
+                ? (resolvedProcess?.label ?? `${system.processType} — not in this world`)
+                : '',
+            unresolved: Boolean(system.processType) && !resolvedProcess
+        };
 
         // Category is free text by design, but the Creation families are what it
         // almost always holds, so they are offered as suggestions rather than rules.

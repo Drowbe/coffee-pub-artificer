@@ -378,7 +378,20 @@ export async function refreshCache(onProgress) {
         addItem(item, 'world');
     }
 
-    // 3. Persist to world setting
+    // 3. Repopulate the in-memory record map.
+    //
+    // THIS WAS MISSING. `refreshCache` cleared `_recordsByUuid` at the start and
+    // only ever refilled it via `loadFromPersisted()` on the next page load -- so
+    // between a refresh and a reload, `getAllRecordsFromCache()` returned NOTHING
+    // while `getCacheStatus()` reported hundreds of items. Anything reading records
+    // rather than the name index silently saw an empty world: process resolution,
+    // recipe slot icons, ingredient suggestions.
+    _recordsByUuid.clear();
+    for (const entry of entries) {
+        if (entry?.uuid) _recordsByUuid.set(entry.uuid, entry);
+    }
+
+    // 4. Persist to world setting
     try {
         game.settings.set(MODULE.ID, 'itemCache', {
             version: ITEM_CACHE_VERSION,

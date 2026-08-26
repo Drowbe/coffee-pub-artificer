@@ -130,7 +130,7 @@
                         <span class="arf-slot-prompt"><i class="fas fa-hand-pointer"></i> Drag a Process here</span>
                         {{else}}
                         {{#if processSlot.img}}<img class="arf-slot-img" src="{{processSlot.img}}" alt="" />{{/if}}
-                        <span class="arf-slot-name">{{processSlot.label}}</span>
+                        <span class="arf-slot-name{{#if processSlot.unresolved}} arf-slot-unresolved{{/if}}">{{processSlot.label}}</span>
                         <button type="button" class="arf-icon-button" data-action="clearSlot"
                             data-field="processType" data-tooltip="Clear" aria-label="Clear"><i class="fas fa-times"></i></button>
                         {{/if}}
