@@ -227,6 +227,7 @@
                         <i class="fa-solid fa-chevron-left"></i>
                     </button>
                     <div class="crafting-bench-process-slider-wrap widget-{{processType}}" title="{{processName}}: {{processLevelNames}}">
+                        {{#if hasProcess}}
                         <div class="crafting-bench-process-slider-label">{{processName}}: {{processLabel}}</div>
                         <div class="crafting-bench-process-slider-row">
                             <div class="crafting-bench-process-slider-left">{{processLeftLabel}}</div>
@@ -235,6 +236,12 @@
                             </div>
                             <div class="crafting-bench-process-slider-right">{{processRightLabel}}</div>
                         </div>
+                        {{else}}
+                        {{!-- No process chosen: no title and no slider. A level means nothing
+                              without a process to have levels, and a title would name one that
+                              has not been picked. Just the prompt. --}}
+                        <div class="crafting-bench-process-empty">Select Crafting Process</div>
+                        {{/if}}
                     </div>
                     <button type="button" class="crafting-bench-process-cycle-arrow" data-action="cycleProcessNext" title="Next process" aria-label="Next process">
                         <i class="fa-solid fa-chevron-right"></i>

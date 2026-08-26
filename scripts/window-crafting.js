@@ -823,7 +823,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         // process is selected, and the process supplies what each position is called.
         this.processLevel = options.processLevel ?? options.heatValue ?? 0;
         /** @type {string} The active process, by id or item name. Not a fixed pair. */
-        this.processType = options.processType ?? 'heat';
+        // Empty, not 'heat'. A fresh bench has no process chosen, and defaulting to
+        // one told the crafter their recipe used Heat before they had picked anything.
+        this.processType = options.processType ?? '';
         this.timeValue = options.timeValue ?? 0;
         this.lastResult = null;
         this.lastCraftTags = [];
@@ -1432,11 +1434,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             // The process names itself and lists its own positions. The tooltip used
             // to spell out "Heat: Off, Low, Medium, High" in the template, which a
             // third process could never be added to.
-            processName: getProcess(this.processType).label,
-            processLevelNames: getProcess(this.processType).levels.map(l => l.label).join(', '),
+            // No process selected is a real state, not an error. The template shows
+            // only a prompt for it -- no title and no level slider, because a title
+            // would name a process nobody has picked.
+            hasProcess: Boolean(String(this.processType ?? '').trim()),
+            processName: String(this.processType ?? '').trim()
+                ? getProcess(this.processType).label
+                : '',
+            processLevelNames: String(this.processType ?? '').trim()
+                ? getProcess(this.processType).levels.map(l => l.label).join(', ')
+                : 'Use the arrows to choose a process.',
             // The animation the bench should play, and the colour it paints with.
             // Named, not boolean: `isGrinding` could only ever describe two states.
-            processAnimation: getProcess(this.processType).animation,
+            processAnimation: String(this.processType ?? '').trim()
+                ? getProcess(this.processType).animation
+                : 'none',
             processColor: getProcessLevel(this.processType, this._processLevelValue()).color,
             isProcessAnimating: this._craftingCountdownRemaining != null,
             timeFillPercent: this._craftingCountdownRemaining != null
@@ -1528,7 +1540,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.lastResult = null;
         this.lastCraftTags = [];
         this.processLevel = 0;
-        this.processType = 'heat';
+        this.processType = '';
         this.timeValue = 0;
         this.render();
     }
@@ -2109,7 +2121,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         // Whatever the recipe names, verbatim. Coercing to 'heat'/'grind' here is
         // what made a GM-authored process uncraftable.
-        this.processType = recipe.processType || 'heat';
+        // A recipe with no process stays without one -- some are just combining.
+        this.processType = recipe.processType || '';
         const rawLevel = recipe.processLevel != null ? Number(recipe.processLevel) : (recipe.heat != null ? Number(recipe.heat) : null);
         // A legacy page could store 0-100 as a percentage; 0-3 is the real range.
         const level = (rawLevel != null && rawLevel >= 0 && rawLevel <= PROCESS_LEVEL_MAX)
@@ -2244,7 +2257,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.selectedTool = null;
         this.selectedRecipe = null;
         this.processLevel = 0;
-        this.processType = 'heat';
+        this.processType = '';
         this.timeValue = 0;
         this.render();
     }

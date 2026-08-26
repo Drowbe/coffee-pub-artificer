@@ -166,25 +166,61 @@
 /* === SHIMMER ======================== */
 /* ==================================== */
 /* Imbue, attune, illuminate. The object is STILL; only the light on it moves.
-   That stillness is the fiction: magic acting on a thing, not a thing being worked. */
+   That stillness is the fiction: magic acting on a thing, not a thing being worked.
 
+   An earlier version was two soft blobs drifting slowly at low opacity, and it was
+   effectively invisible -- with every other motion moving the image, "nothing moves"
+   read as "nothing is happening". The light now does the work instead: the item
+   itself brightens on a rhythm, and a hard-edged glint travels across it. Both are
+   LIGHT, so the object still never moves. */
+
+.crafting-bench-apparatus-slot.artificer-anim-shimmer .crafting-container-img,
+.crafting-bench-apparatus-slot.artificer-anim-shimmer .crafting-bench-container-empty i {
+    animation: artificer-anim-shimmer-charge calc(2.4s - 0.9s * var(--process-level, 0)) ease-in-out infinite;
+}
+
+@keyframes artificer-anim-shimmer-charge {
+    0%, 100% { filter: brightness(1) saturate(1); }
+    50%      { filter: brightness(calc(1 + 0.45 * var(--process-level, 0)))
+                       saturate(calc(1 + 0.6 * var(--process-level, 0))); }
+}
+
+/* The glint: a tight diagonal highlight, not a diffuse wash. */
 .crafting-bench-apparatus-slot.artificer-anim-shimmer::after {
     content: "";
     position: absolute;
     inset: 8px;
     pointer-events: none;
     border-radius: 12px;
-    background:
-        radial-gradient(ellipse at 30% 30%, var(--process-color, #ffffff), transparent 55%),
-        radial-gradient(ellipse at 70% 65%, var(--process-color, #ffffff), transparent 50%);
+    background: linear-gradient(115deg,
+        transparent 42%,
+        var(--process-color, #ffffff) 50%,
+        transparent 58%);
     mix-blend-mode: screen;
-    opacity: calc(0.15 + 0.4 * var(--process-level, 0));
-    animation: artificer-anim-shimmer-drift calc(5s - 2s * var(--process-level, 0)) ease-in-out infinite alternate;
+    opacity: calc(0.35 + 0.5 * var(--process-level, 0));
+    animation: artificer-anim-shimmer-glint calc(2.4s - 0.9s * var(--process-level, 0)) ease-in-out infinite;
 }
 
-@keyframes artificer-anim-shimmer-drift {
-    0%   { transform: translate(-4%, -3%) scale(1); }
-    100% { transform: translate(4%, 3%) scale(1.06); }
+@keyframes artificer-anim-shimmer-glint {
+    0%        { transform: translateX(-140%); }
+    55%, 100% { transform: translateX(140%); }
+}
+
+/* A soft bloom underneath, so the glint has something to travel over. */
+.crafting-bench-apparatus-slot.artificer-anim-shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+    border-radius: 12px;
+    background: radial-gradient(circle at 50% 50%, var(--process-color, #ffffff), transparent 65%);
+    mix-blend-mode: screen;
+    animation: artificer-anim-shimmer-bloom calc(2.4s - 0.9s * var(--process-level, 0)) ease-in-out infinite;
+}
+
+@keyframes artificer-anim-shimmer-bloom {
+    0%, 100% { opacity: calc(0.08 + 0.10 * var(--process-level, 0)); }
+    50%      { opacity: calc(0.20 + 0.35 * var(--process-level, 0)); }
 }
 
 /* ==================================== */

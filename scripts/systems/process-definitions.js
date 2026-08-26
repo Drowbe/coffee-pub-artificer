@@ -120,16 +120,47 @@ function processFromRecord(record) {
     };
 }
 
-/** Every Process item currently in the cache. */
+/**
+ * Every Process item currently in the cache, ONE PER ID.
+ *
+ * The cache holds compendium items AND world items, so a process exported to a
+ * pack appears twice. Duplicates are invisible to `getProcess`, which uses `find`
+ * -- but they broke the crafting bench's cycler outright: `indexOf` returned the
+ * first copy and `idx + 1` landed on its twin, so the next-process button appeared
+ * to do nothing while previous worked fine.
+ *
+ * WHICH COPY WINS IS THE GM'S CHOICE, not ours. `itemLookupOrder` already decides
+ * this for every other item resolution, and a GM editing a process in the world to
+ * try it out has explicitly asked for the world copy. Honouring it here keeps
+ * processes behaving like every other Artificer item.
+ */
 function authoredProcesses() {
-    const found = [];
-    for (const record of getAllRecordsFromCache()) {
-        if (record?.artificerType !== ARTIFICER_TYPES.TOOL) continue;
-        if (record?.family !== PROCESS_FAMILY) continue;
-        const process = processFromRecord(record);
-        if (process) found.push(process);
+    let order = 'compendia-first';
+    try {
+        order = game.settings.get(MODULE.ID, 'itemLookupOrder') ?? order;
+    } catch {
+        // Settings are registered at `ready`; before that the default applies.
     }
-    return found;
+
+    const isWorld = (record) => record?.source === 'world';
+    let records = getAllRecordsFromCache()
+        .filter(r => r?.artificerType === ARTIFICER_TYPES.TOOL && r?.family === PROCESS_FAMILY);
+
+    if (order === 'compendia-only') records = records.filter(r => !isWorld(r));
+
+    // Stable sort so the preferred source is seen first and wins the de-dupe below.
+    if (order === 'world-first') {
+        records = [...records].sort((a, b) => Number(isWorld(b)) - Number(isWorld(a)));
+    } else {
+        records = [...records].sort((a, b) => Number(isWorld(a)) - Number(isWorld(b)));
+    }
+
+    const byId = new Map();
+    for (const record of records) {
+        const process = processFromRecord(record);
+        if (process && !byId.has(process.id)) byId.set(process.id, process);
+    }
+    return Array.from(byId.values());
 }
 
 /**

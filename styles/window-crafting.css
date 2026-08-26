@@ -1350,6 +1350,19 @@
     border-top: 1px solid var(--craft-border-color);
 }
 
+/* No process chosen. Occupies roughly the space the title and slider would, so
+   cycling into and out of it does not resize the row under the cursor. */
+.crafting-bench-process-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 42px;
+    font-size: 0.8em;
+    font-style: italic;
+    opacity: 0.5;
+}
+
 .crafting-bench-process-cycle-arrow {
     width: 26px;
     height: 26px;
@@ -1767,17 +1780,27 @@
     opacity: calc(0.4 + 0.6 * var(--process-level, 0));
 }
 
-/* Subtle breathing motion - only when crafting with heat (not grind) */
+/* A real breath, and it speeds up with level.
+   The original scaled 0.5% to 1.5% at a fixed 2s -- imperceptible, because it was
+   tuned as background texture for heat rather than as a motion anyone should
+   notice. Brightness now carries as much of it as the scale does, which also sells
+   "getting hotter" better than size alone.
+   Scale never drops below 1.0, so the overscan rule does not apply. */
 .crafting-bench-apparatus-slot.artificer-anim-pulse .crafting-container-img,
 .crafting-bench-apparatus-slot.artificer-anim-pulse .crafting-bench-container-empty i {
     transform-origin: 50% 60%;
-    animation: artificer-anim-pulse-breathe 2s ease-in-out infinite;
+    animation: artificer-anim-pulse-breathe calc(2.4s - 0.9s * var(--process-level, 0)) ease-in-out infinite;
 }
 
 @keyframes artificer-anim-pulse-breathe {
-    0%   { transform: scale(calc(1 + 0.005 * var(--process-level, 0))); }
-    50%  { transform: scale(calc(1 + 0.015 * var(--process-level, 0))); }
-    100% { transform: scale(calc(1 + 0.005 * var(--process-level, 0))); }
+    0%, 100% {
+        transform: scale(1);
+        filter: brightness(1);
+    }
+    50% {
+        transform: scale(calc(1 + 0.07 * var(--process-level, 0)));
+        filter: brightness(calc(1 + 0.35 * var(--process-level, 0)));
+    }
 }
 
 /* Unstable flicker at high heat (>= 0.85) - only when crafting */
