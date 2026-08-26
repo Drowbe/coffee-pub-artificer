@@ -20,7 +20,7 @@
         {{!-- Core item fields only; price, weight, rarity, source, and license are hard-coded or set in the item sheet after creation. --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-scroll"></i> Item Details</h3>
-            {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name" inputClass="blacksmith-input"}}
+            {{> partials/form-field name="itemName" label="Name" type="text" value=itemName placeholder="Item Name" inputClass="blacksmith-input" labelClass="blacksmith-field-label"}}
             <div class="artificer-form-group artificer-image-group">
                 <label class="blacksmith-field-label" for="artificer-item-img">Image</label>
                 <div class="artificer-image-row">
@@ -34,10 +34,10 @@
         {{!-- Artificer Properties: Type > Family > Traits + Skill Level --}}
         <section class="item-form-section">
             <h3 class="item-form-section-title"><i class="fa-solid fa-tags"></i> Artificer Properties</h3>
-            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions selectClass="blacksmith-select"}}
-            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions selectClass="blacksmith-select"}}
+            {{> partials/form-field name="artificerType" label="Type" type="select" isSelect=true options=artificerTypeOptions selectClass="blacksmith-select" labelClass="blacksmith-field-label"}}
+            {{> partials/form-field name="family" label="Family" type="select" isSelect=true options=familyOptions selectClass="blacksmith-select" labelClass="blacksmith-field-label"}}
             {{#if isEssenceFamily}}
-            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="blacksmith-select"}}
+            {{> partials/form-field name="affinity" label="Essence Affinity" type="select" isSelect=true options=affinityOptions selectClass="blacksmith-select" labelClass="blacksmith-field-label"}}
             {{/if}}
             <div class="artificer-form-group artificer-tag-picker-group">
                 <label class="blacksmith-field-label" for="artificer-tag-input">Traits</label>

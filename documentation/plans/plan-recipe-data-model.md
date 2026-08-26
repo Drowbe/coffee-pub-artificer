@@ -158,7 +158,15 @@ biomes and quirk only for Component, and traits already have a proper picker. Wh
 | ~~**Not on the Blacksmith Window API**~~ | **DONE for this window.** Extends `BlacksmithWindowBaseV2` via the API bridge; fields carry `blacksmith-input` / `blacksmith-select` / `blacksmith-textarea`. The rest of Artificer's windows remain on the CRITICAL list in `TODO.md`. |
 | ~~**Two trait controls**~~ **DONE.** | This window's picker (input, live suggestions, removable pills) is better than the `+ Existing trait...` select on the recipe sheet. Converged on `scripts/systems/trait-picker.js`, used by both. The port also fixed a real limitation: the item window only committed a trait on Enter when it **matched an existing candidate**, so inventing a new trait there was impossible. |
 
-**3b. Create the animation choices.** *Before* the item system, because a Process item has to
+**3b. Create the animation choices.** ← IN PROGRESS. The seam is built:
+[`scripts/systems/process-definitions.js`](../../scripts/systems/process-definitions.js) holds
+`heat` and `grind` as data (label, levels with colours, animation id, sound,
+`unstableAtMax`), and the crafting bench now reads definitions instead of branching on
+the id. CSS hooks are `artificer-anim-<id>` driven by `--process-level` and
+`--process-color`. Authoring further effects is next, then 3c swaps `getProcess()`
+from constants to items.
+
+Original note: *Before* the item system, because a Process item has to
 NAME an animation — the vocabulary is a dependency of the schema, not a follow-up to it.
 
 The current effects already take exactly the two inputs the level model provides, which is the
@@ -176,6 +184,29 @@ sibling class with hardcoded `rgba(235, 225, 205, ...)` dust. So the work is:
 Note `data-unstable` at high heat (`window-crafting.js:1415`) is a *heat* concept, not a
 universal one. Either it becomes a per-animation option or it stays with the effects that want
 it; it should not silently apply to fermenting.
+
+**3b-note. The animation vocabulary becomes a JSON manifest — in 3c, not before.**
+
+`PROCESS_ANIMATIONS` is a constant today. It should become
+`resources/process-animations.json`, alongside the skills and gathering mappings and
+selectable the same way, because it is the list a GM picks from and an art pack should
+be able to extend.
+
+**What the manifest can hold:** id, display label, description, preview hint.
+**What it cannot:** the animation. `pulse` is keyframes plus a transform; `shake` is a
+rotate, a press, a four-gradient particle field and a conic sweep. A parameterised
+generator (`{motion, from, to, duration}`) covers pulse and comes nowhere near shake.
+So the manifest is an INDEX OF THE CSS, not a replacement for it — an entry means "CSS
+somewhere provides `.artificer-anim-<id>`".
+
+**Failure mode to design against:** a manifest entry with no CSS behind it. The picker
+offers "Bubble", a GM selects it, nothing happens, no error. Make each animation's CSS
+block set a marker custom property (`--artificer-anim-registered: 1`) and probe a hidden
+element at load, so an unbacked entry reports itself.
+
+**Why it waits for 3c:** its only consumer is the Process item's animation picker, which
+does not exist yet. Writing a loader with nothing reading it is the speculative-consumer
+mistake — the same one that got a compatibility layer deleted in the importer work.
 
 **3c. Extend the item system and migrate the two hardcoded processes.** Add the Process flag
 block, ship **Heat** and **Grind** as items carrying today's level names and colours, map

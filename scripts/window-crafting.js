@@ -3,6 +3,7 @@
 // ==================================================================
 
 import { MODULE } from './const.js';
+import { getProcess, getProcessLevel, getProcessSliderLabels, PROCESS_LEVEL_MAX } from './systems/process-definitions.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
 import { getAPI } from './api-artificer.js';
 import { getExperimentationEngine, getTagsFromItem } from './systems/experimentation-engine.js';
@@ -1404,6 +1405,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             heatValue: this.heatValue,
             grindValue: this.grindValue,
             processType: this.processType,
+            processLevelNormalized: this._processIntensity(),
             heat: (() => {
                 const base = this.heatValue / HEAT_MAX;
                 if (this._craftingCountdownRemaining == null) return base;
@@ -1412,27 +1414,29 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const progress = 1 - remaining / total;
                 return base + (1 - base) * progress;
             })(),
-            heatUnstable: (() => {
-                const base = this.heatValue / HEAT_MAX;
-                if (this._craftingCountdownRemaining == null) return this.heatValue >= HEAT_MAX;
-                const total = Math.max(1, this.timeValue);
-                const remaining = this._craftingCountdownRemaining;
-                const progress = 1 - remaining / total;
-                const h = base + (1 - base) * progress;
-                return h >= 1;
-            })(),
+            // Instability is a PROCESS TRAIT now, not a fact about heat. A ferment
+            // held at full intensity is not unstable; heat is.
+            heatUnstable: getProcess(this.processType).unstableAtMax && this._processIntensity() >= 1,
             timeValue: this._craftingCountdownRemaining != null ? this._craftingCountdownRemaining : this.timeValue,
             heatFillPercent: HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0,
             heatLabel: HEAT_LEVELS[this.heatValue] ?? 'Off',
             grindFillPercent: HEAT_MAX > 0 ? (this.grindValue / HEAT_MAX) * 100 : 0,
             grindLabel: GRIND_LEVELS[this.grindValue] ?? 'Off',
-            processValue: this.processType === 'heat' ? this.heatValue : this.grindValue,
-            processLabel: this.processType === 'heat' ? (HEAT_LEVELS[this.heatValue] ?? 'Off') : (GRIND_LEVELS[this.grindValue] ?? 'Off'),
-            processFillPercent: this.processType === 'heat' ? (HEAT_MAX > 0 ? (this.heatValue / HEAT_MAX) * 100 : 0) : (HEAT_MAX > 0 ? (this.grindValue / HEAT_MAX) * 100 : 0),
-            processLeftLabel: this.processType === 'heat' ? 'OFF' : 'off',
-            processRightLabel: this.processType === 'heat' ? 'HIGH' : 'fine',
+            // Read from the process DEFINITION rather than branching on its id.
+            // Every `processType === 'heat' ? a : b` here was a place a third
+            // process would have had to be added by hand. See
+            // systems/process-definitions.js.
+            processValue: this._processLevelValue(),
+            processLabel: getProcessLevel(this.processType, this._processLevelValue()).label,
+            processFillPercent: PROCESS_LEVEL_MAX > 0 ? (this._processLevelValue() / PROCESS_LEVEL_MAX) * 100 : 0,
+            processLeftLabel: getProcessSliderLabels(this.processType).left,
+            processRightLabel: getProcessSliderLabels(this.processType).right,
             isHeatProcess: this.processType === 'heat',
-            isGrinding: this.processType === 'grind' && this._craftingCountdownRemaining != null,
+            // The animation the bench should play, and the colour it paints with.
+            // Named, not boolean: `isGrinding` could only ever describe two states.
+            processAnimation: getProcess(this.processType).animation,
+            processColor: getProcessLevel(this.processType, this._processLevelValue()).color,
+            isProcessAnimating: this._craftingCountdownRemaining != null,
             timeFillPercent: this._craftingCountdownRemaining != null
                 ? (this._craftingCountdownRemaining / Math.max(1, this.timeValue)) * 100
                 : (this.timeValue / 120) * 100,
@@ -2155,9 +2159,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
         this._craftingCountdownRemaining = countdownSec;
         this._craftPending = { actor, items, anyMissing };
-        const craftSoundPath = this.processType === 'grind'
-            ? `modules/${MODULE.ID}/sounds/grind-stone-01.mp3`
-            : `modules/${MODULE.ID}/sounds/fire-boil-01.mp3`;
+        const craftSoundPath = getProcess(this.processType).sound;
         BlacksmithUtils.playSound(craftSoundPath, 0.5, false, false, countdownSec);
         this._craftCountdownInterval = setInterval(() => {
             if (!_craftingWindowRefs.has(this.id)) {
@@ -2242,6 +2244,30 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.processType = 'heat';
         this.timeValue = 0;
         this.render();
+    }
+
+    /**
+     * The level currently set for whichever process is selected.
+     * @returns {number} 0-3
+     */
+    _processLevelValue() {
+        return this.processType === 'grind' ? this.grindValue : this.heatValue;
+    }
+
+    /**
+     * Current intensity as 0-1, ramping to full as a craft runs down.
+     *
+     * This is what drives the animation, and it is deliberately process-agnostic:
+     * the old `heat` context value did the same arithmetic but was named after one
+     * process, so every other process either borrowed heat's name or went without.
+     * @returns {number}
+     */
+    _processIntensity() {
+        const base = PROCESS_LEVEL_MAX > 0 ? this._processLevelValue() / PROCESS_LEVEL_MAX : 0;
+        if (this._craftingCountdownRemaining == null) return base;
+        const total = Math.max(1, this.timeValue);
+        const progress = 1 - this._craftingCountdownRemaining / total;
+        return base + (1 - base) * progress;
     }
 
     /**
