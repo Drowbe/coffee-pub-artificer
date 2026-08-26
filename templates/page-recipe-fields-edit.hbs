@@ -60,15 +60,26 @@
         <div class="arf-field">
             <label for="recipe-traits">Traits</label>
             <div class="arf-traits">
-                <string-tags id="recipe-traits" name="system.traits"{{#if traitsString}} value="{{traitsString}}"{{/if}}></string-tags>
-                <select class="arf-trait-picker" aria-label="Add an existing trait">
-                    <option value="">+ Existing trait…</option>
-                    {{#each traitVocabulary}}
-                    <option value="{{this}}">{{this}}</option>
+                {{#if traitChips.length}}
+                <div class="arf-trait-chips">
+                    {{#each traitChips}}
+                    <span class="arf-trait-chip">{{this}}<button type="button" class="arf-chip-remove"
+                        data-action="removeTrait" data-trait="{{this}}" aria-label="Remove {{this}}"><i class="fas fa-times"></i></button></span>
                     {{/each}}
-                </select>
+                </div>
+                {{/if}}
+                <div class="arf-trait-controls">
+                    <select class="arf-trait-picker" aria-label="Add an existing trait">
+                        <option value="">+ Existing trait...</option>
+                        {{#each traitVocabulary}}
+                        <option value="{{this}}">{{this}}</option>
+                        {{/each}}
+                    </select>
+                    <input type="text" class="arf-trait-custom" placeholder="New trait" aria-label="New trait" />
+                    <button type="button" class="arf-trait-add" data-action="addTrait">Add</button>
+                </div>
             </div>
-            <p class="arf-hint">Pick an existing trait, or type a new one in the box and press Enter. Traits drive ingredient matching — don't repeat the type or category.</p>
+            <p class="arf-hint">Traits drive ingredient matching &mdash; don't repeat the type or category.</p>
         </div>
     </section>
 
@@ -248,6 +259,16 @@
                     <input type="text" name="system.license" value="{{system.license}}" />
                 </span>
             </div>
+        </div>
+    </section>
+
+    <section class="arf-section arf-section-instructions">
+        <h4 class="arf-heading">Instructions</h4>
+        <div class="arf-instructions">
+            <button type="button" class="arf-generate-button" data-action="generateInstructions">
+                <i class="fas fa-wand-magic-sparkles"></i> Generate instructions
+            </button>
+            <p class="arf-hint">Writes the Preparation steps from the fields above into the description below. It replaces only the block it generated &mdash; anything you wrote yourself is left alone.</p>
         </div>
     </section>
 

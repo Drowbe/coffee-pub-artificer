@@ -19,7 +19,7 @@
 
 import { MODULE } from '../const.js';
 import { ITEM_TYPES, PROCESS_TYPES, HEAT_LEVELS, GRIND_LEVELS, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
-import { RECIPE_RARITIES } from '../data/models/model-recipe-page.js';
+import { RECIPE_RARITIES, GENERATED_PREPARATION_ATTR, RECIPE_SECTIONS } from '../data/models/model-recipe-page.js';
 import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
@@ -49,6 +49,21 @@ function cachedImages() {
 }
 
 /**
+ * Flatten a traits value into clean single traits.
+ *
+ * Accepts an array, a comma-joined string, or an array whose entries are
+ * themselves comma-joined -- the last being how the old <string-tags> round trip
+ * stored a whole list as ONE trait. Splitting on read repairs those in place.
+ */
+function splitTraits(value) {
+    const raw = Array.isArray(value) ? value : [value];
+    return raw
+        .flatMap(entry => String(entry ?? '').split(','))
+        .map(entry => entry.trim())
+        .filter(Boolean);
+}
+
+/**
  * Sheet for Artificer recipe journal pages.
  *
  * - EDIT: a recipe fields part sits between the standard header and the
@@ -60,9 +75,15 @@ function cachedImages() {
 export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
     static DEFAULT_OPTIONS = {
         classes: ['artificer-recipe-page'],
+        // A recipe has a lot of fields AND a long description; the stock page
+        // window leaves the editor a few lines tall.
+        position: { width: 800, height: 900 },
         actions: {
             removeIngredient: RecipePageSheet._onRemoveIngredient,
-            clearSlot: RecipePageSheet._onClearSlot
+            clearSlot: RecipePageSheet._onClearSlot,
+            addTrait: RecipePageSheet._onAddTrait,
+            removeTrait: RecipePageSheet._onRemoveTrait,
+            generateInstructions: RecipePageSheet._onGenerateInstructions
         }
     };
 
@@ -164,7 +185,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         // Traits an author can pick rather than retype, gathered from what the
         // world's Artificer items actually carry. Ones already on this recipe are
         // dropped so the picker only ever offers something new.
-        const used = new Set(system.traits ?? []);
+        const used = new Set(splitTraits(system.traits));
         const vocabulary = new Set();
         for (const record of getAllRecordsFromCache()) {
             for (const tag of record?.tags ?? []) {
@@ -174,9 +195,73 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         }
         context.traitVocabulary = Array.from(vocabulary).sort((a, b) => a.localeCompare(b));
 
-        // <string-tags> takes a comma-joined string, not the array.
-        context.traitsString = (system.traits ?? []).join(', ');
+        // Chips are rendered by us rather than by <string-tags>: the element puts its
+        // chips inside its own box, which forced the trait row to span the width and
+        // read as free text. Nothing about traits is submitted as a form field either
+        // -- every change is staged, so the stored array is never re-derived from a
+        // joined string, which is what stored a whole list as one trait.
+        context.traitChips = splitTraits(system.traits);
         return context;
+    }
+
+    /**
+     * A change staged by an action, applied by the next `_prepareSubmitData`.
+     *
+     * WHY: an action that calls `submit()` and then `document.update()` triggers
+     * TWO renders in a row. The second tears down the DOM while ProseMirror is
+     * still building the editor, and its menu throws on a detached node. Staging
+     * the change means one submit, one update, one render.
+     * @type {object|null}
+     */
+    #staged = null;
+
+    /**
+     * Stage a change and flush the form in a single update, then force a re-render.
+     *
+     * The re-render is NOT optional. `JournalEntryPageProseMirrorSheet._canRender`
+     * refuses to re-render while the editor is dirty, to protect in-progress typing
+     * (`foundry.mjs`, `_canRender` -> `!this._isEditorDirty()`). So the document
+     * updates and the view reflects it, while the open edit sheet keeps showing the
+     * old state -- chips that do not appear, generated instructions that never land
+     * in the editor. `resync` is the documented way past that guard, and it is safe
+     * here precisely because `submit()` has just captured the editor's content into
+     * the same update.
+     */
+    async #stage(changes) {
+        this.#staged = changes;
+        try {
+            await this.submit();
+        } finally {
+            this.#staged = null;
+        }
+        await this.render({ resync: true });
+    }
+
+    /** Add the trait typed into the custom box. */
+    static async _onAddTrait(event) {
+        event.preventDefault();
+        const input = this.element?.querySelector('.arf-trait-custom');
+        const trait = (input?.value ?? '').trim();
+        if (!trait) return;
+        if (input) input.value = '';
+        await this.#addTrait(trait);
+    }
+
+    /** Remove one trait chip. */
+    static async _onRemoveTrait(event, target) {
+        event.preventDefault();
+        const trait = target?.dataset?.trait;
+        if (!trait) return;
+        const traits = splitTraits(this.document.system.traits).filter(t => t !== trait);
+        await this.#stage({ 'system.traits': traits });
+    }
+
+    /** Shared by the picker and the custom box. */
+    async #addTrait(trait) {
+        const traits = splitTraits(this.document.system.traits);
+        if (traits.includes(trait)) return;
+        traits.push(trait);
+        await this.#stage({ 'system.traits': traits });
     }
 
     /** Empty an item slot. */
@@ -184,8 +269,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         event.preventDefault();
         const field = target?.dataset?.field;
         if (!field) return;
-        await this.submit();
-        await this.document.update({ [`system.${field}`]: '' });
+        await this.#stage({ [`system.${field}`]: '' });
     }
 
     /** Remove one ingredient row by index. */
@@ -193,11 +277,130 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         event.preventDefault();
         const index = Number(target?.dataset?.index);
         if (!Number.isInteger(index)) return;
-        await this.submit();
         const ingredients = Array.from(this.document.system.ingredients ?? [])
             .map(i => ({ ...i }))
             .filter((_, i) => i !== index);
-        await this.document.update({ 'system.ingredients': ingredients });
+        await this.#stage({ 'system.ingredients': ingredients });
+    }
+
+    /**
+     * Build a Preparation block from the structured fields.
+     *
+     * Deterministic prose, not a summary: it states what the fields already say, in
+     * the order a crafter would do it. The point is to save typing the obvious part,
+     * leaving the author free to rewrite it.
+     */
+    #buildPreparationHtml(system) {
+        const steps = [];
+
+        const ingredients = (system.ingredients ?? []).filter(i => i?.name);
+        if (ingredients.length) {
+            const list = ingredients
+                .map(i => `${escapeHtml(i.name)}${(i.quantity ?? 1) > 1 ? ` &times;${i.quantity}` : ''}`)
+                .join(', ');
+            steps.push(`Gather ${list}.`);
+        }
+
+        if (system.apparatusName) {
+            steps.push(`Prepare the ${escapeHtml(system.apparatusName)}.`);
+        }
+
+        if (system.processType) {
+            const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
+            const intensity = levels[system.processLevel];
+            const how = intensity && intensity !== 'Off'
+                ? `on ${escapeHtml(String(intensity).toLowerCase())}`
+                : '';
+            const duration = system.time != null ? ` for ${system.time} seconds` : '';
+            steps.push(`Work the mixture &mdash; ${escapeHtml(system.processType)} ${how}${duration}.`.replace(/\s+/g, ' '));
+        }
+
+        if (system.skill) {
+            const dc = system.successDC != null ? `, DC ${system.successDC}` : '';
+            const kit = system.skillKit ? ` using ${escapeHtml(system.skillKit)}` : '';
+            steps.push(`Make a ${escapeHtml(system.skill)} check at level ${system.skillLevel ?? 1}${dc}${kit}.`);
+        }
+
+        if (system.containerName) {
+            steps.push(`Decant the result into the ${escapeHtml(system.containerName)}, which is consumed.`);
+        }
+
+        if (system.resultItemName) {
+            const hours = system.workHours != null ? ` Total work: ${system.workHours} hours.` : '';
+            const gold = system.goldCost != null ? ` Additional cost: ${system.goldCost} gp.` : '';
+            steps.push(`On success you produce ${escapeHtml(system.resultItemName)}.${hours}${gold}`);
+        }
+
+        const body = steps.length
+            ? `<ul>${steps.map(step => `<li>${step}</li>`).join('')}</ul>`
+            : '<p><em>Fill in the recipe fields above, then generate again.</em></p>';
+
+        return `<section ${GENERATED_PREPARATION_ATTR}="preparation">${body}</section>`;
+    }
+
+    /**
+     * Replace the generated Preparation block, or append one if there is none.
+     *
+     * Finds the block by OUR OWN marker attribute rather than by heading text. The
+     * old HTML parser matched on labels, and renaming one silently dropped a field;
+     * a marker we write ourselves cannot be renamed out from under us, and prose the
+     * author wrote outside the block is never touched.
+     */
+    static async _onGenerateInstructions(event) {
+        event.preventDefault();
+        // Staged with a marker rather than a value: the content depends on the
+        // form's PENDING field values, which only `_prepareSubmitData` can see.
+        await this.#stage({ __generateInstructions: true });
+        ui.notifications.info('Preparation instructions generated.');
+    }
+
+    /**
+     * Splice a freshly generated block into existing prose.
+     *
+     * Finds the block by OUR OWN marker attribute rather than by heading text. The
+     * old HTML parser matched on labels, and renaming one silently dropped a field;
+     * a marker we write ourselves cannot be renamed out from under us, and prose the
+     * author wrote outside the block is never touched.
+     */
+    #spliceGenerated(current, generated) {
+        const doc = new DOMParser().parseFromString(String(current ?? ''), 'text/html');
+
+        // Already generated once: replace in place and leave everything else alone.
+        const existing = doc.body.querySelector(`[${GENERATED_PREPARATION_ATTR}="preparation"]`);
+        if (existing) {
+            existing.outerHTML = generated;
+            return doc.body.innerHTML;
+        }
+
+        // No marker. Rather than bolting a block onto the end, lay out the sections a
+        // recipe is expected to have -- Description, Preparation, Use, Notes -- keeping
+        // any heading the author already wrote and its content beneath it.
+        const headings = new Map();
+        for (const node of doc.body.querySelectorAll('h1, h2, h3, h4')) {
+            headings.set(node.textContent.trim().toLowerCase(), node);
+        }
+
+        // Nothing recognisable to preserve: emit the full outline.
+        if (!headings.size) {
+            const outline = RECIPE_SECTIONS.map(section => `<h3>${section.heading}</h3>`
+                + (section.generated ? generated : section.body)).join('');
+            const prose = String(current ?? '').trim();
+            return prose ? `${prose}${outline}` : outline;
+        }
+
+        // A Preparation heading exists: put the block directly under it.
+        const preparation = headings.get('preparation');
+        if (preparation) {
+            preparation.insertAdjacentHTML('afterend', generated);
+            return doc.body.innerHTML;
+        }
+
+        // Headings exist but none is Preparation: append the missing sections.
+        const missing = RECIPE_SECTIONS
+            .filter(section => !headings.has(section.heading.toLowerCase()))
+            .map(section => `<h3>${section.heading}</h3>`
+                + (section.generated ? generated : section.body)).join('');
+        return doc.body.innerHTML + missing;
     }
 
     /** @inheritDoc */
@@ -223,11 +426,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             const trait = select.value;
             select.value = '';
             if (!trait) return;
-            await this.submit();
-            const traits = Array.from(this.document.system.traits ?? []);
-            if (traits.includes(trait)) return;
-            traits.push(trait);
-            await this.document.update({ 'system.traits': traits });
+            await this.#addTrait(trait);
         });
     }
 
@@ -262,11 +461,10 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                     const doc = data?.uuid ? await fromUuid(data.uuid) : null;
                     if (!doc?.name) return;
 
-                    await this.submit();
                     const target = zone.dataset.drop;
 
                     if (target !== 'ingredient') {
-                        await this.document.update({ [`system.${target}`]: doc.name });
+                        await this.#stage({ [`system.${target}`]: doc.name });
                         return;
                     }
 
@@ -278,7 +476,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                         name: doc.name,
                         quantity: 1
                     });
-                    await this.document.update({ 'system.ingredients': ingredients });
+                    await this.#stage({ 'system.ingredients': ingredients });
                 } catch (error) {
                     console.error(`${MODULE.ID} | Error handling recipe sheet drop:`, error);
                 }
@@ -290,16 +488,45 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
     _prepareSubmitData(event, form, formData, updateData) {
         const data = super._prepareSubmitData(event, form, formData, updateData);
 
-        // `<string-tags>` submits a comma-separated STRING in some Foundry builds and
-        // an ARRAY in others. `traits` is an ArrayField, so the string form fails
-        // validation -- and a failed field rejects the ENTIRE document update, which
-        // looks like "nothing saved" rather than "one field was wrong".
+        // Traits are never submitted as a form field -- the chips are rendered by us
+        // and every change is staged. Anything arriving here under that key came from
+        // a joined string and would otherwise store the whole list as ONE trait.
         const raw = foundry.utils.getProperty(data, 'system.traits');
-        if (raw !== undefined) {
-            const traits = typeof raw === 'string'
-                ? raw.split(',').map(t => t.trim()).filter(Boolean)
-                : Array.isArray(raw) ? raw.map(t => String(t).trim()).filter(Boolean) : [];
-            foundry.utils.setProperty(data, 'system.traits', traits);
+        if (raw !== undefined) foundry.utils.setProperty(data, 'system.traits', splitTraits(raw));
+
+        // Apply whatever an action staged, on top of the form's own values. This is
+        // the second half of the one-update rule: the action does not write, it
+        // describes what should change and this carries it into the same update.
+        if (this.#staged) {
+            for (const [path, value] of Object.entries(this.#staged)) {
+                if (path === '__generateInstructions') continue;
+                foundry.utils.setProperty(data, path, value);
+            }
+
+            // Instructions are generated HERE because only here are the pending form
+            // values visible -- generating from the saved document would describe the
+            // recipe as it was before the author's unsaved edits.
+            if (this.#staged.__generateInstructions) {
+                const system = foundry.utils.mergeObject(
+                    this.document.system.toObject(),
+                    foundry.utils.getProperty(data, 'system') ?? {},
+                    { inplace: false }
+                );
+                const current = foundry.utils.getProperty(data, 'text.content')
+                    ?? this.document.text?.content ?? '';
+                foundry.utils.setProperty(data, 'text.content',
+                    this.#spliceGenerated(current, this.#buildPreparationHtml(system)));
+            }
+        }
+
+        // Remember the provenance for the next new recipe. A convenience only: it
+        // prefills a NEW page's field, and is never applied to an existing one.
+        for (const [field, key] of [['source', 'lastRecipeSource'], ['license', 'lastRecipeLicense']]) {
+            const value = foundry.utils.getProperty(data, `system.${field}`);
+            if (typeof value !== 'string' || !value.trim()) continue;
+            game.settings.set(MODULE.ID, key, value.trim()).catch(() => {
+                /* A failed convenience must not fail the save. */
+            });
         }
 
         return data;
@@ -310,48 +537,126 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         await super._prepareContentContext(context, options);
         if (!this.isView) return context;
 
-        const system = this.document.system;
-        const row = (label, value) => {
-            if (value == null || value === '') return '';
-            return `<div class="artificer-recipe-row">`
-                + `<span class="artificer-recipe-label">${escapeHtml(label)}</span>`
-                + `<span class="artificer-recipe-value">${escapeHtml(value)}</span>`
-                + `</div>`;
-        };
-
-        const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
-        const processLabel = system.processType
-            ? `${system.processType} — ${levels[system.processLevel] ?? system.processLevel}`
-            : '';
-
-        const ingredients = (system.ingredients ?? []).map(ing => {
-            const qualifier = (ing.family || ing.type || '').trim();
-            const prefix = qualifier ? `${escapeHtml(qualifier)}: ` : '';
-            return `<li>${prefix}${escapeHtml(ing.name)} (${ing.quantity ?? 1})</li>`;
-        }).join('');
-
-        const block = `<section class="artificer-recipe-block">
-            ${row('Result', system.resultItemName)}
-            ${row('Traits', (system.traits ?? []).join(', '))}
-            ${ingredients ? `<div class="artificer-recipe-row"><span class="artificer-recipe-label">Ingredients</span><ul class="artificer-recipe-ingredients">${ingredients}</ul></div>` : ''}
-            ${row('Process', processLabel)}
-            ${row('Time', system.time != null ? `${system.time}s` : '')}
-            ${row('Apparatus', system.apparatusName)}
-            ${row('Container', system.containerName)}
-            ${row('Gold Cost', system.goldCost)}
-            ${row('Work Hours', system.workHours)}
-            ${row('Success DC', system.successDC)}
-            ${row('Type', system.type)}
-            ${row('Category', system.category)}
-            ${row('Rarity', system.rarity)}
-            ${row('Skill', system.skill)}
-            ${row('Skill Level', system.skillLevel)}
-            ${row('Skill Kit', system.skillKit)}
-            ${row('Source', system.source)}
-            ${row('License', system.license)}
-        </section>`;
-
-        context.text.enriched = block + (context.text.enriched || '');
+        // The structured data BRACKETS the prose rather than preceding it: identity,
+        // stats, ingredients and equipment go above, because that is what a reader
+        // needs before the method makes sense. Provenance goes below, because it is
+        // the least important thing on the page and was previously competing with
+        // the recipe itself.
+        context.text.enriched = this.#renderHeader()
+            + (context.text.enriched || '')
+            + this.#renderFooter();
         return context;
+    }
+
+    /** Identity, at-a-glance stats, ingredients and equipment. */
+    #renderHeader() {
+        const system = this.document.system;
+        const images = cachedImages();
+        const parts = [];
+
+        // --- Identity: what this makes, and what kind of thing it is -----------
+        const result = (system.resultItemName ?? '').trim();
+        const pageName = (this.document.name ?? '').trim();
+        const classification = [system.type, system.category, system.rarity]
+            .map(v => (v ?? '').toString().trim()).filter(Boolean);
+
+        if (result || classification.length) {
+            const img = images.get(result);
+            parts.push(`<div class="arv-identity">`
+                + (img ? `<img class="arv-identity-img" src="${escapeHtml(img)}" alt="" />` : '')
+                + `<div class="arv-identity-text">`
+                // The result name is only worth stating when it differs from the page
+                // title -- repeating the heading directly under itself is noise.
+                + (result && result !== pageName
+                    ? `<div class="arv-identity-name">Produces ${escapeHtml(result)}</div>` : '')
+                + (classification.length
+                    ? `<div class="arv-identity-class">${classification.map(escapeHtml).join(' &middot; ')}</div>` : '')
+                + `</div></div>`);
+        }
+
+        // --- Stat strip: the numbers a crafter checks before starting ----------
+        const stats = [
+            ['Skill', system.skill ? `${system.skill} ${system.skillLevel ?? 1}` : ''],
+            ['DC', system.successDC],
+            ['Process', system.time != null ? `${system.time}s` : ''],
+            ['Work', system.workHours != null ? `${system.workHours}h` : ''],
+            ['Cost', system.goldCost != null ? `${system.goldCost} gp` : '']
+        ].filter(([, value]) => value != null && value !== '');
+
+        if (stats.length) {
+            parts.push(`<div class="arv-stats">` + stats.map(([label, value]) =>
+                `<div class="arv-stat"><span class="arv-stat-label">${escapeHtml(label)}</span>`
+                + `<span class="arv-stat-value">${escapeHtml(value)}</span></div>`).join('') + `</div>`);
+        }
+
+        // --- Ingredients and equipment, side by side --------------------------
+        const ingredients = (system.ingredients ?? []).filter(i => i?.name);
+        const equipment = [
+            ['Apparatus', system.apparatusName],
+            ['Container', system.containerName],
+            ['Kit', system.skillKit]
+        ].filter(([, value]) => (value ?? '').toString().trim());
+
+        if (ingredients.length || equipment.length) {
+            const columns = [];
+
+            if (ingredients.length) {
+                const rows = ingredients.map(ing => {
+                    const img = images.get(ing.name);
+                    const qualifier = [ing.type, ing.family].filter(Boolean).join(' &middot; ');
+                    return `<li>`
+                        + (img ? `<img class="arv-ing-img" src="${escapeHtml(img)}" alt="" />` : '')
+                        + `<span class="arv-ing-name">${escapeHtml(ing.name)}</span>`
+                        + (qualifier ? `<span class="arv-ing-qualifier">${qualifier}</span>` : '')
+                        + `<span class="arv-ing-qty">&times;${ing.quantity ?? 1}</span></li>`;
+                }).join('');
+                columns.push(`<div class="arv-column"><h4 class="arv-column-heading">Ingredients</h4>`
+                    + `<ul class="arv-ingredients">${rows}</ul></div>`);
+            }
+
+            if (equipment.length) {
+                const rows = equipment.map(([label, value]) => {
+                    const img = images.get(value);
+                    return `<li>`
+                        + (img ? `<img class="arv-ing-img" src="${escapeHtml(img)}" alt="" />` : '')
+                        + `<span class="arv-ing-name">${escapeHtml(value)}</span>`
+                        + `<span class="arv-ing-qualifier">${escapeHtml(label)}</span></li>`;
+                }).join('');
+                columns.push(`<div class="arv-column"><h4 class="arv-column-heading">Equipment</h4>`
+                    + `<ul class="arv-ingredients">${rows}</ul></div>`);
+            }
+
+            parts.push(`<div class="arv-columns">${columns.join('')}</div>`);
+        }
+
+        // --- Method summary, only when it is not already obvious --------------
+        if (system.processType) {
+            const levels = system.processType === 'grind' ? GRIND_LEVELS : HEAT_LEVELS;
+            const intensity = levels[system.processLevel];
+            const detail = intensity && intensity !== 'Off' ? ` on ${String(intensity).toLowerCase()}` : '';
+            parts.push(`<div class="arv-method">${escapeHtml(system.processType)}${escapeHtml(detail)}</div>`);
+        }
+
+        const traits = splitTraits(system.traits);
+        if (traits.length) {
+            parts.push(`<div class="arv-traits">` + traits
+                .map(t => `<span class="arv-trait">${escapeHtml(t)}</span>`).join('') + `</div>`);
+        }
+
+        return parts.length ? `<section class="arv-header">${parts.join('')}</section>` : '';
+    }
+
+    /** Provenance, demoted below the prose where it belongs. */
+    #renderFooter() {
+        const system = this.document.system;
+        const credits = [
+            ['Source', system.source],
+            ['License', system.license]
+        ].filter(([, value]) => (value ?? '').toString().trim());
+        if (!credits.length) return '';
+
+        return `<footer class="arv-footer">` + credits.map(([label, value]) =>
+            `<span class="arv-credit"><span class="arv-credit-label">${escapeHtml(label)}</span> `
+            + `${escapeHtml(value)}</span>`).join('') + `</footer>`;
     }
 }

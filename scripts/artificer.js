@@ -22,7 +22,7 @@ import { initializeGatherSockets } from './manager-gather.js';
 import { SceneManager } from './manager-scene.js';
 import { PinsManager } from './manager-pins.js';
 import { getBlacksmithApi, postBlacksmithConsole } from './utils/blacksmith-console.js';
-import { RECIPE_PAGE_TYPE, RecipePageModel } from './data/models/model-recipe-page.js';
+import { RECIPE_PAGE_TYPE, RecipePageModel, RECIPE_DESCRIPTION_OUTLINE } from './data/models/model-recipe-page.js';
 import { RecipePageSheet } from './sheets/sheet-recipe-page.js';
 
 /**
@@ -104,6 +104,29 @@ Hooks.once('init', async () => {
         types: [RECIPE_PAGE_TYPE],
         makeDefault: true,
         label: 'Artificer Recipe'
+    });
+
+    // A new recipe page starts with an outline rather than an empty editor, and
+    // with the source/licence last used. Both are AUTHORING conveniences applied
+    // only at creation: an existing page is never rewritten, and a value the author
+    // clears stays cleared.
+    Hooks.on('preCreateJournalEntryPage', (page, data) => {
+        if (data?.type !== RECIPE_PAGE_TYPE) return;
+        const update = {};
+        if (!String(data?.text?.content ?? '').trim()) {
+            update['text.content'] = RECIPE_DESCRIPTION_OUTLINE;
+        }
+        for (const [field, key] of [['source', 'lastRecipeSource'], ['license', 'lastRecipeLicense']]) {
+            if (String(data?.system?.[field] ?? '').trim()) continue;
+            let remembered = '';
+            try {
+                remembered = game.settings.get(MODULE.ID, key) ?? '';
+            } catch {
+                // Setting not registered yet (page created before `ready`); no prefill.
+            }
+            if (remembered) update[`system.${field}`] = remembered;
+        }
+        if (Object.keys(update).length) page.updateSource(update);
     });
 
     // Preload templates (v13+: global loadTemplates deprecated; removed in v15)

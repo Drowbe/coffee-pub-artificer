@@ -31,6 +31,36 @@ import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX, HEAT_MAX }
  */
 export const RECIPE_PAGE_TYPE = `${MODULE.ID}.recipe`;
 
+/**
+ * The starting outline for a new recipe's description.
+ *
+ * Seeded once at creation rather than rendered as a placeholder, so it is real
+ * editable prose the author can rewrite or delete. An empty editor gives no clue
+ * what belongs there; this does, and costs nothing if ignored.
+ *
+ * The Preparation section is what "Generate instructions" rewrites, which is why
+ * it carries a marker instead of being found by its heading text -- matching on
+ * heading text is how the old parser worked, and renaming a heading silently
+ * breaking a feature is the trap we are leaving behind.
+ */
+export const RECIPE_SECTIONS = [
+    { heading: 'Description', body: '<p>Add description here...</p>' },
+    { heading: 'Preparation', body: '<ul><li>Add instruction here...</li><li>Add instruction here...</li></ul>', generated: true },
+    { heading: 'Use', body: '<p>Add how it is used here...</p>' },
+    { heading: 'Notes', body: '<p>Add notes here...</p>' }
+];
+
+/** Marks the block that "Generate instructions" owns and may replace. */
+export const GENERATED_PREPARATION_ATTR = 'data-artificer-generated';
+
+/** The starting outline, built from RECIPE_SECTIONS so the two cannot drift. */
+export const RECIPE_DESCRIPTION_OUTLINE = RECIPE_SECTIONS.map(section => {
+    const body = section.generated
+        ? `<section ${GENERATED_PREPARATION_ATTR}="preparation">${section.body}</section>`
+        : section.body;
+    return `<h3>${section.heading}</h3>${body}`;
+}).join('');
+
 /** D&D 5e rarities, lowercase as stored. Null means "not stated". */
 export const RECIPE_RARITIES = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
 

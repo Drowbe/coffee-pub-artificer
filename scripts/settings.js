@@ -513,6 +513,21 @@ export const registerSettings = () => {
         });
     }
 
+    // ====================================================================================================================
+    // ===== RECIPE AUTHORING CONVENIENCES (hidden)
+    // ====================================================================================================================
+    // The source and licence of the last recipe saved, so the next new recipe page
+    // can prefill them. Per-client: this is a typing convenience for whoever is
+    // authoring, not a property of the world. Never written to a recipe unless the
+    // author saves the page with the prefilled value still in place -- a remembered
+    // value is a suggestion, not an attribution the importer invents.
+    game.settings.register(MODULE.ID, 'lastRecipeSource', {
+        scope: 'client', config: false, default: '', type: String
+    });
+    game.settings.register(MODULE.ID, 'lastRecipeLicense', {
+        scope: 'client', config: false, default: '', type: String
+    });
+
     // Add more settings here as needed
     
 

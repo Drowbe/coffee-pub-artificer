@@ -52,11 +52,12 @@ Two shape decisions worth knowing before the rest is built:
    live at once — this is the writer-retires-first rule applied to ourselves, and it is what
    makes step 4 safe.
 
-4. **Conversion.** Every recipe in every existing world is a `text` page. A subtype cannot
-   be assigned by update — the page must be deleted and recreated, **preserving ownership
-   and sort**, which is exactly the "replace, preserving these paths" case Librarian raised
-   as an open question. Parse with `RecipeParser`, create as subtype, verify, then delete.
-   Never the other order.
+4. **Conversion.** Split into its own plan — see
+   [`plan-recipe-migration.md`](plan-recipe-migration.md). The short version: the ~161 shipped
+   compendium recipes are a *build step*, not a migration, and converting them first exercises
+   the converter against real content at zero risk. Only user-authored world recipes need an
+   in-world migration, and that one needs a dry run, a file backup, verify-before-delete, and a
+   deliberate decision about whether UUIDs survive.
    **This is the step that touches live worlds and it needs its own decision, not just its
    own commit.**
 
