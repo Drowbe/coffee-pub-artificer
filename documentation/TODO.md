@@ -49,10 +49,10 @@ blocked on their step 8 (Journal). Do not build against the callback contract.
 Recipes are a real data model and processes are items as of 13.2.0 — see
 [plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) for what shipped and what is left.
 
-- [ ] Add the Process family to the Artificer item field-group declaration
-      ([plans/declaration-artificer-field-group.md](plans/declaration-artificer-field-group.md)): the Tool
-      family vocabulary grows to three, and the Process-only fields are the conditional-*fields* case
-      Blacksmith has not designed for yet. Needed before AI authoring works for processes.
+- [x] ~~Add the Process family to the Artificer item field-group declaration.~~ **DONE 13.2.0** — Tool
+      family vocabulary is three, and the four `artificerProcess*` fields are declared with notes 5-7
+      covering the conditional-fields gap, the open animation vocabulary, and why a Process needs no
+      traits or skill level.
 - [ ] Send Blacksmith what `onReplace: { preserve: [...] }` actually needed to hold. Answered from the
       recipe conversion rather than predicted: `_id`, `sort`, `ownership`, `title`.
 - [ ] Decide whether the `settle` motion is distinguishable from `none` in play. Only Dry uses it; the CSS

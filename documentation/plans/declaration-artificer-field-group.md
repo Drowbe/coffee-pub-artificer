@@ -74,7 +74,7 @@ fields: [
     // Vocabulary is chosen by artificerType — see rules below. If a rule kind
     // cannot express that, leave `values` off and we keep the check.
     example: 'Plant',
-    guidance: 'The family within the Artificer type. Component: CreaturePart, Environmental, Essence, Gem, Mineral, Plant. Creation: Food, Material, Poison, Potion. Tool: Apparatus, Container.'
+    guidance: 'The family within the Artificer type. Component: CreaturePart, Environmental, Essence, Gem, Mineral, Plant. Creation: Food, Material, Poison, Potion. Tool: Apparatus, Container, Process.'
   },
   {
     name: 'artificerTraits',
@@ -122,6 +122,56 @@ fields: [
     example: '',
     values: ['Heat', 'Cold', 'Electric', 'Light', 'Shadow', 'Time', 'Mind', 'Life', 'Death'],
     guidance: 'The elemental affinity of an Essence. Required when the family is Essence, blank otherwise.'
+  },
+
+  // ---- Process family only. See the note below: these are the conditional-FIELDS
+  // case, one step past the conditional-vocabulary case already being designed for.
+  {
+    name: 'artificerProcessLevels',
+    path: 'flags.coffee-pub-artificer.artificerProcessLevels',
+    type: 'array',
+    required: false,
+    default: [],
+    example: [
+      { label: 'Off', color: '#7a5a3a' },
+      { label: 'Low', color: '#c98a4b' },
+      { label: 'Medium', color: '#ffb45a' },
+      { label: 'High', color: '#ff8c2e' }
+    ],
+    fields: [
+      { name: 'label', type: 'string', guidance: 'What this intensity is called, such as Simmer or Coarse.' },
+      { name: 'color', type: 'string', guidance: 'CSS colour the crafting animation paints with at this level.' }
+    ],
+    guidance: 'Exactly four intensity positions for a Process, from off to full. Position 0 is always the off state. The names are the process's own vocabulary — Off/Low/Medium/High for heat, Off/Coarse/Medium/Fine for a grind.'
+  },
+  {
+    name: 'artificerProcessAnimation',
+    path: 'flags.coffee-pub-artificer.artificerProcessAnimation',
+    type: 'string',
+    required: false,
+    default: 'none',
+    example: 'pulse',
+    // NOT a fixed `values` list -- see note 6. The vocabulary is a manifest an art
+    // pack can extend, so it is not known at declaration time.
+    guidance: 'The crafting-bench motion this Process plays: none, pulse, shake, strike, swirl, sweep, shimmer, settle, ring or blur. Names describe the MOTION, not the process, so a ferment can pulse and a sieve can shake.'
+  },
+  {
+    name: 'artificerProcessSound',
+    path: 'flags.coffee-pub-artificer.artificerProcessSound',
+    type: 'string',
+    required: false,
+    default: '',
+    example: '',
+    guidance: 'Sound played while a craft using this Process runs. Blank for silence.'
+  },
+  {
+    name: 'artificerProcessUnstableAtMax',
+    path: 'flags.coffee-pub-artificer.artificerProcessUnstableAtMax',
+    type: 'boolean',
+    required: false,
+    default: false,
+    example: false,
+    guidance: 'Whether full intensity destabilises and flickers. True for open flame; a ferment held at maximum is not unstable.'
   }
 ]
 ```
@@ -183,3 +233,29 @@ wearing a contract's clothes, and enforcing it is most of the point of declaring
 
 4. **`artificerTraits` must not be absorbed by the `tags` fragment in step 9.** It drives
    ingredient matching — a wrong trait breaks crafting rather than mis-filing an entry.
+
+5. **The four `artificerProcess*` fields are CONDITIONAL FIELDS, not just conditional values.**
+   They exist only when `artificerFamily` is `Process`, and they are meaningless on anything
+   else — a Plant has no animation. This is one step past the conditional-*vocabulary* case
+   already being designed for `artificerFamily` and `skill`: there the field always exists and
+   its allowed values vary, here the field itself should not appear in the template, the guide
+   or the prompt unless the family calls for it.
+
+   `requiresOption` is close but wrong — it gates on an import OPTION the author ticks, and
+   this gates on another FIELD's value. If the model gains a `requiresWhen`-style gate, these
+   four are its first real use. Until then they are harmless: declared, optional, defaulted,
+   and simply blank on every non-Process item. That is a worse authoring experience than it
+   needs to be, not a correctness problem.
+
+6. **`artificerProcessAnimation` has no `values` list, deliberately.** The animation vocabulary
+   is `resources/process-animations.json`, a manifest an art pack can extend by shipping CSS
+   plus an entry. So the allowed set is not known at declaration time — the same shape as
+   `skill` reading ids from a user-configurable mapping. The ten we ship are named in the
+   guidance so an author has something concrete, but a fixed list would reject a valid entry
+   from a pack we have never seen.
+
+7. **A Process needs no traits and no skill level.** Both are declared for every item in the
+   group, and both are ignored on a Process: traits drive *ingredient* matching and a process
+   is never an ingredient; skill level gates crafting difficulty and a process is never
+   crafted. Our own authoring window hides them for that family. Worth knowing before someone
+   tries to make them required.
