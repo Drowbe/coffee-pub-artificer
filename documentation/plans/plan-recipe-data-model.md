@@ -47,7 +47,7 @@ Two shape decisions worth knowing before the rest is built:
    subtype with no sheet is not usable. `DocumentSheetConfig.registerSheet` with
    `types: [RECIPE_PAGE_TYPE]`, `makeDefault: true`.
 
-3. **A Process is an item.** ← NEXT **This is the gate**, not a cleanup. Every other field in a
+3. ~~**A Process is an item.**~~ **DONE 2026-08-26.** **This was the gate**, not a cleanup. Every other field in a
    recipe now resolves to an item you drag or a skill from the world's mapping; `processType`
    is the only one whose vocabulary still lives in our source, so it is the last thing between
    this sheet and a GM authoring recipes without us. Detail below.
@@ -62,7 +62,7 @@ Two shape decisions worth knowing before the rest is built:
    `applyPotionBrewingData`, stay text-only ON PURPOSE: both rewrite a page's HTML, and a
    subtype page has none. Commented so they are not "fixed" later.
 
-5. **Conversion.** Split into its own plan — see
+5. ~~**Conversion.**~~ **DONE 2026-08-26** — 266 recipes converted with ids preserved, and the pack exported. Split into its own plan — see
    [`plan-recipe-migration.md`](plan-recipe-migration.md). The short version: the ~161 shipped
    compendium recipes are a *build step*, not a migration, and converting them first exercises
    the converter against real content at zero risk. Only user-authored world recipes need an
@@ -71,7 +71,7 @@ Two shape decisions worth knowing before the rest is built:
    **This is the step that touches live worlds and it needs its own decision, not just its
    own commit.**
 
-6. **Declare it to Blacksmith** as a mapped profile, and delete our import window, parser,
+6. **Declare it to Blacksmith** as a mapped profile ← BLOCKED on their step 8 (Journal), and delete our import window, parser,
    normalisers, `resolveItemByName` and result reporting.
 
 7. ~~**Fix the blank-apparatus round trip before conversion, not after.**~~ **DONE 2026-08-25.** A blank `Apparatus:`
@@ -147,7 +147,7 @@ hardcoded boolean. Those are the two places to check before calling it done.
 
 ### Order within step 3
 
-**3a. Nail down recipe and item creation.** Finish the authoring pass in flight. Everything
+**3a. Nail down recipe and item creation.** ~~IN PROGRESS~~ **DONE 2026-08-26.** Finish the authoring pass in flight. Everything
 after this assumes a GM can build a recipe and the items it references without our help.
 
 The window itself is sound — Family is scoped by Type, affinity appears only for Essence,
@@ -216,7 +216,7 @@ element at load, so an unbacked entry reports itself.
 does not exist yet. Writing a loader with nothing reading it is the speculative-consumer
 mistake — the same one that got a compatibility layer deleted in the importer work.
 
-**3c. Extend the item system and migrate the two hardcoded processes.** ← NEXT Add the Process flag
+**3c. Extend the item system and migrate the two hardcoded processes.** **DONE 2026-08-26** — nineteen processes across ten motions, shipped in the Tools compendium. Add the Process flag
 block, ship **Heat** and **Grind** as items carrying today's level names and colours, map
 legacy `processType` to them, and delete `HEAT_LEVELS` / `GRIND_LEVELS`.
 
@@ -224,7 +224,7 @@ This is also the natural moment for the item-data audit noted above: adding a fo
 `artificerType` is the first time a drop slot legitimately needs something reliable to check
 against.
 
-**3d. Then AI authoring, through Blacksmith's importer.** This is what the sequence is for, and
+**3d. Then AI authoring, through Blacksmith's importer.** ← NEXT. This is what the sequence is for, and
 it is strictly downstream.
 
 **Import mirrors the native path; it cannot lead it.** An import produces the same documents
