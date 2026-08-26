@@ -615,7 +615,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         const stats = [
             ['Skill', system.skill ? `${system.skill} ${system.skillLevel ?? 1}` : ''],
             ['DC', system.successDC],
-            ['Process', system.time != null ? `${system.time}s` : ''],
+            ['Time', system.time != null ? `${system.time}s` : ''],
             ['Work', system.workHours != null ? `${system.workHours}h` : ''],
             ['Cost', system.goldCost != null ? `${system.goldCost} gp` : '']
         ].filter(([, value]) => value != null && value !== '');
@@ -628,7 +628,16 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
 
         // --- Ingredients and equipment, side by side --------------------------
         const ingredients = (system.ingredients ?? []).filter(i => i?.name);
+        const processName = (system.processType ?? '').toString().trim();
+        const processLevelName = processName
+            ? getProcessLevel(system.processType, system.processLevel).label
+            : '';
         const equipment = [
+            // First, and qualified by its level, because the process is the single
+            // thing that decides whether a craft works -- it was previously a muted
+            // uppercase line below the columns that readers skipped entirely.
+            [processLevelName && processLevelName !== 'Off' ? processLevelName : 'Process',
+                processName ? getProcess(system.processType).label : ''],
             ['Apparatus', system.apparatusName],
             ['Container', system.containerName],
             ['Kit', system.skillKit]
@@ -652,9 +661,11 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             }
 
             if (equipment.length) {
-                const rows = equipment.map(([label, value]) => {
+                const rows = equipment.map(([label, value], index) => {
                     const img = images.get(value);
-                    return `<li>`
+                    // Index 0 is always the process when one is set -- see the list above.
+                    const isProcessRow = index === 0 && Boolean(processName);
+                    return `<li${isProcessRow ? ' class="arv-equipment-process"' : ''}>`
                         + (img ? `<img class="arv-ing-img" src="${escapeHtml(img)}" alt="" />` : '')
                         + `<span class="arv-ing-name">${escapeHtml(value)}</span>`
                         + `<span class="arv-ing-qualifier">${escapeHtml(label)}</span></li>`;
@@ -664,14 +675,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             }
 
             parts.push(`<div class="arv-columns">${columns.join('')}</div>`);
-        }
-
-        // --- Method summary, only when it is not already obvious --------------
-        if (system.processType) {
-            const intensity = getProcessLevel(system.processType, system.processLevel).label;
-            const detail = intensity && intensity !== 'Off' ? ` on ${String(intensity).toLowerCase()}` : '';
-            // The process's own display name, not the stored id.
-            parts.push(`<div class="arv-method">${escapeHtml(getProcess(system.processType).label)}${escapeHtml(detail)}</div>`);
         }
 
         const traits = splitTraits(system.traits);

@@ -6,6 +6,7 @@ import { MODULE } from '../../const.js';
 import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
+import { RECIPE_PAGE_TYPE } from '../models/model-recipe-page.js';
 import { buildRecipePageHtml } from '../../utility-artificer-recipe-import.js';
 import { SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getEnabledCraftingSkillIds } from '../../skills-rules.js';
@@ -131,12 +132,12 @@ export class RecipeStorage {
                 const pages = journal.pages?.contents ?? [];
                 for (const page of pages) {
                     try {
-                        if (page.type !== 'text') continue;
+                        if (page.type !== 'text' && page.type !== RECIPE_PAGE_TYPE) continue;
                         const coreId = `${journalId}_${page.id ?? ''}`;
                         if (coreIdSeen.has(coreId)) continue;
                         coreIdSeen.add(coreId);
                         const rawContent = page.text?.content ?? page.text?.markdown ?? '';
-                        const recipe = await RecipeParser.parseSinglePage(page, rawContent, journal);
+                        const recipe = await RecipeParser.fromPage(page, rawContent, journal);
                         if (recipe) this._cache.set(recipe.id, recipe);
                     } catch (error) {
                         postBlacksmithConsole(MODULE.NAME, `Error loading recipe from page "${page.name}"`, error?.message ?? String(error), true, false);
@@ -268,6 +269,9 @@ export class RecipeStorage {
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];
             for (const page of pages) {
+                // TEXT PAGES ONLY, deliberately. This rewrites a page's HTML, and a
+                // recipe subtype page has no HTML to rewrite -- its fields are
+                // structured. Running it over one would be a no-op at best.
                 if (page.type !== 'text') {
                     result.skipped++;
                     continue;
@@ -370,6 +374,8 @@ export class RecipeStorage {
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];
             for (const page of pages) {
+                // Text pages only, for the same reason as cleanAndRewriteRecipePages:
+                // this edits HTML, and a subtype page has none.
                 if (page.type !== 'text') {
                     result.skipped++;
                     result.skippedNames.push(`${page.name ?? page.id} (non-text page)`);

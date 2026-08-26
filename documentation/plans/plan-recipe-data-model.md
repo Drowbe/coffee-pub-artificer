@@ -52,10 +52,15 @@ Two shape decisions worth knowing before the rest is built:
    is the only one whose vocabulary still lives in our source, so it is the last thing between
    this sheet and a GM authoring recipes without us. Detail below.
 
-4. **Read path first, write path second.** Point `manager-recipes` at `page.system` when the
-   page is a recipe subtype, falling back to `RecipeParser` for `text` pages. Both paths
-   live at once — this is the writer-retires-first rule applied to ourselves, and it is what
-   makes conversion safe.
+4. ~~**Read path first, write path second.**~~ **DONE 2026-08-26.** `RecipeParser.fromPage()`
+   is the single entry point: a subtype page is read straight from `page.system`, a legacy
+   `text` page is parsed from HTML, anything else returns null. `storage-recipes.js` loads
+   through it and no longer skips subtype pages — that `page.type !== 'text'` guard would have
+   made a converted recipe vanish from every list.
+
+   The other two `parseSinglePage` callers, `cleanAndRewriteRecipePages` and
+   `applyPotionBrewingData`, stay text-only ON PURPOSE: both rewrite a page's HTML, and a
+   subtype page has none. Commented so they are not "fixed" later.
 
 5. **Conversion.** Split into its own plan — see
    [`plan-recipe-migration.md`](plan-recipe-migration.md). The short version: the ~161 shipped

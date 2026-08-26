@@ -5,7 +5,7 @@
 import { MODULE } from './const.js';
 import { getOrCreateJournal, extractNameFromUuidLink, normalizePunctuationForStorage } from './utils/helpers.js';
 import { ArtificerRecipe } from './data/models/model-recipe.js';
-import { ITEM_TYPES, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
+import { ITEM_TYPES, HEAT_MAX, PROCESS_LEVEL_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
 import { getSyncFallbackRecipeSkillId } from './skills-rules.js';
 import { resolveItemByName } from './utility-artificer-item.js';
 
@@ -126,8 +126,12 @@ export async function validateRecipePayload(payload) {
         resultItemName: normalizePunctuationForStorage(resultItemName.trim()),
         traits: (Array.isArray(payload.traits) ? payload.traits : (Array.isArray(payload.tags) ? payload.tags : [])).map((t) => normalizePunctuationForStorage(String(t))),
         description: normalizePunctuationForStorage(String(payload.description)),
-        processType: payload.processType != null && PROCESS_TYPES.includes(String(payload.processType).toLowerCase()) ? String(payload.processType).toLowerCase() : 'heat',
-        processLevel: payload.processLevel != null && Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= HEAT_MAX ? Math.round(Number(payload.processLevel)) : 0,
+        // Taken verbatim. This used to force anything outside ['heat', 'grind'] to
+        // 'heat' -- so importing a Ferment recipe silently produced a Heat recipe with
+        // no error anywhere, which is worse than refusing it. A name nothing resolves
+        // is handled at use by getProcess(), where it is visible.
+        processType: normalizePunctuationForStorage(_str(payload.processType)) || 'heat',
+        processLevel: payload.processLevel != null && Number(payload.processLevel) >= 0 && Number(payload.processLevel) <= PROCESS_LEVEL_MAX ? Math.round(Number(payload.processLevel)) : 0,
         time: Math.min(120, payload.time != null && Number(payload.time) >= 0 ? Number(payload.time) : 20),
         apparatusName: normalizePunctuationForStorage(apparatusName?.trim() || 'Mixing Bowl'),
         containerName: normalizePunctuationForStorage(containerName?.trim() || 'Vial'),

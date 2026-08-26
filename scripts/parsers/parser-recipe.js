@@ -6,7 +6,8 @@ import { MODULE } from '../const.js';
 import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 import { extractNameFromUuidLink, normalizePunctuationForStorage } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
-import { ITEM_TYPES, HEAT_MAX, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { ITEM_TYPES, HEAT_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 
 /**
@@ -14,6 +15,73 @@ import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from
  * Parses HTML journal content into ArtificerRecipe objects
  */
 export class RecipeParser {
+    /**
+     * Read a recipe from a page, whichever shape it is.
+     *
+     * THE ONE ENTRY POINT for "give me the recipe on this page". A subtype page
+     * carries structured fields and is read directly; a legacy `text` page is
+     * parsed out of its HTML. Both paths live at once on purpose -- the writer
+     * retires a format only after every reader handles the new one, so nothing is
+     * converted until this has been running.
+     *
+     * @param {JournalEntryPage} page
+     * @param {string} rawContent - HTML, used only by the legacy path.
+     * @param {JournalEntry} [journal]
+     * @returns {Promise<ArtificerRecipe|null>}
+     */
+    static async fromPage(page, rawContent, journal = null) {
+        if (!page) return null;
+        if (page.type === RECIPE_PAGE_TYPE) return RecipeParser.fromSubtypePage(page, journal);
+        if (page.type === 'text') return RecipeParser.parseSinglePage(page, rawContent, journal);
+        return null;
+    }
+
+    /**
+     * Build a recipe from a `coffee-pub-artificer.recipe` page.
+     *
+     * No parsing: the fields are already structured. The description is the page's
+     * own text.content, which is why nothing here reads HTML.
+     * @param {JournalEntryPage} page
+     * @param {JournalEntry} [journal]
+     * @returns {ArtificerRecipe|null}
+     */
+    static fromSubtypePage(page, journal = null) {
+        const system = page?.system;
+        if (!system) return null;
+
+        const recipe = new ArtificerRecipe({
+            id: page.uuid,
+            name: normalizePunctuationForStorage(page.name ?? ''),
+            source: journal?.uuid ?? page.parent?.uuid ?? '',
+            journalPageId: page.id,
+            type: system.type,
+            category: system.category,
+            skill: system.skill,
+            skillLevel: system.skillLevel,
+            processType: system.processType,
+            processLevel: system.processLevel,
+            time: system.time,
+            apparatusName: system.apparatusName,
+            containerName: system.containerName,
+            skillKit: system.skillKit,
+            goldCost: system.goldCost,
+            workHours: system.workHours,
+            successDC: system.successDC,
+            ingredients: Array.from(system.ingredients ?? []).map(i => ({ ...i })),
+            resultItemName: system.resultItemName,
+            traits: Array.from(system.traits ?? []),
+            rarity: system.rarity,
+            license: system.license,
+            description: page.text?.content ?? ''
+        });
+
+        if (!recipe.validate?.()) {
+            postBlacksmithConsole(MODULE.NAME, `Recipe page "${page.name}" failed validation`, null, true, false);
+            return null;
+        }
+        return recipe;
+    }
+
     /**
      * Parse a single journal page into an ArtificerRecipe
      * @param {JournalEntryPage} page - Journal page
@@ -73,8 +141,10 @@ export class RecipeParser {
                     const num = parseInt(value, 10);
                     data.skillLevel = (!isNaN(num) && num >= SKILL_LEVEL_MIN && num <= SKILL_LEVEL_MAX) ? num : 1;
                 } else if (labelLower === 'process type') {
-                    const v = (value || '').toString().trim().toLowerCase();
-                    if (PROCESS_TYPES.includes(v)) data.processType = v;
+                    // Whatever the page says. Filtering to ['heat', 'grind'] meant a
+                    // page naming any other process parsed as having none at all.
+                    const v = (value || '').toString().trim();
+                    if (v) data.processType = normalizePunctuationForStorage(v);
                 } else if (labelLower === 'process level') {
                     const str = (value || '').toString().trim().toLowerCase();
                     const num = parseInt(value, 10);

@@ -5,7 +5,7 @@
 import { MODULE } from '../../const.js';
 import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
-import { ITEM_TYPES, PROCESS_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
 import {
@@ -129,7 +129,15 @@ export class ArtificerRecipe {
             if (isNaN(h) || h < 0 || h > 3) this.heat = null;
             else this.heat = Math.round(h);
         }
-        if (this.processType != null && !PROCESS_TYPES.includes(this.processType)) this.processType = null;
+        // NOT validated against a fixed list. A process is an item now, so the valid
+        // values are process item names, which differ per world. This used to null
+        // anything outside ['heat', 'grind'] -- so a recipe naming a GM-authored
+        // process lost it silently, which is data loss rather than a rejection.
+        // Resolved through getProcess() at use; an unresolvable name falls back there.
+        if (this.processType != null) {
+            const trimmed = String(this.processType).trim();
+            this.processType = trimmed || null;
+        }
         if (this.processLevel != null) {
             const l = Number(this.processLevel);
             if (isNaN(l) || l < 0 || l > 3) this.processLevel = null;

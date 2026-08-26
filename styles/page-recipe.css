@@ -462,6 +462,16 @@
     min-width: 0;
 }
 
+/* The process is the first equipment row and carries the weight of the column:
+   full-strength name where the others are plain, so the eye lands on it. */
+.arv-equipment-process .arv-ing-name {
+    font-weight: 600;
+}
+
+.arv-equipment-process .arv-ing-qualifier {
+    opacity: 0.7;
+}
+
 .arv-column-heading {
     margin: 0 0 0.3rem;
     padding-bottom: 0.15rem;
@@ -521,14 +531,12 @@
     opacity: 0.7;
 }
 
-/* --- Method and traits -------------- */
+/* --- Traits ------------------------- */
 
-.arv-method {
-    font-size: var(--font-size-12, 0.75rem);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    opacity: 0.6;
-}
+/* `.arv-method` is gone: the process now sits at the top of the Equipment column
+   with its item image, because a muted uppercase line under the columns was the
+   single most-missed thing on the page -- and it is the one field that decides
+   whether a craft succeeds. */
 
 .arv-traits {
     display: flex;
