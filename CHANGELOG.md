@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [13.2.1]
+
+### Fixed
+- **13.2.0 shipped the pre-conversion compendiums:** The release was tagged before the converted pack files existed on disk. LevelDB does not write through on export — Foundry holds a pack open and compacts lazily, so the 266 converted recipes sat in an unflushed `.log` while `git status` reported `packs/` as clean. The new `.ldb` was only committed three commits after `BUILD 13.2.0`, so the release zip carried the old compendiums even though the development world was correct. No data was lost anywhere; the packs simply were not in the release. This build contains them.
+
 ## [13.2.0]
 
 ### Added

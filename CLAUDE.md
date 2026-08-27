@@ -157,6 +157,25 @@ trip: import to the world keeping ids, edit, export back keeping ids. Because th
 pre-edit state is recoverable with `git checkout -- packs/<name>` — commit before exporting so that point
 exists.
 
+**Close the world before committing packs, and before any BUILD commit.** LevelDB does not write through
+on export. Foundry holds the pack open and compacts lazily, so freshly exported data sits in a `.log` the
+process has not flushed — and `git status` reports `packs/` **clean** while it does. The data only
+materialises as a new `.ldb` once Foundry compacts or the world closes.
+
+This shipped a broken release once: 13.2.0 was tagged with the pre-conversion packs because the export
+looked committed and was not. The new `.ldb` landed three commits later, so the release zip contained the
+old compendiums while the dev working tree was correct — which is the confusing part, because everything
+looks right locally.
+
+Before a BUILD commit, verify rather than assume:
+
+```
+git show <ref>:packs/<name>/<file>.ldb | grep -ac "<some string you just added>"
+```
+
+A tag is what production installs. If a release goes out without the packs, fixing it means a **new
+version**, not a new commit — moving a tag people may already have pulled is worse.
+
 ## Git
 
 The author commits. Claude prepares reviewable changes and says what changed and why.
