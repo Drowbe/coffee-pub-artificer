@@ -24,6 +24,7 @@ import { PinsManager } from './manager-pins.js';
 import { getBlacksmithApi, postBlacksmithConsole } from './utils/blacksmith-console.js';
 import { RECIPE_PAGE_TYPE, RecipePageModel, RECIPE_DESCRIPTION_OUTLINE } from './data/models/model-recipe-page.js';
 import { RecipePageSheet } from './sheets/sheet-recipe-page.js';
+import { registerArtificerItemFieldGroup } from './declarations/declaration-artificer-item-group.js';
 
 /**
  * Return the actor for the first controlled token, if any.
@@ -189,6 +190,25 @@ Hooks.once('ready', async () => {
         
         // Register module with Blacksmith (prefer module.api — not dependent on window globals)
         const bsApi = getBlacksmithApi();
+
+        // Contribute our flag block to Blacksmith's Item profiles. Registered at
+        // `ready` because the importer registry's placeholders are cleared during
+        // Blacksmith's `init` -- registering earlier can hit a stub. An older
+        // Blacksmith without field groups simply declines, and Artificer works on
+        // without importer integration.
+        try {
+            const registered = registerArtificerItemFieldGroup(bsApi);
+            postBlacksmithConsole(MODULE.NAME,
+                registered
+                    ? `${MODULE.NAME}: Artificer item field group registered with the importer`
+                    : `${MODULE.NAME}: Blacksmith importer has no field groups; skipping`,
+                null, !registered, false);
+        } catch (error) {
+            // A malformed declaration is rejected at registration with the field
+            // named. That is a bug in our declaration, not a reason to fail boot.
+            postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Artificer item field group was rejected`,
+                error?.message ?? String(error), false, false);
+        }
         if (bsApi?.registerModule) {
             bsApi.registerModule(MODULE.ID, {
                 name: MODULE.NAME,

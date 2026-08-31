@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [Unreleased]
+
+### Added
+- **Artificer flags are contributed to Blacksmith's JSON importer:** The flag block registers as a field
+  group (`scripts/declarations/declaration-artificer-item-group.js`), so Blacksmith derives the authoring
+  template, guide, prompt, validation and document construction from one declaration rather than from
+  prompt text we maintained separately. A field group rather than a profile because Artificer flags are
+  orthogonal to the D&D type — an Artificer item *is* a loot, or a consumable, or a tool, with our block
+  added. The four Process-only fields are gated on `artificerFamily`, so they never appear on anything
+  that is not a Process.
+- **A test harness, in `testing/`:** Paste `testing/test-harness.js` into a script macro and run it as GM;
+  it loads the suites listed in `SUITES` and opens a dialog with a headless tier that self-reports PASS/FAIL
+  and an interactive tier for what a person has to judge. It exists because most of what needs checking in
+  this module reports *nothing* when broken — a field group that failed to register, a gate that can never
+  fire, a cache claiming 668 items and returning none all look like working code from the console. The first
+  suite covers the importer field group: that it registered, that every field writes inside our flag
+  namespace, that the Process fields gate on family rather than type, that each gate names a value its gate
+  field can actually hold, and that our fields reach a derived template when the import option is ticked and
+  no template when it is not.
+
+### Changed
+- **Importing a Component without a habitat, or an Essence without an affinity, now fails:** Both have
+  always been stated in the authoring prompt and enforced nowhere, so payloads carrying neither imported
+  cleanly and produced content that could never be gathered or matched. They are declared rules now and
+  are reported as validation errors naming the field. **This will reject JSON that imported before.** The
+  fix is to supply the missing value; a Component with no habitat has nowhere to be found, and an Essence
+  with no affinity cannot be matched by a recipe.
+
 ## [13.2.1]
 
 ### Fixed

@@ -31,6 +31,15 @@ fine — that documents our usage. Documenting Blacksmith's internals here is no
 A plain no-build Foundry module — Foundry loads the ES modules directly. There is **no test suite, linter,
 or formatter**. Don't go looking for one, and don't add a build step casually.
 
+**`testing/test-harness.js` is the closest thing to a test runner.** Paste it into a script macro and run
+it as GM: it loads the suites in `SUITES` and opens a dialog with a headless tier that self-reports
+PASS/FAIL and an interactive tier for what a person has to judge. It exists because most of what needs
+checking here reports NOTHING when broken -- a field group that failed to register, a gate that can never
+fire, a cache claiming 668 items and returning none. All of those look like working code from the console.
+
+**Update the suite as part of the change that alters what it asserts.** A harness asserting a stale
+contract is worse than none, because it manufactures confidence.
+
 Because there is no test framework, `node --input-type=module --check` is the cheapest syntax gate — and note
 the `--input-type=module` part: a plain `node --check` parses as a script and will miss module-scope errors
 like redeclaring a parameter with `const`. It catches *syntax* only. Ordering bugs (temporal dead zone),
@@ -146,6 +155,7 @@ by reading every file, and it is wrong more cheaply than the code is.
 | `documentation/plans/` | Scaffolding for work in flight. Deleted when it lands. |
 | `CHANGELOG.md` | What we did. |
 | `macros/` | GM-run operations: seeding, migration, diagnostics. Dry-run by default where they write. |
+| `testing/` | The test harness. `test-harness.js` is pasted into a script macro; suites live in `testing/suites/` and are listed explicitly in `SUITES`. |
 | `resources/*.json` | GM-selectable rulesets — skills, gathering, process animations. |
 
 Cross-module work spanning the suite belongs in Blacksmith's `documentation/TODO-GLOBAL.md`, not here.

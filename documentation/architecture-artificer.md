@@ -370,6 +370,7 @@ scripts/
   ├── systems/                        (experimentation-engine.js, tag-manager.js)
   │
   ├── manager-*.js                    (facades over storage; refresh, getters)
+  ├── declarations/                   (what we declare to Blacksmith's importer)
   ├── panel-*.js                      (UI panels - ApplicationV2)
   ├── window-*.js                     (UI windows/forms - ApplicationV2)
   └── utils/helpers.js
@@ -377,6 +378,7 @@ scripts/
 resources/                             (JSON: translation-item.json, etc.)
 templates/                             (Handlebars templates)
 styles/                                (CSS files)
+testing/                               (test harness; see 11.9)
 ```
 
 **File Naming Conventions:**
@@ -630,6 +632,57 @@ The item cache provides fast name-based lookup for ingredients, recipe results, 
 - Filter by family, tags, tier, rarity
 - Show discovered/undiscovered tags (tags only visible in crafting UI, not item sheet)
 - Quantity from actor inventory
+
+### 11.9 What We Declare to Blacksmith's Importer
+
+Artificer's flag block reaches Blacksmith's JSON importer as a **field group**, not a profile:
+`scripts/declarations/declaration-artificer-item-group.js`. Registered at `ready` from
+`scripts/artificer.js`, because the importer registry clears its placeholders during Blacksmith's `init`.
+
+A group rather than a profile because our flags are orthogonal to the D&D type. An Artificer item *is* a
+loot, or a consumable, or a tool, with our block added -- a profile would compete with Blacksmith's eight
+Item profiles rather than compose with them, and declaring the block eight times duplicates it and still
+could not be opted into per import. `appliesTo` is `'*'`, so the group attaches to all eight.
+
+The file is data. Blacksmith derives the authoring template, the guide, the prompt, validation and document
+construction from it, so every `guidance` string is the only authoring text its field has.
+
+Two things about the derived template are easy to get wrong, and both cost a debugging session:
+
+- The template is **flat, keyed by each field's authoring `name`** -- `artificerType`, not
+  `flags["coffee-pub-artificer"].artificerType`. `path` says where import *lands* the value; the template
+  says what an author types.
+- **Value-gated fields are still offered in a template.** A template has no entry to test `requiresWhen`
+  against, so Blacksmith offers the gated field and lets the rules reject it at import if it does not
+  belong. The gate suppresses fields per *entry*, not per template.
+
+The four `artificerProcess*` fields gate on `artificerFamily`, **not** `artificerType` -- a Process is a
+Tool whose family is Process, so a gate on type could never fire. `artificerFamily` deliberately carries no
+`values` list: its vocabulary is chosen by `artificerType`, which the rule vocabulary cannot yet express, so
+`validateArtificerData` keeps that check until Blacksmith's dynamic-vocabulary mechanism lands.
+
+Reference: `coffee-pub-blacksmith/documentation/api/api-importer.md`.
+
+### 11.10 Testing
+
+There is no test framework -- this is a plain no-build Foundry module. `testing/test-harness.js` is pasted
+into a script macro and run as GM; it imports `testing/harness-lib.js` and each suite listed in `SUITES`,
+then opens a dialog with two tiers: **headless** checks that self-report PASS/FAIL, and **interactive**
+checks only a person can judge. Suites live in `testing/suites/` and are listed explicitly rather than
+globbed, so what runs is a decision rather than a side effect of what is on disk.
+
+The harness exists because the failures that actually happen here are silent. A field group that did not
+register, a gate keyed on the wrong field, a cache reporting 668 items and returning none -- none of them
+throws, and all of them read as working code in the console.
+
+Two constraints the dialog is built around, both discovered the hard way and both shared with Blacksmith's
+harness: `DialogV2` sanitises string content through `cleanHTML`, which drops inline `style` attributes, so
+styling is a `<head>`-injected sheet keyed on classes (classes and `data-*` survive); and the config
+`render` callback -- which wires every button -- fires through `DialogV2.wait()`, not through
+`new DialogV2(...).render(true)`.
+
+A harness asserting a stale contract is worse than none, because it manufactures confidence. The suite is
+updated as part of the change that alters what it asserts.
 
 ---
 
