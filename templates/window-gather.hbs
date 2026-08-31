@@ -17,7 +17,7 @@
             <span class="gather-label">Habitat</span>
             <div class="gather-biomes-grid">
                 {{#each biomeOptions}}
-                <button type="button" class="gather-biome-btn {{#if selected}}active{{/if}}" data-biome="{{name}}" data-action="toggleBiome">{{name}}</button>
+                <button type="button" class="gather-biome-btn {{#if selected}}active{{/if}}" data-biome="{{key}}" data-action="toggleBiome">{{label}}</button>
                 {{/each}}
             </div>
         </div>

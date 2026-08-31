@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
-import { OFFICIAL_BIOMES, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
+import { getBiomeVocabulary, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } from './schema-artificer-item.js';
 import { getProcessAnimations, PROCESS_LEVEL_MAX } from './systems/process-definitions.js';
@@ -215,7 +215,7 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             biomeOptions: (() => {
                 const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
                 const selectedSet = new Set(normalizeBiomeList(this._formState?.selectedBiomes ?? flagBiomes));
-                return OFFICIAL_BIOMES.map(b => ({ name: b, selected: selectedSet.has(b) }));
+                return getBiomeVocabulary().map(e => ({ key: e.key, label: e.label, selected: selectedSet.has(e.key) }));
             })(),
             biomesValue: (() => {
                 const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];

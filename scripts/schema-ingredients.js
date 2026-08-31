@@ -30,21 +30,79 @@ export const INGREDIENT_FAMILIES = {
 };
 
 /**
- * Official D&D 5e biomes/habitats (source of truth).
- * Use only these values for flags.biomes.
+ * The environment vocabulary, as `{key, label}` pairs.
  *
- * MOVING TO BLACKSMITH. Scene geography takes ownership of this vocabulary and will
- * expose it as `{key, label}` pairs in lowercase. When that lands, this array is
- * replaced by their constant and `normalizeBiome` below returns lowercase without
- * another site changing -- which is the entire reason the helpers exist.
+ * OWNED BY BLACKSMITH. `api.geography.ENVIRONMENTS` is the source of truth; this array
+ * is only the fallback for a Blacksmith too old to have it. The two differ in CASE --
+ * theirs is lowercase -- which is safe precisely because nothing compares a stored
+ * biome directly any more. Every read goes through `normalizeBiome`, so a world that
+ * upgrades Blacksmith mid-campaign flips canonical form and its existing uppercase
+ * data still resolves.
+ *
+ * DELETE THIS FALLBACK once a Blacksmith version floor is declared in module.json.
+ * Carrying two canonical forms indefinitely is the cost of not having one.
  */
-export const OFFICIAL_BIOMES = [
-    'MOUNTAIN', 'ARCTIC', 'PLANAR', 'COASTAL', 'SWAMP', 'DESERT',
-    'UNDERDARK', 'FOREST', 'UNDERWATER', 'GRASSLAND', 'URBAN', 'HILL'
-];
+const FALLBACK_ENVIRONMENTS = Object.freeze([
+    { key: 'MOUNTAIN', label: 'Mountain' },
+    { key: 'ARCTIC', label: 'Arctic' },
+    { key: 'PLANAR', label: 'Planar' },
+    { key: 'COASTAL', label: 'Coastal' },
+    { key: 'SWAMP', label: 'Swamp' },
+    { key: 'DESERT', label: 'Desert' },
+    { key: 'UNDERDARK', label: 'Underdark' },
+    { key: 'FOREST', label: 'Forest' },
+    { key: 'UNDERWATER', label: 'Underwater' },
+    { key: 'GRASSLAND', label: 'Grassland' },
+    { key: 'URBAN', label: 'Urban' },
+    { key: 'HILL', label: 'Hill' }
+]);
 
-/** Case-folded index into OFFICIAL_BIOMES. Rebuilt with the vocabulary, not per call. */
-const BIOME_BY_FOLDED = new Map(OFFICIAL_BIOMES.map((biome) => [biome.toLowerCase(), biome]));
+/** Blacksmith's vocabulary, or null when unavailable. Never throws; we are a consumer. */
+function blacksmithEnvironments() {
+    const environments = game?.modules?.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
+    return Array.isArray(environments) && environments.length ? environments : null;
+}
+
+// Index cache, keyed on the SOURCE ARRAY IDENTITY rather than a boolean. Blacksmith's
+// api is not present at module evaluation, so the first call in a session legitimately
+// resolves to the fallback and a later one to theirs -- caching a "did we check yet"
+// flag would pin whichever answer came first.
+let _cachedSource = null;
+let _cachedIndex = null;
+
+function vocabulary() {
+    const source = blacksmithEnvironments() ?? FALLBACK_ENVIRONMENTS;
+    if (_cachedSource !== source) {
+        _cachedSource = source;
+        _cachedIndex = new Map(source.map((entry) => [String(entry.key).toLowerCase(), entry]));
+    }
+    return { source, index: _cachedIndex };
+}
+
+/**
+ * The environment vocabulary as `{key, label}` pairs, in declaration order.
+ *
+ * A FUNCTION, NOT A CONST, and that is the whole point. `game` does not exist when this
+ * module is evaluated, so a module-scope constant derived from the API would capture the
+ * fallback permanently. Anything that needs the vocabulary at module scope -- an importer
+ * declaration's `values` list, for instance -- must resolve it at `ready` instead.
+ *
+ * @returns {ReadonlyArray<{key: string, label: string}>}
+ */
+export function getBiomeVocabulary() {
+    return vocabulary().source;
+}
+
+/** Just the keys, for a `values` list or a membership check. Resolve at `ready`. */
+export function getBiomeKeys() {
+    return vocabulary().source.map((entry) => entry.key);
+}
+
+/** The display label for a biome, or null when it is not in the vocabulary. */
+export function getBiomeLabel(value) {
+    const entry = vocabulary().index.get(String(value ?? '').trim().toLowerCase());
+    return entry ? entry.label : null;
+}
 
 /**
  * A biome in the vocabulary's own spelling, or null if it is not in the vocabulary.
@@ -63,7 +121,8 @@ const BIOME_BY_FOLDED = new Map(OFFICIAL_BIOMES.map((biome) => [biome.toLowerCas
  */
 export function normalizeBiome(value) {
     if (typeof value !== 'string') return null;
-    return BIOME_BY_FOLDED.get(value.trim().toLowerCase()) ?? null;
+    const entry = vocabulary().index.get(value.trim().toLowerCase());
+    return entry ? entry.key : null;
 }
 
 /** Whether a value names a biome, in any case. */

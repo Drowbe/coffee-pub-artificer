@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   orthogonal to the D&D type — an Artificer item *is* a loot, or a consumable, or a tool, with our block
   added. The four Process-only fields are gated on `artificerFamily`, so they never appear on anything
   that is not a Process.
+- **An import checker, `tools/check-imports.mjs`:** Run `node tools/check-imports.mjs`; every named import
+  under `scripts/` and `testing/` must name an export its target actually has. This closes a class our only
+  other static gate cannot see at all -- `node --input-type=module --check` *parses without resolving*, so a
+  symbol renamed or moved between files without its `export` leaves every file valid and every check
+  passing. A static import then fails the whole module load, and a lazy one is worse: it destructures to
+  `undefined` and throws only when something finally calls it, on whichever branch of whichever window
+  reaches it first. Adapted from Blacksmith's tool of the same name.
+
 - **A test harness, in `testing/`:** Paste `testing/test-harness.js` into a script macro and run it as GM;
   it loads the suites listed in `SUITES` and opens a dialog with a headless tier that self-reports PASS/FAIL
   and an interactive tier for what a person has to judge. It exists because most of what needs checking in
@@ -25,6 +33,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   namespace, that the Process fields gate on family rather than type, that each gate names a value its gate
   field can actually hold, and that our fields reach a derived template when the import option is ticked and
   no template when it is not.
+
+- **The habitat vocabulary now comes from Blacksmith:** `api.geography.ENVIRONMENTS` is the source of
+  truth -- twelve `{key, label}` pairs with lowercase keys -- and Artificer keeps a fallback copy only for
+  a Blacksmith too old to expose it. Two consequences worth knowing. Habitat buttons and checkboxes now
+  show a proper label ("Underdark") while round-tripping the key, which were the same string until the
+  vocabulary moved. And the vocabulary is resolved through a function rather than held in a constant,
+  because `game` does not exist when module scripts evaluate: a constant would have captured the fallback
+  permanently, and our importer field-group declaration would have registered a habitat `values` list in
+  the wrong case -- cleanly, silently, and then rejecting valid content.
 
 - **Biome comparisons are case-insensitive everywhere:** Habitat is a join key -- scene habitats are matched
   against item biome flags -- and every comparison between the two was case-sensitive, including the ones

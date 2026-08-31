@@ -177,7 +177,7 @@ export default {
         // a working importer, which is its own lesson.
         {
             id: 'template-includes-group',
-            label: 'Our fields appear in a derived template when the option is ticked',
+            label: 'Ungated fields appear in a derived template; gated ones do not',
             tier: 'headless',
             group: 'Derived output',
             note: 'The end-to-end check: a group can register cleanly and still not compose into a profile.',
@@ -191,10 +191,18 @@ export default {
                 expect.ok('artificerType is offered', 'artificerType' in (template ?? {}));
                 expect.ok('artificerFamily is offered', 'artificerFamily' in (template ?? {}));
                 expect.ok('artificerTraits is offered', 'artificerTraits' in (template ?? {}));
-                // Value-gated fields ARE offered here, deliberately: a template has
-                // no entry to test `requiresWhen` against, so Blacksmith offers them
-                // and lets the rules reject what does not belong at import.
-                expect.ok('artificerProcessLevels is offered', 'artificerProcessLevels' in (template ?? {}));
+                // Value-gated fields are OMITTED, and this assertion has been both ways.
+                // Blacksmith originally offered them and let the rules reject what did
+                // not belong; they now omit them, because a template is a single
+                // starting point and including a gated field produces a contradictory
+                // example -- a Plant carrying the fields only a Process has. The guide
+                // and prompt state the condition instead, which is where a condition can
+                // be expressed. The harness caught the change; do not "fix" this by
+                // flipping it back without reading manager-declarations.js first.
+                expect.ok('artificerProcessLevels is NOT offered ungated',
+                    !('artificerProcessLevels' in (template ?? {})));
+                expect.ok('artificerAffinity is NOT offered ungated',
+                    !('artificerAffinity' in (template ?? {})));
             }
         },
         {

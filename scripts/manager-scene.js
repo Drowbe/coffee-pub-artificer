@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { OFFICIAL_BIOMES, normalizeBiomeList } from './schema-ingredients.js';
+import { getBiomeVocabulary, normalizeBiomeList } from './schema-ingredients.js';
 import { normalizeCheckboxList } from './utils/helpers.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
@@ -227,12 +227,15 @@ export class SceneManager {
         const discoveryRadiusUnits = Number.isFinite(discoveryRadiusUnitsRaw)
             ? Math.max(5, Math.min(300, Math.round(discoveryRadiusUnitsRaw / 5) * 5))
             : 60;
-        const habitatOptionsHtml = OFFICIAL_BIOMES.map((biome) => {
-            const checked = selectedHabitats.has(biome) ? 'checked' : '';
+        // value is the KEY, the visible span is the LABEL. The two were the same string
+        // until the vocabulary moved to Blacksmith; keeping them fused would have written
+        // a display label into the flag the moment the labels stopped matching the keys.
+        const habitatOptionsHtml = getBiomeVocabulary().map((environment) => {
+            const checked = selectedHabitats.has(environment.key) ? 'checked' : '';
             return `
                 <label class="checkbox artificer-scene-checkbox">
-                    <input type="checkbox" name="flags.${MODULE.ID}.scene.habitats" value="${foundry.utils.escapeHTML(biome)}" ${checked} />
-                    <span>${foundry.utils.escapeHTML(biome)}</span>
+                    <input type="checkbox" name="flags.${MODULE.ID}.scene.habitats" value="${foundry.utils.escapeHTML(environment.key)}" ${checked} />
+                    <span>${foundry.utils.escapeHTML(environment.label)}</span>
                 </label>
             `;
         }).join('');

@@ -7,7 +7,7 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { OFFICIAL_BIOMES, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
+import { getBiomeVocabulary, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { normalizeCheckboxList } from './utils/helpers.js';
 import {
     ARTIFICER_TYPES,
@@ -95,7 +95,9 @@ export function getBiomeOptionsForMultiselect(selectedBiomes = []) {
     // Normalized, so a stored biome in another case still renders as selected. Without
     // this the buttons all read as off and the next save writes the empty set back.
     const set = new Set(normalizeBiomeList(selectedBiomes));
-    return OFFICIAL_BIOMES.map((b) => ({ name: b, selected: set.has(b) }));
+    // `key` is what round-trips through data-biome; `label` is what a person reads.
+    // Collapsing them is how a lowercase vocabulary would have shown a GM "underdark".
+    return getBiomeVocabulary().map((e) => ({ key: e.key, label: e.label, selected: set.has(e.key) }));
 }
 
 /**

@@ -233,7 +233,21 @@ await foundry.applications.api.DialogV2.wait({
             output.innerHTML = `
                 <h4>${esc(title)} — ${results.length - failed} passed, ${failed} failed</h4>
                 ${renderResults(results)}`;
-            console.log(`ARTIFICER HARNESS | ${title}: ${results.length - failed} passed, ${failed} failed`, results);
+
+            // ONE PLAIN-TEXT BLOCK, then the objects. A console.log of an array
+            // renders as a collapsible object that cannot be selected and copied --
+            // which is useless for pasting a failure into a bug report or handing it
+            // to another session. The text block below is the copyable artifact; the
+            // array after it is for expanding a value in place.
+            const header = `ARTIFICER HARNESS | ${title}: ${results.length - failed} passed, ${failed} failed`;
+            const lines = results.map(r => r.pass
+                ? `  PASS  ${r.label}`
+                : `  FAIL  ${r.label}
+          got:    ${display(r.actual)}
+          wanted: ${display(r.expected)}`);
+            console.log([header, ...lines].join('\n'));
+            if (failed) console.warn(`${failed} failed — see the block above to copy.`);
+            console.log('Result objects:', results);
         };
 
         root.querySelector('[data-run-all]')?.addEventListener('click', async () => {

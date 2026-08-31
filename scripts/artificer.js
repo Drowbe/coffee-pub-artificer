@@ -25,6 +25,8 @@ import { getBlacksmithApi, postBlacksmithConsole } from './utils/blacksmith-cons
 import { RECIPE_PAGE_TYPE, RecipePageModel, RECIPE_DESCRIPTION_OUTLINE } from './data/models/model-recipe-page.js';
 import { RecipePageSheet } from './sheets/sheet-recipe-page.js';
 import { registerArtificerItemFieldGroup } from './declarations/declaration-artificer-item-group.js';
+// Imported from the API BRIDGE, never read off `game.modules.get(...)`; see CLAUDE.md.
+import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
 /**
  * Return the actor for the first controlled token, if any.
@@ -164,7 +166,21 @@ Hooks.once('init', async () => {
 Hooks.once('ready', async () => {
     try {
         postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Templates and partials registered successfully`, null, false, false);
-        
+
+        // WAIT FOR BLACKSMITH BEFORE TOUCHING SETTINGS. Module scripts load
+        // alphabetically, so `coffee-pub-artificer` registers its `ready` handler
+        // before `coffee-pub-blacksmith` does and therefore RUNS FIRST -- while
+        // `api.compendiums` is assigned deep inside their `ready`, after several
+        // awaits. Without this, `getCompendiumChoices` dereferences a null api and
+        // takes the whole of initialization down with it.
+        //
+        // This promise only ever RESOLVES, never rejects: Blacksmith marks itself
+        // ready even after an internal failure, deliberately, so consumers get a
+        // degraded API rather than hanging forever. So it guarantees their `ready`
+        // has RUN, not that it succeeded -- which is why requireCompendiumsApi()
+        // still checks rather than assuming.
+        await BlacksmithAPI.waitForReady();
+
         // Register settings FIRST during the ready phase
         registerSettings();
 

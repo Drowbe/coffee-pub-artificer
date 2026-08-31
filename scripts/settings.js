@@ -62,6 +62,30 @@ function getJournalChoices() {
 }
 
 /**
+ * Blacksmith's compendium API, or a thrown error naming why it is missing.
+ *
+ * DO NOT SOFTEN THIS TO `?? {}`. These choices feed `game.settings.register`, which
+ * runs once per key and then refuses to re-register -- so an empty choice list is not
+ * a temporary degraded state, it is a permanently unusable dropdown that a reload does
+ * not fix. A loud failure here is strictly better than settings that exist and cannot
+ * be set. See the `ready` ordering note in artificer.js: this being null means our
+ * `ready` beat Blacksmith's, not that Blacksmith is absent.
+ * @returns {object}
+ */
+function requireCompendiumsApi() {
+    const compendiums = getBlacksmithApi()?.compendiums;
+    if (!compendiums) {
+        throw new Error(
+            'Blacksmith compendium API unavailable while registering settings. '
+            + 'The Artificer ready hook ran before Blacksmith finished its own '
+            + '(module load order is alphabetical, so this is the default ordering). '
+            + 'registerSettings must run after BlacksmithAPI.waitForReady().'
+        );
+    }
+    return compendiums;
+}
+
+/**
  * Get compendium choices for dropdowns (Item packs).
  *
  * Uses Blacksmith's getAllChoices() rather than getChoices(): these settings ask the
@@ -70,7 +94,7 @@ function getJournalChoices() {
  * @returns {Object} Object mapping compendium IDs to display labels
  */
 function getCompendiumChoices() {
-    return getBlacksmithApi().compendiums.getAllChoices('Item');
+    return requireCompendiumsApi().getAllChoices('Item');
 }
 
 /**
@@ -97,7 +121,7 @@ function getJournalFolderChoices() {
  * @returns {Object} Object mapping compendium id to display label
  */
 function getJournalCompendiumChoices() {
-    return getBlacksmithApi().compendiums.getAllChoices('JournalEntry');
+    return requireCompendiumsApi().getAllChoices('JournalEntry');
 }
 
 /**

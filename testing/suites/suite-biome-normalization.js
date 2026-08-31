@@ -29,8 +29,8 @@ async function schema() {
 
 /** A biome that exists, in the vocabulary's own spelling. */
 async function sample() {
-    const { OFFICIAL_BIOMES } = await schema();
-    return OFFICIAL_BIOMES[0] ?? null;
+    const { getBiomeKeys } = await schema();
+    return getBiomeKeys()[0] ?? null;
 }
 
 /** The same biome with its case inverted -- the shape stored data will be in. */
@@ -43,10 +43,15 @@ export default {
     label: 'Biome Normalization',
     icon: 'fa-solid fa-mountain-sun',
 
-    settings: () => [
-        settingRow('Vocabulary owner', 'Artificer (moves to Blacksmith scene geography)'),
-        settingRow('Canonical case', 'whatever OFFICIAL_BIOMES declares -- normalizeBiome follows it')
-    ],
+    settings: () => {
+        const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
+        const live = Array.isArray(theirs);
+        return [
+            settingRow('Vocabulary source', live ? 'Blacksmith api.geography.ENVIRONMENTS' : 'ARTIFICER FALLBACK'),
+            settingRow('Entries', live ? theirs.length : 12),
+            settingRow('Canonical case', live ? 'lowercase (theirs)' : 'uppercase (fallback)')
+        ];
+    },
 
     checks: [
         // ---- The helpers -------------------------------------------------
@@ -57,12 +62,13 @@ export default {
             group: 'Helpers',
             note: 'One place decides case. When the vocabulary flips to lowercase, this is the only thing that has to still be true.',
             run: async ({ expect }) => {
-                const { OFFICIAL_BIOMES, normalizeBiome } = await schema();
-                for (const biome of OFFICIAL_BIOMES) {
+                const { getBiomeKeys, normalizeBiome } = await schema();
+                for (const biome of getBiomeKeys()) {
                     expect(`${biome} round-trips`, normalizeBiome(biome), biome);
                     expect(`${flipCase(biome)} normalizes to ${biome}`, normalizeBiome(flipCase(biome)), biome);
                 }
-                expect('surrounding whitespace is tolerated', normalizeBiome(`  ${OFFICIAL_BIOMES[0]}  `), OFFICIAL_BIOMES[0]);
+                const first = getBiomeKeys()[0];
+                expect('surrounding whitespace is tolerated', normalizeBiome(`  ${first}  `), first);
             }
         },
         {
@@ -94,6 +100,57 @@ export default {
             }
         },
 
+        // ---- Vocabulary ownership ----------------------------------------
+        {
+            id: 'vocabulary-comes-from-blacksmith',
+            label: 'The vocabulary resolves from Blacksmith, not our fallback',
+            tier: 'headless',
+            group: 'Vocabulary',
+            note: 'The fallback exists only for a Blacksmith too old to have api.geography. If this fails while Blacksmith is current, we are silently running on our own copy in the wrong case.',
+            run: async ({ expect }) => {
+                const { getBiomeVocabulary, getBiomeKeys } = await schema();
+                const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
+                expect.ok('api.geography.ENVIRONMENTS is available', Array.isArray(theirs));
+                if (!Array.isArray(theirs)) return;
+                expect('we resolve to their exact array', getBiomeVocabulary(), theirs);
+                expect('twelve environments', getBiomeKeys().length, 12);
+                expect.ok('their keys are lowercase', getBiomeKeys().every(k => k === k.toLowerCase()));
+            }
+        },
+        {
+            id: 'labels-are-distinct-from-keys',
+            label: 'Every entry carries a label, and it is not the raw key',
+            tier: 'headless',
+            group: 'Vocabulary',
+            note: 'data-biome round-trips the key; the button text shows the label. Fusing them is what would have shown a GM "underdark".',
+            run: async ({ expect }) => {
+                const { getBiomeVocabulary, getBiomeLabel } = await schema();
+                const vocab = getBiomeVocabulary();
+                expect.ok('every entry has key and label',
+                    vocab.every(e => typeof e.key === 'string' && typeof e.label === 'string' && e.label));
+                expect.ok('at least one label differs from its key', vocab.some(e => e.label !== e.key));
+                expect('getBiomeLabel resolves any case',
+                    getBiomeLabel(vocab[0].key.toUpperCase()), vocab[0].label);
+                expect('an unknown key has no label', getBiomeLabel('FEYWILD'), null);
+            }
+        },
+        {
+            id: 'declaration-uses-live-vocabulary',
+            label: 'The registered field group carries the live vocabulary, not the fallback',
+            tier: 'headless',
+            group: 'Vocabulary',
+            note: 'The trap this refactor exists for: an object literal built at module scope captures the fallback, registers cleanly, and then rejects legitimate content with nothing in the console.',
+            run: async ({ expect }) => {
+                const { getBiomeKeys } = await schema();
+                const importer = game.modules.get('coffee-pub-blacksmith')?.api?.importer;
+                const group = importer?.listFieldGroups?.().find(g => g.module === 'coffee-pub-artificer');
+                expect.ok('the group is registered', Boolean(group));
+                const field = group?.fields?.find(f => f.name === 'artificerBiomes');
+                expect.ok('artificerBiomes is declared', Boolean(field));
+                expect('its values match the live vocabulary', field?.values, getBiomeKeys());
+            }
+        },
+
         // ---- The join ----------------------------------------------------
         {
             id: 'join-is-case-insensitive',
@@ -103,12 +160,12 @@ export default {
             note: 'The regression this suite exists for. A broken join does not throw and does not empty -- untagged components keep coming back, so it looks like it works.',
             run: async ({ expect, log }) => {
                 const { getEligibleGatherRecords } = await import(GATHER);
-                const { OFFICIAL_BIOMES } = await schema();
+                const { getBiomeKeys } = await schema();
 
                 // Find a real biome/family pair that yields records, so the assertion
                 // compares two live results rather than two empty ones.
                 let found = null;
-                for (const biome of OFFICIAL_BIOMES) {
+                for (const biome of getBiomeKeys()) {
                     for (const family of ['Plant', 'Mineral', 'Gem', 'CreaturePart', 'Environmental', 'Essence']) {
                         const hits = getEligibleGatherRecords([biome], [family]);
                         if (hits.some(r => (r.biomes ?? []).length)) {
@@ -186,8 +243,8 @@ export default {
             note: 'Habitats should render selected, and Save should succeed without asking you to choose a habitat. The soft lock, if it comes back, shows up exactly here.',
             run: async ({ log }) => {
                 const { getEligibleGatherRecords } = await import(GATHER);
-                const { OFFICIAL_BIOMES } = await schema();
-                for (const biome of OFFICIAL_BIOMES) {
+                const { getBiomeKeys } = await schema();
+                for (const biome of getBiomeKeys()) {
                     const hit = getEligibleGatherRecords([biome], ['Plant', 'Mineral', 'Gem', 'CreaturePart', 'Environmental', 'Essence'])
                         .find(r => (r.biomes ?? []).length);
                     if (!hit) continue;

@@ -164,22 +164,24 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
 - [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
       DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
 - [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Hard cut at `ready`.
-- [ ] Declare a Blacksmith version floor in `module.json`. The dependency currently carries an empty
-      `compatibility` block, so a new Artificer against an old Blacksmith finds neither the API nor the
-      flag and habitats are simply gone. Blacksmith fixes the number at BUILD time of the release that
-      ships the geography API. Do not pin a guess, and do not ship the hard cut before the floor exists.
-- [ ] Drop `OFFICIAL_BIOMES` (`schema-ingredients.js:36`) and read the vocabulary from the API. Their
-      constant is confirmed as `{key, label}` pairs.
-      **Splitting key from label is not a display-only change.** Both templates use `{{name}}` as the
-      visible text *and* as the `data-biome` round-trip key --
-      [templates/window-gather.hbs:20](../templates/window-gather.hbs#L20) and
-      [templates/item-form.hbs:126](../templates/item-form.hbs#L126) -- and the click handlers guard on
-      `OFFICIAL_BIOMES.includes(biome)` (`window-gather.js:175`, `window-artificer-item.js:410`). Swapping
-      `{{name}}` to a label without separating the two puts the label into `data-biome`, fails that guard,
-      and the button silently does nothing. `data-biome` carries the key; the button text carries the
-      label. Touches two templates, both option builders and both toggle handlers.
-      Note `getBiomeOptions()` (`manager-gather.js:102`) has **no callers** -- delete it rather than
-      porting it. `getBiomeOptionsForMultiselect()` is the one both windows use.
+- [ ] Declare the Blacksmith version floor in `module.json` -- the dependency carries an empty
+      `compatibility` block today, so a new Artificer against an old Blacksmith finds neither the API nor
+      the flag and habitats are simply gone. See the two floor items above: 13.22.0 for the vocabulary,
+      the migration release for the cut.
+- [x] ~~Drop `OFFICIAL_BIOMES` and read the vocabulary from the API.~~ **DONE 2026-08-31** --
+      `getBiomeVocabulary()` / `getBiomeKeys()` / `getBiomeLabel()` resolve from
+      `api.geography.ENVIRONMENTS` with a fallback. Templates now round-trip `key` and display `label`.
+      The field-group declaration became `buildArtificerItemFieldGroup()`, called at `ready`, because a
+      module-scope literal captured the fallback.
+- [ ] **Pin Blacksmith minimum 13.22.0 and delete the `FALLBACK_ENVIRONMENTS` copy in
+      `schema-ingredients.js`.** That release carries the geography API, the vocabulary and the Scene
+      Config injector. **13.22.0 is an intent, not a tag** -- their `module.json` still reads 13.21.1 and
+      the bump happens at their BUILD. A module pinning a minimum that does not exist will not activate,
+      so make the change on a branch and release only after they tag.
+- [ ] **Raise the floor again for the hard cut, to whichever release ships the habitat migration.** The
+      floor protects two different things and 13.22.0 only covers one: the vocabulary. Workstream 3 --
+      habitats leaving our flag -- is not in it. A floor can be raised, so there is nothing to choose
+      between: adopt the vocabulary at 13.22.0, raise it when we cut.
 - [ ] Register the harvest tab through their Scene Config injector and delete `_injectArtificerTab`,
       `_injectArtificerTabV2` and both guard collections (`manager-scene.js:119`, `:137`, registered at
       `:35-49`).
