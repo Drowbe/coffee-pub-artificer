@@ -45,6 +45,50 @@ blocked on their step 8 (Journal). Do not build against the callback contract.
 - [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/declaration-recipe-field-mappings.md](plans/declaration-recipe-field-mappings.md).
 - [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
 
+### Retire buildItemSystem for Blacksmith's declaration assembler
+Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,
+`buildDocumentData`, `buildDocumentUpdate`, `getAuthoringGuide` on `api.importer`. Until now we could
+declare a shape and have it validated but could not ask them to build the document.
+
+`buildItemSystem` ([utility-artificer-item.js:216](../scripts/utility-artificer-item.js#L216)) is a second
+implementation of what their Item declarations derive: price parsing, rarity normalising, source shaping,
+consumable type/uses/activities/properties mapping. Only the authoring window reaches it, through two
+callers -- `createArtificerItem:133` and `updateArtificerItem:202`. There is exactly one
+`Item.createDocuments` in the module (`:143`), so destination, permissions and rollback are already ours
+and nothing about them changes.
+
+**Both paths move; `buildItemSystem` goes entirely.** Blacksmith shipped
+`buildDocumentUpdate(kindId, profileId, entry)` (2026-08-31) as a second mode of the same assembler, not a
+parallel builder. It never writes document `type` or any const -- so the retype fix at
+[window-artificer-item.js:648-663](../scripts/window-artificer-item.js#L648-L663) stays load-bearing and is
+not fought -- applies no creation defaults, and skips derivations. Transforms still run.
+
+**Its contract is blank-versus-absent, and our form does not currently honour that.** Absent preserves;
+present-but-empty clears. Our submit path decides inclusion by truthiness -- `if (quirkVal)
+artificerData.quirk = ...` ([window-artificer-item.js:624](../scripts/window-artificer-item.js#L624)), and
+`buildArtificerFlags` repeats it at `utility-artificer-item.js:348` -- so a blank field is *omitted*, not
+sent as empty.
+
+- [ ] **A quirk cannot be cleared today.** Blank omits the key, `Document#update` merges, and the old
+      value survives. Pre-existing and independent of this port; the new contract just makes it legible.
+      Same shape for `processSound`. Decide per field which blanks mean "clear" and send those as empty
+      rather than dropping them. Verified by: clear a quirk on an existing component, save, reopen, and
+      confirm it is gone.
+- [ ] Keep the deliberate source stamp when porting the edit path. `window-artificer-item.js:649-651`
+      force-writes `SOURCE_LABEL` on every update. That is the authoring window stating a fact about its
+      own provenance, not an invented default, and it must stay an explicitly supplied field.
+- [ ] Move the update path onto `buildDocumentUpdate('item', profile, entry)`. Verified by: edit one item
+      of each family, save, and confirm quantity, uses and identified are untouched.
+- [ ] Move the create path onto `buildDocumentData('item', profile, entry)`, mapping form fields to the
+      friendly names the Item profiles declare. Verified by: author one item of each family in a live
+      world and diff the resulting `system` against an item created by the current path.
+- [ ] Call `validateEntryDeep` before create so the form rejects bad input the way the importer does.
+      Errors carry a code and a dotted path; surface the path, since the form has a field to point at.
+- [ ] Delete `buildItemSystem` and its consumable/price/rarity/source branches once both paths are moved.
+      Note what is lost: `:244` reads `system.type.value` first and falls back to `system.consumableType`.
+      That fallback is our documented reader behaviour, not drift -- confirm nothing still authors the
+      legacy shape before dropping it.
+
 ### Hand scene habitats to Blacksmith's Scene Config
 Blacksmith is pulling scene-level geography into Scene Config (their `TODO.md`, opened 2026-08-27, and
 `plans/plan-scene-geography.md`). Habitat currently lives on our flag at
@@ -55,14 +99,79 @@ Blacksmith's `TODO-GLOBAL.md`.
 handler — the last one lost its tab between reloads to a render race against Foundry's `_replaceHTML`.
 There will be one injector; we register a harvest tab through it.
 
+**Settled 2026-08-31.** The environment vocabulary stays a closed twelve-value enum, moved to Blacksmith
+and exposed as a constant rather than a registry, so the "what does an unknown environment do to harvest
+tables" question is retired. Canonical case is **lowercase**. The migration is a **hard cut at `ready`** --
+no read-through fallback to our own flag, because two sources with two cases feeding one case-sensitive
+join is how a half-migrated scene hides itself. `_hasGatheringConfigured` requires `habitats.length > 0`,
+so a hard cut makes a failed migration loud (badge off, no gather) instead of silently gathering against
+stale data.
+
+**Do not build the hard cut on `BlacksmithAPI.waitForReady()`.** That promise only ever resolves, never
+rejects, and `bailOutOfReady` deliberately calls `markReadyForConsumers()` after a failure so consumers get
+a degraded API rather than hanging (`coffee-pub-blacksmith/scripts/blacksmith.js:470-493`). If their `ready`
+bails before the geography migration runs, our await resolves, we read a migrated-looking API with no
+habitats, and the hard cut converts that into silent data loss -- the exact failure the hard cut was chosen
+to make loud. Blacksmith is adding a migration-complete signal that separates "migration ran" from "marked
+ready degraded"; wait for it.
+
+**Habitat is a join key, not just a display value, and that is the whole risk here.**
+`getEligibleGatherRecords` ([manager-gather.js:223-236](../scripts/manager-gather.js#L223-L236)) intersects
+scene habitats against *item* biomes with a case-sensitive `Set.has`. Item biomes stay on our items. If the
+two sides disagree about case, gather does not break -- line 234 makes an item with no biomes eligible
+everywhere, so it keeps working and returns a narrower, plausible pool of only the untagged components.
+
+- [ ] **Normalize case on read in `window-artificer-item.js` FIRST -- before the join sites.** Five
+      `OFFICIAL_BIOMES.includes` comparisons live in that one file (`:210`, `:217`, `:410`, `:413`, `:622`)
+      and four of them compare against *stored* values. Under a lowercase vocabulary, an un-normalized
+      Component renders with every habitat button off (`:210-214`) and an empty hidden field (`:215-219`),
+      so submit produces `artificerData.biomes = []` (`:619-622`).
+      **This is a soft lock, not data loss.** The Component-requires-habitat rule added this cycle
+      (`:630-635`) catches the empty array, warns, and aborts the save -- so nothing is written, but every
+      existing Component becomes unsaveable, told to choose a habitat it already has. `buildArtificerFlags`
+      (`utility-artificer-item.js:346`) filters once more behind that. It goes first anyway: a soft lock
+      stops all item authoring, where a bad join only narrows a query.
+      Verified by: with the vocabulary lowercased, open an un-migrated Component, confirm its habitats
+      render selected and it saves unchanged.
+- [ ] **Normalize case at the join.** Fix
+      [manager-gather.js:231-232](../scripts/manager-gather.js#L231-L232) (and the same comparison in
+      `getEligibleGatherItems`, :248-258) to compare case-insensitively. Stored case then stops mattering:
+      world items, pack items and third-party content are all covered at once. Do this at the JOIN, not in
+      `itemToRecord` -- the cache is persisted, so normalizing on record build leaves every existing
+      persisted cache holding the old form until it is rebuilt. Verified by: a scene with lowercase
+      habitats gathers the same components as one with uppercase.
+- [ ] Fix the silent case drop on import. `utility-artificer-item.js:346` and `:449` filter through
+      `OFFICIAL_BIOMES.includes(b)` case-sensitively, so a payload supplying `"forest"` has it dropped with
+      no error. Live bug today, independent of the migration. Verified by: import a component with
+      lowercase biomes and confirm they survive.
 - [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
       DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
-- [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Tell them what an unknown
-      environment should do to harvest tables — nothing, a default table, or ignore while Minstrel still
-      uses it — because that decides whether the vocabulary stays a closed enum.
-- [ ] Register the harvest tab through their Scene Config injector rather than our own `renderSceneConfig`.
+- [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Hard cut at `ready`.
+- [ ] Declare a Blacksmith version floor in `module.json`. The dependency currently carries an empty
+      `compatibility` block, so a new Artificer against an old Blacksmith finds neither the API nor the
+      flag and habitats are simply gone. Blacksmith fixes the number at BUILD time of the release that
+      ships the geography API. Do not pin a guess, and do not ship the hard cut before the floor exists.
+- [ ] Drop `OFFICIAL_BIOMES` (`schema-ingredients.js:36`) and read the vocabulary from the API. Their
+      constant is confirmed as `{key, label}` pairs.
+      **Splitting key from label is not a display-only change.** Both templates use `{{name}}` as the
+      visible text *and* as the `data-biome` round-trip key --
+      [templates/window-gather.hbs:20](../templates/window-gather.hbs#L20) and
+      [templates/item-form.hbs:126](../templates/item-form.hbs#L126) -- and the click handlers guard on
+      `OFFICIAL_BIOMES.includes(biome)` (`window-gather.js:175`, `window-artificer-item.js:410`). Swapping
+      `{{name}}` to a label without separating the two puts the label into `data-biome`, fails that guard,
+      and the button silently does nothing. `data-biome` carries the key; the button text carries the
+      label. Touches two templates, both option builders and both toggle handlers.
+      Note `getBiomeOptions()` (`manager-gather.js:102`) has **no callers** -- delete it rather than
+      porting it. `getBiomeOptionsForMultiselect()` is the one both windows use.
+- [ ] Register the harvest tab through their Scene Config injector and delete `_injectArtificerTab`,
+      `_injectArtificerTabV2` and both guard collections (`manager-scene.js:119`, `:137`, registered at
+      `:35-49`).
+- [ ] Re-export the compendium packs to lowercase biomes. **Cosmetic once the join is normalized** --
+      deliberately NOT in Blacksmith's release window, and not a blocker. Close the world before
+      committing the packs.
 - [ ] Verify gather on a migrated scene still yields the same component families, and that a scene
-      exported to a compendium and re-imported still carries environment.
+      exported to a compendium and re-imported still carries environment. First post-migration test, not
+      an afterthought.
 
 ### Recipes and Processes
 Recipes are a real data model and processes are items as of 13.2.0 — see

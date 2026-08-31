@@ -628,6 +628,17 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         // Rules the prompt has always stated and nothing has ever enforced. Checked
         // HERE rather than in validateArtificerData so the message can name the field
         // the author is looking at; the schema-level check stays where it is.
+        //
+        // DO NOT MOVE THIS INTO validateArtificerData WITHOUT READING THIS FIRST.
+        // The habitat rule is also the only WRITE BARRIER for a read bug three files
+        // away. The biome comparisons above (`:210`, `:217`, `:622`) are case
+        // sensitive, so a component whose stored biomes do not match the vocabulary's
+        // case renders with every button off and submits an EMPTY biome array. This
+        // rule catches that array and aborts the save, which is the whole reason the
+        // failure is a soft lock a GM can see rather than a silent overwrite of the
+        // flag being read. Nothing connects the two -- it holds by luck, and moving
+        // the rule to the schema level removes the barrier without touching anything
+        // that looks related. Normalize the reads first, then move it if you still want to.
         const ruleFailure = (() => {
             if (artificerData.type === ARTIFICER_TYPES.COMPONENT && !(artificerData.biomes ?? []).length) {
                 return 'Choose at least one Habitat. A Component with no habitat can never be gathered.';
