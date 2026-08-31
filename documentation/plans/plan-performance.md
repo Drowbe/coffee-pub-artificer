@@ -5,7 +5,7 @@ This document summarizes potential memory leak and performance risks found durin
 - Timer/interval cleanup (timeouts, intervals)
 - Document-level event listeners / delegation patterns
 - Long-lived Maps/Sets that must be cleared
-- Blacksmith API integration correctness, especially HookManager and Sockets (per `documentation/blacksmith-apis.md`)
+- Blacksmith API integration correctness, especially HookManager and Sockets (per `documentation/api/blacksmith-apis.md`)
 
 ## High-priority memory leak risks
 
@@ -75,7 +75,7 @@ Findings:
 - `initializeGatherSockets()` currently just ensures a global listener is registered via:
   - `Hooks.on('blacksmith.requestRollComplete', ...)`
 - The project does use Blacksmith HookManager in other managers (`manager-scene.js`, `manager-pins.js`) via `BlacksmithAPI.getHookManager()` and `registerHook(...)`.
-- The helper doc `documentation/blacksmith-apis.md` explicitly recommends using HookManager for registration/unregistration.
+- The helper doc `documentation/api/blacksmith-apis.md` explicitly recommends using HookManager for registration/unregistration.
 
 Recommendation:
 

@@ -29,7 +29,7 @@ without code. See 7.2.1.
    predictable outcomes; reduced cost, quality bonus. See 7.2.
 3. **Blueprints** — Multi-stage journal entries; narrative-driven; staged assembly
 
-*For detailed user-facing explanation, see `documentation/overview.md`.*
+*For detailed user-facing explanation, see `documentation/architecture/architecture-overview.md`.*
 
 ---
 
@@ -948,6 +948,6 @@ This crafting system supports:
 
 - **architecture-artificer.md** is the canonical source for architecture and decisions.
 - See `documentation/TODO.md` for current task focus.
-- See `documentation/plan-artificer.md` for phased implementation detail.
+- See `documentation/plans/plan-artificer.md` for phased implementation detail.
 - Architecture decisions based on Coffee Pub Codex and Quest systems.
 - All patterns use FoundryVTT v13+ and ApplicationV2.

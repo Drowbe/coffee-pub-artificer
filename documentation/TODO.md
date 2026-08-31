@@ -346,6 +346,6 @@ Measured 2026-08-07 against the `burden-of-knowledge` world and the shipped pack
 
 ## Notes
 
-- Questions marked with **Q##** in older docs were already resolved; keep decisions in `documentation/architecture-artificer.md` and shipped history in `CHANGELOG.md`.
+- Questions marked with **Q##** in older docs were already resolved; keep decisions in `documentation/architecture/architecture-artificer.md` and shipped history in `CHANGELOG.md`.
 - Discovery-based gather spots and canvas gather pins are already implemented; remaining work is reliability and lifecycle cleanup, not initial pin support.
 - Skill perk persistence to actor flags is already implemented; the remaining skill work is progression, gating, and notifications.

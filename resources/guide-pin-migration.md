@@ -2,7 +2,7 @@
 
 **Audience:** Developers of Coffee Pub modules (Squire, Artificer, Minstrel, etc.) integrating with the Blacksmith Pins API as of **v13.6.3**.
 
-For the full method reference see [`api-pins.md`](../api/api-pins.md).
+For the full method reference see [`api-pins.md`](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-pins).
 
 ---
 
@@ -161,7 +161,7 @@ If your module ships a `pin-taxonomy.json`, update it to the **v3 format**:
 - Add `globalTags` at the root for tags that apply across all modules/categories.
 - `"version": 3` is required for the new loader.
 
-Blacksmith's built-in taxonomy at `resources/pin-taxonomy.json` already uses this format and covers Blacksmith, Squire, and Artificer pin types.
+Blacksmith's built-in taxonomy at `coffee-pub-blacksmith/resources/pin-taxonomy.json` already uses this format and covers Blacksmith, Squire, and Artificer pin types.
 
 ---
 

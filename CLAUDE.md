@@ -53,7 +53,7 @@ the change*, not a later chore.
 Name the outcome first — **bug fix / feature / performance / refactor** — because it sets the bar (a bug fix
 skips the plan step; nothing else does).
 
-1. **Orient in the docs.** Read `documentation/architecture-artificer.md` and the relevant `TODO.md` entries
+1. **Orient in the docs.** Read `documentation/architecture/architecture-artificer.md` and the relevant `TODO.md` entries
    with the outcome in mind. These are the anti-crawl artifacts — start here, not in the code.
 2. **Reality-check against the code.** Grep and read the source before trusting a doc.
 3. **Plan — anything larger than a bug fix.** Write it in `documentation/plans/`. Deleted once implemented,
@@ -143,7 +143,7 @@ something must be drawn — but a fallback shown as a label lies. Resolve to nul
 
 ## Before you crawl the code — read the architecture doc
 
-`documentation/architecture-artificer.md` is the map. It exists so you do not have to reconstruct the design
+`documentation/architecture/architecture-artificer.md` is the map. It exists so you do not have to reconstruct the design
 by reading every file, and it is wrong more cheaply than the code is.
 
 ## Where things live
@@ -151,14 +151,14 @@ by reading every file, and it is wrong more cheaply than the code is.
 | | |
 |---|---|
 | `documentation/TODO.md` | What we will do. Deleted on completion. |
-| `documentation/architecture-artificer.md` | How it is built and why. |
+| `documentation/architecture/architecture-artificer.md` | How it is built and why. |
 | `documentation/plans/` | Scaffolding for work in flight. Deleted when it lands. |
 | `CHANGELOG.md` | What we did. |
 | `macros/` | GM-run operations: seeding, migration, diagnostics. Dry-run by default where they write. |
 | `testing/` | The test harness. `test-harness.js` is pasted into a script macro; suites live in `testing/suites/` and are listed explicitly in `SUITES`. |
 | `resources/*.json` | GM-selectable rulesets — skills, gathering, process animations. |
 
-Cross-module work spanning the suite belongs in Blacksmith's `documentation/TODO-GLOBAL.md`, not here.
+Cross-module work spanning the suite belongs in Blacksmith's `coffee-pub-blacksmith/documentation/TODO-GLOBAL.md`, not here.
 
 ## Packs
 
