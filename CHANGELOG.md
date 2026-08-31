@@ -34,7 +34,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   field can actually hold, and that our fields reach a derived template when the import option is ticked and
   no template when it is not.
 
-- **The habitat vocabulary now comes from Blacksmith:** `api.geography.ENVIRONMENTS` is the source of
+- **Scene habitat is Blacksmith's, not Artificer's:** Habitat is a property of a scene as a *place*, and
+  several modules read it -- Minstrel's habitat-conditioned playlists gated on Artificer being installed
+  purely because we used to own the flag, so they did nothing in worlds without a harvesting module. It now
+  lives on Blacksmith's Geography tab. Artificer's Habitats fieldset is gone, replaced by a read-only
+  summary that says where to set them, and all five places that read our own `scene.habitats` flag now call
+  `api.geography.getHabitats()`. Blacksmith migrates existing habitats on first load; **your scene
+  configuration carries over and the old flag is left in place untouched**, though nothing reads it.
+- **Artificer refuses to start when Blacksmith failed to initialize:** Previously it would have started
+  anyway. Because habitat now comes from Blacksmith and their habitat migration runs before consumers wake,
+  a degraded Blacksmith means an empty habitat list is indistinguishable from a scene that genuinely has
+  none -- so continuing would silently stop gathering on every configured scene. Settings registration is
+  unretryable besides. **If you see "Artificer: not starting", it names the Blacksmith stage that failed;
+  that is where to look, not in Artificer.**
+
+- **The habitat vocabulary now comes from Blacksmith:** `api.geography.HABITATS` is the source of
   truth -- twelve `{key, label}` pairs with lowercase keys -- and Artificer keeps a fallback copy only for
   a Blacksmith too old to expose it. Two consequences worth knowing. Habitat buttons and checkboxes now
   show a proper label ("Underdark") while round-tripping the key, which were the same string until the

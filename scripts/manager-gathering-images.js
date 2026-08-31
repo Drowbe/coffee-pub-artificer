@@ -1,8 +1,7 @@
 import { MODULE } from './const.js';
 import { postBlacksmithConsole } from './utils/blacksmith-console.js';
 import { getGatheringRulesetFetchUrl, getGatheringRulesetPath } from './config-rulesets.js';
-import { normalizeBiomeList } from './schema-ingredients.js';
-import { normalizeCheckboxList } from './utils/helpers.js';
+import { getSceneHabitats } from './utils/helpers.js';
 
 const BIOME_ALIASES = {
     meadow: 'grassland',
@@ -368,10 +367,10 @@ export async function resolveGatheringImage({ state = 'idle', biomes = [], famil
 }
 
 export async function resolveGatheringImageForScene(scene, state = 'idle', options = {}) {
-    const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    // Same checkbox-null hazard as everywhere else habitats are read; see
-    // normalizeCheckboxList in utils/helpers.js.
-    const biomes = normalizeBiomeList(normalizeCheckboxList(flags.habitats));
+    // Blacksmith's geography, not our flag. `_normalizeBiomeKey` below maps these into
+    // the gathering ruleset JSON's own key space, which is a different vocabulary and
+    // case-folds its input -- so lowercase keys arriving from geography change nothing.
+    const biomes = getSceneHabitats(scene);
     const families = options?.families ?? [];
     return resolveGatheringImage({ state, biomes, families });
 }

@@ -4,8 +4,8 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { getBiomeVocabulary, normalizeBiomeList } from './schema-ingredients.js';
-import { normalizeCheckboxList } from './utils/helpers.js';
+import { getBiomeLabel } from './schema-ingredients.js';
+import { normalizeCheckboxList, getSceneHabitats } from './utils/helpers.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
 import { postBlacksmithConsole } from './utils/blacksmith-console.js';
@@ -178,15 +178,18 @@ export class SceneManager {
         tabButton.innerHTML = '<i class="fa-solid fa-hammer"></i> Artificer';
         tabsNav.appendChild(tabButton);
 
-        const existingTabPanel = form.querySelector('.tab[data-tab]');
-        const tabBodyHost = existingTabPanel?.parentElement ?? form.querySelector('.sheet-body') ?? form;
+        // ANCHOR ON A CORE ELEMENT FIRST, not on another panel. Deriving the host from
+        // `.tab[data-tab]` makes our position a function of what other modules have
+        // already injected -- correct here only because we load alphabetically before
+        // Blacksmith and therefore inject first, which is load order doing the work of
+        // a decision. Blacksmith hit the mirror image of this: they anchored on the LAST
+        // tab panel, which turned out to be ours.
+        const tabBodyHost = form.querySelector('.sheet-body')
+            ?? form.querySelector('.tab[data-tab]')?.parentElement
+            ?? form;
         const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
-        // Case-normalized: a scene whose stored habitats do not match the vocabulary's
-        // case would render every box unticked, and saving the tab would then write
-        // that empty set back over habitats the GM never touched.
-        const selectedHabitats = new Set(normalizeBiomeList(normalizeCheckboxList(sceneFlags.habitats)));
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
         const currentComponentTypes = normalizeCheckboxList(sceneFlags.componentTypes);
         const rawComponentTypes = currentComponentTypes.length
@@ -227,18 +230,16 @@ export class SceneManager {
         const discoveryRadiusUnits = Number.isFinite(discoveryRadiusUnitsRaw)
             ? Math.max(5, Math.min(300, Math.round(discoveryRadiusUnitsRaw / 5) * 5))
             : 60;
-        // value is the KEY, the visible span is the LABEL. The two were the same string
-        // until the vocabulary moved to Blacksmith; keeping them fused would have written
-        // a display label into the flag the moment the labels stopped matching the keys.
-        const habitatOptionsHtml = getBiomeVocabulary().map((environment) => {
-            const checked = selectedHabitats.has(environment.key) ? 'checked' : '';
-            return `
-                <label class="checkbox artificer-scene-checkbox">
-                    <input type="checkbox" name="flags.${MODULE.ID}.scene.habitats" value="${foundry.utils.escapeHTML(environment.key)}" ${checked} />
-                    <span>${foundry.utils.escapeHTML(environment.label)}</span>
-                </label>
-            `;
-        }).join('');
+        // HABITAT IS READ-ONLY HERE. It moved to Blacksmith's Geography tab, which owns it
+        // for the whole suite -- Minstrel reads it too, and gated its habitat automation on
+        // Artificer being installed precisely because we used to own it. Two editable lists
+        // of the same twelve values on one sheet is the duplication the move removes, so
+        // this shows what geography holds and sends the GM there to change it.
+        const habitatLabels = getSceneHabitats(app?.document)
+            .map((key) => getBiomeLabel(key) ?? key);
+        const habitatSummary = habitatLabels.length
+            ? `${foundry.utils.escapeHTML(habitatLabels.join(', '))} &mdash; set on the Geography tab.`
+            : 'None set. Choose them on the Geography tab; gathering needs at least one.';
         const componentTypeOptionsHtml = componentFamilies.map((family) => {
             const checked = selectedComponentTypes.has(family) ? 'checked' : '';
             const label = FAMILY_LABELS[family] ?? family;
@@ -276,12 +277,12 @@ export class SceneManager {
                     <input type="text" name="flags.${MODULE.ID}.scene.profile" value="${foundry.utils.escapeHTML(profile)}" placeholder="Default" />
                 </div>
             </div>
-            <fieldset class="form-group artificer-scene-fieldset">
-                <legend>Habitats</legend>
-                <div class="form-fields artificer-scene-checkbox-grid">
-                    ${habitatOptionsHtml}
+            <div class="form-group">
+                <label>Habitats</label>
+                <div class="form-fields">
+                    <p class="notes artificer-scene-habitat-note">${habitatSummary}</p>
                 </div>
-            </fieldset>
+            </div>
             <fieldset class="form-group artificer-scene-fieldset">
                 <legend>Component Types</legend>
                 <div class="form-fields artificer-scene-checkbox-grid">
@@ -475,9 +476,10 @@ export class SceneManager {
         const flags = scene.getFlag(MODULE.ID, 'scene') ?? {};
         const enabled = !!flags.enabled;
         const gatherSpots = Math.max(1, Math.min(30, Number(flags.gatherSpots) || 1));
-        // normalizeBiomeList, not the raw list: a habitat that is not in the vocabulary
-        // is not a habitat, and counting it here is what makes junk read as configured.
-        const habitats = normalizeBiomeList(normalizeCheckboxList(flags.habitats));
+        // Habitat comes from Blacksmith now, so this predicate spans two flags: ours for
+        // the harvest settings, theirs for the place. Already normalized and vocabulary
+        // filtered on their side.
+        const habitats = getSceneHabitats(scene);
         const componentTypes = normalizeCheckboxList(flags.componentTypes);
         return enabled && gatherSpots > 0 && habitats.length > 0 && componentTypes.length > 0;
     }

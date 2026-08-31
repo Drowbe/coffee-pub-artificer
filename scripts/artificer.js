@@ -179,7 +179,33 @@ Hooks.once('ready', async () => {
         // degraded API rather than hanging forever. So it guarantees their `ready`
         // has RUN, not that it succeeded -- which is why requireCompendiumsApi()
         // still checks rather than assuming.
-        await BlacksmithAPI.waitForReady();
+        // THE HARD CUT. `waitForReadyStatus()` awaits readiness AND reports whether it
+        // succeeded -- awaiting alone tells you their `ready` RAN, not that it worked,
+        // because the failure path marks consumers ready deliberately so they get a
+        // degraded API rather than hanging. Blacksmith records the degraded status
+        // BEFORE resolving waiters, so a consumer waking on the resolve already sees it.
+        const readiness = await BlacksmithAPI.waitForReadyStatus();
+        if (readiness?.status === 'degraded') {
+            // REFUSE TO START, rather than degrade. Habitat lives in Blacksmith's
+            // geography now and their one-time migration is awaited during their `ready`
+            // before consumers are marked ready -- so a degraded API means the migration
+            // may not have run, and an empty habitat list would be indistinguishable from
+            // a scene that genuinely has none. Continuing would silently stop gathering on
+            // every configured scene. Settings registration is unretryable besides:
+            // `game.settings.register` runs once per key, so a half-started Artificer
+            // leaves permanently dead dropdowns that a reload does not fix.
+            //
+            // WHEN THIS FIRES IT WILL LOOK LIKE AN ARTIFICER BUG AND IS NOT. It is a
+            // Blacksmith bail-out surfacing through the consumer that chose to fail
+            // loudly. The failed stage is named below; start there, not here.
+            const stage = readiness.failedStage ?? 'unknown';
+            const message = `${MODULE.NAME}: not starting — Blacksmith initialization failed at "${stage}". `
+                + 'This is a Blacksmith failure reported by Artificer, not an Artificer failure. '
+                + 'Check the console for Blacksmith errors above this line.';
+            console.error(message);
+            ui.notifications?.error(message, { permanent: true });
+            return;
+        }
 
         // Register settings FIRST during the ready phase
         registerSettings();

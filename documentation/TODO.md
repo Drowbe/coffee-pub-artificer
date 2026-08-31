@@ -163,17 +163,31 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
 
 - [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
       DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
-- [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Hard cut at `ready`.
+- [x] ~~Hand `habitats` to Blacksmith's scene geography; hard cut at `ready`.~~ **DONE 2026-08-31** --
+      all five sites moved to `getSceneHabitats()` (`utils/helpers.js`, a zero-import leaf), the Habitats
+      fieldset is now a read-only summary pointing at the Geography tab, and `artificer.js` refuses to
+      initialise when `waitForReadyStatus()` reports `degraded`. Two harness checks enforce it.
+      **NOT YET VERIFIED IN A LIVE WORLD** -- see below; that is the only check that counts.
+- [ ] **Verify the cut in a live world.** Two things, and non-emptiness proves neither:
+      (a) habitats come back LOWERCASE and in VOCABULARY order -- uppercase or alphabetical means our own
+      flag answered and we are on a stale path;
+      (b) gather on a previously-configured scene yields the SAME component families it did before. That
+      is the one that catches a migration which ran and transformed wrongly, and no static check or
+      harness assertion can reach it.
+- [ ] **Sweep whatever renders the refuse-to-start state, by word and across file types.** It is a
+      console error and a notification today, so there is no markup surface -- but the hard cut has given
+      us the cross-module availability gate that Minstrel's disabled-`<select>` bug lived in, and that
+      class is invisible to any `.js` sweep.
 - [ ] Declare the Blacksmith version floor in `module.json` -- the dependency carries an empty
       `compatibility` block today, so a new Artificer against an old Blacksmith finds neither the API nor
       the flag and habitats are simply gone. See the two floor items above: 13.22.0 for the vocabulary,
       the migration release for the cut.
 - [x] ~~Drop `OFFICIAL_BIOMES` and read the vocabulary from the API.~~ **DONE 2026-08-31** --
       `getBiomeVocabulary()` / `getBiomeKeys()` / `getBiomeLabel()` resolve from
-      `api.geography.ENVIRONMENTS` with a fallback. Templates now round-trip `key` and display `label`.
+      `api.geography.HABITATS` with a fallback. Templates now round-trip `key` and display `label`.
       The field-group declaration became `buildArtificerItemFieldGroup()`, called at `ready`, because a
       module-scope literal captured the fallback.
-- [ ] **Pin Blacksmith minimum 13.22.0 and delete the `FALLBACK_ENVIRONMENTS` copy in
+- [ ] **Pin Blacksmith minimum 13.22.0 and delete the `FALLBACK_HABITATS` copy in
       `schema-ingredients.js`.** That release carries the geography API, the vocabulary and the Scene
       Config injector. **13.22.0 is an intent, not a tag** -- their `module.json` still reads 13.21.1 and
       the bump happens at their BUILD. A module pinning a minimum that does not exist will not activate,
@@ -195,6 +209,14 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
       apply in both places, lets the harness drive the surface, makes it reachable from the scene directory
       and a macro rather than only from Scene Config, and shrinks what we ask Blacksmith's injector to
       place from a tab to a button.
+      When this lands it deletes `_injectArtificerTab`, `_injectArtificerTabV2` and the active-tab
+      reconstruction at `manager-scene.js:414-432`. **Do not refactor that reconstruction in the
+      meantime** -- it works, and it is scheduled for deletion. If it ever is rewritten, the shorter path
+      is `app.tabGroups[group]` rather than capturing intent before the re-bind: `_prepareTabs`
+      (Foundry `client/applications/api/application.mjs:598`) assigns with `??=`, so an id Foundry does
+      not recognise is PRESERVED in `tabGroups` while no core tab matches it and none of core's panels
+      get `.active`. After a render the markup and `tabGroups` disagree, and `tabGroups` is the one
+      telling the truth. Verified in the Foundry source, from Blacksmith's diagnosis of the same trap.
       **Decide save semantics first.** Scene Config has its own Save/Cancel; a window that writes flags
       immediately lets a GM cancel Scene Config and still have our changes persisted. Preference is an
       explicit Save of our own that plainly owns its data, rather than staging into the parent form --

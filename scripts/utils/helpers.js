@@ -213,3 +213,33 @@ export function normalizeCheckboxList(value) {
     if (typeof value === 'string' && value.trim()) return [value.trim()];
     return [];
 }
+
+/**
+ * A scene's habitats, from Blacksmith's geography API.
+ *
+ * BLACKSMITH OWNS HABITAT. Artificer is a consumer of habitat information, not its
+ * owner -- it is a property of the scene as a place, and several modules read it.
+ * Our own `flags.coffee-pub-artificer.scene.habitats` was migrated onto
+ * `geography.habitat` and is NOT read any more. The legacy key is deliberately left
+ * on the document (deleting is not reversible) which is exactly why nothing here may
+ * fall back to it: a stale key something still reads is worse than a deleted one,
+ * because it looks live. There is a harness assertion enforcing that.
+ *
+ * NO FALLBACK, BY DESIGN. Blacksmith's migration is awaited during their `ready`
+ * BEFORE consumers are marked ready, and bails to a degraded API if it throws -- so
+ * there is no window in which habitats are legitimately absent-but-unmigrated. An
+ * empty result means the scene genuinely has none. Artificer refuses to initialise
+ * against a degraded Blacksmith (see the readiness gate in artificer.js), which is
+ * what makes that reading safe.
+ *
+ * Values come back lowercase and in vocabulary order.
+ * @param {Scene|null} scene
+ * @returns {string[]}
+ */
+export function getSceneHabitats(scene) {
+    if (!scene) return [];
+    const geography = game?.modules?.get('coffee-pub-blacksmith')?.api?.geography;
+    if (typeof geography?.getHabitats !== 'function') return [];
+    const habitats = geography.getHabitats(scene);
+    return Array.isArray(habitats) ? habitats : [];
+}

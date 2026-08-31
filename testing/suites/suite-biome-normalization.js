@@ -44,10 +44,10 @@ export default {
     icon: 'fa-solid fa-mountain-sun',
 
     settings: () => {
-        const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
+        const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.HABITATS;
         const live = Array.isArray(theirs);
         return [
-            settingRow('Vocabulary source', live ? 'Blacksmith api.geography.ENVIRONMENTS' : 'ARTIFICER FALLBACK'),
+            settingRow('Vocabulary source', live ? 'Blacksmith api.geography.HABITATS' : 'ARTIFICER FALLBACK'),
             settingRow('Entries', live ? theirs.length : 12),
             settingRow('Canonical case', live ? 'lowercase (theirs)' : 'uppercase (fallback)')
         ];
@@ -109,8 +109,8 @@ export default {
             note: 'The fallback exists only for a Blacksmith too old to have api.geography. If this fails while Blacksmith is current, we are silently running on our own copy in the wrong case.',
             run: async ({ expect }) => {
                 const { getBiomeVocabulary, getBiomeKeys } = await schema();
-                const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
-                expect.ok('api.geography.ENVIRONMENTS is available', Array.isArray(theirs));
+                const theirs = game.modules.get('coffee-pub-blacksmith')?.api?.geography?.HABITATS;
+                expect.ok('api.geography.HABITATS is available', Array.isArray(theirs));
                 if (!Array.isArray(theirs)) return;
                 expect('we resolve to their exact array', getBiomeVocabulary(), theirs);
                 expect('twelve environments', getBiomeKeys().length, 12);
@@ -231,6 +231,66 @@ export default {
                 const selectedSet = new Set(normalizeBiomeList([flipCase(one)]));
                 expect.ok(`${one} renders selected from stored ${flipCase(one)}`, selectedSet.has(one));
                 expect.ok('and the hidden field is not empty', normalizeBiomeList([flipCase(one)]).length === 1);
+            }
+        },
+
+        // ---- Habitat ownership -------------------------------------------
+        {
+            id: 'habitat-comes-from-blacksmith',
+            label: 'Scene habitat is read from Blacksmith, not our legacy flag',
+            tier: 'headless',
+            group: 'Habitat ownership',
+            note: 'The tell that distinguishes a live read from a stale one: their keys are LOWERCASE and in vocabulary order. Uppercase or alphabetical means our own flag answered.',
+            run: async ({ expect, log }) => {
+                const geography = game.modules.get('coffee-pub-blacksmith')?.api?.geography;
+                expect.ok('api.geography.getHabitats is available', typeof geography?.getHabitats === 'function');
+                if (typeof geography?.getHabitats !== 'function') return;
+
+                const { getSceneHabitats } = await import('/modules/coffee-pub-artificer/scripts/utils/helpers.js');
+                const { getBiomeKeys } = await schema();
+                const order = getBiomeKeys();
+
+                const scene = [...(game.scenes ?? [])].find(s => getSceneHabitats(s).length) ?? null;
+                if (!scene) {
+                    log('No scene carries habitats. Set some on the Geography tab of a scene and re-run.');
+                    expect.ok('a scene with habitats exists to test with', false);
+                    return;
+                }
+                const habitats = getSceneHabitats(scene);
+                log(`${scene.name}: ${habitats.join(', ')}`);
+
+                expect('we agree with Blacksmith exactly', habitats, geography.getHabitats(scene));
+                expect.ok('every value is lowercase', habitats.every(h => h === h.toLowerCase()));
+                expect.ok('every value is in the vocabulary', habitats.every(h => order.includes(h)));
+                // Vocabulary order, not alphabetical. A stale reader would return the
+                // stored order or a sorted one; only their reader returns this.
+                const asDeclared = order.filter(k => habitats.includes(k));
+                expect('returned in vocabulary order', habitats, asDeclared);
+            }
+        },
+        {
+            id: 'legacy-flag-is-not-read',
+            label: 'Nothing reads the legacy habitats flag any more',
+            tier: 'headless',
+            group: 'Habitat ownership',
+            note: 'Blacksmith left our key in place on purpose -- deleting is irreversible. That makes this assertion the thing keeping it inert: a stale key something still reads is worse than a deleted one, because it looks live.',
+            run: async ({ expect }) => {
+                // Read our own source and assert the absence, because "we removed the
+                // reads" is exactly the kind of claim that rots on the next edit.
+                const files = [
+                    'scripts/manager-scene.js',
+                    'scripts/manager-gather.js',
+                    'scripts/manager-gathering-images.js'
+                ];
+                for (const file of files) {
+                    const source = await fetch(`/modules/coffee-pub-artificer/${file}`).then(r => r.text());
+                    // Strip comments: the accessor documents the legacy path by name, and
+                    // an assertion that cannot tell prose from code would forbid saying so.
+                    const code = source
+                        .replace(/\/\*[\s\S]*?\*\//g, '')
+                        .replace(/^\s*\/\/.*$/gm, '');
+                    expect.ok(`${file} does not read .habitats`, !/\.habitats/.test(code));
+                }
             }
         },
 

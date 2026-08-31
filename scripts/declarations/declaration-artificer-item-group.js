@@ -52,7 +52,7 @@ const PREAMBLE = [
  * Build the field group.
  *
  * A FUNCTION, NOT A CONSTANT, and the reason is the habitat `values` list. The
- * vocabulary now resolves from `api.geography.ENVIRONMENTS`, which does not exist when
+ * vocabulary now resolves from `api.geography.HABITATS`, which does not exist when
  * this module is evaluated -- so a module-scope object literal would capture the
  * FALLBACK vocabulary permanently and register a `values` list in the wrong case. That
  * registers cleanly and then rejects legitimate content, with nothing to see in the

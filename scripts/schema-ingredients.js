@@ -30,9 +30,9 @@ export const INGREDIENT_FAMILIES = {
 };
 
 /**
- * The environment vocabulary, as `{key, label}` pairs.
+ * The habitat vocabulary, as `{key, label}` pairs.
  *
- * OWNED BY BLACKSMITH. `api.geography.ENVIRONMENTS` is the source of truth; this array
+ * OWNED BY BLACKSMITH. `api.geography.HABITATS` is the source of truth; this array
  * is only the fallback for a Blacksmith too old to have it. The two differ in CASE --
  * theirs is lowercase -- which is safe precisely because nothing compares a stored
  * biome directly any more. Every read goes through `normalizeBiome`, so a world that
@@ -42,7 +42,7 @@ export const INGREDIENT_FAMILIES = {
  * DELETE THIS FALLBACK once a Blacksmith version floor is declared in module.json.
  * Carrying two canonical forms indefinitely is the cost of not having one.
  */
-const FALLBACK_ENVIRONMENTS = Object.freeze([
+const FALLBACK_HABITATS = Object.freeze([
     { key: 'MOUNTAIN', label: 'Mountain' },
     { key: 'ARCTIC', label: 'Arctic' },
     { key: 'PLANAR', label: 'Planar' },
@@ -57,10 +57,18 @@ const FALLBACK_ENVIRONMENTS = Object.freeze([
     { key: 'HILL', label: 'Hill' }
 ]);
 
-/** Blacksmith's vocabulary, or null when unavailable. Never throws; we are a consumer. */
-function blacksmithEnvironments() {
-    const environments = game?.modules?.get('coffee-pub-blacksmith')?.api?.geography?.ENVIRONMENTS;
-    return Array.isArray(environments) && environments.length ? environments : null;
+/**
+ * Blacksmith's vocabulary, or null when unavailable. Never throws; we are a consumer.
+ *
+ * `HABITATS`, not `ENVIRONMENTS`. Blacksmith renamed it before shipping -- the D&D
+ * rules say habitat, it is what we already store and what Minstrel reads, and having
+ * the hub use a different word for the same twelve values meant every consumer
+ * translating at its boundary. NO FALLBACK TO THE OLD NAME: it never appeared in a
+ * released build, so there is nothing to stay compatible with.
+ */
+function blacksmithHabitats() {
+    const habitats = game?.modules?.get('coffee-pub-blacksmith')?.api?.geography?.HABITATS;
+    return Array.isArray(habitats) && habitats.length ? habitats : null;
 }
 
 // Index cache, keyed on the SOURCE ARRAY IDENTITY rather than a boolean. Blacksmith's
@@ -71,7 +79,7 @@ let _cachedSource = null;
 let _cachedIndex = null;
 
 function vocabulary() {
-    const source = blacksmithEnvironments() ?? FALLBACK_ENVIRONMENTS;
+    const source = blacksmithHabitats() ?? FALLBACK_HABITATS;
     if (_cachedSource !== source) {
         _cachedSource = source;
         _cachedIndex = new Map(source.map((entry) => [String(entry.key).toLowerCase(), entry]));
@@ -80,7 +88,7 @@ function vocabulary() {
 }
 
 /**
- * The environment vocabulary as `{key, label}` pairs, in declaration order.
+ * The habitat vocabulary as `{key, label}` pairs, in declaration order.
  *
  * A FUNCTION, NOT A CONST, and that is the whole point. `game` does not exist when this
  * module is evaluated, so a module-scope constant derived from the API would capture the

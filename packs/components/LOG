@@ -1,3 +1,7 @@
 2026/08/31-10:03:55.541 dd74 Recovering log #551
 2026/08/31-10:03:55.548 dd74 Delete type=0 #551
 2026/08/31-10:03:55.549 dd74 Delete type=3 #550
+2026/08/31-11:37:54.633 d4bc Level-0 table #555: started
+2026/08/31-11:37:54.633 d4bc Level-0 table #555: 0 bytes OK
+2026/08/31-11:37:54.634 d4bc Delete type=0 #553
+2026/08/31-11:37:54.634 d4bc Manual compaction at level-0 from '!folders!7FP6gXP7GD9Baldx' @ 72057594037927935 : 1 .. '!items.effects!exWXcS7ga7xoLImS.D2HbUqqwl0ywH4f6' @ 0 : 0; will stop at (end)

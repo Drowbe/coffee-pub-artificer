@@ -8,7 +8,7 @@
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { getBiomeVocabulary, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
-import { normalizeCheckboxList } from './utils/helpers.js';
+import { normalizeCheckboxList, getSceneHabitats } from './utils/helpers.js';
 import {
     ARTIFICER_TYPES,
     FAMILIES_BY_TYPE,
@@ -605,9 +605,11 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
 
 async function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    // Vocabulary-filtered here too, so an all-junk habitat flag reads as NO habitats
-    // rather than as twelve of them -- the length is what the callers gate on.
-    const biomes = normalizeBiomeList(normalizeCheckboxList(flags.habitats));
+    // Habitat comes from Blacksmith's geography, not our flag. Already lowercase,
+    // vocabulary-ordered and vocabulary-filtered on their side, so there is nothing
+    // left to normalize -- the callers gate on `.length`, and an empty result means
+    // the scene genuinely has no habitat rather than that we failed to read one.
+    const biomes = getSceneHabitats(scene);
     const componentTypes = normalizeCheckboxList(flags.componentTypes);
     let harvestingFallback = [];
     try {
