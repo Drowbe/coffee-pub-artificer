@@ -44,7 +44,8 @@ const ROOT = '/modules/coffee-pub-artificer/testing';
 const BASE = `${ROOT}/suites`;
 
 const SUITES = [
-    `${BASE}/suite-importer-field-group.js`
+    `${BASE}/suite-importer-field-group.js`,
+    `${BASE}/suite-biome-normalization.js`
 ];
 
 // ------------------------------------------------------------------

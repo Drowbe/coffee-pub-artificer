@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
-import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { OFFICIAL_BIOMES, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { createArtificerItem, updateArtificerItem, validateArtificerData, getTraitsFromFlags, getFamilyFromFlags, getArtificerTypeFromFlags } from './utility-artificer-item.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS, deriveItemTypeFromArtificer, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } from './schema-artificer-item.js';
 import { getProcessAnimations, PROCESS_LEVEL_MAX } from './systems/process-definitions.js';
@@ -207,15 +207,19 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             skillLevel,
             skillLevelFillPercent: ((skillLevel - 1) / 19) * 100,
             family: selectedFamily,
-            biomeOptions: OFFICIAL_BIOMES.map(b => {
+            // Normalized on READ, both here and in the hidden field below. A stored
+            // biome whose case does not match the vocabulary would otherwise render
+            // with its button off and drop out of `biomesValue` -- and since submit
+            // reads that field back, the habitat rule then rejects the save and the
+            // item cannot be edited at all until its data is normalized.
+            biomeOptions: (() => {
                 const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
-                const selected = (this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes : [])).includes(b);
-                return { name: b, selected };
-            }),
+                const selectedSet = new Set(normalizeBiomeList(this._formState?.selectedBiomes ?? flagBiomes));
+                return OFFICIAL_BIOMES.map(b => ({ name: b, selected: selectedSet.has(b) }));
+            })(),
             biomesValue: (() => {
                 const flagBiomes = flags[ARTIFICER_FLAG_KEYS.BIOMES] ?? flags.biomes ?? [];
-                const arr = this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : []);
-                return arr.join(',');
+                return normalizeBiomeList(this._formState?.selectedBiomes ?? flagBiomes).join(',');
             })(),
             quirk: this._formState?.quirk ?? (flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk ?? ''),
             affinity: affinityVal || '',
@@ -407,11 +411,16 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
      * @param {string} biome - Official biome name (e.g. FOREST)
      */
     _toggleBiome(biome) {
-        if (!OFFICIAL_BIOMES.includes(biome)) return;
+        // The clicked value arrives from `data-biome` in the DOM. Normalize rather than
+        // reject: when the vocabulary moves to Blacksmith's lowercase keys, a rendered
+        // page still holding the old spelling must keep working instead of becoming a
+        // button that silently does nothing.
+        const key = normalizeBiome(biome);
+        if (!key) return;
         const f = this.itemData?.flags?.[MODULE.ID] ?? this.existingItem?.flags?.[MODULE.ID] ?? {};
         const flagBiomes = f[ARTIFICER_FLAG_KEYS.BIOMES] ?? f.biomes ?? [];
-        const current = this._formState?.selectedBiomes ?? (Array.isArray(flagBiomes) ? flagBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : []);
-        const next = current.includes(biome) ? current.filter(b => b !== biome) : [...current, biome];
+        const current = normalizeBiomeList(this._formState?.selectedBiomes ?? flagBiomes);
+        const next = current.includes(key) ? current.filter(b => b !== key) : [...current, key];
         this._formState = this._formState ?? {};
         this._formState.selectedBiomes = next;
         this.render();
@@ -619,7 +628,7 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
             const rawBiomes = formObject.biomes
                 ? formObject.biomes.split(',').map(b => b.trim()).filter(Boolean)
                 : [];
-            artificerData.biomes = rawBiomes.filter(b => OFFICIAL_BIOMES.includes(b));
+            artificerData.biomes = normalizeBiomeList(rawBiomes);
             if (formObject.affinity) artificerData.affinity = formObject.affinity;
             const quirkVal = (formObject.quirk || '').trim();
             if (quirkVal) artificerData.quirk = quirkVal;

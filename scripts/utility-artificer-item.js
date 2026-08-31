@@ -12,7 +12,7 @@ import {
     FAMILIES_BY_TYPE,
     ARTIFICER_FLAG_KEYS
 } from './schema-artificer-item.js';
-import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { normalizeBiomeList } from './schema-ingredients.js';
 
 /**
  * Get configured compendium IDs from settings (in priority order)
@@ -343,7 +343,11 @@ function buildArtificerFlags(artificerData) {
     };
     if (type === ARTIFICER_TYPES.COMPONENT) {
         if (Array.isArray(artificerData.biomes)) {
-            flags[ARTIFICER_FLAG_KEYS.BIOMES] = artificerData.biomes.filter(b => OFFICIAL_BIOMES.includes(b));
+            // Normalized, not case-filtered. This used to drop a payload's biomes
+            // silently whenever they were not in the vocabulary's exact case -- an
+            // import supplying "forest" produced a component with NO habitats, which
+            // can never be gathered, with no error anywhere.
+            flags[ARTIFICER_FLAG_KEYS.BIOMES] = normalizeBiomeList(artificerData.biomes);
         }
         if (artificerData.quirk) flags[ARTIFICER_FLAG_KEYS.QUIRK] = String(artificerData.quirk).trim();
     }
@@ -446,7 +450,7 @@ export function extractArtificerData(item) {
         traits: getTraitsFromFlags(flags),
         skillLevel: flags[ARTIFICER_FLAG_KEYS.SKILL_LEVEL] ?? flags.skillLevel ?? 1,
         rarity: (item.system?.rarity ?? 'Common').trim() || 'Common',
-        biomes: Array.isArray(rawBiomes) ? rawBiomes.filter(b => OFFICIAL_BIOMES.includes(b)) : [],
+        biomes: normalizeBiomeList(rawBiomes),
         quirk: (flags[ARTIFICER_FLAG_KEYS.QUIRK] ?? flags.quirk) || null,
         affinity: (flags[ARTIFICER_FLAG_KEYS.AFFINITY] ?? flags.affinity) || null
     };

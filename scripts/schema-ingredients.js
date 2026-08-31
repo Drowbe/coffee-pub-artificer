@@ -32,11 +32,60 @@ export const INGREDIENT_FAMILIES = {
 /**
  * Official D&D 5e biomes/habitats (source of truth).
  * Use only these values for flags.biomes.
+ *
+ * MOVING TO BLACKSMITH. Scene geography takes ownership of this vocabulary and will
+ * expose it as `{key, label}` pairs in lowercase. When that lands, this array is
+ * replaced by their constant and `normalizeBiome` below returns lowercase without
+ * another site changing -- which is the entire reason the helpers exist.
  */
 export const OFFICIAL_BIOMES = [
     'MOUNTAIN', 'ARCTIC', 'PLANAR', 'COASTAL', 'SWAMP', 'DESERT',
     'UNDERDARK', 'FOREST', 'UNDERWATER', 'GRASSLAND', 'URBAN', 'HILL'
 ];
+
+/** Case-folded index into OFFICIAL_BIOMES. Rebuilt with the vocabulary, not per call. */
+const BIOME_BY_FOLDED = new Map(OFFICIAL_BIOMES.map((biome) => [biome.toLowerCase(), biome]));
+
+/**
+ * A biome in the vocabulary's own spelling, or null if it is not in the vocabulary.
+ *
+ * NEVER COMPARE STORED BIOMES DIRECTLY. Habitat is a join key -- scene habitats are
+ * matched against item biome flags -- and the two sides are written by different
+ * paths at different times, so a case-sensitive comparison between them fails
+ * silently and partially. It does not throw and it does not empty the result: an
+ * item with NO biomes stays eligible everywhere, so the join keeps returning a
+ * plausible, wrong subset. Normalize on read at every edge instead. The edge is the
+ * only place that cannot be stale -- item data that no migration reached still
+ * arrives here, and so does a persisted cache built before the vocabulary changed.
+ *
+ * @param {unknown} value
+ * @returns {string|null} The canonical spelling, or null.
+ */
+export function normalizeBiome(value) {
+    if (typeof value !== 'string') return null;
+    return BIOME_BY_FOLDED.get(value.trim().toLowerCase()) ?? null;
+}
+
+/** Whether a value names a biome, in any case. */
+export function isOfficialBiome(value) {
+    return normalizeBiome(value) !== null;
+}
+
+/**
+ * A list of biomes in canonical spelling, unknown entries dropped and duplicates
+ * collapsed -- two spellings of one biome must not survive as two entries.
+ * @param {unknown} values
+ * @returns {string[]}
+ */
+export function normalizeBiomeList(values) {
+    if (!Array.isArray(values)) return [];
+    const seen = new Set();
+    for (const value of values) {
+        const biome = normalizeBiome(value);
+        if (biome) seen.add(biome);
+    }
+    return [...seen];
+}
 
 /**
  * Ingredient Rarities

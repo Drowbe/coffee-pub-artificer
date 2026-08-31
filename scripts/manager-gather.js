@@ -7,7 +7,8 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { OFFICIAL_BIOMES, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
+import { normalizeCheckboxList } from './utils/helpers.js';
 import {
     ARTIFICER_TYPES,
     FAMILIES_BY_TYPE,
@@ -91,16 +92,10 @@ const PIN_EVENT_ANIMATIONS = Object.freeze({
  * @returns {Array<{ name: string, selected: boolean }>}
  */
 export function getBiomeOptionsForMultiselect(selectedBiomes = []) {
-    const set = new Set(Array.isArray(selectedBiomes) ? selectedBiomes : []);
+    // Normalized, so a stored biome in another case still renders as selected. Without
+    // this the buttons all read as off and the next save writes the empty set back.
+    const set = new Set(normalizeBiomeList(selectedBiomes));
     return OFFICIAL_BIOMES.map((b) => ({ name: b, selected: set.has(b) }));
-}
-
-/**
- * Get biome options for dropdown (value + label). Prefer getBiomeOptionsForMultiselect for gather window.
- * @returns {Array<{ value: string, label: string }>}
- */
-export function getBiomeOptions() {
-    return OFFICIAL_BIOMES.map((b) => ({ value: b, label: b }));
 }
 
 /**
@@ -223,15 +218,21 @@ async function _getGatheringSkillContext(actor, skillIds) {
 export function getEligibleGatherRecords(biomes, families) {
     if (!biomes?.length || !families?.length) return [];
     const records = getAllRecordsFromCache();
-    const biomeSet = new Set(biomes.map((b) => String(b).trim()).filter(Boolean));
+    // THE JOIN. Scene habitats on one side, item biome flags on the other, written by
+    // different paths at different times. Both sides are normalized here rather than
+    // where they are stored: the cache is persisted, so normalizing at record build
+    // would pass on a fresh world and silently fail on an established one.
+    const biomeSet = new Set(normalizeBiomeList(biomes));
     const familySet = new Set(families.map((f) => f.trim()).filter(Boolean));
     return records.filter((rec) => {
         if ((rec.artificerType ?? null) !== ARTIFICER_TYPES.COMPONENT) return false;
         const itemFamily = rec.family ?? '';
         if (!itemFamily || !familySet.has(itemFamily)) return false;
         const recBiomes = Array.isArray(rec.biomes) ? rec.biomes : [];
+        // No biomes means "found anywhere", which is why a broken join looks like a
+        // working one: the untagged components still come back.
         if (recBiomes.length === 0) return true;
-        return recBiomes.some((b) => biomeSet.has(b));
+        return recBiomes.some((b) => biomeSet.has(normalizeBiome(b)));
     });
 }
 
@@ -245,7 +246,7 @@ export async function getEligibleGatherItems(biomes, families) {
     if (!biomes?.length || !families?.length) return [];
     const items = await getAllItemsFromCache();
     const flagsKey = MODULE.ID;
-    const biomeSet = new Set(biomes.map((b) => String(b).trim()).filter(Boolean));
+    const biomeSet = new Set(normalizeBiomeList(biomes));
     const familySet = new Set(families.map((f) => f.trim()).filter(Boolean));
     return items.filter((item) => {
         const f = item.flags?.[flagsKey] || item.flags?.artificer;
@@ -254,7 +255,7 @@ export async function getEligibleGatherItems(biomes, families) {
         if (!itemFamily || !familySet.has(itemFamily)) return false;
         const itemBiomes = f?.[ARTIFICER_FLAG_KEYS.BIOMES] ?? f?.biomes ?? [];
         if (!Array.isArray(itemBiomes) || itemBiomes.length === 0) return true;
-        return itemBiomes.some((b) => biomeSet.has(b));
+        return itemBiomes.some((b) => biomeSet.has(normalizeBiome(b)));
     });
 }
 
@@ -602,21 +603,18 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
 
 async function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    const normalizeList = (value) => {
-        if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-        if (typeof value === 'string' && value.trim()) return [value.trim()];
-        return [];
-    };
-    const biomes = normalizeList(flags.habitats);
-    const componentTypes = normalizeList(flags.componentTypes);
+    // Vocabulary-filtered here too, so an all-junk habitat flag reads as NO habitats
+    // rather than as twelve of them -- the length is what the callers gate on.
+    const biomes = normalizeBiomeList(normalizeCheckboxList(flags.habitats));
+    const componentTypes = normalizeCheckboxList(flags.componentTypes);
     let harvestingFallback = [];
     try {
         harvestingFallback = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
     } catch {
         /* skills mapping failed — caller may surface errors elsewhere */
     }
-    const harvestingSkills = normalizeList(flags.harvestingSkills).length
-        ? normalizeList(flags.harvestingSkills)
+    const harvestingSkills = normalizeCheckboxList(flags.harvestingSkills).length
+        ? normalizeCheckboxList(flags.harvestingSkills)
         : harvestingFallback;
     const fallbackDC = Number(flags.defaultDC);
     const rawDiscoveryDC = Number(flags.discoveryDC);

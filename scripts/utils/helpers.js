@@ -179,3 +179,37 @@ export function hashString(uuid, prefix = '') {
     const number = Math.abs(hash) % 1000 + 1; // Numbers 1-1000
     return prefix ? `${prefix}${number}` : number.toString();
 }
+
+/**
+ * A flag written by a group of checkboxes, as a clean list of strings.
+ *
+ * NULLS ARE NOT VALUES HERE, AND STRINGIFYING THEM IS THE BUG THIS EXISTS TO STOP.
+ * `FormDataExtended` resolves several inputs sharing a name to a `RadioNodeList` and
+ * maps over every element, and a checkbox carrying a `value` attribute yields
+ * `checked ? value : null` (Foundry `client/applications/ux/form-data-extended.mjs`,
+ * `#getFieldValue`). So a group of twelve boxes with none ticked submits twelve
+ * NULLS, not an empty array and not an absent key -- the key is present, so it is
+ * written, and flags are not schema-validated on the way in.
+ *
+ * A naive `.map(String).filter(Boolean)` then turns those into twelve literal
+ * `"null"` strings, because `String(null)` is `"null"` and `"null"` is truthy. The
+ * result is a flag that reads as POPULATED while matching nothing: a scene reports
+ * itself configured and yields only the components that have no habitat at all.
+ *
+ * Note the single-box case behaves differently -- `namedItem` returns the element
+ * rather than a list, so it yields a scalar `null` and comes out empty. A one-box
+ * test does not reproduce this.
+ *
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function normalizeCheckboxList(value) {
+    if (Array.isArray(value)) {
+        return value
+            .filter((entry) => entry !== null && entry !== undefined)
+            .map((entry) => String(entry).trim())
+            .filter(Boolean);
+    }
+    if (typeof value === 'string' && value.trim()) return [value.trim()];
+    return [];
+}

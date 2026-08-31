@@ -10,7 +10,7 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 import { MODULE } from './const.js';
 import { getPositionWithSavedBounds, saveWindowBounds } from './window-bounds.js';
-import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { loadSkillsDetails, resolveGatherDefaults, getEnabledCraftingSkillIds } from './skills-rules.js';
 import {
     getBiomeOptionsForMultiselect,
@@ -172,10 +172,12 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     async _toggleBiome(biome) {
-        if (!OFFICIAL_BIOMES.includes(biome)) return;
+        // Normalize rather than reject -- see the same handler on the item window.
+        const key = normalizeBiome(biome);
+        if (!key) return;
         const saved = await getGatherWindowSettings();
-        const current = this._selectedBiomes ?? saved.biomes;
-        const next = current.includes(biome) ? current.filter((b) => b !== biome) : [...current, biome];
+        const current = normalizeBiomeList(this._selectedBiomes ?? saved.biomes);
+        const next = current.includes(key) ? current.filter((b) => b !== key) : [...current, key];
         this._selectedBiomes = next;
         this.render();
     }

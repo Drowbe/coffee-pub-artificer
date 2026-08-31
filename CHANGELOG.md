@@ -26,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   field can actually hold, and that our fields reach a derived template when the import option is ticked and
   no template when it is not.
 
+- **Biome comparisons are case-insensitive everywhere:** Habitat is a join key -- scene habitats are matched
+  against item biome flags -- and every comparison between the two was case-sensitive, including the ones
+  that decide what a form renders and then writes back. `normalizeBiome` and `normalizeBiomeList` in
+  `schema-ingredients.js` are now the single place that decides case, and no stored biome is compared
+  directly anywhere. This matters because the vocabulary is moving to Blacksmith's scene geography as a
+  lowercase constant: without this, every biome-tagged component would have rendered with its habitats
+  unselected and refused to save, and gather would have quietly returned only the components that have no
+  habitats at all -- working, plausible, and wrong.
+
 ### Changed
 - **Importing a Component without a habitat, or an Essence without an affinity, now fails:** Both have
   always been stated in the authoring prompt and enforced nowhere, so payloads carrying neither imported
@@ -35,6 +44,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with no affinity cannot be matched by a recipe.
 
 ## [13.2.1]
+
+### Fixed
+- **An unticked checkbox group wrote junk that read as configuration:** Foundry resolves several inputs
+  sharing a name to a `RadioNodeList` and yields `checked ? value : null` for each, so a scene whose
+  habitat, component-type or harvesting-skill boxes were all unticked submitted a *list of nulls* -- not an
+  empty array, and not an absent key, so it was written. Our list normalizer then stringified them into
+  literal `"null"` entries, because `String(null)` is truthy. The scene reported itself configured with
+  twelve habitats that match no component, and gather returned only the components that have no habitat at
+  all. Reachable without any of the case work: enabling Artificer on a scene and saving Scene Config from
+  any tab was enough, since the fields submit whether or not the tab is visible. Nulls are now dropped
+  before stringifying (`normalizeCheckboxList`), and habitat lists are filtered through the vocabulary so
+  values that are not habitats cannot be counted as configuration.
+- **Importing a component with lowercase habitats silently produced no habitats:** The import path filtered
+  biomes through a case-sensitive membership test, so a payload supplying `"forest"` had it dropped without
+  an error, producing a Component that can never be gathered. Values are normalized now rather than
+  filtered.
+- **Removed `getBiomeOptions`,** which had no callers.
 
 ### Fixed
 - **13.2.0 shipped the pre-conversion compendiums:** The release was tagged before the converted pack files existed on disk. LevelDB does not write through on export — Foundry holds a pack open and compacts lazily, so the 266 converted recipes sat in an unflushed `.log` while `git status` reported `packs/` as clean. The new `.ldb` was only committed three commits after `BUILD 13.2.0`, so the release zip carried the old compendiums even though the development world was correct. No data was lost anywhere; the packs simply were not in the release. This build contains them.

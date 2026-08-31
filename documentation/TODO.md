@@ -89,6 +89,32 @@ sent as empty.
       That fallback is our documented reader behaviour, not drift -- confirm nothing still authors the
       legacy shape before dropping it.
 
+### Every scene gathers; retire the per-scene enable
+Plan: [plans/plan-scene-opt-in.md](plans/plan-scene-opt-in.md). Installing the module is the opt-in; a
+per-scene `enabled` flag asks the same question again. `enabled` gates a directory badge and pin
+rendering, never an action -- nothing in Artificer fires unprompted. Can proceed while Blacksmith builds
+scene geography.
+
+- [ ] One resolver owns the effective gather settings for a scene, read by both the form and the gather
+      path. Move the existing fallbacks in `_getSceneGatherSettings` (`manager-gather.js:603-631`) and
+      `resolveGatherDefaults` into it rather than rewriting them -- they are correct, just scattered.
+      **Not blocked on Blacksmith; none of these fields are moving.** Verified by: a scene with an
+      environment and nothing else configured yields components of every family.
+- [ ] Close the componentTypes gap. The form shows all families when the flag is empty
+      (`manager-scene.js:193-195`); the gather path reads the same flag with no fallback
+      (`manager-gather.js:611`) and yields nothing. The form says all, the engine says none, and nothing
+      reports the disagreement. Verified by: the families a scene yields match what its form shows selected.
+- [ ] Decide whether `profile` becomes a real named-preset system or is deleted. It is written by a
+      free-text box at `manager-scene.js:277` and read by nothing. Leaving a control that implies a feature
+      is the one option that is not honest.
+- [ ] Confirm whether `flags.defaultDC` (read at `manager-gather.js:622`, written by no form field) has
+      live data behind it before the resolver decides whether to keep accepting it.
+- [ ] Delete `enabled` -- the checkbox and the reads at `manager-scene.js:188`, `:482`,
+      `manager-pins.js:158`. **Sequence AFTER the habitat migration**, so a post-migration gather failure
+      has one cause rather than two. Verified by: a scene that previously had `enabled: false` shows its
+      existing discovery pins, and the CHANGELOG says so as a change rather than letting it arrive silently.
+- [ ] Repoint the scene-directory badge from "may this scene gather" to "has a GM tuned this scene".
+
 ### Hand scene habitats to Blacksmith's Scene Config
 Blacksmith is pulling scene-level geography into Scene Config (their `TODO.md`, opened 2026-08-27, and
 `plans/plan-scene-geography.md`). Habitat currently lives on our flag at
@@ -121,29 +147,20 @@ scene habitats against *item* biomes with a case-sensitive `Set.has`. Item biome
 two sides disagree about case, gather does not break -- line 234 makes an item with no biomes eligible
 everywhere, so it keeps working and returns a narrower, plausible pool of only the untagged components.
 
-- [ ] **Normalize case on read in `window-artificer-item.js` FIRST -- before the join sites.** Five
-      `OFFICIAL_BIOMES.includes` comparisons live in that one file (`:210`, `:217`, `:410`, `:413`, `:622`)
-      and four of them compare against *stored* values. Under a lowercase vocabulary, an un-normalized
-      Component renders with every habitat button off (`:210-214`) and an empty hidden field (`:215-219`),
-      so submit produces `artificerData.biomes = []` (`:619-622`).
-      **This is a soft lock, not data loss.** The Component-requires-habitat rule added this cycle
-      (`:630-635`) catches the empty array, warns, and aborts the save -- so nothing is written, but every
-      existing Component becomes unsaveable, told to choose a habitat it already has. `buildArtificerFlags`
-      (`utility-artificer-item.js:346`) filters once more behind that. It goes first anyway: a soft lock
-      stops all item authoring, where a bad join only narrows a query.
-      Verified by: with the vocabulary lowercased, open an un-migrated Component, confirm its habitats
-      render selected and it saves unchanged.
-- [ ] **Normalize case at the join.** Fix
-      [manager-gather.js:231-232](../scripts/manager-gather.js#L231-L232) (and the same comparison in
-      `getEligibleGatherItems`, :248-258) to compare case-insensitively. Stored case then stops mattering:
-      world items, pack items and third-party content are all covered at once. Do this at the JOIN, not in
-      `itemToRecord` -- the cache is persisted, so normalizing on record build leaves every existing
-      persisted cache holding the old form until it is rebuilt. Verified by: a scene with lowercase
-      habitats gathers the same components as one with uppercase.
-- [ ] Fix the silent case drop on import. `utility-artificer-item.js:346` and `:449` filter through
-      `OFFICIAL_BIOMES.includes(b)` case-sensitively, so a payload supplying `"forest"` has it dropped with
-      no error. Live bug today, independent of the migration. Verified by: import a component with
-      lowercase biomes and confirm they survive.
+- [x] ~~Normalize case at every biome read; delete `getBiomeOptions`.~~ **DONE 2026-08-31** --
+      `normalizeBiome` / `normalizeBiomeList` in `schema-ingredients.js` are now the only place that
+      decides case, so the switch to Blacksmith's lowercase constant is a one-line change. No raw
+      comparison against a stored biome remains anywhere.
+- [x] ~~Establish what the scene-config checkbox group actually wrote.~~ **ANSWERED 2026-08-31** -- neither
+      an empty array nor an omitted key: one null per unticked box, which our normalizer stringified into
+      literal `"null"` entries. Fixed at the root in `normalizeCheckboxList`. See the CHANGELOG.
+- [ ] **Check production worlds for junk habitat/componentType/harvestingSkills flags.** The null bug did
+      NOT require the lowercase vocabulary -- it fired whenever a group was fully unticked and Scene Config
+      was saved, which is the normal state of a scene nobody configured. So unlike the case hazard, its
+      window has been open all along. The fix stops new junk and makes existing junk read as empty rather
+      than as configuration, so nothing is broken by leaving it; this is a cleanup question, not a
+      correctness one. Verified by: scan scenes for a `habitats` entry that `normalizeBiome` rejects.
+
 - [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
       DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
 - [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Hard cut at `ready`.
@@ -166,6 +183,21 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
 - [ ] Register the harvest tab through their Scene Config injector and delete `_injectArtificerTab`,
       `_injectArtificerTabV2` and both guard collections (`manager-scene.js:119`, `:137`, registered at
       `:35-49`).
+- [ ] **Replace the injected tab with a button that opens our own window.** Sequence AFTER the habitat
+      migration: habitats are what is leaving, and what remains is the twelve harvest-specific keys, which
+      are Artificer configuration rather than scene geography. Building the window around habitats first
+      means gutting it.
+      The argument is the scene-config bug above. Those checkboxes are plain inputs on Foundry's form, so
+      we do not own the submit and cannot put a guard behind them -- which is exactly why the item sheet
+      survived the same case defect and the scene tab did not. Owning the window lets the habitat rule
+      apply in both places, lets the harness drive the surface, makes it reachable from the scene directory
+      and a macro rather than only from Scene Config, and shrinks what we ask Blacksmith's injector to
+      place from a tab to a button.
+      **Decide save semantics first.** Scene Config has its own Save/Cancel; a window that writes flags
+      immediately lets a GM cancel Scene Config and still have our changes persisted. Preference is an
+      explicit Save of our own that plainly owns its data, rather than staging into the parent form --
+      staging re-couples us to the submit we are trying to stop depending on, which is the whole point.
+
 - [ ] Re-export the compendium packs to lowercase biomes. **Cosmetic once the join is normalized** --
       deliberately NOT in Blacksmith's release window, and not a blocker. Close the world before
       committing the packs.

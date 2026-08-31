@@ -4,7 +4,8 @@
 
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
-import { OFFICIAL_BIOMES } from './schema-ingredients.js';
+import { OFFICIAL_BIOMES, normalizeBiomeList } from './schema-ingredients.js';
+import { normalizeCheckboxList } from './utils/helpers.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
 import { postBlacksmithConsole } from './utils/blacksmith-console.js';
@@ -180,16 +181,14 @@ export class SceneManager {
         const existingTabPanel = form.querySelector('.tab[data-tab]');
         const tabBodyHost = existingTabPanel?.parentElement ?? form.querySelector('.sheet-body') ?? form;
         const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
-        const normalizeList = (value) => {
-            if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-            if (typeof value === 'string' && value.trim()) return [value.trim()];
-            return [];
-        };
         const enabled = !!sceneFlags.enabled;
         const profile = (sceneFlags.profile ?? '').toString();
-        const selectedHabitats = new Set(normalizeList(sceneFlags.habitats));
+        // Case-normalized: a scene whose stored habitats do not match the vocabulary's
+        // case would render every box unticked, and saving the tab would then write
+        // that empty set back over habitats the GM never touched.
+        const selectedHabitats = new Set(normalizeBiomeList(normalizeCheckboxList(sceneFlags.habitats)));
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
-        const currentComponentTypes = normalizeList(sceneFlags.componentTypes);
+        const currentComponentTypes = normalizeCheckboxList(sceneFlags.componentTypes);
         const rawComponentTypes = currentComponentTypes.length
             ? currentComponentTypes
             : componentFamilies;
@@ -197,7 +196,7 @@ export class SceneManager {
         // Cached at initialize(); see _injectArtificerTab for why this must not await.
         const defaultHarvestingSkills = this._defaultHarvestingSkills;
         if (!defaultHarvestingSkills.length) this._refreshHarvestingSkillDefaults();
-        const currentHarvestingSkills = normalizeList(sceneFlags.harvestingSkills);
+        const currentHarvestingSkills = normalizeCheckboxList(sceneFlags.harvestingSkills);
         const rawHarvestingSkills = currentHarvestingSkills.length
             ? currentHarvestingSkills
             : defaultHarvestingSkills;
@@ -471,15 +470,12 @@ export class SceneManager {
     static _hasGatheringConfigured(scene) {
         if (!scene) return false;
         const flags = scene.getFlag(MODULE.ID, 'scene') ?? {};
-        const normalizeList = (value) => {
-            if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-            if (typeof value === 'string' && value.trim()) return [value.trim()];
-            return [];
-        };
         const enabled = !!flags.enabled;
         const gatherSpots = Math.max(1, Math.min(30, Number(flags.gatherSpots) || 1));
-        const habitats = normalizeList(flags.habitats);
-        const componentTypes = normalizeList(flags.componentTypes);
+        // normalizeBiomeList, not the raw list: a habitat that is not in the vocabulary
+        // is not a habitat, and counting it here is what makes junk read as configured.
+        const habitats = normalizeBiomeList(normalizeCheckboxList(flags.habitats));
+        const componentTypes = normalizeCheckboxList(flags.componentTypes);
         return enabled && gatherSpots > 0 && habitats.length > 0 && componentTypes.length > 0;
     }
 
