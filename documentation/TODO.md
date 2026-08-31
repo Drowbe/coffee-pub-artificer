@@ -45,6 +45,25 @@ blocked on their step 8 (Journal). Do not build against the callback contract.
 - [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/declaration-recipe-field-mappings.md](plans/declaration-recipe-field-mappings.md).
 - [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
 
+### Hand scene habitats to Blacksmith's Scene Config
+Blacksmith is pulling scene-level geography into Scene Config (their `TODO.md`, opened 2026-08-27, and
+`plans/plan-scene-geography.md`). Habitat currently lives on our flag at
+`flags.coffee-pub-artificer.scene.habitats`, and Minstrel reads that flag raw. Suite coordination is in
+Blacksmith's `TODO-GLOBAL.md`.
+
+**Blocked on Blacksmith shipping the injector and the API.** Do not add a second `renderSceneConfig`
+handler — the last one lost its tab between reloads to a render race against Foundry's `_replaceHTML`.
+There will be one injector; we register a harvest tab through it.
+
+- [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
+      DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
+- [ ] Hand `habitats` to Blacksmith's scene geography once the API exists. Tell them what an unknown
+      environment should do to harvest tables — nothing, a default table, or ignore while Minstrel still
+      uses it — because that decides whether the vocabulary stays a closed enum.
+- [ ] Register the harvest tab through their Scene Config injector rather than our own `renderSceneConfig`.
+- [ ] Verify gather on a migrated scene still yields the same component families, and that a scene
+      exported to a compendium and re-imported still carries environment.
+
 ### Recipes and Processes
 Recipes are a real data model and processes are items as of 13.2.0 — see
 [plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) for what shipped and what is left.
