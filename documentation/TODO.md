@@ -192,10 +192,6 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
       Config injector. **13.22.0 is an intent, not a tag** -- their `module.json` still reads 13.21.1 and
       the bump happens at their BUILD. A module pinning a minimum that does not exist will not activate,
       so make the change on a branch and release only after they tag.
-- [ ] **Raise the floor again for the hard cut, to whichever release ships the habitat migration.** The
-      floor protects two different things and 13.22.0 only covers one: the vocabulary. Workstream 3 --
-      habitats leaving our flag -- is not in it. A floor can be raised, so there is nothing to choose
-      between: adopt the vocabulary at 13.22.0, raise it when we cut.
 - [ ] Register the harvest tab through their Scene Config injector and delete `_injectArtificerTab`,
       `_injectArtificerTabV2` and both guard collections (`manager-scene.js:119`, `:137`, registered at
       `:35-49`).
