@@ -25,6 +25,8 @@ default, so a world that wants the smaller set gets it.
 Artificer has one entry point: the **hammer icon** in the Blacksmith menubar. Clicking it opens a bar of
 tools in three groups.
 
+![The Artificer menubar](../assets/artificer-menubar.webp)
+
 **Craft and Tinker** — visible to everyone.
 
 | | |
@@ -32,6 +34,15 @@ tools in three groups.
 | Crafting Station | The bench. Load a recipe, add ingredients, run the process. |
 | Recipes and Blueprints | Browse every recipe your world knows about. |
 | Skill Mapping | Which character skills apply to crafting and gathering. |
+
+**Recipes and Blueprints** lists everything craftable, with what each one needs.
+
+![The recipe browser](../assets/artificer-recipe-browser.webp)
+
+**Skill Mapping** shows which character skills back each crafting and gathering skill, so a player can
+see what a Herbalism check actually rolls.
+
+![Skill mapping](../assets/artificer-skillmapping.webp)
 
 **Gather and Harvest** — visible to everyone except where noted.
 
@@ -54,25 +65,39 @@ tools in three groups.
 
 Gathering is per-scene, and a scene needs two things before anything can be found there.
 
-**1. Set the scene's habitat.** Open Scene Configuration and go to the **Geography** tab — this is
-Blacksmith's, not Artificer's. Choose one or more habitats: Forest, Mountain, Coastal, Underdark and so on.
+**1. Set the scene's habitat.** Open Scene Configuration and go to the **Geography** tab -- this is
+Blacksmith's tab, not Artificer's.
 
-Habitat lives with Blacksmith because it describes the scene as a *place*, and more than one module reads
-it — Minstrel uses the same value to choose ambient playlists. Setting it once serves all of them. The
-Artificer tab shows the habitats currently set and points you here to change them.
+![The Geography tab, where habitat is set](../assets/artificer-scene-geography.webp)
 
-**2. Configure harvesting on the Artificer tab.** Same window, next tab along:
+**Habitat is global, and Artificer only reads it.** It is set once on the Geography tab and belongs to
+Blacksmith, because it describes the scene as a *place* rather than as a gathering site. Other Coffee Pub
+modules read the same value for their own purposes -- Minstrel uses it to choose ambient audio -- so
+setting Forest on a scene tells the whole suite where it is, not just Artificer.
 
-- **Component Types** — which families can be found here: Plant, Mineral, Gem, CreaturePart,
-  Environmental, Essence. Leave them all ticked unless a scene should only yield certain kinds.
-- **Harvesting Skills** — which skills a character may roll. Defaults come from your selected skills
-  ruleset.
-- **Gathering Spots** — how many discoverable spots the scene holds.
-- **Discovery DC** and **Harvest DC** — how hard it is to find a spot, and to work it once found.
-- **Discovery offsets by rarity** — how much harder rarer components are to spot.
-- **Discovery radius** — how close a token must be.
+That is why there is no habitat control on the Artificer tab. Artificer has no opinion about where a scene
+is; it asks Blacksmith and decides what can be found there. If the habitats are wrong, change them on the
+Geography tab and every module follows.
 
-A scene with a habitat and at least one component type is ready. The scene directory shows a marker on
+**2. Turn Artificer on for the scene and configure harvesting.** Next tab along:
+
+![The Artificer tab](../assets/artificer-scene-configuration.webp)
+
+- **Enable Artificer Features** -- the master switch. Nothing is gathered on this scene until it is ticked.
+- **Habitats** -- shown here read-only, exactly as set on the Geography tab, so you can confirm without
+  switching tabs.
+- **Component Types** -- which families can be found: Creature Part, Environmental, Essence, Gem, Mineral,
+  Plant.
+- **Harvesting Skills** -- which skills a character may roll here. Untick one and it cannot be used on this
+  scene.
+- **Discovery DC Thresholds** -- a Base DC plus an offset per rarity. Rolls are checked from Legendary
+  down through Very Rare, Rare, Uncommon and Common, so a high roll can turn up something rare and a
+  modest one still finds common material.
+- **Harvest DC** -- the difficulty of working a spot once found, 0 to 20.
+- **Gather Spots** -- how many discovered spots the scene may hold at once, up to 30.
+- **Discovery Radius** -- how close to the rolling token new spots appear, 5 to 300 feet.
+
+A scene needs Artificer enabled, at least one habitat, and at least one component type before anything can be found. Miss any of the three and foraging returns nothing, with no error to tell you which. The scene directory shows a marker on
 scenes that are configured, so you can see at a glance which ones you have set up.
 
 ## Gathering, in play
@@ -84,12 +109,13 @@ allowed. A component with no habitat set can be found anywhere.
 **Gather and Harvest** works a spot. Success adds the component to the character's inventory; the spot is
 consumed.
 
-If foraging turns up nothing, the usual cause is a scene with no habitat, no component types ticked, or a
-component pool that has nothing matching both.
+If foraging turns up nothing, check the three preconditions above before anything else.
 
 ## Crafting
 
 Open the **Crafting Station**.
+
+![The Crafting Station](../assets/artificer-crafting-station.webp)
 
 1. **Load a recipe.** Recipes come from your recipe compendiums and from journals in the world.
 2. **Add ingredients.** Drag items from an actor's inventory into the bench. The recipe lists what it
@@ -109,7 +135,11 @@ is remembered between sessions.
 
 ### Items
 
-**Create Artificer Item** opens the authoring window. Every Artificer item has:
+**Create Artificer Item** opens the authoring window.
+
+![Creating an Artificer item](../assets/artificer-createitem.webp)
+
+Every Artificer item has:
 
 - **Type** — Component (raw, found in the world), Creation (crafted), or Tool (the apparatus, containers
   and processes that do the work).
@@ -124,9 +154,14 @@ Components additionally take **habitats** — where they occur — and an option
 an **affinity**. A Component with no habitat can never be gathered, and an Essence with no affinity can
 never be matched by a recipe, so both are required.
 
-An Artificer item is also a real D&D 5e item. A healing herb can be chewed, a poison applied, a crystal
-used — give it the item type and activities that effect needs rather than reducing it to a trinket. Only
-raw ores and pure reagents with no use effect are correctly plain loot.
+An Artificer item is also a real D&D 5e item, and its Artificer fields appear as a block on the normal
+item sheet rather than in a separate window.
+
+![Artificer properties on a 5e item sheet](../assets/artificer-item-embeded.webp)
+
+A healing herb can be chewed, a poison applied, a crystal used — give it the item type and activities that
+effect needs rather than reducing it to a trinket. Only raw ores and pure reagents with no use effect are
+correctly plain loot.
 
 ### Processes
 
