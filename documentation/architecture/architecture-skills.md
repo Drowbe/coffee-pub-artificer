@@ -1,5 +1,7 @@
 # Skills Rules Design — Crafting & Gathering Integration
 
+**Audience:** someone changing Artificer, and the rest of the suite
+
 **Purpose:** Define how perk rules drive the crafting window and gathering logic. Rules are stored in the **skills ruleset JSON** (default `resources/skills-mapping.json`; world setting **Skills Ruleset JSON**) under each perk’s optional `rules.benefits` array. This doc describes the **actual implementation**: structure, rule keys, aggregation, and how the window/gather use them.
 
 ---

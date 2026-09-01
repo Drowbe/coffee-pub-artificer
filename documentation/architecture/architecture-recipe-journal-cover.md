@@ -1,5 +1,7 @@
 # Recipe journal Cover page
 
+**Audience:** someone changing Artificer, and the rest of the suite
+
 Recipe journals can include a **Cover** page with metadata: which skill(s) the book is for (used for filtering), plus author, description, and an optional image used as the book cover in the crafting UI.
 
 ## Page name

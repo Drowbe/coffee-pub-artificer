@@ -1,4 +1,6 @@
-# Coffee Pub Artificer — User Guide
+# Getting started with Artificer
+
+**Audience:** someone playing or running a game with Artificer
 
 Artificer adds gathering, recipes and crafting to a D&D 5e world. Players forage a scene for raw
 components, and turn what they find into potions, poisons, food, materials and gear by working a recipe at

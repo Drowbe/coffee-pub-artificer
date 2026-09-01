@@ -1,5 +1,7 @@
 # Artificer item flags, for Blacksmith's importer declarations
 
+**Audience:** us, while the work is in flight
+
 **Status: raw input for Blacksmith, not an Artificer plan.** Sent for step 5, which is
 where Blacksmith's hosted copies of our prompt text stop being read. Delete when the
 declaration exists upstream and `prompt-item-partial-artificer.txt` /

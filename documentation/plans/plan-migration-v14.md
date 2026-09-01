@@ -1,5 +1,7 @@
 # Foundry v14 migration notes (Coffee Pub Artificer)
 
+**Audience:** us, while the work is in flight
+
 ## Important resources
 
 - [Foundry API (current)](https://foundryvtt.com/api/) — **reference index**, not a migration narrative. Use it to look up types, classes, and constants (e.g. `ChatMessageData`, `CONST`) once you know what broke.

@@ -1,5 +1,7 @@
 # Recipe field mappings, for Blacksmith's importer declarations
 
+**Audience:** us, while the work is in flight
+
 **Status: raw input for Blacksmith, not an Artificer plan.** Sent ahead of step 8 (Journal,
 the rendered form), per their request for recipe requirements before the design rather than
 after. Delete when the declaration exists upstream and our parallel import pipeline is

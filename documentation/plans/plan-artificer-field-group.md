@@ -1,8 +1,10 @@
 # Artificer item field group — the list to build against
 
+**Audience:** us, while the work is in flight
+
 **Status: raw input for Blacksmith, for step 5.** This is the concrete field list requested
 after they accepted `registerFieldGroup`. It supersedes the table in
-[`declaration-artificer-item-flags.md`](declaration-artificer-item-flags.md), which stays
+[`plan-artificer-item-flags.md`](plan-artificer-item-flags.md), which stays
 as the reasoning and the vocabulary sources. Delete both when the group exists upstream.
 
 Every `guidance` string below is written to be the **only** authoring text for its field —

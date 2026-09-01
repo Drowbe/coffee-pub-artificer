@@ -1,14 +1,17 @@
 name: Sync Wiki
 
 # Publishes the documentation/ publish set to the GitHub wiki on every commit to master that touches
-# the docs — so the wiki always reflects the repo without waiting for a release.
+# the docs — so sibling modules always have the current reference without waiting for a build.
 # What goes live is controlled entirely by the PUBLISH list in tools/wiki-sync.mjs, NOT by what
 # changed: held docs are never published, so a commit touching them cannot leak an unfinished doc.
 # Runs on GitHub's servers — nothing to run locally.
 
 on:
   push:
-    branches: [main]
+    # Both, because this file is copied to every module unchanged and the suite is split across
+    # main and master. A single-branch trigger on the wrong one does not fail -- it never fires, and
+    # the module simply has no wiki. Listing both is correct everywhere and needs no per-module edit.
+    branches: [main, master]
     paths:
       - 'documentation/**'
       - 'tools/wiki-sync.mjs'

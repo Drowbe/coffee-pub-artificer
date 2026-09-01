@@ -1,5 +1,7 @@
 # Plan: every scene gathers, and the default profile becomes real
 
+**Audience:** us, while the work is in flight
+
 Artificer currently asks a GM to opt each scene in. This removes that question. Installing the module is
 already the opt-in; a per-scene `enabled` flag asks it a second time, and a fourth time counting the two
 list fields that gate on being non-empty.

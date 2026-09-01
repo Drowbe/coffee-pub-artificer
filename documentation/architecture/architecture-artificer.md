@@ -1,4 +1,7 @@
-# Coffee Pub Artificer  
+# Coffee Pub Artificer
+
+**Audience:** someone changing Artificer, and the rest of the suite
+
 ### Crafting & Gathering System Design Document
 
 ---
@@ -492,33 +495,33 @@ Following Codex/Quest patterns:
 
 ### 11.4 Patterns Adopted from Codex/Quest Systems
 
-#### ✅ Parser-Based Architecture
+#### Parser-Based Architecture
 - HTML stored in journals, parsed on-demand
 - Flexible, version-tolerant, human-editable
 
-#### ✅ Form/Panel Pattern
+#### Form/Panel Pattern
 - **ApplicationV2** for all UI (create/edit forms, panels, windows) — no legacy FormApplication
 - ApplicationV2 for browsing (like CodexPanel/QuestPanel)
 - Drag & drop auto-population
 
-#### ✅ Status-Based Organization
+#### Status-Based Organization
 - Recipes/Blueprints grouped by status (Available, Locked, Unlocked, In Progress, Complete)
 - Dynamic status calculation from requirements/state
 
-#### ✅ Client-Side Filtering
+#### Client-Side Filtering
 - DOM-based filtering for performance
 - Tag-based filtering, search, category filters
 
-#### ✅ Scene Pin Integration (Future)
+#### Scene Pin Integration (Future)
 - PIXI-based pins for workstations and gathering nodes
 - Interactive canvas placement (like Quest pins)
 - Position persistence in scene flags
 
-#### ✅ Notification Integration
+#### Notification Integration
 - Use Blacksmith API for crafting event notifications
 - Tag discoveries, skill increases, crafting success/failure, etc.
 
-#### ✅ Hash-Based Numbering (Optional)
+#### Hash-Based Numbering (Optional)
 - Recipe numbers (R1, R2, etc.) from UUID hash
 - Blueprint numbers (B1, B2, etc.)
 - Consistent reference system
@@ -693,59 +696,59 @@ updated as part of the change that alters what it asserts.
 **Q1: Ingredient Storage**
 - **Decision:** Compendium Packs (Items)
 - **Rationale:** Ingredients are physical materials that need to be held and used in crafting. Storing them as FoundryVTT Items allows them to be dragged into actor inventories, used in crafting operations, and consumed. Compendiums provide performance benefits and easy sharing/expansion.
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q2: Blueprint Storage**
 - **Decision:** Separate journal from recipes ("Artificer Blueprints")
 - **Rationale:** Clear separation, different permissions possible, cleaner organization
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q3: Canvas/Pin Approach for MVP**
 - **Decision:** Abstract menu-based for MVP
 - **Rationale:** Faster to build, canvas pins can be added in Phase 8/12
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q4: Blueprint State Representation**
 - **Decision:** HTML markup (`<s>`, `<code>`, `<em>`) like Quest tasks
 - **Rationale:** Consistent with Quest patterns, human-editable, version-tolerant
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q5: Workstation Storage**
 - **Decision:** Hybrid approach (Compendium for definitions + scene flags for instances)
 - **Rationale:** Reusable definitions in compendium, scene-specific placement/state in flags
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q6: Gathering Node Storage**
 - **Decision:** Compendium for definitions + scene flags for instances
 - **Rationale:** Consistent with workstation approach, reusable definitions, scene-specific data
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 ### Important (Should Decide Before Phase 2-3)
 
 **Q7: Recipe Numbering**
 - **Decision:** Hash-based numbers (R1, R2, etc.)
 - **Rationale:** Consistent with Quest system, easy reference system, stable IDs even if recipe name changes
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q8: Recipe Result Item Creation**
 - **Decision:** Link to existing item in compendium (Option A)
 - **Rationale:** Recipe stores `resultItemName` (and ingredient names). At runtime the item cache resolves names to items (compendia + world). Crafting creates a copy of the resolved result item. Portable across worlds; requires item cache refresh when compendia change.
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q9: Blueprint Stage Progression**
 - **Decision:** Player manually initiates each stage (Option A)
 - **Rationale:** Player sees available stages and clicks "Start Stage 2" when ready. Provides player control, clear progression, requires extra clicks but better UX.
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q10: Panel Organization**
 - **Decision:** Both (default to status, with category filter) (Option C)
 - **Rationale:** Default shows player state (Available, Locked, In Progress, Complete), with ability to filter by category (Potion, Weapon, Armor, etc.) when needed. Best of both worlds.
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 **Q11: Item System Integration**
 - **Decision:** D&D 5e (version 5.5+)
 - **Rationale:** Primary target system for item structure and stats; 5.5+ for schema compatibility
-- **Status:** ✅ Decided
+- **Status:** Decided
 
 ### Nice to Have (Can Decide During Implementation)
 
@@ -766,22 +769,22 @@ updated as part of the change that alters what it asserts.
 
 ## 13. Implementation Status
 
-### ✅ Completed
+### Completed
 - Module setup and GitHub repository
 - Menubar integration (Artificer tool in middle zone)
 - Secondary bar (100px height, ready for content)
 - Blacksmith API integration
-- Resolve critical and important questions (Q1–Q11) ✅
-- Phase 0: Foundation & Architecture Setup ✅
+- Resolve critical and important questions (Q1–Q11)
+- Phase 0: Foundation & Architecture Setup
   - Folder structure (resources/, templates/)
   - Schema files, manager placeholders, module API
-- Phase 1: Core Data System (major pieces) ✅
+- Phase 1: Core Data System (major pieces)
   - Core item creation utilities (`utility-artificer-item.js`)
   - Unified form (`window-artificer-item.js`), recipe import (`window-artificer-recipe-import.js`)
   - Data models (Ingredient, Component, Essence, Recipe, Blueprint)
   - Storage managers (ingredients, recipes, blueprints) with configurable compendium mapping
   - TagManager
-- Crafting Window ✅
+- Crafting Window
   - Three-zone layout (ingredient list | bench | feedback)
   - Crafter portrait/name in header; "Results" → "Details"
   - Experimentation engine (tag-based rules)
@@ -789,28 +792,28 @@ updated as part of the change that alters what it asserts.
   - Refresh Cache button
   - Crafting sounds (component panel, timer heat/grind); success/failure broadcast (13.0.5)
   - GM-only menubar: Create Item, Import Recipes, Roll for Components (13.0.5)
-- Item cache (persisted) ✅
+- Item cache (persisted)
   - World setting `itemCache`; GM-initiated refresh from compendia + world
   - Name-based lookup, alias support from `resources/translation-item.json`
   - IngredientStorage uses cache when available; otherwise notifies GM
   - TYPE → FAMILY → TRAITS migration macro: `macros/migration-macro-example.js`
 - Settings: `itemLookupOrder`, `ingredientStorageSource`
 - Rarity: Very Rare (D&D 5e standard; no "Epic")
-- Skills Window ✅
+- Skills Window
   - ApplicationV2, data from the configured skills ruleset JSON (default `resources/skills-mapping.json`)
   - Panels: label (left) + total-cost dots (right), badge (image) + perks grid; click badge → skill details, perk → perk details
   - Perk number = cost; applied state (value > 0) uses `.perk-applied`; panels column 700px, details flex; panels scroll
-- Roll for Components (Gather) ✅
+- Roll for Components (Gather)
   - Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
   - Habitat multi-select, eligibility by biome; Blacksmith Request a Roll (Wisdom, silent); chat cards; remember settings
 - GM-only macro scripts in `macros/` (e.g. Split Minor Potions, migration example)
 
-### 🔄 In Progress
+### In Progress
 - **Skill system:** Skills Window UI done; actor persistence (Apply button), progression logic (XP, gating) next
 - Recipe/Blueprint browser (parsers exist; recipes in crafting window; dedicated RecipeForm/BlueprintForm TBD)
 - Workstation system; initial data set
 
-### 📋 Next Steps
+### Next Steps
 1. Skill persistence to actor flags (Apply button), progression logic (XP, gating)
 2. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
 3. RecipeForm / BlueprintForm (editing); workstation system
@@ -900,7 +903,7 @@ This crafting system supports:
 |------|-------------|--------|
 | **Custom ingredients in journals** | overview.md and storage-ingredients `_loadFromJournals` imply journal-based custom ingredients. Not implemented (TODO stub). | Decide: implement journal ingredient parsing, or remove from docs. |
 | **D&D version** | Architecture says D&D 5e; user rules say 5.5+. | Explicitly target D&D 5e 5.5+ in §11 and schema docs. |
-| **Persisted cache storage** | ✅ World setting `game.settings.get(MODULE.ID, 'itemCache')` (Bibliosoph/Blacksmith pattern). |
+| **Persisted cache storage** | World setting `game.settings.get(MODULE.ID, 'itemCache')` (Bibliosoph/Blacksmith pattern). |
 | **Experimentation §7.0** | Quantities, solvent, process (temp/time) are designed but not implemented. | Phase 2; tag-based matching works, full model is enhancement. |
 | **Data model migration** | New hierarchy TYPE > FAMILY > TRAITS; primary/secondary/quirk removed. | One-time migration macro; see §14.2 and plan-artificer.md. |
 
@@ -914,9 +917,7 @@ This crafting system supports:
 | Document | Purpose | Relationship |
 |----------|---------|--------------|
 | **architecture-artificer.md** | Canonical architecture, decisions, schema | **Source of truth** |
-| **TODO.md** | Active task list, next steps | Tracks current focus; references architecture |
-| **plan-artificer.md** | Phased breakdown (Phase 0–14), MVP path, technical notes | Merged from DEVELOPMENT_PLAN + IMPLEMENTATION_ROADMAP |
-| **overview.md** | User-facing system explanation | Product/design; correct any storage/tier mismatches per §11.2 |
+| **architecture-overview.md** | The crafting model, for a reader new to it | Product/design; correct any storage/tier mismatches per §11.2 |
 | **recipie-migration.md** | Recipe import schema | Reference for recipe structure |
 
 ### 16.4 Document Alignment Checklist
@@ -947,7 +948,5 @@ This crafting system supports:
 ## Notes
 
 - **architecture-artificer.md** is the canonical source for architecture and decisions.
-- See `documentation/TODO.md` for current task focus.
-- See `documentation/plans/plan-artificer.md` for phased implementation detail.
 - Architecture decisions based on Coffee Pub Codex and Quest systems.
 - All patterns use FoundryVTT v13+ and ApplicationV2.

@@ -1,5 +1,7 @@
 # Gathering Flow Design (Discovery + Harvest)
 
+**Audience:** someone changing Artificer, and the rest of the suite
+
 > **Purpose:** Define the cohesive gathering experience and data model for scene-based gathering spots, discovery, and harvesting.
 
 ## 1. Design Intent

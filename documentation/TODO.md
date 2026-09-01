@@ -42,7 +42,7 @@ callback contract with declared profiles (2026-08-25). Recipes are now a mapped 
 callback consumer — see [plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) step 6, which is
 blocked on their step 8 (Journal). Do not build against the callback contract.
 
-- [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/declaration-recipe-field-mappings.md](plans/declaration-recipe-field-mappings.md).
+- [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/plan-recipe-field-mappings.md](plans/plan-recipe-field-mappings.md).
 - [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
 
 ### Retire buildItemSystem for Blacksmith's declaration assembler

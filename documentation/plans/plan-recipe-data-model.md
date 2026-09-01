@@ -1,5 +1,7 @@
 # Plan: recipes as a declared page subtype
 
+**Audience:** us, while the work is in flight
+
 **Why now.** Blacksmith's step 8 will support a mapped foreign subtype whether or not ours
 exists. If ours does not, recipes stay on the HTML parser and the format stays undeclared
 exactly where it is most load-bearing. This is the long pole and it is entirely on our side.
@@ -238,7 +240,7 @@ own.**
 is ours: we declare the values, the per-field guidance, the JSON shape and the preamble, and
 Blacksmith derives the template, validation, prompt and export from that declaration. Adding
 Process to `artificerType` and giving it its Process-only fields is an edit to
-[`declaration-artificer-field-group.md`](declaration-artificer-field-group.md), not a message
+[`plan-artificer-field-group.md`](plan-artificer-field-group.md), not a message
 to anyone. That is precisely the boundary the field group exists to draw — Blacksmith hosts
 none of our vocabulary, so changing it is not an event on their side.
 

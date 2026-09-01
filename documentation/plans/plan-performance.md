@@ -1,11 +1,13 @@
 # Performance & Memory Review
 
+**Audience:** us, while the work is in flight
+
 This document summarizes potential memory leak and performance risks found during a codebase scan of `coffee-pub-artificer`, focusing on:
 
 - Timer/interval cleanup (timeouts, intervals)
 - Document-level event listeners / delegation patterns
 - Long-lived Maps/Sets that must be cleared
-- Blacksmith API integration correctness, especially HookManager and Sockets (per `documentation/api/blacksmith-apis.md`)
+- Blacksmith API integration correctness, especially HookManager and Sockets (per the Blacksmith wiki (https://github.com/Drowbe/coffee-pub-blacksmith/wiki))
 
 ## High-priority memory leak risks
 
@@ -75,7 +77,7 @@ Findings:
 - `initializeGatherSockets()` currently just ensures a global listener is registered via:
   - `Hooks.on('blacksmith.requestRollComplete', ...)`
 - The project does use Blacksmith HookManager in other managers (`manager-scene.js`, `manager-pins.js`) via `BlacksmithAPI.getHookManager()` and `registerHook(...)`.
-- The helper doc `documentation/api/blacksmith-apis.md` explicitly recommends using HookManager for registration/unregistration.
+- The helper doc the Blacksmith wiki (https://github.com/Drowbe/coffee-pub-blacksmith/wiki) explicitly recommends using HookManager for registration/unregistration.
 
 Recommendation:
 

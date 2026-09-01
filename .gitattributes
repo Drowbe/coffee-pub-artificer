@@ -1,3 +1,56 @@
-# LevelDB pack files: treat as binary so line endings are not converted (Foundry v11 packaging guide).
-# Prevents "cannot connect to database" errors when developing on Windows.
+# Suite-wide rules, from coffee-pub-blacksmith/.gitattributes. ADDED to this file, never
+# copied over it -- see the packs rule at the bottom, which the hub does not carry and
+# which a wholesale copy would have silently removed.
+
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# JavaScript files
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+
+# Web files
+*.html text eol=lf
+*.css text eol=lf
+*.hbs text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf
+
+# The files every module copies from the hub unchanged. Without these, `text=auto` plus
+# core.autocrlf=true turns them CRLF in the working tree on the next checkout while the hub's stay LF,
+# and a byte-identity diff then reports every line changed -- looking exactly like a local edit.
+# .yml and the two dotfiles are the three of the five copied files that no extension rule reaches.
+*.yml text eol=lf
+*.yaml text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Images should be treated as binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+
+# Font files
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+
+# ---------------------------------------------------------------------------
+# ARTIFICER-SPECIFIC, AND IT MUST STAY LAST.
+#
+# LevelDB pack files: treat as binary so line endings are not converted (Foundry v11
+# packaging guide). Prevents "cannot connect to database" errors when developing on Windows.
+#
+# THE POSITION IS LOAD-BEARING. Git applies the LAST matching rule, so this has to come
+# after `* text=auto` above or that rule wins and eight compendiums get line-ending
+# conversion run over them -- silently, on checkout, with the damage already in the working
+# tree. Most files inside a pack (`LOG`, `CURRENT`, `MANIFEST-000123`) have no extension, so
+# no other rule here reaches them; `*` is the only thing that would, and this is what stops it.
 packs/** binary

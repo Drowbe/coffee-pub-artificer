@@ -1,5 +1,7 @@
 # Coffee Pub Artificer - System Explanation
 
+**Audience:** someone changing Artificer, and the rest of the suite
+
 > **For implementation:** Architecture, data storage, and technical decisions are in `documentation/architecture/architecture-artificer.md`. This document explains the system for users and designers.
 >
 > **Gathering design:** Discovery + Harvest flow and item-level difficulty are defined in `documentation/architecture/architecture-gathering.md`.
@@ -10,7 +12,7 @@ The Coffee Pub Artificer system is a **tag-based crafting system** that encourag
 
 ---
 
-## 🎯 The Core Loop
+## The Core Loop
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -40,7 +42,7 @@ The Coffee Pub Artificer system is a **tag-based crafting system** that encourag
 
 ---
 
-## 📦 Item Data Hierarchy: TYPE > FAMILY > TRAITS
+## Item Data Hierarchy: TYPE > FAMILY > TRAITS
 
 Every Artificer item is organized by a single hierarchy. **Family** is the identity; **traits** are modifiers (no separate "primary tag").
 
@@ -79,7 +81,7 @@ FINISHED ITEMS (Creations)
 
 ---
 
-## 🏷️ Family & Traits: The Heart of Crafting
+## Family & Traits: The Heart of Crafting
 
 ### How It Works
 
@@ -112,7 +114,7 @@ Traits can be revealed gradually (e.g. after 1, 3, or 5 uses) so players discove
 
 ---
 
-## 🔬 Experimentation: Family + Trait Crafting
+## Experimentation: Family + Trait Crafting
 
 ### How Experimentation Works
 
@@ -216,15 +218,15 @@ System Analysis:
     └─────────────────────────────────────┘
 
 Outcome:
-    ✅ Created: "Floral Healing Potion"
-    ✅ Restores 2d4+2 HP
-    ✅ Player gains XP in Alchemy skill
-    ✅ Trait discovery progress on Lavender
+ Created: "Floral Healing Potion"
+ Restores 2d4+2 HP
+ Player gains XP in Alchemy skill
+ Trait discovery progress on Lavender
 ```
 
 ---
 
-## 📜 Recipe System: Predictable Crafting
+## Recipe System: Predictable Crafting
 
 ### How Recipes Work
 
@@ -280,34 +282,34 @@ CRAFTING FLOW:
 
 EXPERIMENTATION:
     Pros:
-    ✅ No recipe needed
-    ✅ Discover new combinations
-    ✅ Tag discovery progress
-    ✅ Surprise results
+ No recipe needed
+ Discover new combinations
+ Tag discovery progress
+ Surprise results
     
     Cons:
-    ❌ Unpredictable outcome
-    ❌ May create "sludge"
-    ❌ Higher material cost
-    ❌ Lower quality potential
+ Unpredictable outcome
+ May create "sludge"
+ Higher material cost
+ Lower quality potential
 
 RECIPE:
     Pros:
-    ✅ Predictable outcome
-    ✅ Reduced material cost
-    ✅ Quality bonus
-    ✅ Guaranteed variant
+ Predictable outcome
+ Reduced material cost
+ Quality bonus
+ Guaranteed variant
     
     Cons:
-    ❌ Must unlock recipe first
-    ❌ Requires specific materials
-    ❌ May need specific workstation
-    ❌ Skill requirements
+ Must unlock recipe first
+ Requires specific materials
+ May need specific workstation
+ Skill requirements
 ```
 
 ---
 
-## 🗺️ Blueprint System: Multi-Stage Crafting
+## Blueprint System: Multi-Stage Crafting
 
 ### How Blueprints Work
 
@@ -340,10 +342,10 @@ BLUEPRINT: The Arcanic Wayfinder
 └── Result: Arcanic Wayfinder (Legendary Artifact)
 
 STAGE PROGRESSION:
-    [Stage 1: Active] ──Complete──→ [Stage 1: ✓]
+ [Stage 1: Active] ──Complete──→ [Stage 1: ]
                                          │
                                          ▼
-                            [Stage 2: Active] ──Complete──→ [Stage 2: ✓]
+ [Stage 2: Active] ──Complete──→ [Stage 2: ]
                                                                     │
                                                                     ▼
                                                     [Stage 3: Active] ──...
@@ -373,7 +375,7 @@ State Detection:
 
 ---
 
-## 🎮 Complete Player Workflow
+## Complete Player Workflow
 
 ### Example: Player Journey
 
@@ -422,7 +424,7 @@ SESSION 3: Mastery
 
 ---
 
-## 🔄 Data Flow & Storage
+## Data Flow & Storage
 
 ### How Data Moves Through the System
 
@@ -518,7 +520,7 @@ When System Needs Ingredients:
 
 ---
 
-## 🎯 Skill System
+## Skill System
 
 ### How Skills Work
 
@@ -564,7 +566,7 @@ SKILL GATING:
 
 ---
 
-## 🏭 Workstation System
+## Workstation System
 
 ### How Workstations Influence Crafting
 
@@ -593,7 +595,7 @@ CRAFTING WITHOUT WORKSTATION:
 
 ---
 
-## 🎨 Visual: Complete Crafting Flow
+## Visual: Complete Crafting Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -671,7 +673,7 @@ CRAFTING WITHOUT WORKSTATION:
 
 ---
 
-## 📊 Example: Complete Crafting Session
+## Example: Complete Crafting Session
 
 ### Scenario: Player Wants to Create a Healing Potion
 
@@ -713,10 +715,10 @@ STEP 4: Recipe Crafting
     └─ Clicks "Craft from Recipe"
     
     System:
-    ├─ Validates: Has Lavender (2)? ✓
-    ├─ Validates: Has Life Essence (1)? ✓
-    ├─ Validates: Alchemy skill 25? ✓ (player has 30)
-    ├─ Validates: Alchemist Table? ✓ (at workstation)
+ ├─ Validates: Has Lavender (2)?
+ ├─ Validates: Has Life Essence (1)?
+ ├─ Validates: Alchemy skill 25? (player has 30)
+ ├─ Validates: Alchemist Table? (at workstation)
     ├─ Applies recipe benefits:
     │  ├─ Reduced cost (saves 1 Lavender)
     │  ├─ Quality bonus (+10%)
@@ -734,7 +736,7 @@ STEP 5: Blueprint Discovery
 
 ---
 
-## 🔍 Key Concepts Summary
+## Key Concepts Summary
 
 ### 1. **Family + Traits Drive Crafting**
    - Family and traits determine what you can craft
@@ -764,7 +766,7 @@ STEP 5: Blueprint Discovery
 
 ---
 
-## 🎮 Player Experience Flow
+## Player Experience Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -801,7 +803,7 @@ MASTER CRAFTER:
 
 ---
 
-## 💡 Design Philosophy
+## Design Philosophy
 
 **Why This System Works:**
 

@@ -284,7 +284,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced top detail rows with a scoreboard-style layout (small label + larger value tiles).
   - Metadata requirements block (apparatus/container/process/time/cost/work hours) now uses matching tile treatment with smaller values and responsive multi-row wrapping.
   - Removed redundant detail rows (`Result`, `Skill Kit`, and `DC`) from the default details view.
-- **Journal filter locked marker:** Journal dropdown options now prefix journals that contain perk-locked recipes with a Unicode lock (`🔒`), which works with native select/option rendering.
+- **Journal filter locked marker:** Journal dropdown options now prefix journals that contain perk-locked recipes with a Unicode lock character (U+1F512), which works with native select/option rendering.
 - **Crafting bench traits block:** Traits now render inside a dedicated block with the same top-border treatment as other bench rows; the divider block only renders when traits exist.
 - **Crafting bench overflow behavior:** Bench column now scrolls vertically when content exceeds available height, matching the other columns.
 - **Artificer window launch behavior:** Gameplay windows now require a selected token before opening (skills, recipe browser, crafting station, gather roll), and opening one Artificer window closes other open Artificer windows first (single-window behavior).

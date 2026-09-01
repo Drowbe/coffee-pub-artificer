@@ -1,12 +1,14 @@
 # Coffee Pub Artificer - Implementation Plan
 
+**Audience:** us, while the work is in flight
+
 > **Canonical source:** `documentation/architecture/architecture-artificer.md` is the source of truth for architecture and decisions. For current task focus, see `documentation/TODO.md`.
 >
 > **Gathering design source:** `documentation/architecture/architecture-gathering.md` (Discovery + Harvest loop, rarity-band discovery, item-level difficulty).
 
 This document merges phased task breakdown, current status, MVP path, and technical notes into a single implementation plan.
 
-> **⚠️ Top priority:** Section 2.5 (Organizing Principles & Item Form) must be completed before any other implementation work. It unblocks item editing, recipe crafting, and data consistency.
+> ** Top priority:** Section 2.5 (Organizing Principles & Item Form) must be completed before any other implementation work. It unblocks item editing, recipe crafting, and data consistency.
 
 ---
 
@@ -41,34 +43,34 @@ This document merges phased task breakdown, current status, MVP path, and techni
 
 ## 2. Current Status
 
-**Phase 0:** ✅ Complete (module structure, schemas, API, settings)
+**Phase 0:** Complete (module structure, schemas, API, settings)
 
 **Phase 1:** Largely complete (see CHANGELOG.md through 13.0.6)
-- ✅ Data models (Ingredient, Component, Essence, Recipe, Blueprint)
-- ✅ Storage managers (ingredients, recipes, blueprints)
-- ✅ TagManager
-- ✅ Item creation utilities, unified form, recipe import
-- ✅ Crafting window (ApplicationV2), experimentation engine, Refresh Cache
-- ✅ Item cache (persisted; world setting `itemCache`); IngredientStorage uses cache
-- ✅ TYPE → FAMILY → TRAITS migration + macro (`macros/migration-macro-example.js`)
-- ✅ GM-only menubar (Create Item, Import Recipes, Roll for Components); crafting/timer sounds
+- Data models (Ingredient, Component, Essence, Recipe, Blueprint)
+- Storage managers (ingredients, recipes, blueprints)
+- TagManager
+- Item creation utilities, unified form, recipe import
+- Crafting window (ApplicationV2), experimentation engine, Refresh Cache
+- Item cache (persisted; world setting `itemCache`); IngredientStorage uses cache
+- TYPE → FAMILY → TRAITS migration + macro (`macros/migration-macro-example.js`)
+- GM-only menubar (Create Item, Import Recipes, Roll for Components); crafting/timer sounds
 - ⏳ Initial data set (starter content)
 - ⏳ ArtificerWorkstation model
 
 **Phase 2:** Blocked on Phase 1 (tag logic, ExperimentationEngine)
 
-**Phase 3:** ✅ Crafting window, recipe/ingredient browser, result display, actor integration
+**Phase 3:** Crafting window, recipe/ingredient browser, result display, actor integration
 
 **Phase 4 (Skills):** Skills Window UI in place
-- ✅ Skills Window (ApplicationV2) from Artificer bar; data from the configured skills ruleset JSON (default `resources/skills-mapping.json`)
-- ✅ Panels: label (left) + total-cost dots (right), badge + perks; click badge → skill details, perk → perk details
-- ✅ Perks show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
+- Skills Window (ApplicationV2) from Artificer bar; data from the configured skills ruleset JSON (default `resources/skills-mapping.json`)
+- Panels: label (left) + total-cost dots (right), badge + perks; click badge → skill details, perk → perk details
+- Perks show cost; applied state (value > 0) styled; panels scroll; 700px panels column, details flex
 - ⏳ Persist to actor flags (Apply), skill progression logic (next)
 
-**Phase 8 (Gathering):** ✅ Roll for Components (Gather)
-- ✅ Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
-- ✅ Habitat multi-select, eligibility by biome; chat cards (success/failure/no pool); remember settings
-- ✅ Blacksmith Request a Roll integration (Wisdom, silent mode, onRollComplete)
+**Phase 8 (Gathering):** Roll for Components (Gather)
+- Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
+- Habitat multi-select, eligibility by biome; chat cards (success/failure/no pool); remember settings
+- Blacksmith Request a Roll integration (Wisdom, silent mode, onRollComplete)
 
 ---
 
@@ -153,7 +155,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 
 ## 3. Phase Breakdown (0–14)
 
-### Phase 0: Foundation & Architecture Setup ✅
+### Phase 0: Foundation & Architecture Setup
 - Data storage approach decided (hybrid)
 - Schema definitions (JSDoc)
 - Module structure (cache, data/, parsers/, managers)
@@ -170,7 +172,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 - Item creation & import (utility-artificer-item.js, window-artificer-item.js, window-artificer-recipe-import.js)
 - Storage: IngredientStorage, RecipeStorage, BlueprintStorage
 - Parsers: RecipeParser, BlueprintParser
-- Item cache (persisted ✅; world setting `itemCache`, translation index, consumable→family)
+- Item cache (persisted ; world setting `itemCache`, translation index, consumable→family)
 - Initial data set (starter ingredients, components, essences, example recipes/blueprint) — in progress
 
 **Deliverable:** Item creation working, data models working, ingredients load from cache/compendiums.
@@ -190,7 +192,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 ---
 
 ### Phase 3: Basic UI - Crafting Interface
-- Crafting window (✅ exists; recipe/ingredient browser, result display, actor integration)
+- Crafting window ( exists; recipe/ingredient browser, result display, actor integration)
 - Ingredient browser (filter, search, tag display)
 - Recipe browser (filter by skill, workstation, category)
 - Result display
@@ -205,7 +207,7 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 - Skill data model (actor flags)
 - Skill categories: Herbalism, Metallurgy, Artifice, Alchemy, Monster Handling
 - XP gain, level-up, skill gating
-- **Skill UI:** ✅ Skills Window (ApplicationV2) — JSON-driven panels, badge + perks, details pane; ⏳ actor persistence, progression
+- **Skill UI:** Skills Window (ApplicationV2) — JSON-driven panels, badge + perks, details pane; ⏳ actor persistence, progression
 
 ---
 
@@ -235,9 +237,9 @@ Single, non-redundant hierarchy. **Family** is the identity; **traits** are modi
 
 ### Phase 8: Gathering System (Basic)
 - Gathering node definitions (biomes, component types; compendium eligibility)
-- Basic gathering interaction (✅ Roll for Components — GM selects biomes/types/DC, request roll for tokens)
+- Basic gathering interaction ( Roll for Components — GM selects biomes/types/DC, request roll for tokens)
 - Biome/seasonal logic (habitat multi-select)
-- Gathering UI (✅ Roll for Components window, chat cards, remember settings)
+- Gathering UI ( Roll for Components window, chat cards, remember settings)
 
 ---
 

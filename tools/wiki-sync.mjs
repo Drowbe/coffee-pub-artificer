@@ -1,24 +1,15 @@
 #!/usr/bin/env node
 /*
- * wiki-sync.mjs -- mirror the publish set of documentation/ into flat GitHub-wiki pages.
- *
- * PORTED FROM coffee-pub-blacksmith/tools/wiki-sync.mjs. Kept in step by hand; there is no
- * shared tooling between the modules. Only four things differ: WIKI_URL, THIS_MODULE, the
- * PUBLISH list and the sidebar groups. Everything else is theirs and should stay that way,
- * so a fix on either side ports across cleanly.
+ * wiki-sync.mjs — mirror the round-1 publish set of documentation/ into flat GitHub-wiki pages.
  *
  * The wiki is a pure mirror: each published doc becomes a top-level page named by its basename
- * (architecture-gathering.md -> page "architecture-gathering"), so there are no colons and no
- * subdirectories. Inter-doc links are rewritten from repo paths to wiki page names; links to
- * code files, or to docs not in the publish set, are downgraded to plain text so the wiki has
- * no broken red links.
- *
- * BECAUSE UNRESOLVABLE LINKS ARE DOWNGRADED RATHER THAN FAILED, a genuinely broken link leaves
- * the repo as quietly missing text. `tools/check-doc-links.mjs` is what fails on those. Run it
- * before publishing; the workflow does not, because a broken link should not block a doc sync.
+ * (api-pins.md -> page "api-pins"), so there are no colons and no subdirectories. Inter-doc links
+ * are rewritten from repo paths (../api/foo.md) to wiki page names (foo); links to code files, or
+ * to docs not in the publish set, are downgraded to plain text so the wiki has no broken red links.
  *
  * Source docs are never modified. The publish/downgrade decision is made fresh each run from the
- * PUBLISH list below, so adding a held doc to that list later auto-links every reference to it.
+ * PUBLISH list below, so adding a held doc to that list later auto-links every reference to it —
+ * no source edits needed.
  *
  * Usage:
  *   node tools/wiki-sync.mjs build              # write reviewable pages to tools/.wiki-build/
@@ -32,56 +23,99 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DOCS = path.join(ROOT, 'documentation');
 const OUT = path.join(ROOT, 'tools', '.wiki-build');
-const WIKI_URL = process.env.WIKI_URL || 'https://github.com/Drowbe/coffee-pub-artificer.wiki.git';
+// Identity comes from module.json so a satellite can copy this file unchanged. `url` is the repo page;
+// the wiki and the raw host are derived from it. (The rest of the portable rewrite is still to come --
+// see TODO-GLOBAL -- but the two values that would silently misbehave in a copied file start here.)
+const MODULE = JSON.parse(fs.readFileSync(path.join(ROOT, 'module.json'), 'utf8'));
+const REPO_URL = (MODULE.url || '').replace(/\/+$/, '');
+const REPO_SLUG = REPO_URL.replace(/^https?:\/\/github\.com\//i, '');
+const WIKI_URL = process.env.WIKI_URL || `${REPO_URL}.wiki.git`;
+// Assets are rewritten to raw.githubusercontent so images render on the wiki, which cannot resolve a
+// repo-relative path. Source docs keep the relative path, which renders in the repo and in an editor.
+// The branch is read from the repository, so a module on `main` and a module on `master` both work.
+// Hardcoding it silently breaks every image on the wiki of any module that does not use this one's.
+function defaultBranch() {
+  for (const args of [
+    ['symbolic-ref', '--quiet', '--short', 'refs/remotes/origin/HEAD'],
+    ['rev-parse', '--abbrev-ref', 'HEAD'],
+  ]) {
+    try {
+      const out = execFileSync('git', ['-C', ROOT, ...args], { encoding: 'utf8' }).trim();
+      if (out && out !== 'HEAD') return out.replace(/^origin\//, '');
+    } catch { /* not a checkout, or no origin: fall through */ }
+  }
+  return 'master';
+}
+const BRANCH = defaultBranch();
+const RAW_BASE = `https://raw.githubusercontent.com/${REPO_SLUG}/${BRANCH}/documentation/assets`;
+const ASSET_LINK = /(?:^|\/)assets\/([^/\\)]+)$/i;
 
-// ---- Publish set. Add held docs here as they are finished and verified clean. ----
+// ---- What publishes: folder membership, not a hand-kept list. ----
 //
-// DELIBERATELY SMALL. This is what someone outside the project needs to understand what
-// Artificer is and how it behaves -- not everything we have written. A wiki that publishes
-// working notes teaches a reader to distrust all of it.
-const PUBLISH = [
-  // Architecture
-  'architecture/architecture-artificer.md',
-  'architecture/architecture-overview.md',
-  'architecture/architecture-gathering.md',
-  'architecture/architecture-skills.md',
-  'architecture/architecture-recipe-journal-cover.md',
-  // User guides -- how to RUN the module. First thing a reader should reach.
-  'userguides/userguide-artificer.md',
-];
+// Every .md in a published folder goes live by existing. The previous version of this file carried a
+// list of 68 paths and nothing published until somebody added a line to it -- which is how
+// architecture-effects.md stayed written, finished, and invisible for months. Convention publishing
+// fails in the direction people notice instead.
+//
+// `global/` is the hub's alone: suite-wide documents are authored once here and LINKED by the
+// satellites, never copied. A satellite has no such folder, so this resolves to nothing there.
+const HUB = 'coffee-pub-blacksmith';
+const MODULE_ID = MODULE.id;
+export const IS_HUB = MODULE_ID === HUB;
 
-// Held, with the reason, so each omission is a decision rather than an oversight:
-//   Internal:     TODO.md and plans/* -- working notes, and a plan is deleted once it lands.
-//   Not ours:     api/apis-blacksmith.md and api/blacksmith-apis.md are notes about
-//                 BLACKSMITH's API and near-duplicates of each other. Their canonical home is
-//                 Blacksmith's own wiki; publishing our summary of someone else's contract
-//                 creates a second source that drifts from it.
-//   Not ours:     Resources/* are reference copies of other modules' documentation.
-//   Placeholders: applicationv2-window/* is an internal how-to whose paths name files the
-//                 reader is told to create. Harmless in the repo, confusing on a wiki.
-//   Out of tree:  testing/ documentation lives beside the harness. This script only scans
-//                 documentation/, so it is unpublishable by construction rather than by being
-//                 left off this list.
+export const PUBLISHED_FOLDERS = ['api', 'architecture', 'designsystem', 'userguides', ...(IS_HUB ? ['global'] : [])];
+export const ROOT_PAGES = ['known-issues.md'];
+// home.md becomes the Home page. It is not in ROOT_PAGES as well, or it would publish twice.
+export const HOME_SRC = 'home.md';
 
-// The Home page. The overview is the right front door: it says what Artificer IS before
-// any other document explains how one part of it works.
-const HOME_SRC = 'architecture/architecture-overview.md';
+// ---- HOLD: deliberately withheld, each with a reason. A hold without a reason is not a hold. ----
+// Empty by design. A document goes live by existing; add an entry here only to withhold one
+// deliberately, and only with a reason -- a hold without a reason is not a hold, it is an oversight
+// wearing a policy's clothes.
+export const HOLD = new Map([]);
 
+export function collect() {
+  const out = [];
+  for (const dir of PUBLISHED_FOLDERS) {
+    const abs = path.join(DOCS, dir);
+    if (!fs.existsSync(abs)) continue;
+    for (const f of fs.readdirSync(abs).sort()) {
+      if (f.endsWith('.md') && !HOLD.has(`${dir}/${f}`)) out.push(`${dir}/${f}`);
+    }
+  }
+  for (const f of ROOT_PAGES) {
+    if (fs.existsSync(path.join(DOCS, f)) && !HOLD.has(f)) out.push(f);
+  }
+  return out;
+}
+
+// A HOLD entry naming a file that no longer exists is stale, and stale holds are how a document stays
+// invisible after the reason for hiding it is gone.
+function checkHold() {
+  const stale = [...HOLD.keys()].filter((rel) => !fs.existsSync(path.join(DOCS, rel)));
+  if (stale.length) {
+    console.warn(`
+HOLD names ${stale.length} file(s) that do not exist -- remove the entry:`);
+    for (const rel of stale) console.warn('  ' + rel);
+  }
+}
+
+const PUBLISH = collect();
 const pageName = (p) => path.basename(p, '.md');
 const publishedPages = new Set([...PUBLISH.map(pageName), 'Home']);
 
 // Clean sidebar label: strip the api-/architecture- prefix, kebab -> Sentence case.
 function label(rel) {
-  if (rel === 'architecture/architecture-artificer.md') return 'Artificer';
-  if (rel === 'architecture/architecture-recipe-journal-cover.md') return 'Recipe journal cover';
-  if (rel === 'userguides/userguide-artificer.md') return 'Using Artificer';
-  const base = pageName(rel).replace(/^(api|architecture|design|guide)-/, '');
+  if (rel === 'api/api-effects.md') return 'Active Effects';
+  if (rel === 'global/global-dnd5e-conditions.md') return 'dnd5e conditions';
+  if (rel === 'architecture/architecture-ownership.md') return 'Module ownership';
+  const base = pageName(rel).replace(/^(api|architecture|design|global|userguide)-/, '');
   const spaced = base.replace(/-/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
@@ -97,15 +131,16 @@ function label(rel) {
 //
 // The rule used to live only in prose, and prose is why it was misapplied at least once. The predicate
 // below is the whole of it: rewrite only when the TARGET is the hub and WE are not the hub. In
-// Blacksmith own copy THIS_MODULE === HUB, so it never rewrites and the hub cannot link out even by
-// accident. A satellite copying this file changes THIS_MODULE and gets the other two directions right
-// for free.
+// Blacksmith's own copy IS_HUB is true, so it never rewrites and the hub cannot link out even by
+// accident. A satellite copies this file unchanged and gets the other two directions right for free,
+// because the identity comes from its own module.json rather than from a constant it must remember
+// to edit.
 //
-// FRAGILITY WORTH KNOWING: an inbound link targets a page NAME from the hub PUBLISH list. A doc that
-// leaves PUBLISH, or is renamed, silently 404s every inbound link in the suite. PUBLISH is therefore a
-// contract with the satellites, not just a local choice.
-const HUB = 'coffee-pub-blacksmith';
-const THIS_MODULE = 'coffee-pub-artificer';
+// FRAGILITY WORTH KNOWING: an inbound link targets a page NAME. A doc that is renamed, or dropped
+// into HOLD, silently 404s every inbound link in the suite. The publish set is therefore a contract
+// with the satellites, not just a local choice.
+// HUB, MODULE_ID and IS_HUB are declared above, derived from module.json. Nothing here is hardcoded
+// per module: a satellite copies this file unchanged and gets the right answer.
 const HUB_WIKI = 'https://github.com/Drowbe/coffee-pub-blacksmith/wiki';
 const SIBLING_DOC = /coffee-pub-([a-z]+)[\\/]documentation[\\/](?:[^)]*[\\/])?([^/\\)]+)\.md(#.+)?$/i;
 
@@ -114,12 +149,16 @@ function siblingWikiUrl(target) {
   if (!m) return null;
   const targetModule = `coffee-pub-${m[1].toLowerCase()}`;
   if (targetModule !== HUB) return null;      // -> satellite: refused, whoever is asking
-  if (THIS_MODULE === HUB) return null;       // hub -> anywhere: refused
+  if (IS_HUB) return null;                    // hub -> anywhere: refused
   return `${HUB_WIKI}/${m[2]}${m[3] || ''}`;
 }
 
 const LINK = /\[([^\]]+)\]\(([^)]+)\)/g;
 const CODE_LINK = /\.(js|mjs|css|hbs|json|txt|webp|png)(#.*)?$/i;
+// CODE_PATH matches a directory name anywhere in the target, which is why the doc branch below runs
+// first: a documentation folder may share a name with a code folder -- `documentation/resources/` did,
+// before it became `documentation/primers/` -- and matching the code branch first would downgrade every
+// link into it to plain text as if it were source. A `.md` target is always a doc, wherever it lives.
 const CODE_PATH = /(scripts|styles|templates|resources)\//;
 
 function rewriteLinks(md, srcRel) {
@@ -136,10 +175,15 @@ function rewriteLinks(md, srcRel) {
       // CODE_PATH entry could otherwise swallow these silently.
       const hub = siblingWikiUrl(target);
       if (hub) return `[${text}](${hub})`;
-      if (CODE_LINK.test(target) || CODE_PATH.test(target)) {         // code / asset -> plain text
+      const asset = target.match(ASSET_LINK);                         // documentation/assets -> raw URL
+      if (asset) return `[${text}](${RAW_BASE}/${asset[1]})`;
+      if (CODE_LINK.test(target)) {                                   // code / asset -> plain text
         downgraded.push(`${srcRel}: code -> text  (${target})`);
         return text;
       }
+      // A .md target is a doc wherever it lives, and this is tested BEFORE CODE_PATH on purpose: a
+      // documentation folder may share a name with a code folder (documentation/resources/ nearly did),
+      // and the other ordering downgrades every link into it to plain text, silently.
       const m = target.match(/([^/]+)\.md(#.+)?$/i);                 // .md doc link
       if (m) {
         const name = m[1];
@@ -149,6 +193,10 @@ function rewriteLinks(md, srcRel) {
         if (publishedPages.has(name)) return `[${clean}](${name}${anchor})`;
         downgraded.push(`${srcRel}: unpublished -> text  (${target})`);
         return clean;
+      }
+      if (CODE_PATH.test(target)) {                                   // extensionless code dir -> text
+        downgraded.push(`${srcRel}: code -> text  (${target})`);
+        return text;
       }
       return whole;
     });
@@ -164,30 +212,48 @@ function readRewriteWrite(rel, outName) {
 }
 
 function buildSidebar() {
-  // HOME_SRC is excluded from its group. It stays in PUBLISH so inter-doc links to it
-  // resolve to a real page instead of being downgraded to plain text, but it is also the
-  // Home page -- listing it in both places makes one document look like two.
-  const group = (prefix) =>
-    PUBLISH.filter((p) => p.startsWith(prefix) && p !== HOME_SRC)
-      .map((rel) => `- [${label(rel)}](${pageName(rel)})`)
-      .join('\n');
+  // Stripping the folder prefix collides whenever two folders hold a document named for the module:
+  // userguide-artificer and architecture-artificer both reduce to "Artificer", in adjacent groups.
+  // A label used more than once falls back to the full page name, which is always unique because it
+  // is the filename. (Raised by coffee-pub-artificer on adoption.)
+  const labelCounts = new Map();
+  for (const rel of PUBLISH) labelCounts.set(label(rel), (labelCounts.get(label(rel)) || 0) + 1);
+  const uniqueLabel = (rel) => (labelCounts.get(label(rel)) > 1 ? pageName(rel) : label(rel));
+
+  const linksIn = (prefix) =>
+    PUBLISH.filter((p) => p.startsWith(prefix))
+      .map((rel) => `- [${uniqueLabel(rel)}](${pageName(rel)})`);
+  // A group whose every document is held renders as a bare heading with nothing under it, which reads
+  // as a broken sidebar rather than an empty category. Emit the heading only when it has links.
+  const section = (title, links) => (links.length ? [`### ${title}`, links.join('\n'), ''] : []);
+  const topLevel = PUBLISH.filter((p) => !p.includes('/'))
+    .map((rel) => `- [${uniqueLabel(rel)}](${pageName(rel)})`);
   return [
-    '### Getting started',
-    '- [Home](Home)',
-    group('userguides/'),
-    '',
-    '### Architecture',
-    group('architecture/'),
-    '',
-    '### Elsewhere',
-    '- [Blacksmith wiki](https://github.com/Drowbe/coffee-pub-blacksmith/wiki)',
-    '',
+    ...section('Getting started', ['- [Home](Home)', ...topLevel]),
+    ...section('User guides', linksIn('userguides/')),
+    ...section('Global', linksIn('global/')),
+    ...section('API', linksIn('api/')),
+    ...section('Architecture', linksIn('architecture/')),
+    ...section('Design system', linksIn('designsystem/')),
   ].join('\n');
 }
 
 function build() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
+
+  checkHold();
+
+  // A satellite adopting the standard copies this file before it has written home.md, and an
+  // unhandled ENOENT stack trace is a terrible way to learn that. Say what is missing and why.
+  if (!fs.existsSync(path.join(DOCS, HOME_SRC))) {
+    console.error(`
+Missing documentation/${HOME_SRC} -- the wiki has no front door without it.`);
+    console.error('Write it before running the publisher: a paragraph on what this module is, then');
+    console.error('links to the user guides, the API, and the architecture. See the documentation');
+    console.error('standard on the hub wiki, page global-documentation-standard.');
+    process.exit(1);
+  }
 
   const downgrades = [];
   for (const rel of PUBLISH) downgrades.push(...readRewriteWrite(rel, `${pageName(rel)}.md`));
@@ -250,10 +316,15 @@ function publish(wikiPathArg) {
   console.log(`  git -C "${wiki}" push`);
 }
 
-const mode = process.argv[2] || 'build';
-if (mode === 'build') build();
-else if (mode === 'publish') publish(process.argv[3]);
-else {
-  console.error('usage: node tools/wiki-sync.mjs [build | publish [wikiClonePath]]');
-  process.exit(1);
+// Run the CLI only when invoked directly. check-docs-structure.mjs imports the publish rules from
+// here rather than restating them -- two copies of "what publishes" is exactly the drift this file
+// exists to prevent -- and an unguarded dispatch would run a full build on import.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const mode = process.argv[2] || 'build';
+  if (mode === 'build') build();
+  else if (mode === 'publish') publish(process.argv[3]);
+  else {
+    console.error('usage: node tools/wiki-sync.mjs [build | publish [wikiClonePath]]');
+    process.exit(1);
+  }
 }
