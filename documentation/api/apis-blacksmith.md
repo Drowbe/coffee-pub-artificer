@@ -1,9 +1,9 @@
 We should use the blacksmith APIs as much as possible:
 
-https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Core-Blacksmith
-https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Hook-Manager
-https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Canvas
-https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Sockets
-https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Pins
+https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-core
+https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-hookmanager
+https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-canvas
+https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-sockets
+https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-pins
 
 There are more at https://github.com/Drowbe/coffee-pub-blacksmith/wiki

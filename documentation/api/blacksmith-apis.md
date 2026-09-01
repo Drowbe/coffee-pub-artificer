@@ -2,33 +2,33 @@ Here are the important Blacksmith APIs other Coffee Pub modules should consider 
 
 Blacksmith Wiki: https://github.com/Drowbe/coffee-pub-blacksmith/wiki (entry point)
 
-API Core: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Core-Blacksmith (utilities + console/notification helpers)
+API Core: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-core (utilities + console/notification helpers)
 
-API Toolbar: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Toolbar (register toolbar tools/UI)
+API Toolbar: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-toolbar (register toolbar tools/UI)
     
-API Menubar: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Menubar (register menubar tools/layout)
+API Menubar: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-menubar (register menubar tools/layout)
 
-API Canvas: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Canvas (canvas layer helpers)
+API Canvas: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-canvas (canvas layer helpers)
 
-API Hook Manager: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Hook-Manager (register/unregister hooks)
+API Hook Manager: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-hookmanager (register/unregister hooks)
 
-API Sockets: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Sockets (emit/register for cross-client sync)
+API Sockets: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-sockets (emit/register for cross-client sync)
 
-API Stats: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Stats (combat/player statistics)
+API Stats: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-stats (combat/player statistics)
 
-API Pins: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Pins (canvas pins system)
+API Pins: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-pins (canvas pins system)
 
-API Chat Cards: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Chat-Cards (chat card themes/helpers)
+API Chat Cards: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-chatcards (chat card themes/helpers)
 
-API Window: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Window (Window API V2 registry)
+API Window: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window (Window API V2 registry)
 
-API Request Roll: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Request-Roll (open roll dialog)
+API Request Roll: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-requestroll (open roll dialog)
 
-API Campaign: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Campaign (normalized campaign context)
+API Campaign: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-campaign (normalized campaign context)
 
-API OpenAI: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-OpenAI (provided by `coffee-pub-regent` when installed; Blacksmith core does not ship an OpenAI surface)
+API OpenAI: no wiki page. The page was deleted with no replacement (confirmed 2026-08-31); the surface is provided by `coffee-pub-regent` when installed and Blacksmith core does not ship one.
 
-API Supplement: https://github.com/Drowbe/coffee-pub-blacksmith/wiki/API:-Supplement (misc helpers used by modules)   
+API Supplement: no wiki page. Deleted with no replacement (confirmed 2026-08-31).   
 
 ## Quick How-To (for other Coffee Pub modules)
 
