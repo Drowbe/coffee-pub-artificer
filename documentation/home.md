@@ -8,6 +8,8 @@ poisons, food, materials and gear at a crafting station. A GM configures which c
 and how hard they are to find, and can author new components, recipes and even new crafting processes
 without writing code.
 
+![The Artificer crafting station](assets/artificer-crafting-station.webp)
+
 It requires [Coffee Pub Blacksmith](https://github.com/Drowbe/coffee-pub-blacksmith/wiki), which owns the
 menubar Artificer lives in, the chat cards it posts, the pins it drops on the map, and the scene
 information it reads.

@@ -4,6 +4,8 @@
 ![Foundry v13](https://img.shields.io/badge/foundry-v13-yellow)
 ![MIT License](https://img.shields.io/badge/license-MIT-blue)
 
+![The Artificer crafting station](https://raw.githubusercontent.com/Drowbe/coffee-pub-artificer/main/documentation/assets/artificer-crafting-station.webp)
+
 ## Description
 
 A crafting, recipe, and blueprint system.
