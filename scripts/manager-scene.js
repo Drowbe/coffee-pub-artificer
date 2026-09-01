@@ -5,7 +5,8 @@
 import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { getBiomeLabel } from './schema-ingredients.js';
-import { normalizeCheckboxList, getSceneHabitats } from './utils/helpers.js';
+import { getSceneHabitats } from './utils/helpers.js';
+import { resolveSceneGatherProfile } from './systems/scene-gather-profile.js';
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, FAMILY_LABELS } from './schema-artificer-item.js';
 import { loadSkillsDetails, resolveGatherDefaults } from './skills-rules.js';
 import { postBlacksmithConsole } from './utils/blacksmith-console.js';
@@ -187,49 +188,29 @@ export class SceneManager {
         const tabBodyHost = form.querySelector('.sheet-body')
             ?? form.querySelector('.tab[data-tab]')?.parentElement
             ?? form;
-        const sceneFlags = app?.document?.getFlag(MODULE.ID, 'scene') ?? {};
-        const enabled = !!sceneFlags.enabled;
-        const profile = (sceneFlags.profile ?? '').toString();
+        // ONE RESOLVER, SHARED WITH THE GATHER PATH. This block used to compute its own
+        // defaults, and they disagreed with the engine's: the form fell back to every
+        // component family when the flag was empty, the gather path fell back to nothing,
+        // so an unconfigured scene displayed all six ticked and found none of them.
+        // Whatever this form shows is now literally what gathering will use.
+        //
+        // `_defaultHarvestingSkills` is cached at initialize() because this render hook
+        // must not await -- see _injectArtificerTab. The resolver is synchronous for that
+        // reason and takes the defaults as an argument.
+        if (!this._defaultHarvestingSkills.length) this._refreshHarvestingSkillDefaults();
+        const profile = resolveSceneGatherProfile(app?.document, this._defaultHarvestingSkills);
         const componentFamilies = FAMILIES_BY_TYPE[ARTIFICER_TYPES.COMPONENT] ?? [];
-        const currentComponentTypes = normalizeCheckboxList(sceneFlags.componentTypes);
-        const rawComponentTypes = currentComponentTypes.length
-            ? currentComponentTypes
-            : componentFamilies;
-        const selectedComponentTypes = new Set(rawComponentTypes.map((s) => String(s).trim()).filter(Boolean));
-        // Cached at initialize(); see _injectArtificerTab for why this must not await.
-        const defaultHarvestingSkills = this._defaultHarvestingSkills;
-        if (!defaultHarvestingSkills.length) this._refreshHarvestingSkillDefaults();
-        const currentHarvestingSkills = normalizeCheckboxList(sceneFlags.harvestingSkills);
-        const rawHarvestingSkills = currentHarvestingSkills.length
-            ? currentHarvestingSkills
-            : defaultHarvestingSkills;
-        const selectedHarvestingSkills = new Set(rawHarvestingSkills.map((s) => String(s).trim()).filter(Boolean));
-        const fallbackDC = Number(sceneFlags.defaultDC);
-        const discoveryDCRaw = Number(sceneFlags.discoveryDC);
-        const harvestDCRaw = Number(sceneFlags.harvestDC);
-        const discoveryDCFallback = Number.isFinite(discoveryDCRaw)
-            ? Math.max(0, Math.min(20, discoveryDCRaw))
-            : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, fallbackDC)) : 5);
-        const discoveryBaseDCRaw = Number(sceneFlags.discoveryBaseDC);
-        const discoveryBaseDC = Number.isFinite(discoveryBaseDCRaw)
-            ? Math.max(0, Math.min(20, discoveryBaseDCRaw))
-            : discoveryDCFallback;
-        const harvestDC = Number.isFinite(harvestDCRaw)
-            ? Math.max(0, Math.min(20, harvestDCRaw))
-            : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, fallbackDC)) : 5);
-        const clampOffset = (raw, fallbackValue) => Number.isFinite(Number(raw))
-            ? Math.max(0, Math.min(30, Number(raw)))
-            : fallbackValue;
-        const discoveryOffsetCommon = clampOffset(sceneFlags.discoveryOffsetCommon, 0);
-        const discoveryOffsetUncommon = clampOffset(sceneFlags.discoveryOffsetUncommon, 3);
-        const discoveryOffsetRare = clampOffset(sceneFlags.discoveryOffsetRare, 6);
-        const discoveryOffsetVeryRare = clampOffset(sceneFlags.discoveryOffsetVeryRare, 10);
-        const discoveryOffsetLegendary = clampOffset(sceneFlags.discoveryOffsetLegendary, 14);
-        const gatherSpots = Number.isFinite(Number(sceneFlags.gatherSpots)) ? Math.max(1, Math.min(30, Number(sceneFlags.gatherSpots))) : 1;
-        const discoveryRadiusUnitsRaw = Number(sceneFlags.discoveryRadiusUnits);
-        const discoveryRadiusUnits = Number.isFinite(discoveryRadiusUnitsRaw)
-            ? Math.max(5, Math.min(300, Math.round(discoveryRadiusUnitsRaw / 5) * 5))
-            : 60;
+        const selectedComponentTypes = new Set(profile.componentTypes);
+        const selectedHarvestingSkills = new Set(profile.harvestingSkills);
+        const discoveryBaseDC = profile.discoveryBaseDC;
+        const harvestDC = profile.harvestDC;
+        const discoveryOffsetCommon = profile.discoveryOffsets.common;
+        const discoveryOffsetUncommon = profile.discoveryOffsets.uncommon;
+        const discoveryOffsetRare = profile.discoveryOffsets.rare;
+        const discoveryOffsetVeryRare = profile.discoveryOffsets.veryRare;
+        const discoveryOffsetLegendary = profile.discoveryOffsets.legendary;
+        const gatherSpots = profile.gatherSpots;
+        const discoveryRadiusUnits = profile.discoveryRadiusUnits;
         // HABITAT IS READ-ONLY HERE. It moved to Blacksmith's Geography tab, which owns it
         // for the whole suite -- Minstrel reads it too, and gated its habitat automation on
         // Artificer being installed precisely because we used to own it. Two editable lists
@@ -250,7 +231,7 @@ export class SceneManager {
                 </label>
             `;
         }).join('');
-        const harvestingSkillOptionsHtml = defaultHarvestingSkills.map((skillId) => {
+        const harvestingSkillOptionsHtml = this._defaultHarvestingSkills.map((skillId) => {
             const checked = selectedHarvestingSkills.has(skillId) ? 'checked' : '';
             return `
                 <label class="checkbox artificer-scene-checkbox">
@@ -265,18 +246,6 @@ export class SceneManager {
         tabPanel.dataset.tab = 'artificer';
         tabPanel.dataset.group = dataGroup;
         tabPanel.innerHTML = `
-            <div class="form-group">
-                <label>Enable Artificer Features</label>
-                <div class="form-fields">
-                    <input type="checkbox" name="flags.${MODULE.ID}.scene.enabled" ${enabled ? 'checked' : ''} />
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Artificer Profile</label>
-                <div class="form-fields">
-                    <input type="text" name="flags.${MODULE.ID}.scene.profile" value="${foundry.utils.escapeHTML(profile)}" placeholder="Default" />
-                </div>
-            </div>
             <div class="form-group">
                 <label>Habitats</label>
                 <div class="form-fields">
@@ -471,17 +440,21 @@ export class SceneManager {
         this._refreshSceneDirectoryIndicator(scene);
     }
 
+    /**
+     * Whether the scene-directory badge should show.
+     *
+     * THE QUESTION CHANGED. This used to answer "may this scene gather", which was the
+     * right badge when a GM had to switch each scene on. Every scene with a habitat can
+     * gather now, so that badge would mark almost all of them and mean nothing. It
+     * answers "has a GM deliberately tuned this scene" instead -- which is what a GM
+     * scanning the directory actually wants to know.
+     *
+     * Both facts still exist on the profile as `isConfigurable` and `isTuned`; this
+     * picks the second on purpose.
+     */
     static _hasGatheringConfigured(scene) {
         if (!scene) return false;
-        const flags = scene.getFlag(MODULE.ID, 'scene') ?? {};
-        const enabled = !!flags.enabled;
-        const gatherSpots = Math.max(1, Math.min(30, Number(flags.gatherSpots) || 1));
-        // Habitat comes from Blacksmith now, so this predicate spans two flags: ours for
-        // the harvest settings, theirs for the place. Already normalized and vocabulary
-        // filtered on their side.
-        const habitats = getSceneHabitats(scene);
-        const componentTypes = normalizeCheckboxList(flags.componentTypes);
-        return enabled && gatherSpots > 0 && habitats.length > 0 && componentTypes.length > 0;
+        return resolveSceneGatherProfile(scene, this._defaultHarvestingSkills).isTuned;
     }
 
     static _decorateSceneDirectory(html) {

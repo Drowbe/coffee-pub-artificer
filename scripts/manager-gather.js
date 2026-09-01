@@ -9,6 +9,7 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { getBiomeVocabulary, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { normalizeCheckboxList, getSceneHabitats } from './utils/helpers.js';
+import { resolveSceneGatherProfile } from './systems/scene-gather-profile.js';
 import {
     ARTIFICER_TYPES,
     FAMILIES_BY_TYPE,
@@ -604,33 +605,26 @@ export async function handleGatherRollResult(rollTotal, actor = null, pending = 
 }
 
 async function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
-    const flags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    // Habitat comes from Blacksmith's geography, not our flag. Already lowercase,
-    // vocabulary-ordered and vocabulary-filtered on their side, so there is nothing
-    // left to normalize -- the callers gate on `.length`, and an empty result means
-    // the scene genuinely has no habitat rather than that we failed to read one.
-    const biomes = getSceneHabitats(scene);
-    const componentTypes = normalizeCheckboxList(flags.componentTypes);
-    let harvestingFallback = [];
+    // One resolver decides what a scene effectively has; this function only supplies
+    // the ruleset-derived harvesting defaults, which need an await the resolver must
+    // not do. The Scene Config tab reads the same resolver with its own cached copy,
+    // so what a GM sees configured is what actually runs -- they used to disagree.
+    let harvestingDefaults = [];
     try {
-        harvestingFallback = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
+        harvestingDefaults = resolveGatherDefaults(await loadSkillsDetails()).harvestingSkillIds;
     } catch {
-        /* skills mapping failed — caller may surface errors elsewhere */
+        /* skills mapping failed -- caller may surface errors elsewhere */
     }
-    const harvestingSkills = normalizeCheckboxList(flags.harvestingSkills).length
-        ? normalizeCheckboxList(flags.harvestingSkills)
-        : harvestingFallback;
-    const fallbackDC = Number(flags.defaultDC);
-    const rawDiscoveryDC = Number(flags.discoveryDC);
-    const rawHarvestDC = Number(flags.harvestDC);
-    const discoveryDC = Number.isFinite(rawDiscoveryDC)
-        ? Math.max(0, Math.min(20, Math.floor(rawDiscoveryDC)))
-        : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, Math.floor(fallbackDC))) : 5);
-    const harvestDC = Number.isFinite(rawHarvestDC)
-        ? Math.max(0, Math.min(20, Math.floor(rawHarvestDC)))
-        : (Number.isFinite(fallbackDC) ? Math.max(0, Math.min(20, Math.floor(fallbackDC))) : 5);
-    return { discoveryDC, harvestDC, biomes, componentTypes, harvestingSkills };
+    const profile = resolveSceneGatherProfile(scene, harvestingDefaults);
+    return {
+        discoveryDC: profile.discoveryDC,
+        harvestDC: profile.harvestDC,
+        biomes: profile.habitats,
+        componentTypes: profile.componentTypes,
+        harvestingSkills: profile.harvestingSkills
+    };
 }
+
 
 function _normalizeRarityKey(value) {
     const raw = String(value ?? '').trim().toLowerCase();

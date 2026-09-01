@@ -67,12 +67,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   habitats at all -- working, plausible, and wrong.
 
 ### Changed
+- **Every scene gathers; the per-scene enable is gone:** Installing the module is the opt-in, so asking
+  again on every scene asked the same question twice. The "Enable Artificer Features" checkbox is removed,
+  along with the "Artificer Profile" text box beside it, which was written to a flag nothing ever read.
+  **A scene now needs only a habitat**, set on Blacksmith's Geography tab; everything on the Artificer tab
+  narrows that default rather than enabling it. Two visible changes on upgrade: **a scene that had
+  Artificer switched off will show its discovery pins again** -- the flag was hiding nodes that had been
+  legitimately discovered, which did not undo the discovery -- and **a scene with a habitat but no
+  component types ticked will start yielding components**. No migration runs; the old flags are left on
+  the documents and simply ignored.
 - **Importing a Component without a habitat, or an Essence without an affinity, now fails:** Both have
   always been stated in the authoring prompt and enforced nowhere, so payloads carrying neither imported
   cleanly and produced content that could never be gathered or matched. They are declared rules now and
   are reported as validation errors naming the field. **This will reject JSON that imported before.** The
   fix is to supply the missing value; a Component with no habitat has nowhere to be found, and an Essence
   with no affinity cannot be matched by a recipe.
+
+### Fixed
+- **An unconfigured scene displayed every component family and found none of them:** The Scene Config tab
+  and the gathering engine each decided their own defaults, and disagreed. The tab fell back to all six
+  families when the flag was empty; the engine fell back to nothing. So a scene that looked completely
+  configured returned no components, which is indistinguishable from a scene where there was genuinely
+  nothing to find -- no error, on either side. Both now read one resolver
+  (`scripts/systems/scene-gather-profile.js`), so what the tab shows is what gathering uses.
+- **The scene-directory badge marked the wrong thing:** It meant "this scene can gather", which is now
+  true of almost every scene with a habitat and therefore says nothing. It means "a GM has tuned this
+  scene" instead.
 
 ## [13.2.1]
 

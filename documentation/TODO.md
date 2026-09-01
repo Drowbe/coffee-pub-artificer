@@ -90,30 +90,24 @@ sent as empty.
       legacy shape before dropping it.
 
 ### Every scene gathers; retire the per-scene enable
-Plan: [plans/plan-scene-opt-in.md](plans/plan-scene-opt-in.md). Installing the module is the opt-in; a
-per-scene `enabled` flag asks the same question again. `enabled` gates a directory badge and pin
-rendering, never an action -- nothing in Artificer fires unprompted. Can proceed while Blacksmith builds
-scene geography.
+Built 2026-08-31. Plan [plans/plan-scene-opt-in.md](plans/plan-scene-opt-in.md) is absorbed and can be
+deleted once this is verified in a live world.
 
-- [ ] One resolver owns the effective gather settings for a scene, read by both the form and the gather
-      path. Move the existing fallbacks in `_getSceneGatherSettings` (`manager-gather.js:603-631`) and
-      `resolveGatherDefaults` into it rather than rewriting them -- they are correct, just scattered.
-      **Not blocked on Blacksmith; none of these fields are moving.** Verified by: a scene with an
-      environment and nothing else configured yields components of every family.
-- [ ] Close the componentTypes gap. The form shows all families when the flag is empty
-      (`manager-scene.js:193-195`); the gather path reads the same flag with no fallback
-      (`manager-gather.js:611`) and yields nothing. The form says all, the engine says none, and nothing
-      reports the disagreement. Verified by: the families a scene yields match what its form shows selected.
-- [ ] Decide whether `profile` becomes a real named-preset system or is deleted. It is written by a
-      free-text box at `manager-scene.js:277` and read by nothing. Leaving a control that implies a feature
-      is the one option that is not honest.
-- [ ] Confirm whether `flags.defaultDC` (read at `manager-gather.js:622`, written by no form field) has
-      live data behind it before the resolver decides whether to keep accepting it.
-- [ ] Delete `enabled` -- the checkbox and the reads at `manager-scene.js:188`, `:482`,
-      `manager-pins.js:158`. **Sequence AFTER the habitat migration**, so a post-migration gather failure
-      has one cause rather than two. Verified by: a scene that previously had `enabled: false` shows its
-      existing discovery pins, and the CHANGELOG says so as a change rather than letting it arrive silently.
-- [ ] Repoint the scene-directory badge from "may this scene gather" to "has a GM tuned this scene".
+- [x] ~~One resolver owns the effective gather settings.~~ `systems/scene-gather-profile.js`, synchronous
+      and pure so the Scene Config render hook can call it without awaiting. Both the tab and
+      `_getSceneGatherSettings` read it.
+- [x] ~~Close the componentTypes gap.~~ An unconfigured scene now resolves to every component family in
+      both places instead of all-in-the-form and none-in-the-engine.
+- [x] ~~Delete `enabled`.~~ Checkbox and all three reads gone. Discovery pins no longer gated on it.
+- [x] ~~Decide `profile`.~~ Deleted. Nothing read it; a control implying a feature was the one dishonest
+      option.
+- [x] ~~Repoint the scene-directory badge.~~ `isTuned`, not `isConfigurable`.
+- [x] ~~Resolve `flags.defaultDC`.~~ Kept as a read-only fallback with the reason in the resolver: no form
+      writes it, but worlds predating the DC split may carry it. Writer retired it; reader keeps it.
+- [ ] **Verify in a live world.** The harness covers the resolver; these two need a person:
+      (a) a scene with a habitat and nothing else configured yields components of every family;
+      (b) a scene that previously had Artificer switched off shows its existing discovery pins again.
+- [ ] Delete `plans/plan-scene-opt-in.md` once (a) and (b) pass. Absorbed is the trigger, not implemented.
 
 ### Hand scene habitats to Blacksmith's Scene Config
 Blacksmith is pulling scene-level geography into Scene Config (their `TODO.md`, opened 2026-08-27, and

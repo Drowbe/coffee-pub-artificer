@@ -155,8 +155,11 @@ export class PinsManager {
                 if (!scene) return;
 
                 const sceneFlags = scene.getFlag(MODULE.ID, 'scene') ?? {};
-                const enabled = !!sceneFlags.enabled;
-                const discoveredNodes = enabled && Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY])
+                // No `enabled` gate. A discovered node is a thing that HAPPENED, and
+                // hiding it did not undo the discovery -- it only made a GM who had
+                // switched the scene off wonder where the pins went. A node exists
+                // because someone gathered; that is the whole condition.
+                const discoveredNodes = Array.isArray(sceneFlags[DISCOVERY_NODES_FLAG_KEY])
                     ? sceneFlags[DISCOVERY_NODES_FLAG_KEY].filter((n) => n && typeof n === 'object' && n.id)
                     : [];
                 const targetCount = discoveredNodes.length;

@@ -79,11 +79,10 @@ That is why there is no habitat control on the Artificer tab. Artificer has no o
 is; it asks Blacksmith and decides what can be found there. If the habitats are wrong, change them on the
 Geography tab and every module follows.
 
-**2. Turn Artificer on for the scene and configure harvesting.** Next tab along:
+**2. Tune harvesting, if you want to.** Next tab along:
 
 ![The Artificer tab](../assets/artificer-scene-configuration.webp)
 
-- **Enable Artificer Features** -- the master switch. Nothing is gathered on this scene until it is ticked.
 - **Habitats** -- shown here read-only, exactly as set on the Geography tab, so you can confirm without
   switching tabs.
 - **Component Types** -- which families can be found: Creature Part, Environmental, Essence, Gem, Mineral,
@@ -97,7 +96,14 @@ Geography tab and every module follows.
 - **Gather Spots** -- how many discovered spots the scene may hold at once, up to 30.
 - **Discovery Radius** -- how close to the rolling token new spots appear, 5 to 300 feet.
 
-A scene needs Artificer enabled, at least one habitat, and at least one component type before anything can be found. Miss any of the three and foraging returns nothing, with no error to tell you which. The scene directory shows a marker on
+**A habitat is the only thing a scene needs.** There is no switch to turn Artificer on for a scene:
+installing the module is the opt-in, and asking again per scene was asking the same question twice. A
+scene with a habitat and nothing else configured yields every component family that habitat supports,
+using the DCs and skills from your rulesets. Everything on this tab narrows that default rather than
+enabling it.
+
+The screenshot above predates this change and still shows an "Enable Artificer Features" switch and an
+unused "Artificer Profile" box; both are gone. The scene directory shows a marker on
 scenes that are configured, so you can see at a glance which ones you have set up.
 
 ## Gathering, in play
@@ -109,7 +115,8 @@ allowed. A component with no habitat set can be found anywhere.
 **Gather and Harvest** works a spot. Success adds the component to the character's inventory; the spot is
 consumed.
 
-If foraging turns up nothing, check the three preconditions above before anything else.
+If foraging turns up nothing, the scene most likely has no habitat set on the Geography tab -- or its
+component types are narrowed to families that do not occur there.
 
 ## Crafting
 
