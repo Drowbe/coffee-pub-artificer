@@ -263,6 +263,13 @@ Measured 2026-08-07 against the `burden-of-knowledge` world and the shipped pack
 - [ ] **Resolve the world/pack duplication.** Shipped packs carry no `_stats.compendiumSource` (0 of 564 items); 278 of 281 Artificer-flagged world items do, because the GM imported them by drag-drop. The item cache indexes compendia *and* world ([scripts/cache/cache-items.js](../scripts/cache/cache-items.js) L365-368), so both copies land in the same pool: all 96 gatherable component names appear **exactly twice**, and `pickOneGatherRecord` chooses between them at random. Flags are identical so it is harmless today, but it is the direct cause of the `grantItem` mixed-case problem above.
 - [ ] Note that `_cache` is keyed by normalized **name only**, not name + type ([scripts/cache/cache-items.js](../scripts/cache/cache-items.js) L290-297), so the five components that ship as both `base` and `consumable` (Golden Lotus Petal, Wyvern Stinger, Ankheg Ichor, Spider Venom, Bloodroot) collapse to a single cache entry. Confirm that is intended.
 
+### Experimentation model (architecture section 7.0)
+Rescued from a status board deleted out of `architecture-artificer.md` on 2026-09-01; the design is still
+in that document, this is the outstanding work.
+
+- [ ] Implement the full experimentation model: solvent selection, quantity inputs, temperature and time.
+      Tag-based matching works today; this is the enhancement on top of it.
+
 ### Workstations
 - [ ] Create an `ArtificerWorkstation` data model implementation.
 - [ ] Create workstation data definitions.

@@ -512,7 +512,7 @@ Following Codex/Quest patterns:
 - DOM-based filtering for performance
 - Tag-based filtering, search, category filters
 
-#### Scene Pin Integration (Future)
+#### Scene Pin Integration
 - PIXI-based pins for workstations and gathering nodes
 - Interactive canvas placement (like Quest pins)
 - Position persistence in scene flags
@@ -689,9 +689,12 @@ updated as part of the change that alters what it asserts.
 
 ---
 
-## 12. Outstanding Questions to Resolve
+## 12. Decisions and Their Rationale
 
-### Critical (Must Decide Before Phase 1)
+Each entry is settled. They are kept because the reasoning is the part you cannot recover from
+the code -- what was chosen is visible there, why it was chosen is not.
+
+### Foundational
 
 **Q1: Ingredient Storage**
 - **Decision:** Compendium Packs (Items)
@@ -723,7 +726,7 @@ updated as part of the change that alters what it asserts.
 - **Rationale:** Consistent with workstation approach, reusable definitions, scene-specific data
 - **Status:** Decided
 
-### Important (Should Decide Before Phase 2-3)
+### Structural
 
 **Q7: Recipe Numbering**
 - **Decision:** Hash-based numbers (R1, R2, etc.)
@@ -750,7 +753,7 @@ updated as part of the change that alters what it asserts.
 - **Rationale:** Primary target system for item structure and stats; 5.5+ for schema compatibility
 - **Status:** Decided
 
-### Nice to Have (Can Decide During Implementation)
+### Refinements
 
 **Q12: Pin Interactions**
 - Click behaviors, drag, right-click menus, tooltips
@@ -767,59 +770,7 @@ updated as part of the change that alters what it asserts.
 
 ---
 
-## 13. Implementation Status
-
-### Completed
-- Module setup and GitHub repository
-- Menubar integration (Artificer tool in middle zone)
-- Secondary bar (100px height, ready for content)
-- Blacksmith API integration
-- Resolve critical and important questions (Q1–Q11)
-- Phase 0: Foundation & Architecture Setup
-  - Folder structure (resources/, templates/)
-  - Schema files, manager placeholders, module API
-- Phase 1: Core Data System (major pieces)
-  - Core item creation utilities (`utility-artificer-item.js`)
-  - Unified form (`window-artificer-item.js`), recipe import (`window-artificer-recipe-import.js`)
-  - Data models (Ingredient, Component, Essence, Recipe, Blueprint)
-  - Storage managers (ingredients, recipes, blueprints) with configurable compendium mapping
-  - TagManager
-- Crafting Window
-  - Three-zone layout (ingredient list | bench | feedback)
-  - Crafter portrait/name in header; "Results" → "Details"
-  - Experimentation engine (tag-based rules)
-  - Ingredient filtering (Artificer ingredients only), known combinations
-  - Refresh Cache button
-  - Crafting sounds (component panel, timer heat/grind); success/failure broadcast (13.0.5)
-  - GM-only menubar: Create Item, Import Recipes, Roll for Components (13.0.5)
-- Item cache (persisted)
-  - World setting `itemCache`; GM-initiated refresh from compendia + world
-  - Name-based lookup, alias support from `resources/translation-item.json`
-  - IngredientStorage uses cache when available; otherwise notifies GM
-  - TYPE → FAMILY → TRAITS migration macro: `macros/migration-macro-example.js`
-- Settings: `itemLookupOrder`, `ingredientStorageSource`
-- Rarity: Very Rare (D&D 5e standard; no "Epic")
-- Skills Window
-  - ApplicationV2, data from the configured skills ruleset JSON (default `resources/skills-mapping.json`)
-  - Panels: label (left) + total-cost dots (right), badge (image) + perks grid; click badge → skill details, perk → perk details
-  - Perk number = cost; applied state (value > 0) uses `.perk-applied`; panels column 700px, details flex; panels scroll
-- Roll for Components (Gather)
-  - Gather window: GM selects habitats (biomes), component types, DC; request roll for selected tokens
-  - Habitat multi-select, eligibility by biome; Blacksmith Request a Roll (Wisdom, silent); chat cards; remember settings
-- GM-only macro scripts in `macros/` (e.g. Split Minor Potions, migration example)
-
-### In Progress
-- **Skill system:** Skills Window UI done; actor persistence (Apply button), progression logic (XP, gating) next
-- Recipe/Blueprint browser (parsers exist; recipes in crafting window; dedicated RecipeForm/BlueprintForm TBD)
-- Workstation system; initial data set
-
-### Next Steps
-1. Skill persistence to actor flags (Apply button), progression logic (XP, gating)
-2. Implement §7.0 Experimentation Model: solvent selection, quantity inputs, temperature + time
-3. RecipeForm / BlueprintForm (editing); workstation system
-4. Initial data set (starter content)
-
----
+## 14. Schemas
 
 ### 14.1 Item JSON Structure
 
@@ -868,7 +819,7 @@ Existing items (hundreds) use the old model: `type` (ingredient/component/essenc
 
 See **plan-artificer.md** for the migration macro task breakdown.
 
-### 14.3 Future Schemas
+### 14.3 Schemas Not Yet Written
 
 (Previously 14.2.) Additional schemas to define:
 - Recipes (Journal entries)  
@@ -893,15 +844,15 @@ This crafting system supports:
 
 ---
 
-## 16. Gaps, Open Items & Document Reconciliation
+## 16. Known Divergences
 
-**This document is the canonical source** for architecture, decisions, and implementation status. Other docs (plan-artificer, overview, TODO) should align with it.
+**This document is the canonical source** for architecture, decisions, and implementation status.
 
 ### 16.1 Gaps & Issues to Address
 
 | Item | Description | Action |
 |------|-------------|--------|
-| **Custom ingredients in journals** | overview.md and storage-ingredients `_loadFromJournals` imply journal-based custom ingredients. Not implemented (TODO stub). | Decide: implement journal ingredient parsing, or remove from docs. |
+| **Custom ingredients in journals** | Ingredients come only from compendiums. `IngredientStorage._loadFromJournals` is an empty method whose name implies otherwise, and `architecture-overview.md` describes journal-based custom ingredients that do not exist. | Decide: implement journal ingredient parsing, or remove the claim from the overview. |
 | **D&D version** | Architecture says D&D 5e; user rules say 5.5+. | Explicitly target D&D 5e 5.5+ in §11 and schema docs. |
 | **Persisted cache storage** | World setting `game.settings.get(MODULE.ID, 'itemCache')` (Bibliosoph/Blacksmith pattern). |
 | **Experimentation §7.0** | Quantities, solvent, process (temp/time) are designed but not implemented. | Phase 2; tag-based matching works, full model is enhancement. |

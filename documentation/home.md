@@ -16,8 +16,17 @@ information it reads.
 
 ## Start here
 
-- **[Getting started](userguides/userguide-getting-started.md)** — how to set up a scene, gather, craft, and author content.
-  If you are running a game, this is the only page you need.
+- **[Getting started](userguides/userguide-getting-started.md)** — the first five minutes: give a scene a
+  habitat, forage, harvest, craft. Start here.
+
+Then, by what you are doing:
+
+- **[Crafting](userguides/userguide-crafting.md)** — the bench, processes, and what success and failure produce.
+- **[Recipes and blueprints](userguides/userguide-recipes.md)** — reading, writing and importing them.
+- **[Gathering and harvesting](userguides/userguide-gathering.md)** — scene setup and the discovery loop.
+- **[Authoring content](userguides/userguide-authoring-content.md)** — your own components, tools and processes.
+- **[Skills and perks](userguides/userguide-skills.md)** — crafting skills, and what is not built yet.
+- **[Settings](userguides/userguide-settings.md)** — compendiums, rulesets, and the lookup-order trap.
 
 ## How it is built
 
