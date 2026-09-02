@@ -30,56 +30,37 @@ export const INGREDIENT_FAMILIES = {
 };
 
 /**
- * The habitat vocabulary, as `{key, label}` pairs.
+ * The habitat vocabulary: twelve `{key, label}` pairs with lowercase keys.
  *
- * OWNED BY BLACKSMITH. `api.geography.HABITATS` is the source of truth; this array
- * is only the fallback for a Blacksmith too old to have it. The two differ in CASE --
- * theirs is lowercase -- which is safe precisely because nothing compares a stored
- * biome directly any more. Every read goes through `normalizeBiome`, so a world that
- * upgrades Blacksmith mid-campaign flips canonical form and its existing uppercase
- * data still resolves.
+ * OWNED BY BLACKSMITH, and as of 13.3.0 there is NO LOCAL COPY. `module.json` pins
+ * Blacksmith 13.22.0, the release carrying `api.geography.HABITATS`, so any world running
+ * Artificer has it. The fallback array this file used to hold existed for older Blacksmiths
+ * and carried a SECOND canonical case -- uppercase -- which made the correct spelling of a
+ * habitat depend on which version happened to be installed. Deleting it removes that
+ * ambiguity rather than merely tidying up.
  *
- * DELETE THIS FALLBACK once a Blacksmith version floor is declared in module.json.
- * Carrying two canonical forms indefinitely is the cost of not having one.
- */
-const FALLBACK_HABITATS = Object.freeze([
-    { key: 'MOUNTAIN', label: 'Mountain' },
-    { key: 'ARCTIC', label: 'Arctic' },
-    { key: 'PLANAR', label: 'Planar' },
-    { key: 'COASTAL', label: 'Coastal' },
-    { key: 'SWAMP', label: 'Swamp' },
-    { key: 'DESERT', label: 'Desert' },
-    { key: 'UNDERDARK', label: 'Underdark' },
-    { key: 'FOREST', label: 'Forest' },
-    { key: 'UNDERWATER', label: 'Underwater' },
-    { key: 'GRASSLAND', label: 'Grassland' },
-    { key: 'URBAN', label: 'Urban' },
-    { key: 'HILL', label: 'Hill' }
-]);
-
-/**
- * Blacksmith's vocabulary, or null when unavailable. Never throws; we are a consumer.
+ * An empty result means Blacksmith failed to initialise. Artificer refuses to start in that
+ * case (see the readiness gate in `artificer.js`), so nothing downstream treats empty as a
+ * state it has to survive.
  *
- * `HABITATS`, not `ENVIRONMENTS`. Blacksmith renamed it before shipping -- the D&D
- * rules say habitat, it is what we already store and what Minstrel reads, and having
- * the hub use a different word for the same twelve values meant every consumer
- * translating at its boundary. NO FALLBACK TO THE OLD NAME: it never appeared in a
- * released build, so there is nothing to stay compatible with.
+ * `HABITATS`, not `ENVIRONMENTS`: Blacksmith renamed it before shipping, because the D&D
+ * rules say habitat and it is what Minstrel reads. The old name never appeared in a released
+ * build, so there is nothing to stay compatible with.
  */
 function blacksmithHabitats() {
     const habitats = game?.modules?.get('coffee-pub-blacksmith')?.api?.geography?.HABITATS;
-    return Array.isArray(habitats) && habitats.length ? habitats : null;
+    return Array.isArray(habitats) ? habitats : [];
 }
 
-// Index cache, keyed on the SOURCE ARRAY IDENTITY rather than a boolean. Blacksmith's
-// api is not present at module evaluation, so the first call in a session legitimately
-// resolves to the fallback and a later one to theirs -- caching a "did we check yet"
+// Index cache, keyed on the SOURCE ARRAY IDENTITY rather than a boolean. Blacksmith's api
+// is not present at module evaluation, so the first call in a session legitimately resolves
+// to an empty array and a later one to their real vocabulary -- caching a "did we check yet"
 // flag would pin whichever answer came first.
 let _cachedSource = null;
 let _cachedIndex = null;
 
 function vocabulary() {
-    const source = blacksmithHabitats() ?? FALLBACK_HABITATS;
+    const source = blacksmithHabitats();
     if (_cachedSource !== source) {
         _cachedSource = source;
         _cachedIndex = new Map(source.map((entry) => [String(entry.key).toLowerCase(), entry]));
@@ -91,9 +72,10 @@ function vocabulary() {
  * The habitat vocabulary as `{key, label}` pairs, in declaration order.
  *
  * A FUNCTION, NOT A CONST, and that is the whole point. `game` does not exist when this
- * module is evaluated, so a module-scope constant derived from the API would capture the
- * fallback permanently. Anything that needs the vocabulary at module scope -- an importer
- * declaration's `values` list, for instance -- must resolve it at `ready` instead.
+ * module is evaluated, so a module-scope constant derived from the API would capture an
+ * EMPTY vocabulary permanently and never recover. Anything needing the vocabulary at module
+ * scope -- an importer declaration's `values` list, for instance -- must resolve it at
+ * `ready` instead.
  *
  * @returns {ReadonlyArray<{key: string, label: string}>}
  */

@@ -181,11 +181,14 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
       `api.geography.HABITATS` with a fallback. Templates now round-trip `key` and display `label`.
       The field-group declaration became `buildArtificerItemFieldGroup()`, called at `ready`, because a
       module-scope literal captured the fallback.
-- [ ] **Pin Blacksmith minimum 13.22.0 and delete the `FALLBACK_HABITATS` copy in
-      `schema-ingredients.js`.** That release carries the geography API, the vocabulary and the Scene
-      Config injector. **13.22.0 is an intent, not a tag** -- their `module.json` still reads 13.21.1 and
-      the bump happens at their BUILD. A module pinning a minimum that does not exist will not activate,
-      so make the change on a branch and release only after they tag.
+- [x] ~~Pin Blacksmith minimum 13.22.0 and delete the local habitat vocabulary.~~ **DONE 13.3.0** --
+      `module.json` declares `compatibility.minimum` on the Blacksmith dependency and
+      `schema-ingredients.js` no longer carries a fallback array, so there is one vocabulary and one
+      canonical case.
+- [ ] **DO NOT TAG 13.3.0 UNTIL BLACKSMITH 13.22.0 IS RELEASED.** Their `module.json` still reads
+      13.21.1 and no 13.22 tag exists. A module whose declared dependency minimum does not exist will
+      not activate, so tagging first ships a release that cannot run. Verify with
+      `git -C ../coffee-pub-blacksmith tag --list "*13.22*"` before the BUILD commit.
 - [ ] Register the harvest tab through their Scene Config injector and delete `_injectArtificerTab`,
       `_injectArtificerTabV2` and both guard collections (`manager-scene.js:119`, `:137`, registered at
       `:35-49`).

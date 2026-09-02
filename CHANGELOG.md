@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [Unreleased]
+## [13.3.0]
 
 ### Added
 - **Artificer flags are contributed to Blacksmith's JSON importer:** The flag block registers as a field
@@ -67,6 +67,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   habitats at all -- working, plausible, and wrong.
 
 ### Changed
+- **Coffee Pub Blacksmith 13.22.0 is now the minimum:** That release carries the scene geography API, the
+  habitat vocabulary and the Scene Config injector, all of which Artificer now depends on rather than
+  works around. **Artificer will not activate against an older Blacksmith.**
+- **The local copy of the habitat vocabulary is deleted:** Artificer used to carry its own twelve-value
+  list as a fallback for a Blacksmith too old to publish one. That copy used UPPERCASE keys where
+  Blacksmith uses lowercase, so the correct spelling of a habitat depended on which version happened to be
+  installed. With the version floor pinned there is one vocabulary and one canonical case.
 - **Every scene gathers; the per-scene enable is gone:** Installing the module is the opt-in, so asking
   again on every scene asked the same question twice. The "Enable Artificer Features" checkbox is removed,
   along with the "Artificer Profile" text box beside it, which was written to a flag nothing ever read.
