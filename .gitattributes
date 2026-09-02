@@ -34,6 +34,7 @@
 *.jpg binary
 *.gif binary
 *.ico binary
+*.webp binary
 *.svg text eol=lf
 
 # Font files

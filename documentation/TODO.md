@@ -240,6 +240,15 @@ Recipes are a real data model and processes are items as of 13.2.0 — see
 - [ ] Implement skill-level gating for recipes, blueprints, and other downstream systems.
 - [ ] Add level-up / progression notifications.
 
+### Re-verify the copied hub tooling
+- [ ] **`tools/check-docs-structure.mjs` was copied from Blacksmith's WORKING TREE, not their HEAD**
+      (2026-09-01, hub HEAD `64a48d6a`). It carried an uncommitted fix we needed -- the per-group sidebar
+      dedupe and the heading check no longer firing on the verb "Open". Their author had not committed it
+      yet. Re-copy and re-verify once they have, because a copy taken from a dirty tree can diverge from
+      what eventually lands without either side noticing. The other four files came from committed state.
+      Verify by: `sha256sum tools/check-docs-structure.mjs` against
+      `git -C ../coffee-pub-blacksmith show HEAD:tools/check-docs-structure.mjs | sha256sum`.
+
 ## High Priority
 
 ### Blacksmith Pins API Collaboration
