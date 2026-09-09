@@ -48,6 +48,20 @@ Blacksmith, and settings registration cannot be retried once it has run, so a pa
 would leave permanently unusable settings. The notification names the Blacksmith stage that failed; that
 is where to look.
 
+## Foundry v14
+
+Artificer is verified on Foundry v14 (measured on 14.367 with dnd5e 5.3.3) and still runs on v13. No
+behaviour differs between them.
+
+**Two `Dialog` call sites are deprecated rather than broken.** `utils/helpers.js` and `window-skills.js`
+still construct the v1 `Dialog`, which Foundry has deprecated with a v16 horizon. It resolves and works on
+v14; migrating both to `DialogV2` is scheduled work, not a defect you will see.
+
+**One dead hook registration is kept on purpose.** `renderItemSheet` no longer fires on v14 -- dnd5e emits
+`renderItemSheet5e` instead -- but Artificer also registers the core `renderDocumentSheetV2`, which does
+fire, so the Artificer block on item sheets renders normally. The dead registration stays because a v13
+system using an older sheet fires only the old name.
+
 ## Data left behind by older versions
 
 **Some scenes may carry junk habitat, component-type or harvesting-skill flags.** Foundry writes one

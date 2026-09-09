@@ -33,3 +33,65 @@
 **Implemented in this module:** `getChatCardPresentationFields()` in `scripts/utils/helpers.js` — spreads into `ChatMessage.create` so v14 uses `{ style }` and v13 uses `{ type }` with the same numeric value (`CHAT_MESSAGE_STYLES.OTHER` or legacy `CHAT_MESSAGE_TYPES.OTHER`). Used by `scripts/manager-gather.js` and `scripts/window-crafting.js`.
 
 **Reference:** [foundryvtt#13436 — Constants / `CHAT_MESSAGE_TYPES`](https://github.com/foundryvtt/foundryvtt/issues/13436).
+
+---
+
+## What the 2026-09-09 sweep found
+
+Verified against a live Foundry 14.367 client by the Blacksmith session, which holds it.
+
+**`CONST.CHAT_MESSAGE_TYPES` is genuinely removed** -- confirmed on the client, not inferred.
+`CONST.CHAT_MESSAGE_STYLES` survives with `OTHER/OOC/IC/EMOTE`. Our dual-path fix was a real break rather
+than deprecation debt, and Artificer was the only module in the suite that hit it. Note the shape: a
+PROPERTY removed from a global that itself still resolves, so a scan for missing globals cannot see it.
+
+**Deprecation debt, not breakage.** All of the following still resolve on 14.367:
+
+| Site | What |
+|---|---|
+| `scripts/utils/helpers.js:76` | `new Dialog(...)` -- v16 horizon |
+| `scripts/window-skills.js:544` | `new Dialog(...)` -- v16 horizon |
+
+Nineteen such `Dialog` sites exist across the suite and none blocked a build. Migrating them to `DialogV2`
+is worth doing on its own schedule, not inside this migration.
+
+**Fixed here:** `storage-blueprints.js:73` used the bare global `TextEditor`. Now
+`foundry.applications.ux.TextEditor.implementation`, matching `sheet-recipe-page.js:476`. The bare global
+still resolves on 14.367, so this was consistency rather than repair.
+
+**Confirmed clean:** `renderTemplate`, `FormApplication`, `extends Application`, `SearchFilter`,
+`DragDrop`, `AudioHelper`, `ui.notifications.notify`, `setPosition`, `this._element`, `.data.data`.
+`loadTemplates` and every one of thirty `mergeObject` calls are already namespaced.
+
+### The sweep that lied, and how to run it correctly
+
+The first version of this sweep reported CLEAN on three patterns that had live sites. It used
+`grep -rlE "<pattern>" 2>/dev/null | wc -l`, and in ERE a bare `(` is an unterminated group: grep exits 2,
+prints nothing, and the suppressed stderr made an invalid pattern indistinguishable from a real zero.
+
+**Use `grep -F` for anything containing regex punctuation, and never send stderr to `/dev/null` in a
+survey.** A sweep that cannot tell "no matches" from "the pattern was invalid" reports the same number for
+both, and the reassuring reading is the default one.
+
+### The risk static analysis cannot reach
+
+A hook registered under a renamed class name registers successfully and never fires. This caught three
+modules in the suite on migration day -- Squire's `renderActorSheet5e`, six dead journal registrations in
+Blacksmith, Monarch's `renderDialog`. Nothing in the code looks wrong; the symptom is absence.
+
+Artificer registers: `renderSceneConfig`, `renderApplicationV2`, `renderSceneDirectory`, `updateScene`,
+`canvasReady` through Blacksmith's HookManager, and `preCreateJournalEntryPage`, `renderDocumentSheetV2`,
+`renderItemSheet`, `init`, `ready` directly.
+
+`renderItemSheet` is the likeliest to be dead -- it is the dnd5e-side name, and dnd5e renames are what
+killed Squire's. `renderDocumentSheetV2` is the second candidate. Blacksmith 14.1.0 ships
+`blacksmithSilentHooks()`, which lists registered hook names that have not fired; run it after exercising
+every window and treat anything of ours in that list as a break rather than debt.
+
+### Pre-existing, surfaced by the same sweep
+
+Five files define `activateListeners(html)` and call `super.activateListeners(html)`:
+`panel-crafting-experiment.js`, `window-artificer-recipe-import.js`, `window-crafting.js`,
+`window-gather.js`, `window-skills.js`. ApplicationV2 never calls `activateListeners`, so these are dead
+methods -- and `super.activateListeners` likely does not exist, so anything that did call one would throw.
+Not a v14 issue. Tracked separately in `TODO.md`.

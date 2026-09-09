@@ -1,6 +1,6 @@
 # TODO - Active Backlog
 
-**Progress overview:** Current release **v13.1.1**; **13.2.0** in progress. Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
+**Progress overview:** Current release **13.3.0**; **14.0.0** in progress (Foundry v14 migration). Completed work should live in **CHANGELOG.md**; this file is only for unfinished or newly discovered work.
 
 ## Current Focus
 

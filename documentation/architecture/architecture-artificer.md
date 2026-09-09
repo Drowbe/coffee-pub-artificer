@@ -900,4 +900,5 @@ This crafting system supports:
 
 - **architecture-artificer.md** is the canonical source for architecture and decisions.
 - Architecture decisions based on Coffee Pub Codex and Quest systems.
-- All patterns use FoundryVTT v13+ and ApplicationV2.
+- All patterns use FoundryVTT v13+ and ApplicationV2. Verified on v14.367; see
+  [plans/plan-migration-v14.md](../plans/plan-migration-v14.md) for what was measured.

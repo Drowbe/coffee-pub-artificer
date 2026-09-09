@@ -4,7 +4,9 @@ Foundry VTT module (`coffee-pub-artificer`) for D&D 5e: gathering components, au
 crafting. A **consumer** of Coffee Pub Blacksmith, not a hub — Blacksmith is a hard dependency and owns
 windows, the menubar, chat cards, pins, tags and the JSON importer.
 
-D&D 5e / Foundry v13 (`minimum: 13`, `verified: 13`, `maximum: 14`). Requires `coffee-pub-blacksmith`.
+D&D 5e / Foundry v13 and v14 (`minimum: 13`, `verified: 14`, `maximum: 14`). Requires
+`coffee-pub-blacksmith` **>= 14.1.0**, which itself still declares `minimum: 13` -- so a v13 world can
+run both.
 
 **Before starting: confirm the session's working directory is this module's folder.** Reaching this repo
 through an additional working directory works fine, which is what makes a mismatch easy to miss — editing

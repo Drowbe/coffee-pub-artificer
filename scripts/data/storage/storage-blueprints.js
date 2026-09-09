@@ -70,7 +70,14 @@ export class BlueprintStorage {
         for (const page of pages) {
             try {
                 // Enrich HTML content (handles @UUID links, etc.)
-                const enrichedHtml = await TextEditor.enrichHTML(page.text.content, {
+                //
+                // NAMESPACED, not the bare global. `TextEditor` still resolves on Foundry
+                // v14.367 -- verified on the live client -- so this is deprecation debt
+                // rather than a break, and it was the only bare use left in the module.
+                // `sheet-recipe-page.js:476` already did it this way; this file was the
+                // one inconsistent with our own pattern.
+                const TextEditorImpl = foundry.applications.ux.TextEditor.implementation;
+                const enrichedHtml = await TextEditorImpl.enrichHTML(page.text.content, {
                     async: true,
                     relativeTo: journal
                 });

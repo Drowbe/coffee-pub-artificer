@@ -15,8 +15,16 @@ import { ARTIFICER_TYPES, FAMILY_LABELS, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } f
 /**
  * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
  * If not, show "Convert to Artificer item" so users can add Artificer data without duplicating the item editor.
- * - renderItemSheet: legacy AppV1 Item sheets
- * - renderDocumentSheetV2: v13 DocumentSheetV2 (Item, Actor, Image, Journal, etc.) - we must guard for Item only
+ * - renderItemSheet: legacy AppV1 Item sheets. DEAD ON FOUNDRY v14 -- measured on 14.367
+ *   with dnd5e 5.3.3, which emits renderItemSheet5e instead. KEPT ANYWAY: we declare
+ *   `minimum: 13`, and on v13 a system using an AppV1 item sheet fires only this one.
+ *   The writer of a legacy name retires it; the reader keeps its fallback.
+ * - renderDocumentSheetV2: core, system-agnostic, fires on BOTH v13 and v14 -- we guard for Item.
+ *
+ * REGISTERING BOTH IS WHY v14 DID NOT BREAK THIS. Blacksmith measured `renderItemSheet` dead
+ * and concluded the Artificer block never renders; it does, through the DocumentSheetV2 path.
+ * Deliberately NOT switching to `renderItemSheet5e`: that name belongs to dnd5e and is theirs
+ * to rename, which is the exact dependency that killed the hook above.
  */
 function registerItemSheetIntegration() {
     Hooks.on('renderItemSheet', onRenderItemSheet);

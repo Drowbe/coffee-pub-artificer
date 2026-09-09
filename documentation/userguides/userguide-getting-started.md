@@ -10,10 +10,12 @@ This is the first five minutes. Each part has its own guide, linked as it comes 
 
 ## Before you start
 
-**Coffee Pub Blacksmith is required.** Artificer is a consumer of it, not a companion to it -- Blacksmith
-owns the menubar Artificer lives in, the chat cards it posts, the map pins it drops, and the scene
-information it reads. If Blacksmith fails to load, Artificer refuses to start and says so rather than
+**Coffee Pub Blacksmith 14.1.0 or later is required.** Artificer is a consumer of it, not a companion to
+it -- Blacksmith owns the menubar Artificer lives in, the chat cards it posts, the map pins it drops, and
+the scene information it reads. If Blacksmith fails to load, Artificer refuses to start and says so rather than
 running half-configured.
+
+Artificer runs on **Foundry v13 and v14**, and is verified on v14.
 
 **Artificer ships its own content.** Four compendiums install with the module: components, creations,
 tools, and recipes and blueprints. A new world can craft immediately without any authoring and without

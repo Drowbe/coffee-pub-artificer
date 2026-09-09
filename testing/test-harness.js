@@ -46,7 +46,8 @@ const BASE = `${ROOT}/suites`;
 const SUITES = [
     `${BASE}/suite-importer-field-group.js`,
     `${BASE}/suite-biome-normalization.js`,
-    `${BASE}/suite-scene-gather-profile.js`
+    `${BASE}/suite-scene-gather-profile.js`,
+    `${BASE}/suite-harness-integrity.js`
 ];
 
 // ------------------------------------------------------------------
