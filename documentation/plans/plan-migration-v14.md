@@ -30,7 +30,16 @@
 - Per v14 [`ChatMessageData`](https://foundryvtt.com/api/interfaces/foundry.documents.types.ChatMessageData.html), the field for that enum is **`style`**, not the old overloaded **`type`** usage. Document **`type`** is now a **string** subtype from `BaseChatMessage.metadata.types`, separate from chat “style”.
 - **`CONST.CHAT_MESSAGE_STYLES.ROLL`** and **`.WHISPER`** were also removed; infer roll vs whisper from message data (`rolls`, `whisper`) instead.
 
-**Implemented in this module:** `getChatCardPresentationFields()` in `scripts/utils/helpers.js` — spreads into `ChatMessage.create` so v14 uses `{ style }` and v13 uses `{ type }` with the same numeric value (`CHAT_MESSAGE_STYLES.OTHER` or legacy `CHAT_MESSAGE_TYPES.OTHER`). Used by `scripts/manager-gather.js` and `scripts/window-crafting.js`.
+**NO LONGER IMPLEMENTED HERE, AND NOT NEEDED.** This module once carried
+`getChatCardPresentationFields()` in `scripts/utils/helpers.js` to emit `{style}` on v14 and `{type}` on
+v13 (commit `783c14f`). Commit `1cc2d4e` then moved Artificer's chat cards onto Blacksmith's Chat Cards
+API and removed it. Artificer no longer calls `ChatMessage.create` anywhere, so the constant's removal
+cannot reach it -- verified 2026-09-09: zero `CONST.` reads and zero `CHAT_MESSAGE` references in the
+whole module.
+
+Kept here because the note above is still correct about v14, and because the sequence is the point: the
+fix was real, and then the feature moved and took the problem with it. A migration note describing a fix
+that no longer exists will be believed by the next reader.
 
 **Reference:** [foundryvtt#13436 — Constants / `CHAT_MESSAGE_TYPES`](https://github.com/foundryvtt/foundryvtt/issues/13436).
 
@@ -40,7 +49,9 @@
 
 Verified against a live Foundry 14.367 client by the Blacksmith session, which holds it.
 
-**`CONST.CHAT_MESSAGE_TYPES` is genuinely removed** -- confirmed on the client, not inferred.
+**`CONST.CHAT_MESSAGE_TYPES` is absent on 14.367** -- confirmed on the client, not inferred. Stated as
+absence rather than removal: there is no v13 install on this machine, so "it used to be there" is history
+we did not measure.
 `CONST.CHAT_MESSAGE_STYLES` survives with `OTHER/OOC/IC/EMOTE`. Our dual-path fix was a real break rather
 than deprecation debt, and Artificer was the only module in the suite that hit it. Note the shape: a
 PROPERTY removed from a global that itself still resolves, so a scan for missing globals cannot see it.

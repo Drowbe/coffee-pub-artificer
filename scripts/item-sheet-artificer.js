@@ -15,8 +15,10 @@ import { ARTIFICER_TYPES, FAMILY_LABELS, ARTIFICER_FLAG_KEYS, PROCESS_FAMILY } f
 /**
  * Inject Artificer section into all item sheets. If the item has artificer flags, show properties + Edit.
  * If not, show "Convert to Artificer item" so users can add Artificer data without duplicating the item editor.
- * - renderItemSheet: legacy AppV1 Item sheets. DEAD ON FOUNDRY v14 -- measured on 14.367
- *   with dnd5e 5.3.3, which emits renderItemSheet5e instead. KEPT ANYWAY: we declare
+ * - renderItemSheet: legacy AppV1 Item sheets. DOES NOT FIRE on Foundry 14.367 with
+ *   dnd5e 5.3.3, which emits renderItemSheet5e instead -- measured on that client, and
+ *   stated as an observation rather than as "removed in v14", because there is no v13
+ *   install here to compare against. KEPT ANYWAY: we declare
  *   `minimum: 13`, and on v13 a system using an AppV1 item sheet fires only this one.
  *   The writer of a legacy name retires it; the reader keeps its fallback.
  * - renderDocumentSheetV2: core, system-agnostic, fires on BOTH v13 and v14 -- we guard for Item.

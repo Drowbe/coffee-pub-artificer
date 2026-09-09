@@ -57,10 +57,10 @@ behaviour differs between them.
 still construct the v1 `Dialog`, which Foundry has deprecated with a v16 horizon. It resolves and works on
 v14; migrating both to `DialogV2` is scheduled work, not a defect you will see.
 
-**One dead hook registration is kept on purpose.** `renderItemSheet` no longer fires on v14 -- dnd5e emits
-`renderItemSheet5e` instead -- but Artificer also registers the core `renderDocumentSheetV2`, which does
-fire, so the Artificer block on item sheets renders normally. The dead registration stays because a v13
-system using an older sheet fires only the old name.
+**One dead hook registration is kept on purpose.** `renderItemSheet` does not fire on Foundry 14.367 with
+dnd5e 5.3.3 -- dnd5e emits `renderItemSheet5e` there instead. Artificer also registers the core
+`renderDocumentSheetV2`, which does fire, so the Artificer block on item sheets renders normally. The dead
+registration stays because a system using an older sheet class fires only the old name.
 
 ## Data left behind by older versions
 

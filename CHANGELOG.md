@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [14.0.0]
+
+### Changed
+- **Foundry v14 support:** Artificer is verified on Foundry v14 (measured on Foundry 14.367 with dnd5e 5.3.3) and
+  still runs on v13 -- the manifest declares `minimum: 13`, `verified: 14`, `maximum: 14`. Nothing about
+  the module's behaviour changes on either version.
+- **Coffee Pub Blacksmith 14.1.0 is now the minimum.** Blacksmith itself still declares `minimum: 13`, so
+  requiring it does not force a v13 world off Artificer.
+- **Chat cards were already immune, because Artificer no longer builds them.** `CONST.CHAT_MESSAGE_TYPES`
+  is absent on v14, which was the one thing expected to break here. It does not reach us: Artificer stopped
+  calling `ChatMessage.create` when its cards moved to Blacksmith's Chat Cards API, so there is no
+  version-dependent chat code left in this module to adapt.
+
+### Fixed
+- **`TextEditor.enrichHTML` is called through its namespace when loading blueprints:** `storage-blueprints.js`
+  used the bare global while the recipe sheet already used
+  `foundry.applications.ux.TextEditor.implementation`. The bare global still resolves on v14, so nothing was
+  broken; it was the one file inconsistent with our own pattern.
+
+### Added
+- **A programmatic harness runner, `testing/run-headless.js`:** Import it in the console and call
+  `runHeadless()` to run every headless check without opening a dialog. Until now the harness could only be
+  driven by a person pasting a file into a Script macro and clicking a button, which meant it could not be
+  run by anyone automating a migration -- exactly when it is most wanted. The v14 migration surfaced this:
+  the session driving the live client could not run our suites at all.
+- **A harness-integrity suite:** The dialog runner and the programmatic runner each carry their own suite
+  list, and a suite added to one and not the other would run in one place while both reported green. That
+  is coverage shrinking silently, which is the failure the harness exists to catch, so it now checks itself.
+
 ## [13.3.0]
 
 ### Added
