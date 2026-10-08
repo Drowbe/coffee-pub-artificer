@@ -373,6 +373,23 @@
                         {{/if}}
                     </div>
                     {{#unless selectedRecipeData.recipeHiddenByPerk}}
+                    {{#if selectedRecipeIngredients.length}}
+                    <hr class="crafting-details-divider" />
+                    <div class="crafting-recipe-ingredients">
+                        <div class="crafting-recipe-ingredients-title">Ingredients</div>
+                        <div class="crafting-recipe-ingredients-list">
+                            {{#each selectedRecipeIngredients}}
+                            <div class="crafting-ingredient-row">
+                                <img src="{{this.img}}" alt="" class="crafting-ingredient-row-img" />
+                                <div class="crafting-ingredient-row-info">
+                                    <span class="crafting-ingredient-row-name">{{this.name}}</span>
+                                    <span class="crafting-ingredient-row-qty">&times;{{this.quantity}}</span>
+                                </div>
+                            </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                    {{/if}}
                     {{#if selectedRecipeMetadata.length}}
                     <hr class="crafting-details-divider" />
                     <div class="crafting-recipe-stats-scoreboard crafting-recipe-stats-scoreboard--metadata" role="group" aria-label="Recipe requirements">

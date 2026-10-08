@@ -1383,6 +1383,24 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 r.workHours != null ? { label: 'Work Hours', value: String(r.workHours) } : null
             ].filter(Boolean)
             : [];
+        // The Details panel never showed what a recipe actually needs -- only the top
+        // scoreboard (level/skill/rarity) and the apparatus/container/time/cost metadata.
+        // Resolved the same way the result image already is (by name, via the item cache),
+        // not against the current actor's inventory -- this is what the RECIPE requires,
+        // not what the crafter currently has. Gated behind recipeHiddenByPerk in the
+        // template, same as the metadata scoreboard: a locked recipe does not leak its
+        // requirements.
+        const selectedRecipeIngredients = r
+            ? await Promise.all((r.ingredients ?? []).map(async (ing) => {
+                const name = (ing?.name ?? '').trim();
+                const item = name ? await resolveItemByName(name) : null;
+                return {
+                    name: name || '(unnamed)',
+                    quantity: ing?.quantity ?? 1,
+                    img: item?.img ?? 'icons/svg/item-bag.svg'
+                };
+            }))
+            : [];
 
         let selectedRecipeAppliedPerks = [];
         let isExperimentalCrafting = false;
@@ -1514,6 +1532,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             selectedRecipeData,
             selectedRecipeTopFields,
             selectedRecipeMetadata,
+            selectedRecipeIngredients,
             selectedRecipeAppliedPerks,
             selectedRecipeHiddenByPerk: selectedRecipeData?.recipeHiddenByPerk ?? false,
             familyOptions,

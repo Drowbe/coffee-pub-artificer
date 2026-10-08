@@ -429,6 +429,36 @@
     margin-top: 4px;
 }
 
+.crafting-recipe-ingredients {
+    margin-top: 4px;
+}
+
+.crafting-recipe-ingredients-title {
+    font-size: 0.85em;
+    font-weight: 700;
+    color: var(--craft-accent-color);
+    margin-bottom: 6px;
+}
+
+.crafting-recipe-ingredients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Rows reuse .crafting-ingredient-row from the Components column, which is a
+   drag source there and carries `cursor: pointer` for it. Here it is a static
+   summary of what the recipe needs, not an actionable list -- no hover accent,
+   no pointer cursor implying a click does something. */
+.crafting-recipe-ingredients-list .crafting-ingredient-row {
+    cursor: default;
+}
+
+.crafting-recipe-ingredients-list .crafting-ingredient-row:hover {
+    border-color: var(--craft-border-color);
+    background: rgba(0, 0, 0, 0.4);
+}
+
 .crafting-applied-perks-title {
     font-size: 0.85em;
     font-weight: 700;
@@ -694,6 +724,62 @@
     background: rgba(0, 0, 0, 0.8);
     color: rgba(172, 159, 129, 0.75);
     font-size: 1.1em;
+}
+
+/* A cover row shares .crafting-recipe-page's base class (click target, selection
+   state) but nothing about its shape used to say "this starts a book" rather
+   than "here is one more recipe" -- `.crafting-recipe-page-cover` carried no
+   rules of its own at all. Full-bleed art, cropped in rather than shrunk with
+   padding (object-fit: cover on whatever small built-in icon the journal uses
+   -- the same "zoom" treatment Squire's favourite tiles use), a taller banner
+   shape, and a bottom gradient caption read as a divider instead of a row. */
+.crafting-recipe-page.crafting-recipe-page-cover {
+    position: relative;
+    height: 108px;
+    padding: 0;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.crafting-recipe-page-cover .crafting-recipe-page-img,
+.crafting-recipe-page-cover .crafting-recipe-page-img-placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    object-fit: cover;
+    border: none;
+    border-radius: 0;
+    font-size: 2.2em;
+}
+
+.crafting-recipe-page-cover .crafting-recipe-page-content {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    margin-top: 0;
+    padding: 22px 10px 6px;
+    gap: 2px;
+    background: linear-gradient(to top, rgba(8, 6, 4, 0.92) 60%, rgba(8, 6, 4, 0));
+    /* Inert as a block so the gradient never steals the click meant for the row
+       itself (selectCoverPage is bound to .crafting-recipe-page-cover, not to
+       anything inside it). */
+    pointer-events: none;
+}
+
+.crafting-recipe-page-cover .crafting-recipe-page-title {
+    color: #f4e7cd;
+    font-weight: 700;
+    font-size: 1.1em;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.crafting-recipe-page-cover .crafting-recipe-page-tags {
+    color: rgba(241, 231, 214, 0.65);
+    font-size: 0.75em;
 }
 
 /* recipe item */

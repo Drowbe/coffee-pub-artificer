@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The Recipe Browser and Crafting Station's Details panel now shows a recipe's ingredients.**
+  Confirmed missing entirely -- the panel showed the top scoreboard (level/skill/rarity),
+  apparatus/container/process/time/cost, and applied perks, but never what the recipe actually
+  needs to craft. `selectedRecipeIngredients` (`window-crafting.js`) resolves each ingredient's
+  icon by name the same way the result image already is -- against the item cache, not the
+  current actor's inventory, since this shows what the RECIPE requires, not what the crafter
+  currently has. Gated behind the same `recipeHiddenByPerk` check as the metadata scoreboard, so a
+  locked recipe does not leak its requirements. Rows reuse `.crafting-ingredient-row` from the
+  Components column (icon, name, quantity) with the pointer cursor and hover accent switched off,
+  since this list is a static summary, not a drag source.
+
 ### Changed
 - **Recipe import moved entirely to Blacksmith's Unified Import window -- the Artificer-owned "Import
   Recipes" window is gone.** Recipes now work the way items already did: a declared profile
@@ -92,6 +104,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of a stale display-only badge -- options are built from the distinct values actually present on
   the loaded recipe set, since dnd5e item types are not a vocabulary this module owns or enumerates
   anywhere. **Not yet verified live.**
+- **A journal's cover-page row in the Crafting Station/Recipe Browser looked identical to an
+  ordinary recipe row** -- `.crafting-recipe-page-cover` shared `.crafting-recipe-page`'s whole
+  layout and carried no rules of its own, so a book divider and a craftable recipe were visually
+  the same thing. Reworked to read as a divider: the cover art fills the row full-bleed
+  (`object-fit: cover`, cropping in rather than shrinking the icon with padding -- the same "zoom"
+  treatment Squire's Favourites tray tiles use on Foundry's own small built-in icon art), the row
+  is taller (108px), and the journal name sits on a bottom gradient caption instead of beside a
+  small thumbnail. `window-crafting.css` only; no template or script changes, and the regular
+  recipe row is untouched. **Not yet verified live.**
 
 ### Fixed
 - **The Artificer Properties panel's edit (feather) button did nothing when clicked on a compendium
