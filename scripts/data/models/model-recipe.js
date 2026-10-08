@@ -5,7 +5,7 @@
 import { MODULE } from '../../const.js';
 import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { hashString, normalizeItemNameForMatch } from '../../utils/helpers.js';
-import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getSyncFallbackRecipeSkillId, getLastKnownEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE } from '../../schema-artificer-item.js';
 import {
@@ -37,7 +37,11 @@ export class ArtificerRecipe {
     constructor(data = {}) {
         this.id = data.id ?? '';
         this.name = data.name ?? '';
-        this.type = data.type ?? ITEM_TYPES.CONSUMABLE;
+        // Derived from the Result item's own dnd5e document type (RecipePageSheet's drop
+        // handler), not authored -- no longer a closed vocabulary this module owns, so there
+        // is nothing to default to. Blank means "no result item dropped yet", same as the
+        // schema field itself.
+        this.type = data.type ?? '';
         this.category = data.category ?? '';
         this.skill = data.skill ?? getSyncFallbackRecipeSkillId();
         this.skillLevel = data.skillLevel ?? 1;
@@ -69,12 +73,11 @@ export class ArtificerRecipe {
      * @private
      */
     _validateAndNormalize() {
-        // Validate type
-        if (!Object.values(ITEM_TYPES).includes(this.type)) {
-            postBlacksmithConsole(MODULE.NAME, `Invalid recipe type: ${this.type}. Defaulting to ${ITEM_TYPES.CONSUMABLE}`, null, true, false);
-            this.type = ITEM_TYPES.CONSUMABLE;
-        }
-        
+        // No type validation here any more. `type` used to be checked against the fixed
+        // ITEM_TYPES enum and silently reset to Consumable on anything else -- which would
+        // have stomped every derived dnd5e type (`weapon`, `loot`, `equipment`, ...) back to
+        // a wrong, fixed value on every single load. Free text now, exactly like `category`.
+
         // Validate skill against last known enabled ids from skills mapping (when available)
         const validSkills = getLastKnownEnabledCraftingSkillIds();
         if (validSkills?.length && !validSkills.includes(this.skill)) {

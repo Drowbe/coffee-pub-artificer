@@ -6,7 +6,7 @@ import { MODULE } from '../const.js';
 import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 import { extractNameFromUuidLink, normalizePunctuationForStorage } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
-import { ITEM_TYPES, HEAT_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { HEAT_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 import { RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 

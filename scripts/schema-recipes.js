@@ -16,8 +16,11 @@
  * @typedef {Object} ArtificerRecipe
  * @property {string} id - Unique identifier (UUID)
  * @property {string} name - Recipe name
- * @property {string} type - Item type (Weapon, Armor, Consumable, Tool, Gadget, Trinket, ArcaneDevice)
- * @property {string} category - Category within type (e.g., "Potion" for Consumable)
+ * @property {string} type - The Result item's own dnd5e document type (`weapon`, `consumable`,
+ *   `equipment`, ...). Derived, not authored: set from the dropped Result item in the authoring
+ *   sheet (`sheet-recipe-page.js`), blank until one has been dropped.
+ * @property {string} category - The Result item's own dnd5e subtype (`system.type.value`/
+ *   `.subtype`/`.consumableType`, e.g. "potion", "simpleM"). Derived the same way as `type`.
  * @property {string} skill - Required skill (must match an enabled id in the configured skills mapping JSON)
  * @property {number} skillLevel - Minimum skill level required (0–20). Default 1.
  * @property {number|null} heat - (Legacy) Heat level 0–3. Prefer processType + processLevel.
@@ -38,20 +41,6 @@
  * @property {string} source - Source journal UUID
  * @property {string} journalPageId - Journal page ID within source journal
  */
-
-/**
- * Item Types (D&D 5e compatible)
- * @enum {string}
- */
-export const ITEM_TYPES = {
-    WEAPON: 'Weapon',
-    ARMOR: 'Armor',
-    CONSUMABLE: 'Consumable',
-    TOOL: 'Tool',
-    GADGET: 'Gadget',
-    TRINKET: 'Trinket',
-    ARCANE_DEVICE: 'ArcaneDevice'
-};
 
 /**
  * Crafting skill ids are defined only in the skills mapping JSON (`skills` array).

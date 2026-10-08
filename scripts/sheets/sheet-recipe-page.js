@@ -18,11 +18,11 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 import { getProcess, findProcess, getProcessLevel, PROCESS_LEVEL_MAX } from '../systems/process-definitions.js';
 import { RECIPE_RARITIES, GENERATED_PREPARATION_ATTR, RECIPE_SECTIONS } from '../data/models/model-recipe-page.js';
 import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKitNameSet } from '../skills-rules.js';
-import { ARTIFICER_TYPES, FAMILIES_BY_TYPE, PROCESS_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
+import { ARTIFICER_TYPES, PROCESS_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
 import { bindTraitPicker } from '../systems/trait-picker.js';
 
@@ -112,8 +112,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
             value: v, label: v, selected: String(v) === String(current)
         }));
 
-        context.itemTypes = toOptions(Object.values(ITEM_TYPES), system.type);
-
         context.rarities = toOptions(RECIPE_RARITIES, system.rarity);
 
         // The intensity vocabulary belongs to the PROCESS, not to a branch on its
@@ -183,10 +181,6 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                 : '',
             unresolved: Boolean(system.processType) && !resolvedProcess
         };
-
-        // Category is free text by design, but the Creation families are what it
-        // almost always holds, so they are offered as suggestions rather than rules.
-        context.categorySuggestions = FAMILIES_BY_TYPE[ARTIFICER_TYPES.CREATION] ?? [];
 
         // Type and family are DERIVED from the dropped item's flags, not authored.
         // They stay visible because they explain why an ingredient matches, and they
@@ -288,7 +282,15 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         event.preventDefault();
         const field = target?.dataset?.field;
         if (!field) return;
-        await this.#stage({ [`system.${field}`]: '' });
+        // Clearing the result item also clears what it set: type/category have no meaning
+        // without the item that produced them, and leaving them behind would show a stale
+        // classification for a recipe that no longer names what it classified.
+        const update = { [`system.${field}`]: '' };
+        if (field === 'resultItemName') {
+            update['system.type'] = '';
+            update['system.category'] = '';
+        }
+        await this.#stage(update);
     }
 
     /** Remove one ingredient row by index. */
@@ -448,6 +450,7 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
         });
     }
 
+
     /**
      * Wire drag-and-drop onto every element marked `data-drop`.
      *
@@ -495,6 +498,21 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                             return;
                         }
                         await this.#stage({ 'system.processType': doc.name });
+                        return;
+                    }
+
+                    // Result item ALSO sets the recipe's own classification -- dnd5e's real
+                    // document type and subtype, read straight off the dropped item, not
+                    // authored or generator-guessed. Read from the live document, not the item
+                    // cache: cache-items.js's `type`/`dndType` fields are derived for a different
+                    // purpose (an Artificer ingredient family hint) and would misread this.
+                    if (target === 'resultItemName') {
+                        await this.#stage({
+                            'system.resultItemName': doc.name,
+                            'system.type': doc.type ?? '',
+                            'system.category': doc.system?.type?.value ?? doc.system?.type?.subtype
+                                ?? doc.system?.consumableType ?? ''
+                        });
                         return;
                     }
 

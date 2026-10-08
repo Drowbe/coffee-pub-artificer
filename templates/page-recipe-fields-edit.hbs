@@ -30,20 +30,17 @@
         </div>
 
         <div class="arf-field">
-            <label for="recipe-type">Result type</label>
+            <label>Result type</label>
             <div class="arf-inline">
                 <span class="arf-sub">
                     <span class="arf-sub-label">Type</span>
-                    <select id="recipe-type" name="system.type">
-                        {{#each itemTypes}}
-                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
-                        {{/each}}
-                    </select>
+                    <span class="arf-sub-value">{{#if system.type}}{{system.type}}{{else}}&mdash;{{/if}}</span>
+                    <input type="hidden" name="system.type" value="{{system.type}}" />
                 </span>
                 <span class="arf-sub">
-                    <span class="arf-sub-label">Category</span>
-                    <input type="text" name="system.category" value="{{system.category}}"
-                        list="arf-categories" placeholder="e.g. Potion" />
+                    <span class="arf-sub-label">Subtype</span>
+                    <span class="arf-sub-value">{{#if system.category}}{{system.category}}{{else}}&mdash;{{/if}}</span>
+                    <input type="hidden" name="system.category" value="{{system.category}}" />
                 </span>
                 <span class="arf-sub">
                     <span class="arf-sub-label">Rarity</span>
@@ -55,6 +52,7 @@
                     </select>
                 </span>
             </div>
+            <p class="arf-hint">Type and Subtype are set automatically from the dropped Result item above &mdash; drop (or re-drop) it to set or update them.</p>
         </div>
 
         <div class="arf-field">
@@ -276,10 +274,5 @@
             <p class="arf-hint">Writes the Preparation steps from the fields above into the description below. It replaces only the block it generated &mdash; anything you wrote yourself is left alone.</p>
         </div>
     </section>
-
-    {{!-- Suggestion lists. `list=` leaves the field free text, so a name the cache
-          has not seen is still accepted — these narrow the guessing, they do not
-          constrain what a recipe may name. --}}
-    <datalist id="arf-categories">{{#each categorySuggestions}}<option value="{{this}}"></option>{{/each}}</datalist>
 
 </div>

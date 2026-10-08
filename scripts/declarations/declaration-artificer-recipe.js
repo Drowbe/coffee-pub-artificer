@@ -82,6 +82,18 @@
 
 import { RecipePageModel, RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
 import { MODULE } from '../const.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
+
+/**
+ * `{value, label}` options for a static, inclusive numeric range -- for a `promptFields` select
+ * whose legal values are a fixed range with no cross-field dependency (processLevel, skillLevel,
+ * successDC). NOT for a world-configurable vocabulary; that is `dynamicOptions` (skill, skillKit).
+ */
+function numericRangeOptions(min, max) {
+    const options = [];
+    for (let n = min; n <= max; n++) options.push({ value: String(n), label: String(n) });
+    return options;
+}
 
 /**
  * Guidance text per dotted `system.*` path. Not generated -- a schema field
@@ -96,8 +108,12 @@ const RECIPE_GUIDANCE = {
     'ingredients.family': 'Optional. Narrows the match within type (e.g. Plant, Mineral).',
     'ingredients.name': 'The ingredient item, by name.',
     'ingredients.quantity': 'How many of this ingredient the recipe consumes. Defaults to 1.',
-    type: 'The crafted result\'s D&D 5e item type.',
-    category: 'Free text within type, such as "Potion".',
+    // Leave blank, not guessed: both are set automatically from the dropped Result item in the
+    // authoring sheet (its own dnd5e document type and subtype), never authored or generated.
+    // The model carries no `choices` for `type` any more either, so nothing here claims an
+    // "Allowed: ..." list that no longer exists.
+    type: 'Leave blank. Set automatically from the Result item once it is dropped in the authoring sheet.',
+    category: 'Leave blank. Set automatically from the Result item once it is dropped in the authoring sheet.',
     rarity: 'Common, Uncommon, Rare, Very Rare, or Legendary. Leave blank if not stated.',
     skill: 'The crafting skill this recipe is rolled against, and the folder its book files into (e.g. "Alchemy"). Must be an id enabled in the world\'s skills mapping -- not validated against a fixed list, since that mapping is per-world.',
     skillLevel: 'Crafting difficulty, 0 to 20.',
@@ -118,8 +134,6 @@ const RECIPE_EXAMPLES = {
     resultItemName: 'Potion of Healing',
     traits: ['Herbal', 'Medicinal'],
     ingredients: [{ type: 'Component', family: 'Plant', name: 'Sunleaf', quantity: 2 }],
-    type: 'Consumable',
-    category: 'Potion',
     rarity: 'Common',
     skill: 'Alchemy',
     skillLevel: 1,
@@ -187,15 +201,14 @@ const RECIPE_PREAMBLE = 'You are a Dungeon Master designing a crafting recipe fo
     + 'different angles and should agree with each other: skillLevel should rise with rarity '
     + '(roughly common 0-3, uncommon 4-9, rare 10-14, very rare 15-19, legendary 20), and '
     + 'successDC should rise with skillLevel on a similar curve, not be chosen independently. '
-    + 'A recipe\'s category is a subtype of its type (for example "Potion" for a Consumable) -- '
-    + 'choose category only after type, never before, and do not assume a category vocabulary '
-    + 'for a type this sentence does not name; ask rather than guess one. An ingredient\'s '
-    + 'family is similarly a subtype of its own type, not of the recipe\'s type. Weave apparatus, '
-    + 'container, process and timing into the description as part of how the recipe is made, '
-    + 'rather than treating them as isolated facts. Ingredient and result names must come from '
-    + 'the AVAILABLE ITEMS list when it is present -- the author can turn that list off, so do '
-    + 'not assume it is always there. Traits are two to five tags describing what the recipe is '
-    + 'good for -- do not repeat type or category as a trait.';
+    + 'Do not set type or category -- both are set automatically from the result item once it is '
+    + 'dropped in the authoring sheet, never generated. An ingredient\'s family is a subtype of '
+    + 'its own type, not of the recipe\'s. Weave apparatus, container, process and timing into the '
+    + 'description as part of how the recipe is made, rather than treating them as isolated facts. '
+    + 'Ingredient and result names must come from the AVAILABLE ITEMS list when it is present -- '
+    + 'the author can turn that list off, so do not assume it is always there. Traits are two to '
+    + 'five tags describing what the recipe is good for -- do not repeat the result item\'s own '
+    + 'kind as a trait.';
 
 /**
  * Named catalogs to offer on the recipe prompt. ONLY 'actors' and 'items' are legal -- these
@@ -250,9 +263,13 @@ const RECIPE_PROMPT_CATALOGS = ['items'];
  *    Tracked in TODO.md -- not yet implemented; this is prompt-metadata only, that is a change to
  *    already-shipped crafting-match code and deserves its own pass, not a same-night add-on.
  *
- * `type`/`category`/`rarity` (the crafted result's classification) stay OUT for now -- genuinely
- * fixed vocabularies, but asking the author to classify a result before dropping the item that
- * IS the result reads backwards. Revisit once result-item drag-and-drop has been used once.
+ * `type`/`category` stay OUT permanently, not just for now, resolved 2026-10-09: both are now
+ * fully derived, read-only fields on the recipe page, set from the dropped Result item's own
+ * dnd5e document type/subtype in the authoring sheet's drop handler (`sheet-recipe-page.js`,
+ * same pattern as ingredient type/family). Asking the generator to classify a result before any
+ * item is dropped was always backwards, and the old fixed `ITEM_TYPES` vocabulary this used to
+ * validate against is gone from the model entirely -- see plans/plan-recipe-classification.md.
+ * `rarity` stays a real, author-filled field: it is not something any item document exposes.
  *
  * `skill`, `skillKit` are `select` with `dynamicOptions: true` (Blacksmith, 2026-10-09, "A select
  * whose list changes"), NOT a static `select` and NOT free text -- both are world-configurable (a
@@ -295,7 +312,7 @@ const RECIPE_PROMPT_FIELDS = [
     {
         id: 'traits', label: 'Traits', inputType: 'tags', dynamicOptions: true,
         group: 'Traits', groupIcon: 'fa-solid fa-tags',
-        hint: 'Pick a suggestion or type a new one -- suggestions are every trait already used anywhere in your items, not a closed list. Two to five tags describing what the recipe is good for -- do not repeat type or category.'
+        hint: 'Pick a suggestion or type a new one -- suggestions are every trait already used anywhere in your items, not a closed list. Two to five tags describing what the recipe is good for -- do not repeat what kind of item the result already is.'
     },
     {
         id: 'ingredients', label: 'Ingredients', inputType: 'items',
@@ -309,10 +326,7 @@ const RECIPE_PROMPT_FIELDS = [
     },
     {
         id: 'processLevel', label: 'Process level', inputType: 'select',
-        options: [
-            { value: '0', label: '0' }, { value: '1', label: '1' },
-            { value: '2', label: '2' }, { value: '3', label: '3' }
-        ],
+        options: numericRangeOptions(0, 3),
         group: 'Process', groupIcon: 'fa-solid fa-fire',
         hint: '0-3, always this range regardless of process. 0 is always Off; what 1-3 mean (Low/Medium/High, Coarse/Medium/Fine, etc.) depends on the process chosen above, which this list cannot see.'
     },
@@ -336,7 +350,9 @@ const RECIPE_PROMPT_FIELDS = [
         hint: 'This world\'s currently enabled crafting skills. Options are pushed live -- see syncRecipeSkillPromptOptions() in skills-rules.js.'
     },
     {
-        id: 'skillLevel', label: 'Skill level', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        id: 'skillLevel', label: 'Skill level', inputType: 'select',
+        options: numericRangeOptions(SKILL_LEVEL_MIN, SKILL_LEVEL_MAX),
+        group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
         hint: '0-20. Minimum crafting skill required.'
     },
     {
@@ -345,7 +361,11 @@ const RECIPE_PROMPT_FIELDS = [
         hint: 'The tool kit the crafter must hold in inventory, e.g. "Alchemist\'s Supplies". Per-world, not a fixed list.'
     },
     {
-        id: 'successDC', label: 'Success DC', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        // 1-30 is not a named export -- it is RecipePageModel's own successDC NumberField
+        // bounds (model-recipe-page.js), inlined there with no constant to import.
+        id: 'successDC', label: 'Success DC', inputType: 'select',
+        options: numericRangeOptions(1, 30),
+        group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
         hint: '1-30. The crafting roll DC.'
     },
     {

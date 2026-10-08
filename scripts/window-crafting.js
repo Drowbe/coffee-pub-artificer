@@ -658,7 +658,12 @@ async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new
             recipeHiddenByPerk,
             hiddenMessage,
             experimentalIconBeforeTitle,
-            showDimLock
+            showDimLock,
+            // The recipe's own derived classification (dnd5e type/subtype of its Result item),
+            // carried onto the display row so the Type/Subtype filter below can read it without
+            // a second join against `recipes` by id.
+            type: r.type ?? '',
+            category: r.category ?? ''
         };
     }));
     return results;
@@ -804,6 +809,11 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this.filterSearch = options.filterSearch ?? '';
         this.filterRecipeSearch = options.filterRecipeSearch ?? '';
         this.filterRecipeJournal = options.filterRecipeJournal ?? '';
+        /** Recipe's own derived classification (dnd5e document type / subtype of its Result
+         *  item), not the Artificer TYPE above -- same "Type | Subtype" filter shape as
+         *  Components' "Type | Family", different vocabulary (dnd5e's, not Artificer's). */
+        this.filterRecipeType = options.filterRecipeType ?? '';
+        this.filterRecipeCategory = options.filterRecipeCategory ?? '';
         /** Show recipes that are locked (hidden by perk). When false, hide locked recipes from the list. */
         this.showLockedRecipes = options.showLockedRecipes ?? true;
         /** When true, show only recipes the actor can craft (all ingredients available). When false, show all. */
@@ -856,6 +866,15 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
 
     /**
      * Debounced render for search inputs; avoids re-creating inputs on every keystroke (cursor reset bug)
+     *
+     * MITIGATION, NOT A FIX (2026-10-09, found live): a full `render()` destroys and recreates the
+     * input element, and focus/cursor restoration only happens AFTER that DOM swap completes. Any
+     * natural typing pause longer than this delay fires the render mid-keystroke, and a character
+     * landing in the gap between the old input being torn down and the new one regaining focus gets
+     * silently dropped -- confirmed live, typing "blight" produced "blght". 400ms makes that race far
+     * less likely to land on an ordinary typing pause, but does not eliminate it; a sufficiently slow
+     * typist can still hit it. The real fix is patching just the recipe list on a filter change
+     * instead of re-rendering the whole window -- see TODO.md.
      * @param {HTMLElement} inputEl - The search input that had focus
      */
     _debouncedSearchRender(inputEl) {
@@ -873,7 +892,7 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 newEl.focus();
                 if (typeof newEl.setSelectionRange === 'function') newEl.setSelectionRange(saveStart, saveEnd);
             }
-        }, 150);
+        }, 400);
     }
 
     /**
@@ -1185,6 +1204,32 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     (r.tags ?? []).some((t) => String(t).toLowerCase().includes(q))
             );
         }
+        // Type | Subtype options are built from what is actually on the UNFILTERED recipe set,
+        // not a fixed vocabulary -- recipes have none (dnd5e's own item types are not enumerated
+        // anywhere in this module). Built before the type/category filters below are applied, so
+        // the dropdowns always offer every value currently in play, not just what survives the
+        // current selection.
+        const recipeTypeValues = [...new Set(knownCombinations.map((r) => r.type).filter(Boolean))].sort();
+        const recipeTypeOptions = [
+            { value: '', label: 'All types', selected: !this.filterRecipeType },
+            ...recipeTypeValues.map((t) => ({ value: t, label: t, selected: this.filterRecipeType === t }))
+        ];
+        const recipeCategoryValues = [...new Set(
+            knownCombinations
+                .filter((r) => !this.filterRecipeType || r.type === this.filterRecipeType)
+                .map((r) => r.category)
+                .filter(Boolean)
+        )].sort();
+        const recipeCategoryOptions = [
+            { value: '', label: 'All subtypes', selected: !this.filterRecipeCategory },
+            ...recipeCategoryValues.map((c) => ({ value: c, label: c, selected: this.filterRecipeCategory === c }))
+        ];
+        if (this.filterRecipeType) {
+            knownCombinations = knownCombinations.filter((r) => r.type === this.filterRecipeType);
+        }
+        if (this.filterRecipeCategory) {
+            knownCombinations = knownCombinations.filter((r) => r.category === this.filterRecipeCategory);
+        }
         if (!this.showLockedRecipes) {
             knownCombinations = knownCombinations.filter((r) => !r.recipeHiddenByPerk);
         }
@@ -1443,6 +1488,8 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             recipeListWithDividers,
             recipeJournalAllOption: recipeJournalAllOption,
             recipeJournalOptionGroups: recipeJournalOptionGroups,
+            recipeTypeOptions,
+            recipeCategoryOptions,
             /** When viewing a cover (clicked a divider), show that journal's cover in Details. */
             selectedJournalCoverBlock: (() => {
                 if (!this.viewingCoverPage || !this.viewingCoverJournalUuid) return null;
@@ -1753,6 +1800,16 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 w.viewingCoverPage = false;
                 w.viewingCoverJournalUuid = null;
                 w.render();
+            } else if (id === `${appId}-filter-recipe-type`) {
+                w.filterRecipeType = el.value ?? '';
+                // Subtype options are scoped to the selected type (same reasoning as
+                // Components' Family-depends-on-Type below) -- clear a subtype the new
+                // type does not have rather than silently filter against a stale one.
+                w.filterRecipeCategory = '';
+                w.render();
+            } else if (id === `${appId}-filter-recipe-category`) {
+                w.filterRecipeCategory = el.value ?? '';
+                w.render();
             } else if (id === `${appId}-filter-type`) {
                 w.filterArtificerType = el.value ?? '';
                 // Clear family if it's not in the new type's families
@@ -1840,13 +1897,21 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
             ui.notifications?.warn?.('Select a token before opening Crafting Station.');
             return;
         }
+        const recipeId = this.selectedRecipe.id;
         await closeOpenArtificerWindowsForCrafting();
         const win = new CraftingWindow({
-            selectedRecipe: this.selectedRecipe,
             filterRecipeJournal: this.filterRecipeJournal,
-            filterRecipeSearch: this.filterRecipeSearch
+            filterRecipeSearch: this.filterRecipeSearch,
+            filterRecipeType: this.filterRecipeType,
+            filterRecipeCategory: this.filterRecipeCategory
         });
         await win.render(true);
+        // The constructor's `selectedRecipe` option (now removed above) only ever set the bare
+        // reference -- it never ran the matching that actually populates the bench: ingredients
+        // against the actor's inventory, apparatus/container/tool, process/level/time. That is
+        // what `_selectRecipe` does, the same method the in-window recipe list calls on a click,
+        // which is why selecting a recipe there worked and this path never did.
+        await win._selectRecipe(recipeId);
     }
 
     /** Call render() and restore the components list scroll position so it doesn't jump to top. */

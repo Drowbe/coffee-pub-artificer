@@ -22,7 +22,7 @@
 // ==================================================================
 
 import { MODULE } from '../../const.js';
-import { ITEM_TYPES, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX, PROCESS_LEVEL_MAX } from '../../schema-recipes.js';
+import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX, PROCESS_LEVEL_MAX } from '../../schema-recipes.js';
 
 /**
  * The page subtype id. MUST agree exactly with the module.json documentTypes
@@ -136,10 +136,12 @@ export class RecipePageModel extends foundry.abstract.TypeDataModel {
             successDC: new fields.NumberField({ required: false, integer: true, min: 1, max: 30, initial: null, nullable: true }),
 
             // ----- Classification ---------------------------------------
-            type: new fields.StringField({
-                required: false, blank: false, initial: ITEM_TYPES.CONSUMABLE,
-                choices: Object.values(ITEM_TYPES)
-            }),
+            // `type`/`category` are DERIVED, not authored: set by the sheet's drop handler from
+            // the Result item's own `doc.type` / `doc.system.type.value` the moment it is dropped
+            // (see sheet-recipe-page.js), same pattern as ingredient type/family. No `choices` --
+            // dnd5e's real item types are not a vocabulary this module owns or constrains, unlike
+            // the old ITEM_TYPES enum this replaced. Blank until a result item has been dropped.
+            type: new fields.StringField({ required: false, blank: true, initial: '' }),
             category: new fields.StringField({ required: false, blank: true, initial: '' }),
             // Blank means "not stated". Deliberately NOT nullable with a null initial:
             // null is not in `choices`, so the field would fail its own validation on a

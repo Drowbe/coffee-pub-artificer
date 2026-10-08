@@ -4,6 +4,76 @@
 
 ## Current Focus
 
+### Recipe Type/Subtype derived from the dropped result item
+Raised 2026-10-09, investigating the Category suggestion-popup positioning bug: `type`/`category`
+turned out to be real (type is `choices`-enforced, category is free text with Creation-family
+suggestions that ignore the selected type) but unused anywhere beyond a display badge, and the
+generator was guessing values that often did not fit (Iron Ingot -> `Tool`, confirmed not a good
+fit). Author's call: stop authoring/guessing them at all -- derive both from the dropped Result
+item's own dnd5e type/subtype, the same way ingredient type/family are already derived from a
+dropped item. Full design in
+[plans/plan-recipe-classification.md](plans/plan-recipe-classification.md).
+
+- [x] ~~Model: `type` loses its `ITEM_TYPES` `choices`/initial.~~ **DONE 2026-10-09** --
+      `model-recipe-page.js`, blank-by-default like `category`/`rarity`.
+- [x] ~~Sheet: drop handler stages `system.type`/`system.category` from the dropped Result
+      document; remove the now-dead `#bindCategoryPicker()`.~~ **DONE 2026-10-09** --
+      `#bindDropZones`' new `target === 'resultItemName'` branch
+      (`sheet-recipe-page.js`) reads `doc.type` / `doc.system?.type?.value ?? .subtype ??
+      .consumableType`. Clearing the Result slot (`_onClearSlot`) also clears both now, so a
+      cleared recipe does not keep showing a stale classification.
+- [x] ~~Template: Type/Subtype become read-only display.~~ **DONE 2026-10-09** --
+      `page-recipe-fields-edit.hbs`, hidden inputs carry the values through submit.
+- [x] ~~Declaration: rewrite `type`/`category` guidance, the example payload, and the preamble's
+      category-authoring instructions.~~ **DONE 2026-10-09** -- all three said "set it yourself";
+      now all three say "leave blank, set automatically on drop."
+- [x] ~~Suite: `'type' DOES have a values list` assertion flips.~~ **DONE 2026-10-09** --
+      `suite-recipe-declaration.js` now asserts type/category have NO values list.
+- [x] ~~Caught mid-implementation, NOT in the original plan: `model-recipe.js`'s
+      `ArtificerRecipe#_validateAndNormalize()` was silently resetting any `type` not in the old
+      `ITEM_TYPES` enum back to `'Consumable'`.~~ **DONE 2026-10-09** -- this is the LIVE flattened
+      shape every recipe loads into (`RecipeParser.fromSubtypePage`, not a legacy-only path as
+      first assumed), so every derived dnd5e type would have been silently stomped back to
+      `'Consumable'` on every Crafting Station open had this not been caught and fixed. `ITEM_TYPES`
+      deleted from `schema-recipes.js` -- confirmed by repo-wide grep to have no remaining reader.
+- [x] ~~New: Recipe Browser/Crafting Station gets a "Type | Subtype" filter pair.~~ **DONE
+      2026-10-09** -- `window-crafting.js`, `window-crafting.hbs`, `window-recipes.hbs`. Options
+      are built from the distinct `type`/`category` values present on the currently loaded recipe
+      set (no fixed vocabulary exists for dnd5e item types in this module, unlike Components'
+      `ARTIFICER_TYPES`/`FAMILIES_BY_TYPE`). Subtype options narrow to the selected Type, and
+      picking a new Type clears a Subtype selection the new Type may not have -- same shape as
+      Components' Type/Family, different source.
+- [ ] **Not in this pass, logged for later:** recipes created through Blacksmith's Unified Import
+      (the generator path) never have a live dropped document to read `type`/`subtype` from --
+      only a name string. Needs the same "resolve from the item cache by name when read" treatment
+      already planned for ingredient type/family (see the entry below), not drop-time capture.
+      Until then, an imported recipe's Type/Subtype stay blank, which is correct (absent, not a
+      guess) rather than wrong.
+- [ ] **Not yet verified live:** drop a Consumable item as a recipe's Result item and confirm
+      Type/Subtype populate and display correctly; re-drop a different item and confirm both
+      update; clear the Result slot and confirm both clear; open the Crafting Station and confirm
+      no recipe's Type got silently reset to Consumable; exercise the new Type/Subtype filter in
+      both the Recipe Browser and the Crafting Station's Recipes column.
+
+### Crafting window search filter can drop a keystroke while typing
+Found live 2026-10-09, testing the recipe-prompt work. Typing "blight" into the Crafting Station's
+recipe search produced "blght" — a dropped character, not a scramble, pointing at a specific race
+rather than general flakiness.
+
+`_debouncedSearchRender()` (`window-crafting.js`) waits after the last keystroke, then calls a full
+`render()` — which destroys and recreates the search `<input>` element — and only restores
+focus/cursor AFTER that DOM swap completes. Any typing pause longer than the debounce delay fires
+the render mid-keystroke; a character landing in the gap between the old input being torn down and
+the new one regaining focus is silently lost.
+
+- [x] ~~Mitigate.~~ **DONE 2026-10-09** — raised the debounce delay 150ms -> 400ms. Reduces how
+      often an ordinary typing pause lands inside the race; does not eliminate it for a slow enough
+      typist. Comment on `_debouncedSearchRender` states this plainly — it is a mitigation, not a fix.
+- [ ] **Real fix:** stop re-rendering the whole window on a filter keystroke. Patch just the recipe
+      list portion of the DOM (or whatever the filtered list actually is) so the search input
+      itself is never destroyed while it has focus, and the cursor-restore dance becomes
+      unnecessary rather than merely less likely to lose a race.
+
 ### CRITICAL — Migrate Windows to the Blacksmith Window API
 - [ ] Replace Artificer's direct `HandlebarsApplicationMixin(ApplicationV2)` window implementations with the appropriate Blacksmith public base: `BlacksmithWindowBaseV2` for full editors/forms and `BlacksmithToolWindowBaseV2` only for lightweight persistent canvas tools. Reference: [Blacksmith Window API](https://github.com/Drowbe/coffee-pub-blacksmith/wiki/api-window).
   - **Import the bases from the bridge, NOT from `module.api`** (corrected 2026-08-22; the previous instruction here said the opposite and would have broken a live world):
@@ -348,6 +418,24 @@ something fixable by editing our own declaration alone.
       values in the new `preamble` (fixed there — no type→category example invented without
       verification). Decide which vocabulary is actually correct and fix whichever side is wrong; did
       not guess here, since neither file states which one the author intends.
+- [ ] **Confirmed live, 2026-10-09, and it sharpens the item above: `ITEM_TYPES` itself may be
+      missing a value, not just mismatched against the stale prompt file.** A real generation run
+      produced a recipe for "Iron Ingot" (cataloged in `coffee-pub-artificer.creations`). The
+      generator correctly refused to write `type: "Creation"` (not a legal `ITEM_TYPES` value) and
+      flagged its own uncertainty rather than guessing silently, but its fallback, `"Tool"`, does
+      not fit either -- an ingot is a raw material / intermediate crafting good, and none of the
+      seven `ITEM_TYPES` values (`Weapon`/`Armor`/`Consumable`/`Tool`/`Gadget`/`Trinket`/
+      `ArcaneDevice`) are a real fit for one. Also confirmed separately: `artificerType` (the
+      ingredient-bucket flag, `Component`/`Creation`/`Tool`, shown as "Type" in the Artificer
+      Properties panel on a plain item sheet -- `item-sheet-artificer.js:170`) is a THIRD,
+      independent vocabulary from both `ITEM_TYPES` and Foundry's own native item document type
+      (Weapon/Equipment/Loot/Consumable/etc.) -- three different "type" concepts in this system,
+      two of which share the word "Tool" with different meanings. **Two separate decisions for the
+      author, not guessed:** (1) does `ITEM_TYPES` need an eighth value for raw materials/trade
+      goods, or is there an existing value intended to cover them? (2) fix the prompt-level
+      guidance regardless, to state plainly that `type`'s vocabulary is unrelated to the
+      Component/Creation/Tool bucket names shown in the item catalog, since that overlap is what
+      caused the generator's confusion in the first place.
 
 ### Retire buildItemSystem for Blacksmith's declaration assembler
 Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,

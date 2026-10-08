@@ -127,6 +127,15 @@
     line-height: 1.2;
 }
 
+/* Read-only Type/Subtype: matches a <select>'s line height so the row does not
+   jump when sitting next to Rarity, which is still a real control. */
+.artificer-recipe-page .arf-sub-value {
+    display: block;
+    padding: 0.25rem 0;
+    font-size: var(--font-size-13, 0.8rem);
+    opacity: 0.85;
+}
+
 .artificer-recipe-page .arf-sub > input,
 .artificer-recipe-page .arf-sub > select {
     width: 100%;

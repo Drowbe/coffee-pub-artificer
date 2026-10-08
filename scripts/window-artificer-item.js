@@ -229,10 +229,17 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
         return mergedContext;
     }
 
-    async _prepareContext(options = {}) {
-        const base = await super._prepareContext?.(options) ?? {};
-        return foundry.utils.mergeObject(base, await this.getData(options));
-    }
+    // No _prepareContext override here, deliberately. BlacksmithWindowBaseV2's OWN
+    // _prepareContext (window-base.js) already does exactly this -- calls this.getData(options)
+    // (polymorphic, so it reaches ArtificerItemForm's own override below regardless of which
+    // class's _prepareContext invokes it) and merges it into the base context, plus applies
+    // ZONE_DEFAULTS. An override here used to repeat that: call super (which already ran
+    // getData() and merged once), then call getData() AGAIN and mergeObject() the result into
+    // the already-merged context a second time. That second recursive merge could land on the
+    // live Item document (held somewhere in the first-pass result) and try to write into its
+    // `effects` EmbeddedCollection, a getter with no setter -- "Cannot assign to read only
+    // property 'effects'", thrown from inside mergeObject, confirmed live 2026-10-09. Removing
+    // the override removes the double call entirely; inheritance already does the right thing.
 
     /**
      * Browse for an item image.
@@ -287,6 +294,68 @@ export class ArtificerItemForm extends BlacksmithWindowBaseV2 {
 
     _getItemFormRoot() {
         return document.getElementById(this.id) ?? this.element ?? null;
+    }
+
+    /**
+     * Snapshot every live DOM field into `_formState` before a type/family change
+     * triggers `render()`. `getData()` prefers `_formState` over the item's flags,
+     * but only for keys that are actually present in it -- a field this never
+     * copies in (name, traits, skill level, process levels, ...) is rebuilt from
+     * flags on the next render, discarding whatever the author had just typed.
+     *
+     * A field whose section is conditionally hidden (Traits/Skill Level when the
+     * family is Process; Habitat/Quirk outside Component) is simply absent from
+     * the DOM, so its `querySelector` returns null and the existing `_formState`
+     * value -- if any -- is left untouched rather than overwritten with nothing.
+     */
+    _captureFormState() {
+        const root = this._getItemFormRoot();
+        this._formState = this._formState ?? {};
+        if (!root) return;
+
+        const value = (selector) => root.querySelector(selector)?.value;
+
+        const itemName = value('#itemName');
+        if (itemName !== undefined) this._formState.itemName = itemName;
+
+        const img = value('#artificer-item-img');
+        if (img !== undefined) this._formState.img = img;
+
+        const traits = value('#artificer-traits-hidden');
+        if (traits !== undefined) this._formState.traits = traits;
+
+        const skillLevel = value('#skillLevel');
+        if (skillLevel !== undefined) this._formState.skillLevel = Number(skillLevel);
+
+        const affinity = value('#affinity');
+        if (affinity !== undefined) this._formState.affinity = affinity;
+
+        const biomes = value('#artificer-biomes-hidden');
+        if (biomes !== undefined) {
+            this._formState.selectedBiomes = normalizeBiomeList(biomes.split(',').map(b => b.trim()).filter(Boolean));
+        }
+
+        const quirk = value('#artificer-quirk');
+        if (quirk !== undefined) this._formState.quirk = quirk;
+
+        const processSound = value('#processSound');
+        if (processSound !== undefined) this._formState.processSound = processSound;
+
+        const processAnimation = value('#processAnimation');
+        if (processAnimation !== undefined) this._formState.processAnimation = processAnimation;
+
+        const processUnstableEl = root.querySelector('#processUnstable');
+        if (processUnstableEl) this._formState.processUnstable = processUnstableEl.checked;
+
+        const processLevels = [];
+        let sawProcessLevel = false;
+        for (let i = 0; i <= PROCESS_LEVEL_MAX; i++) {
+            const label = value(`[name="processLevelLabel${i}"]`);
+            const color = value(`[name="processLevelColor${i}"]`);
+            if (label !== undefined || color !== undefined) sawProcessLevel = true;
+            processLevels[i] = { label: label ?? '', color: color ?? '' };
+        }
+        if (sawProcessLevel) this._formState.processLevels = processLevels;
     }
 
     /**

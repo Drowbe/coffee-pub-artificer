@@ -63,6 +63,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   their behaviour changes. `panel-crafting-experiment.js` still carries the one REAL instance of this bug
   (its actor-selector `change` handler), left as-is per `TODO.md` since that panel is not reachable from
   any menubar entry or hook today.
+- **`skillLevel` (0-20) and `successDC` (1-30) are dropdowns on the recipe prompt now, not free
+  text.** Same reasoning as `processLevel` already was: both are genuinely fixed, numeric ranges
+  with no cross-field dependency, so a static `promptFields` select is correct and simpler than it
+  looked at first -- caught live, comparing the prompt's guidance text (which already stated the
+  range) against the plain text box actually offered.
+- **A recipe's Type/Subtype are now derived from the dropped Result item, not authored, picked
+  from a list, or generator-guessed.** Investigating a Category suggestion-popup positioning bug
+  (below) surfaced that `type` was a closed, Artificer-invented vocabulary (`ITEM_TYPES`:
+  Weapon/Armor/Consumable/Tool/Gadget/Trinket/ArcaneDevice) a real generation run could not satisfy
+  for a raw material (Iron Ingot correctly refused `"Creation"` and fell back to a poorly-fitting
+  `"Tool"`), `category` was free text whose suggestions ignored whatever Type was selected, and
+  neither was read by anything beyond a display badge. Both now read straight off the Result item's
+  own dnd5e document type and subtype (`doc.type`, `doc.system.type.value`/`.subtype`/
+  `.consumableType`) the moment it is dropped in the authoring sheet -- the same pattern ingredient
+  type/family already use -- and are shown read-only, never hand-edited. Renamed "Category" to
+  "Subtype" throughout (field label, filter, docs) so it reads as dnd5e's own term rather than
+  colliding with Components' unrelated "Type | Family" labels for the Artificer bucket vocabulary.
+  `ITEM_TYPES` is deleted from `schema-recipes.js`. Caught mid-implementation, not in the original
+  scope: `model-recipe.js`'s `ArtificerRecipe` -- the live flattened shape every recipe loads into,
+  old format and new alike, not a legacy-only path as first assumed -- was validating `type`
+  against the now-deleted `ITEM_TYPES` enum and silently resetting anything else back to
+  `"Consumable"`; left alone, every derived type would have been stomped back to Consumable on
+  every Crafting Station open. Fixed in the same pass. See
+  `documentation/plans/plan-recipe-classification.md` for the full design. **New:** the Recipe
+  Browser and Crafting Station gained a "Type | Subtype" filter pair next to the existing journal
+  filter (`window-crafting.js`), the natural use for a field that is now real, derived data instead
+  of a stale display-only badge -- options are built from the distinct values actually present on
+  the loaded recipe set, since dnd5e item types are not a vocabulary this module owns or enumerates
+  anywhere. **Not yet verified live.**
+
+### Fixed
+- **The Artificer Properties panel's edit (feather) button did nothing when clicked on a compendium
+  item.** `item-sheet-artificer.js`'s click handler resolved the item with `foundry.utils.fromUuidSync`,
+  which only returns a document already cached in memory -- reliable for a world item, not for a
+  compendium one that has not been loaded yet, where it silently returns `null` and the handler no-ops:
+  no error, no form, nothing visible. Found live, testing an unrelated recipe-prompt change, on a
+  compendium item. Switched to `fromUuid` (async); the handler is now `async` to match.
+- **A second, independent, pre-existing bug the fix above unmasked: the edit form itself threw
+  `Cannot assign to read only property 'effects'` the moment it tried to open.** `ArtificerItemForm`
+  extends `BlacksmithWindowBaseV2`, whose own `_prepareContext` already calls `this.getData(options)`
+  (polymorphic -- it reaches the subclass override regardless) and merges the result into the base
+  context. `ArtificerItemForm` had its own `_prepareContext` override doing the exact same thing a
+  SECOND time -- call `super._prepareContext()` (which already ran `getData()` and merged once), then
+  call `getData()` again and `mergeObject()` the result into the already-merged context a second time.
+  That second recursive merge landed on the live Item document held somewhere in the first-pass
+  result and tried to write into its `effects` `EmbeddedCollection`, a getter with no setter. Removed
+  the redundant override entirely; the base class already does the right thing on its own.
+- **"Open in Crafting Window" from the Recipe Browser opened an empty bench instead of the selected
+  recipe.** `_openInCraftingWindow` (`window-crafting.js`) passed `selectedRecipe` as a raw
+  constructor option, which only ever set the bare `this.selectedRecipe` reference. All the real work
+  -- matching the recipe's ingredients against the actor's actual inventory, filling the bench slots,
+  picking apparatus/container/tool, setting process/level/time -- happens in `_selectRecipe(recipeId)`,
+  the same method the in-window recipe list calls on a click, which this path never called at all.
+  Now constructs the window without `selectedRecipe`, then calls `await win._selectRecipe(recipeId)`
+  after it renders -- the same sequence a GM clicking a recipe in an already-open window produces.
+- **Mitigated (not fully fixed) a dropped keystroke in the Crafting Station's recipe search.**
+  Typing "blight" could produce "blght" -- `_debouncedSearchRender`'s render, after the debounce
+  delay, destroys and recreates the search input and only restores focus/cursor afterward; a
+  keystroke landing in that gap is lost. Raised the delay 150ms -> 400ms, which makes an ordinary
+  typing pause landing inside that window far less likely, not impossible. Real fix (patch the
+  recipe list instead of re-rendering the whole window) tracked in `TODO.md`.
+- **Changing Type or Family on the Artificer item form threw `w._captureFormState is not a function`,
+  and the name, image, traits, skill level, process levels and quirk the author had just typed were
+  silently lost on the next edit.** Both dropdown handlers called `_captureFormState()` before
+  re-rendering (`window-artificer-item.js`) -- the method was never actually implemented. `getData()`
+  already preferred `_formState` over the item's flags for every one of those fields; nothing had ever
+  written most of them into `_formState` in the first place, so a type/family change rebuilt them from
+  flags and discarded whatever was on screen. Implemented `_captureFormState()` to snapshot every live
+  DOM field into `_formState` before the handlers call `render()`. A field whose section is
+  conditionally hidden at capture time (Traits/Skill Level under the Process family; Habitat/Quirk
+  outside Component) is simply skipped rather than overwritten with nothing, so switching away from and
+  back to a family does not wipe a value the form just isn't showing right now.
+- **Not a bug: "Create" and "Edit" showing different fields on the Artificer item form.** The two
+  screenshots compared had different Type/Family selected (Component vs. Creation) -- Habitat and
+  Quirk are deliberately Component-only (`{{#if isComponent}}` in `templates/item-form.hbs`), and
+  Traits/Skill Level are hidden for the Process family, which neither matches nor is crafted. The form
+  renders the same field set for the same type/family regardless of create vs. edit.
+- **The recipe page's Category suggestion popup rendered far from the field it belonged to** --
+  confirmed live, 2026-10-09: typing or clicking into Category on the recipe sheet opened its
+  suggestion list anchored near the Traits row instead of under Category itself. Category was a
+  native `<input list="arf-categories">` datalist; that popup is positioned by the browser in
+  viewport space, which does not track wherever this window places itself on screen. Investigating
+  this is what surfaced that `type`/`category` were barely used at all -- see the Type/Subtype
+  entry in `### Changed` above, the same day. Category is no longer free text, so there is no
+  suggestion popup left to position; the native-datalist replacement built earlier the same session
+  (a self-positioned dropdown, matching the Traits picker) was itself superseded within hours by
+  removing the input entirely, not left in place.
 
 ## [14.0.1]
 

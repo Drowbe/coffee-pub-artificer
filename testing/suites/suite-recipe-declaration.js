@@ -114,21 +114,36 @@ export default {
                 // correct here -- unlike skill/skillKit, this vocabulary never changes.
                 expect('promptFields "processLevel" inputType', promptField('processLevel')?.inputType, 'select');
                 expect('promptFields "processLevel" options', (promptField('processLevel')?.options ?? []).map(o => o.value), ['0', '1', '2', '3']);
+                // skillLevel (0-20) and successDC (1-30) are the same fixed-range pattern as
+                // processLevel -- a static select, not dynamicOptions, since the legal range
+                // never changes (confirmed against SKILL_LEVEL_MIN/MAX and RecipePageModel's
+                // successDC bounds directly).
+                expect('promptFields "skillLevel" inputType', promptField('skillLevel')?.inputType, 'select');
+                expect.ok('promptFields "skillLevel" options span 0-20',
+                    (promptField('skillLevel')?.options ?? []).length === 21
+                    && promptField('skillLevel').options[0].value === '0'
+                    && promptField('skillLevel').options[20].value === '20');
+                expect('promptFields "successDC" inputType', promptField('successDC')?.inputType, 'select');
+                expect.ok('promptFields "successDC" options span 1-30',
+                    (promptField('successDC')?.options ?? []).length === 30
+                    && promptField('successDC').options[0].value === '1'
+                    && promptField('successDC').options[29].value === '30');
             }
         },
         {
             id: 'values-correct-for-dynamic-fields',
-            label: 'processType and skill carry no fixed values list',
+            label: 'processType, skill, type and category carry no fixed values list; rarity does',
             tier: 'headless',
             group: 'Registration',
-            note: 'Both vocabularies are runtime-configurable. A values list here would reject legitimate recipes in a world whose processes or skills differ from ours -- confirm declarationFromModel did not invent one from somewhere.',
+            note: 'processType/skill are runtime-configurable; a values list here would reject legitimate recipes in a world whose processes or skills differ from ours. type/category are DERIVED (set from the dropped Result item\'s own dnd5e document type/subtype, never authored) as of 2026-10-09 -- they lost the old ITEM_TYPES-based values list on purpose, not by accident. rarity is still a real, author-filled, genuinely fixed vocabulary.',
             run: async ({ expect }) => {
                 const importer = blacksmithApi()?.importer;
                 const declaration = importer?.getDeclaration?.(PROFILE_KIND, PROFILE_ID);
                 const field = (name) => declaration?.fields?.find(f => f.name === name);
                 expect.ok('processType has no values list', !field('processType')?.values);
                 expect.ok('skill has no values list', !field('skill')?.values);
-                expect.ok('type DOES have a values list (it is genuinely static)', Array.isArray(field('type')?.values) && field('type').values.length > 0);
+                expect.ok('type has no values list (derived, not a vocabulary this module owns)', !field('type')?.values);
+                expect.ok('category has no values list (derived, same as type)', !field('category')?.values);
                 expect.ok('rarity DOES have a values list', Array.isArray(field('rarity')?.values) && field('rarity').values.length > 0);
             }
         },

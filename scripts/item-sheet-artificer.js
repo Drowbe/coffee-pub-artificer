@@ -40,14 +40,17 @@ function onRenderDocumentSheetV2(app, html) {
     onRenderItemSheet(app, html);
 }
 
-function onDocumentClick(event) {
+async function onDocumentClick(event) {
     const target = event.target.closest('[data-action="edit-artificer"], [data-action="convert-artificer"]');
     if (!target) return;
     const uuid = target.getAttribute('data-item-uuid');
     if (!uuid) return;
     event.preventDefault();
     event.stopPropagation();
-    const item = foundry.utils.fromUuidSync(uuid);
+    // fromUuidSync only resolves a document already cached in memory -- reliable for a world
+    // item, not for a compendium one that has not been loaded yet, where it silently returns
+    // null and the button reads as doing nothing. fromUuid (async) always resolves correctly.
+    const item = await fromUuid(uuid);
     if (item) openEditForm(item);
 }
 

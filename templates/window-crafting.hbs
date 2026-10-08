@@ -70,6 +70,18 @@
                         {{/each}}
                     </select>
                 </div>
+                <div class="crafting-zone-filters-row">
+                    <select id="{{appId}}-filter-recipe-type" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by the result's type">
+                        {{#each recipeTypeOptions}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                    <select id="{{appId}}-filter-recipe-category" class="crafting-zone-select artificer-crafting-dropdown" title="Filter by the result's subtype (options depend on type)">
+                        {{#each recipeCategoryOptions}}
+                        <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
+                        {{/each}}
+                    </select>
+                </div>
                 <div class="crafting-zone-recipes-list">
                     {{#each recipeListWithDividers}}
                     {{#if this.isCoverDivider}}
