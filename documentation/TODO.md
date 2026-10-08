@@ -91,6 +91,117 @@ placement, driven entirely by the declaration.
       table in, then delete the plan doc. Notes 5 (duplicate policy) and 6 (our own button) are already
       resolved/obsolete and do not need carrying forward.
 
+### CRITICAL — Evolve the recipe Prompt Template, raised 2026-10-08
+Author's ask, from comparing our Prompt Template tab against the Area Narrative one in Blacksmith's own
+Unified Import window: Area's tab offers Location Path fields, Generation Direction dropdowns, and —
+the part that matters most — **Compendium Actors / Compendium Items checklists** that inject a real,
+world-accurate catalog of names into the generated prompt, so the LLM references actual items instead of
+inventing them. Ours offers only "Select Prompt Template" + a single "Additional Guidance" textarea.
+
+**Confirmed by reading the code, not assumed: this is not reachable today, for any declared satellite
+profile, recipe or otherwise.** `buildJournalPrompt` (`registry-json-import-journals.js:1226`) special-cases
+exactly four literal keys — `area`, `illustration`, `location`, `encounter` — each wired to its own
+hand-authored prompt file and kind-level UI getter (`journalAreaUi`, `getJournalAreaImportUi()`,
+`AREA_GENERATION_OPTIONS`, `applyAreaCatalogSections` with its `[ADD-COMPENDIUM-ITEMS-HERE]` placeholder
+substitution). Every other profile key — including `recipe` — falls through to `buildPromptSchemaText`,
+the generic declaration-derived prompt (fields, `guidance`, `examples`, `rules` only; confirmed no catalog
+mechanism exists there). `promptFields` (the one authoring-time extension point a declared profile does
+have) only renders `text`/`select`/`textarea` controls with static, registration-time options — no
+compendium picker, no dynamically-fetched catalog, and unsuited to a world-configurable list like our
+enabled skills (already noted when this was first raised with Blacksmith).
+
+So this is a genuine capability gap, in the same family as the profile-`preamble` request below — not
+something fixable by editing our own declaration alone.
+
+- [x] ~~Review Bibliosoph's injury profile for prior art.~~ **DONE 2026-10-08** — it uses `promptFields`
+      for exactly one select ("damage type"), a genuinely fixed vocabulary. Confirms `promptFields` is
+      real but narrow: static `text`/`select`/`textarea` only, registered once, no catalog mechanism, no
+      cross-field dependency (one field's options cannot depend on another field's chosen value). Nobody
+      has asked Blacksmith for catalog injection on a declared profile before.
+- [x] ~~Profile-level `preamble`.~~ **SHIPPED by Blacksmith 2026-10-08** (their side staged, not yet
+      committed/released — author reloads and commits there too) **and wired in on ours**:
+      `declaration-artificer-recipe.js`'s `RECIPE_PREAMBLE` covers the generator role, the two-step
+      "JSON first, then ask about the image" instruction, and cross-field relationships a single field's
+      `guidance` can't carry (rarity/skillLevel/DC bands, type-before-category, ingredient family being a
+      subtype of the ingredient's own type, not the recipe's). Added to `suite-recipe-declaration.js` too
+      (asserts `preamble` is a non-empty string). **Not yet verified live** — added after the author went
+      to bed; needs a reload + harness run (or a real generation) to confirm Blacksmith's build actually
+      renders it before the FIELDS list as documented, and that `declarationFromModel` forwards it
+      correctly (code-read confirms it should: `preamble` isn't a named destructured key in
+      `declarationFromModel`, so it passes through the `...declaration` spread untouched).
+- [x] ~~Scope the catalog request instead of asking Blacksmith to design blind.~~ **DONE 2026-10-08**,
+      grounded by reading `scripts/cache/cache-items.js` (the item cache `buildDocumentData` and every
+      runtime name-resolution already draws from):
+      - **Source:** the exact same set already used for ingredient/result name resolution — GM-configured
+        Item compendiums (`ingredientCompendium1..N` settings, via `getConfiguredCompendiumIds()`) plus
+        all world items. No new picker UI needed; Artificer already has the GM-facing settings that pick
+        this, unlike Area which has none of its own and needs the checkbox UI for that reason.
+      - **Contents:** NOT Artificer-flagged items only — mundane D&D items (Flask of Oil, Charcoal) are
+        legitimate ingredients too, matched by name alone. Include everything the cache already indexes.
+      - **Grouping:** by `artificerType` (Component / Creation / Tool / none) then by `family` within
+        each — the exact two dimensions `ingredients[].type`/`.family` match against, confirmed from
+        `itemToRecord()`'s record shape. Not by rarity (Area's axis); rarity isn't how a recipe looks up
+        an ingredient.
+      - **"Kinds of recipes"** is likely two different things under one label, not one: (1) `type`/
+        `category` classification of the crafted RESULT — `type` is already a fixed enum
+        (`ITEM_TYPES`), `category` has a known closed-ish vocabulary per type (see the Fields table
+        above) — achievable via `promptFields` TODAY, no new mechanism needed, not blocked on this
+        request. (2) `skill` — genuinely world-configurable, cannot be a static `promptFields` select,
+        the actual reason a declarative catalog/vocabulary mechanism matters here. Flagged to Blacksmith
+        as our best reading, not confirmed by the author (asleep) — may need correcting.
+      - Sent to Blacksmith 2026-10-08 with these answers plus their proposed `promptCatalogs` design
+        (a declarative source/filter/grouping descriptor Blacksmith fetches and renders, we only
+        describe intent) endorsed as the right shape.
+      - **Blacksmith wrote a real plan** (their own `plan-prompt-catalogs.md`, in their
+        `documentation/plans/` directory — private to them, not in this repo, summarized here): both
+        findings above confirmed and changed their design — grouping settles on names + D&D item
+        type only (our `family` derivation has a real, demonstrated mislabeling case: a plain SRD
+        "Longsword" would catalog as family "Environmental", since `itemToRecord()` only derives a
+        real family for Artificer-flagged items or consumables; everything else falls to that blanket
+        default). Source had two options (D: our shipped packs + Blacksmith's mapping; E: D plus
+        Blacksmith also reading our `ingredientCompendium1..N` settings directly) — **decided by the
+        author 2026-10-09: Option A, neither D nor E.** The catalog sources from Blacksmith's
+        Compendium Mapping only, plus optionally world items. Explicit reasoning from the author:
+        `ingredientCompendium1..N` exists for what Artificer uses to PROCESS things at craft time
+        (resolve ingredient/result names), not for authoring or import — the two are different
+        purposes and the settings should not be repurposed for the second one. If a GM wants our
+        bundled packs (components/creations/tools) in the catalog, they map them in Blacksmith's own
+        Compendium Mapping, same as any other module's content. **Do not change
+        `ingredientCompendium1..N` or its defaults over this.**
+      - **DONE, nothing further to decide.** Blacksmith is building `promptCatalogs` now — a declared
+        catalog scoped to a profile, rendered as a checkbox in the Unified Import prompt window,
+        fetched with `query()` against the GM's mapping, injected into the derived prompt. Names only,
+        grouped by D&D item type, first version. They will send the exact declaration key once built;
+        add it to `declaration-artificer-recipe.js` then. Nothing to build on our side until that key
+        arrives.
+      - [x] ~~Add `promptCatalogs` to the declaration.~~ **DONE 2026-10-09, corrected same day.**
+        First draft used an object form (`{ id: 'items', label: 'Available items', type: 'Item',
+        includeWorld: true }`) that Blacksmith's own first spec had invented rather than reusing
+        Area Narrative's existing catalog UI. **The author caught this** before it shipped and had
+        Blacksmith correct course. Fixed value: `promptCatalogs: ['items']` — a named reference to
+        Blacksmith's EXISTING per-compendium checkbox UI (Select All/None, remembered selection, a
+        World section), the same one Area's prompt already uses, not a second shape of our own. The
+        object form is REJECTED at registration now; leaving it would have failed the profile
+        entirely. Preamble still references the catalog conditionally. Suite updated to assert
+        `promptCatalogs` equals `['items']` exactly. Syntax-checked, import/doc-link checks pass.
+        **Not run live** — unstaged/uncommitted on Blacksmith's side too, never exercised in a real
+        Foundry session by either side; needs the author to reload with both modules before this can
+        be called verified.
+- [ ] Separately, not blocked on Blacksmith: add `type` (and possibly a per-type `category` hint via
+      `guidance` prose, since `promptFields` options can't depend on another field's answer) as a
+      `promptFields` entry now that `promptFields` itself is understood — achievable today, just not
+      done yet.
+- [ ] **Found while writing the new preamble, pre-existing and unrelated to this session's changes:**
+      `prompts/artificer-recipe.txt`'s TYPE list (`Consumable`/`Container`/`Equipment`/`Loot`/`Tool`/
+      `Weapon` — the real dnd5e document-type enum) does not match `schema-recipes.js`'s actual
+      `ITEM_TYPES` (`Weapon`/`Armor`/`Consumable`/`Tool`/`Gadget`/`Trinket`/`ArcaneDevice` —
+      `RecipePageModel`'s real `choices`, confirmed by reading the schema directly). Following the
+      prompt file's own TYPE guidance today generates JSON the model rejects (e.g. `"Container"`,
+      `"Equipment"` are not in `choices`). Caught by catching myself about to repeat the same wrong
+      values in the new `preamble` (fixed there — no type→category example invented without
+      verification). Decide which vocabulary is actually correct and fix whichever side is wrong; did
+      not guess here, since neither file states which one the author intends.
+
 ### Retire buildItemSystem for Blacksmith's declaration assembler
 Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,
 `buildDocumentData`, `buildDocumentUpdate`, `getAuthoringGuide` on `api.importer`. Until now we could

@@ -1,18 +1,17 @@
 // ==================================================================
 // ===== SUITE: RECIPE DECLARATION ===================================
 // ==================================================================
-// Asserts the recipe declaration registered, and -- the part that cannot be
-// known by reading docs -- surfaces exactly what `buildDocumentData` returns
-// for a JournalEntryPage profile, since neither side has read that code path.
+// Asserts the recipe declaration registered (Track B: construction AND
+// destination, no Artificer-owned import window), and surfaces exactly what
+// `buildDocumentData` returns for this profile, so a shape change is visible
+// here rather than only in a live import.
 //
-// WHY THE SECOND CHECK IS EXPLORATORY, NOT A PASS/FAIL ASSERTION. We do not
-// yet know the expected shape -- whether it includes a `type`, whether it
-// nests under `system`, whether a container/destination field shows up
-// unprompted. Asserting a specific shape before seeing one real result would
-// be guessing dressed as a test. The full returned object is put into the
-// PASS/FAIL table's own `actual` value (via `expect`, not `log`) specifically
-// so it is visible from BOTH harness runners -- `run-headless.js` silences
-// `log`, the dialog runner does not, and this must be readable from either.
+// The `build-document-data-shape` check's expectations WERE "no name, no
+// container key" under Track A, when neither was declared. Track B declares
+// both (`title` -> path:'name', `book` -> role:'input' feeding
+// containerNameFrom), so the expectations flipped to match -- getting this
+// wrong here would mean the suite asserts a contract the declaration no
+// longer has, which is worse than no suite at all.
 // ==================================================================
 
 import { blacksmithApi, settingRow } from '../harness-lib.js';
@@ -52,7 +51,7 @@ export default {
             label: 'The recipe declaration is registered',
             tier: 'headless',
             group: 'Registration',
-            note: 'Track A only -- this declaration builds system data for us; it does not hand destination or window ownership to Blacksmith.',
+            note: 'Track B -- Blacksmith\'s Unified Import window is the only recipe import path; this declaration covers both construction (system fields) and destination (book/folder).',
             run: async ({ expect }) => {
                 const importer = blacksmithApi()?.importer;
                 expect.ok('Blacksmith importer API is present', Boolean(importer));
@@ -62,6 +61,21 @@ export default {
                 expect.ok('a declaration is registered for kind/id journal/recipe', Boolean(declaration));
                 expect('document name', declaration?.document?.documentName, 'JournalEntryPage');
                 expect('document type', declaration?.document?.type, 'coffee-pub-artificer.recipe');
+                expect('document.containerNameFrom', declaration?.document?.containerNameFrom, 'book');
+                expect('document.folderNameFrom', declaration?.document?.folderNameFrom, 'skill');
+                expect.ok('document has NO containerName constant (containerNameFrom is the real mechanism now, not a placeholder)',
+                    !('containerName' in (declaration?.document ?? {})));
+                expect.ok('preamble is a non-empty string', typeof declaration?.preamble === 'string' && declaration.preamble.length > 0);
+                // Named catalogs only -- 'actors'/'items' select Blacksmith's EXISTING Area-style
+                // catalog UI. The object form ({id, label, type, includeWorld}) is REJECTED at
+                // registration; an earlier draft used it and the author caught it before it shipped.
+                expect('promptCatalogs', declaration?.promptCatalogs, ['items']);
+                const field = (name) => declaration?.fields?.find(f => f.name === name);
+                expect('journaltype selector role', field('journaltype')?.role, 'selector');
+                expect('journaltype selector values', field('journaltype')?.values, ['recipe']);
+                expect('title path', field('title')?.path, 'name');
+                expect('description path', field('description')?.path, 'text.content');
+                expect('book role', field('book')?.role, 'input');
             }
         },
         {
@@ -84,8 +98,8 @@ export default {
             id: 'build-document-data-shape',
             label: 'What buildDocumentData actually returns for a JournalEntryPage profile',
             tier: 'headless',
-            group: 'Exploratory -- unread code path on both sides',
-            note: 'Neither we nor Blacksmith have read this path for a JournalEntryPage profile specifically. The full returned object is in the row below -- copy it into the report back to Blacksmith rather than summarising it.',
+            group: 'Construction',
+            note: 'Confirmed live through the Unified Import window (four cases: new book, existing book, second skill folder, re-import-updates-in-place), 2026-10-08. This check guards the shape so a later declaration change surfaces here before it surfaces as a broken import.',
             run: async ({ expect }) => {
                 const importer = blacksmithApi()?.importer;
                 expect.ok('buildDocumentData is available', typeof importer?.buildDocumentData === 'function');
@@ -109,15 +123,15 @@ export default {
                     return;
                 }
 
-                // THE ACTUAL FINDING. `expect` rather than `log` so it survives both
-                // runners. "wanted" is deliberately not a real expectation -- there is
-                // nothing to compare against yet -- it is a label telling the reader
-                // what they are looking at.
-                expect('RETURNED SHAPE (copy this to Blacksmith)', result, '(no prior expectation -- this IS the result to read)');
+                // THE ACTUAL FINDING, surfaced for a human either way, since the shape is
+                // worth a look even when the assertions below pass.
+                expect('RETURNED SHAPE', result, '(no prior expectation -- read this row)');
                 expect.ok('has a system object', result && typeof result.system === 'object');
-                expect.ok('has NO top-level "name" (page name is outside system; not handled by this declaration yet)', !('name' in (result ?? {})));
-                expect.ok('has NO container/destination key at the top level (would mean buildDocumentData assumes a destination we have not declared)',
-                    !('container' in (result ?? {})) && !('containerName' in (result ?? {})) && !('folder' in (result ?? {})));
+                expect('has the page name at the top level (from title -> path:\'name\')', result?.name, entry?.title);
+                expect.ok('has text.content at the top level (from description -> path:\'text.content\')',
+                    typeof result?.text?.content === 'string' && result.text.content.length > 0);
+                expect.ok('has NO container/destination key at the top level (destination is resolved outside assemble(), from the raw entry, not written into the built document)',
+                    !('container' in (result ?? {})) && !('containerName' in (result ?? {})) && !('folder' in (result ?? {})) && !('book' in (result ?? {})));
             }
         }
     ]

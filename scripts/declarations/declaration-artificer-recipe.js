@@ -170,6 +170,54 @@ const RECIPE_EXTRA_FIELDS = [
 ];
 
 /**
+ * Profile-level framing a per-field `guidance` sentence cannot carry: the generator role,
+ * the two-step JSON-then-image process, and relationships BETWEEN fields rather than within
+ * one. Renders before the FIELDS list in the generation prompt and after the rules in the
+ * authoring guide (Blacksmith's `preamble` support, 2026-10-08). Does not restate the field
+ * list -- each field's own `guidance` already does that.
+ *
+ * Condensed from `prompts/artificer-recipe.txt`'s framing section, which this preamble
+ * replaces for anyone using the Unified Import window; the file itself is left alone for the
+ * macro/manual-paste use it still serves.
+ */
+const RECIPE_PREAMBLE = 'You are a Dungeon Master designing a crafting recipe for the Coffee '
+    + 'Pub Artificer module. Generate the recipe JSON first; only after it is complete, ask '
+    + 'whether an image should be generated for the result -- do not generate or describe an '
+    + 'image before the JSON is confirmed. Several fields describe the same recipe from '
+    + 'different angles and should agree with each other: skillLevel should rise with rarity '
+    + '(roughly common 0-3, uncommon 4-9, rare 10-14, very rare 15-19, legendary 20), and '
+    + 'successDC should rise with skillLevel on a similar curve, not be chosen independently. '
+    + 'A recipe\'s category is a subtype of its type (for example "Potion" for a Consumable) -- '
+    + 'choose category only after type, never before, and do not assume a category vocabulary '
+    + 'for a type this sentence does not name; ask rather than guess one. An ingredient\'s '
+    + 'family is similarly a subtype of its own type, not of the recipe\'s type. Weave apparatus, '
+    + 'container, process and timing into the description as part of how the recipe is made, '
+    + 'rather than treating them as isolated facts. Ingredient and result names must come from '
+    + 'the AVAILABLE ITEMS list when it is present -- the author can turn that list off, so do '
+    + 'not assume it is always there.';
+
+/**
+ * Named catalogs to offer on the recipe prompt. ONLY 'actors' and 'items' are legal -- these
+ * select Blacksmith's EXISTING Area-style catalog UI (per-compendium checkboxes with Select
+ * All/None, a remembered selection, a World section) rather than declaring our own shape. The
+ * object form `{ id, label, type, includeWorld }` was a first draft the author rejected: Area's
+ * prompt already has this exact pattern and a declared profile must reuse it, not reinvent a
+ * second one. Corrected 2026-10-09, same day it was first added.
+ *
+ * Source is the GM's Blacksmith Compendium Mapping (plus world items, via the same checkboxes
+ * Area uses) -- NOT our own `ingredientCompendium1..N` settings. That split is a deliberate
+ * author decision: our settings resolve ingredients and results at CRAFT time, a different
+ * purpose from authoring/import, and conflating the two would mean a GM's narrower crafting pool
+ * silently constrains what a generator is allowed to invent from. If a GM wants our bundled
+ * packs (components/creations/tools) offered here, they map them in Blacksmith's own Compendium
+ * Mapping like any other compendium -- do not change our settings or their defaults to
+ * compensate. Names only, grouped by compendium and rarity (Area's existing grouping, not ours);
+ * no family grouping (our own `family` derivation has a real, demonstrated mislabeling case for
+ * anything without Artificer flags or a consumable subtype -- see TODO.md).
+ */
+const RECIPE_PROMPT_CATALOGS = ['items'];
+
+/**
  * Build the recipe declaration. A FUNCTION, not a module-scope constant --
  * `declarationFromModel` itself lives on the Blacksmith API, which does not
  * exist at module-evaluation time (same reasoning as every other declaration
@@ -194,7 +242,9 @@ export function buildArtificerRecipeDeclaration(blacksmithApi) {
         },
         guidance: RECIPE_GUIDANCE,
         examples: RECIPE_EXAMPLES,
-        extraFields: RECIPE_EXTRA_FIELDS
+        extraFields: RECIPE_EXTRA_FIELDS,
+        preamble: RECIPE_PREAMBLE,
+        promptCatalogs: RECIPE_PROMPT_CATALOGS
     });
 }
 
