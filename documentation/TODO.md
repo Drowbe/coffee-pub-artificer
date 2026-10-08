@@ -325,6 +325,20 @@ in that document, this is the outstanding work.
 - [ ] Implement trait discovery / progressive reveal.
 - [ ] Implement item generation from family + trait combinations.
 - [ ] Add quality / stability calculation based on skill, workstation, and rarity.
+- [ ] `CraftingExperimentPanel` (`scripts/panel-crafting-experiment.js`) is not instantiated from any
+      menubar entry or hook -- confirmed by grep, nothing outside the file itself references the class.
+      Before wiring it up: its actor-selector dropdown's `change` handler is defined only inside the dead
+      `activateListeners(html)` method (see CHANGELOG `[Unreleased]`, same bug class as the recipe-import
+      window fix), with no `data-action`/`actions:` equivalent -- `ApplicationV2`'s action dispatch only
+      handles clicks. Move it to `_onRender` the same way, before anyone can reach this panel and find the
+      crafter picker silently does nothing. Verify by: open the panel, change the actor dropdown, confirm
+      the ingredient list repopulates for the new actor.
+- [ ] Delete the four now-confirmed-inert `activateListeners(html)` methods that redundantly re-call an
+      already-correctly-wired setup function: `window-artificer-item.js`, `window-crafting.js`,
+      `window-gather.js`, `window-skills.js`. Harmless today, but a future edit to one of them is exactly
+      how a second real instance of this bug gets written -- someone adds a new listener to the "wrong"
+      copy because both exist and look equally live. Low priority. Verify by: each window still opens and
+      every control still responds after the dead method is removed.
 
 ### Recipe / Blueprint Portability
 - [ ] Add recipe / blueprint export and import support.

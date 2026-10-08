@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **"Import Recipes from JSON" -- Copy Prompt, Load File and Cancel did nothing when clicked, silently.**
+  `ArtificerRecipeImportWindow` wired all three (and the file-input's change handler) exclusively inside
+  `activateListeners(html)`, the V1 `Application` lifecycle method. `ApplicationV2` never calls it --
+  confirmed against the installed Foundry client source, zero references in `application.mjs` or
+  `handlebars-application.mjs` -- so every click there has done nothing since this window was written, on
+  every Foundry version, with no console error of any kind. Found testing an unrelated change; this window
+  itself was never touched by the DialogV2 migration below. Moved the wiring to `_onRender`, the pattern
+  already used correctly elsewhere in this module (`window-artificer-item.js`). The "Import Recipes" submit
+  button was unaffected -- it goes through the form's own `handler` option, a separate and real
+  ApplicationV2 mechanism.
+
+  Five other files define the same dead `activateListeners` method. Checked each: `window-artificer-item.js`,
+  `window-crafting.js`, `window-gather.js` and `window-skills.js` already wire everything through
+  `_onRender`/`_onFirstRender`, so their copies are inert leftovers, not bugs. `panel-crafting-experiment.js`
+  has the same real defect -- its actor-selector dropdown's `change` handler exists only in the dead method,
+  with no `data-action` equivalent -- but that panel is not currently instantiated from any menubar entry or
+  hook, so nothing reaches it today. Left as-is; worth the same fix if that panel is ever wired up.
+
 ### Changed
 - **Both V1 `Dialog` call sites migrated to `DialogV2`, for Foundry v15 readiness.** `Dialog` still
   resolves and works on v14, so this was deprecation debt rather than a break -- noted in the v14 migration

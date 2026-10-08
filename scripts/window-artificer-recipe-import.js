@@ -53,12 +53,23 @@ export class ArtificerRecipeImportWindow extends HandlebarsApplicationMixin(Appl
         return super._preClose?.();
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        if (html?.jquery ?? typeof html?.find === 'function') {
-            html = html[0] ?? html.get?.(0) ?? html;
-        }
-        const root = html?.matches?.('.artificer-window') ? html : html?.querySelector?.('.artificer-window') ?? (html?.tagName === 'FORM' ? html : html?.querySelector?.('form') ?? html);
+    // WAS `activateListeners(html)` -- ApplicationV2 never calls that V1 lifecycle
+    // method, so Cancel, Copy Prompt, Select File and the file-input change handler
+    // were dead from the day this file was written: it compiled clean, rendered
+    // clean, and every click produced nothing and logged nothing. Found 2026-10-07
+    // testing an unrelated change; confirmed against the installed Foundry client
+    // source that neither `application.mjs` nor `handlebars-application.mjs`
+    // references `activateListeners` anywhere. `this.element` is the actual
+    // rendered root for an ApplicationV2 with `tag: 'form'`, so no jQuery-or-not
+    // unwrapping is needed the way the old code attempted.
+    //
+    // No "already bound" guard: this window never calls `this.render()` on itself
+    // after the initial render (it closes on a successful import, or stays open
+    // with the same DOM on failure/validation), so `_onRender` fires once per
+    // window lifetime in normal use.
+    _onRender(context, options) {
+        super._onRender?.(context, options);
+        const root = this.element;
 
         root?.querySelector?.('[data-action="cancel"]')?.addEventListener('click', (e) => {
             e.preventDefault();
