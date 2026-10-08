@@ -76,6 +76,34 @@ export default {
                 expect('title path', field('title')?.path, 'name');
                 expect('description path', field('description')?.path, 'text.content');
                 expect('book role', field('book')?.role, 'input');
+                // promptFields: every id must match a declared field name (so it becomes a
+                // constraint) EXCEPT 'specificInstructions', which deliberately names nothing --
+                // that is how it stays free-author-text rather than a fixed value.
+                const promptFields = declaration?.promptFields ?? [];
+                expect.ok('promptFields is a non-empty array', Array.isArray(promptFields) && promptFields.length > 0);
+                const promptFieldIds = promptFields.map(f => f.id);
+                for (const id of promptFieldIds) {
+                    if (id === 'specificInstructions') continue;
+                    expect.ok(`promptFields "${id}" matches a declared field name`, Boolean(field(id)));
+                }
+                // The five item-valued fields must use Blacksmith's drag-and-drop input types
+                // ('item' for one, 'items' for a list), never plain text -- a free-text guess at
+                // an item name is exactly what the catalog/drag-and-drop exist to prevent.
+                const promptField = (id) => promptFields.find(f => f.id === id);
+                for (const id of ['resultItemName', 'apparatusName', 'containerName', 'processType']) {
+                    expect(`promptFields "${id}" inputType`, promptField(id)?.inputType, 'item');
+                }
+                expect('promptFields "ingredients" inputType', promptField('ingredients')?.inputType, 'items');
+                // skill/skillKit are world-configurable vocabularies with no vocabulary fixed at
+                // declaration time -- dynamicOptions, never a static select (which would have to
+                // carry `options`) and never plain text (a real downgrade from the sheet's own
+                // dropdowns, caught by the author).
+                for (const id of ['skill', 'skillKit']) {
+                    expect(`promptFields "${id}" inputType`, promptField(id)?.inputType, 'select');
+                    expect.ok(`promptFields "${id}" dynamicOptions is true`, promptField(id)?.dynamicOptions === true);
+                    expect.ok(`promptFields "${id}" carries no static options`, !('options' in (promptField(id) ?? {})));
+                }
+                expect('promptFields "traits" inputType', promptField('traits')?.inputType, 'textarea');
             }
         },
         {

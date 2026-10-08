@@ -28,6 +28,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deleted outright (this module is unreleased, with a single world confirmed to hold zero legacy-format
   pages, so there was nothing left for them to protect). `window-crafting.js`'s `getRecipeSourceJournals()`
   is also deleted -- it read the same two settings but was never actually called anywhere.
+- **The recipe declaration now guides authoring through Blacksmith's Unified Import window as
+  thoroughly as our own authoring sheet does.** A `preamble` states the generator's role, the
+  two-step "JSON first, then offer the image" process, and relationships between fields a single
+  field's guidance can't carry (rarity/skillLevel/successDC rising together, category depending on
+  type, ingredient family depending on the ingredient's own type, not the recipe's). A
+  `promptCatalogs: ['items']` entry offers the GM's real, configured item names on the prompt (via
+  Blacksmith's existing Area-style catalog UI), so a generator references items that exist instead
+  of inventing them. Six titled `promptFields` sections -- Result item, Ingredients, Process,
+  Requirements, Provenance, Instructions -- let an author constrain any field before copying the
+  prompt, including drag-and-drop for every item-valued field (result item, ingredients, process,
+  apparatus, container) once Blacksmith shipped that support the same day, and live dropdowns for
+  `skill`/`skillKit` sourced from the world's actual skills mapping (`dynamicOptions`, pushed via
+  `syncRecipeSkillPromptOptions()` in `skills-rules.js`) rather than degrading to free text just
+  because the vocabulary is world-configurable. `traits` -- missing from the first pass, caught
+  comparing the prompt against the sheet -- is a comma/line-separated textarea. **Known, logged
+  gap, not yet fixed:** a dropped ingredient only carries name and quantity, so its type/family are
+  generator-written rather than read off the item; a wrong value for an item carrying Artificer
+  flags can fail the craft-time match. The fix belongs on our side (resolve type/family from the
+  item cache by name when a recipe is read, not trusted from import) and needs its own pass before
+  it ships.
 - **Legacy `type: 'text'` recipe maintenance (`cleanAndRewriteRecipePages`, `applyPotionBrewingData`)
   now scans every world journal instead of the deleted recipe-journal setting**, since there is no
   longer a single configured journal to scope to. Both remain deliberate, GM-invoked, dry-run-capable

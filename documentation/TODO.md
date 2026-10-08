@@ -187,10 +187,111 @@ something fixable by editing our own declaration alone.
         **Not run live** — unstaged/uncommitted on Blacksmith's side too, never exercised in a real
         Foundry session by either side; needs the author to reload with both modules before this can
         be called verified.
-- [ ] Separately, not blocked on Blacksmith: add `type` (and possibly a per-type `category` hint via
-      `guidance` prose, since `promptFields` options can't depend on another field's answer) as a
-      `promptFields` entry now that `promptFields` itself is understood — achievable today, just not
-      done yet.
+- [x] ~~Add `promptFields`, including drag-and-drop once Blacksmith shipped it.~~ **DONE
+      2026-10-09, in two passes.** First pass added the scalar fields Blacksmith said needed no
+      new mechanism. Blacksmith then shipped two new `promptField` input types the same
+      day (`item`: one dragged Item, writes its name; `items`: a list, `[{name, quantity}]`,
+      documented in their `api-importer.md` "Dropping real items") and asked us to wire up the
+      five item-valued fields with them. `RECIPE_PROMPT_FIELDS` now has all of it, six titled
+      sections in the author's own order — Result item, Ingredients, Process, Requirements,
+      Provenance, Instructions:
+      - **Result item** — `resultItemName` (`item`).
+      - **Ingredients** — `ingredients` (`items`).
+      - **Process** — `processType` (`item`), `processLevel`, `time`, `apparatusName` (`item`),
+        `containerName` (`item`).
+      - **Requirements** — `skill`, `skillLevel`, `skillKit`, `successDC`, `goldCost`,
+        `workHours` (matches the author's original "requirements: skill, level, kit, difficulty
+        (DC), cost, work hours" grouping; an earlier pass wrongly split DC/cost/hours into a
+        separate "Difficulty and cost" section, corrected here). `skill`/`skillKit` became dynamic
+        selects in the third pass below, not text — see that entry.
+      - **Provenance** — `source`, `license`.
+      - **Instructions** — `specificInstructions` (`textarea`, id matches no declared field so it
+        stays free author text, not a constraint).
+      `type`/`category`/`rarity` still withheld — classifying the result before the result item
+      itself is dropped reads backwards; revisit once result-item drag-and-drop has been used
+      once. Suite updated to assert the five item-valued fields use `item`/`items`, not text.
+      Syntax, import and doc-link checks pass. **Not run live, by either side.**
+      - **Two caveats Blacksmith explicitly left for us to decide, both answered from code:**
+        1. **Process can end up wrong, and it is not a hard failure.** Our own sheet validates a
+           dropped process (Process family flag + non-empty levels array); Blacksmith's generic
+           `item` field cannot. Confirmed `recipeCanCraft` (`window-crafting.js:233`) never checks
+           `processType` at all — a bad value doesn't block crafting, it just means
+           `findProcess()` returns null at use and the bench shows no intensity/animation.
+           Accepted as-is (hint text says so) rather than asking Blacksmith to replicate our own
+           drop validation.
+        2. **Ingredient type/family are now generator-written, not item-read, for a dropped
+           list — and a wrong value on a FLAGGED ingredient DOES fail the craft-time match.**
+           Confirmed from `recipeCanCraft`: an ingredient with no Artificer flags matches by name
+           alone regardless of declared type/family, but a flagged item's actual flags must match
+           what the recipe declares. An `items` answer only carries name+quantity, so Blacksmith
+           cannot fill type/family the way our own sheet's drop handler does. **Decided not to
+           ask Blacksmith to read our flags off a dropped item** — not because Blacksmith's
+           mechanism is generic and module-specific questions don't belong (the author corrected
+           this reasoning when I overstated it this way: Area already captures narrative-specific
+           fields, injury profiles capture damage type, `promptFields` exists precisely for this).
+           The real distinction is narrower: asking a domain-specific QUESTION is routine and
+           already supported; having Blacksmith reach into a dropped document and read a module's
+           PRIVATE FLAG NAMESPACE is a different, more invasive coupling nothing in Blacksmith does
+           for any module today. The fix belongs on our side regardless: resolve
+           `ingredients[].type`/`.family` from the item cache BY
+           NAME when a recipe is READ, overriding whatever was written at import. No regression
+           (today a mismatch already fails the match; this only ever fixes one) and it covers
+           every authoring path, not just this one. **Not yet implemented** — this is a change to
+           already-shipped crafting-match code (`recipeCanCraft`/wherever recipes are read for
+           use), higher stakes than tonight's prompt-metadata work, and deserves its own pass with
+           the author present rather than a same-night add-on. New item below.
+        3. **Image: nothing to build**, confirmed by the author directly — the image is the
+           result item's own image, resolved at render time exactly like every other icon on the
+           page already is.
+      - **Third pass, same day, from the author testing the prompt live against our own authoring
+        sheet and finding it gave LESS guidance than the sheet does.** Two real gaps, both fixed:
+        - **`traits` was missing entirely.** Our sheet offers it with a live-built suggestion list
+          drawn from every tag already used across the item cache — genuinely open vocabulary, no
+          fixed list anywhere, and the prompt asked nothing about it. Added as a plain `textarea`
+          (Blacksmith added the conversion: a comma/line-separated answer becomes an array for an
+          array-of-string field automatically) in the Result item group, hint says "comma or line
+          separated".
+        - **`skill`/`skillKit` were free text where the sheet has real dropdowns.** Confirmed the
+          sheet populates both at RENDER time from the world's live skills mapping
+          (`getLastKnownEnabledCraftingSkillIds()`/`buildCraftingKitNameSet()`), not a static
+          schema `choices` — proof the dynamic-dropdown experience is solvable, which made free
+          text a real downgrade, not an acceptable simplification. Blacksmith shipped
+          `dynamicOptions: true` the same day (`api-importer.md`, "A select whose list changes"):
+          a select with no `options` of its own, fed live via
+          `blacksmith.importer.setPromptFieldOptions({kind, profile, field, options})`, re-read by
+          Blacksmith every time the prompt window opens. Both fields converted. New exported
+          `syncRecipeSkillPromptOptions()` (`scripts/skills-rules.js`) pushes the current
+          skill/kit lists; called from two places, both needed: `_loadSkillsDocument()` (the one
+          place the skills cache itself updates, so the two can never disagree) and once more,
+          explicitly, right after `registerArtificerRecipeDeclaration` succeeds in `artificer.js`
+          — needed because skills already load earlier in `ready`, BEFORE registration, so that
+          very first load's push always finds the profile unregistered and drops silently; this
+          second call is the one guaranteed to run after registration and is what actually
+          populates the dropdowns on a normal boot.
+        - **Answered Blacksmith's question** (what the prompt should show when the skill/kit list
+          is empty): matches the sheet's own precedent, which degrades an empty kit list to free
+          text rather than blocking. Blacksmith's mechanism cannot swap input type after
+          declaration, so a genuinely empty list leaves the select with only its built-in "No
+          preference" option — not as good as the sheet's fallback, but not broken either, since
+          `skill` is never required on the model (`recipeCanCraft` already tolerates an unmapped
+          skill gracefully). Stated honestly as an accepted limitation, not claimed as equivalent
+          to the sheet.
+        - **Also corrected a claim made to Blacksmith** in caveat 2 above: "a tool meant to work
+          the same way for every module" overstated why ingredient-flag-reading was declined. The
+          author caught it — Blacksmith's `promptFields` is explicitly a per-profile mechanism
+          (Area, injury, crit/fumble all ask their own domain-specific questions); the real
+          distinction is reading a QUESTION answer (supported, routine) versus reading a dropped
+          document's PRIVATE FLAG NAMESPACE (not something Blacksmith does for any module, a
+          different kind of coupling). Correction sent to Blacksmith directly; text above updated
+          to match.
+        Suite updated: `skill`/`skillKit` assert `inputType: 'select'` + `dynamicOptions: true` +
+        no `options` key; `traits` asserts `inputType: 'textarea'`. Syntax, import and doc-link
+        checks pass. **Not run live, by either side.**
+- [ ] **New, from caveat 2 above:** resolve a flagged ingredient's `type`/`family` from the item
+      cache by name when a recipe is read, instead of trusting whatever was written at import.
+      Closes the gap where a generator (via the new ingredient drag-and-drop) writes a plausible
+      but wrong type/family for a flagged item, silently failing that ingredient's craft-time
+      match. Needs its own verification pass — this touches already-shipped crafting logic.
 - [ ] **Found while writing the new preamble, pre-existing and unrelated to this session's changes:**
       `prompts/artificer-recipe.txt`'s TYPE list (`Consumable`/`Container`/`Equipment`/`Loot`/`Tool`/
       `Weapon` — the real dnd5e document-type enum) does not match `schema-recipes.js`'s actual

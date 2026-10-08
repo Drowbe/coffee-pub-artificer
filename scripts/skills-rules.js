@@ -5,7 +5,7 @@
 // and derives crafting/gathering rules from each perk's optional rules.benefits.
 
 import { MODULE } from './const.js';
-import { postBlacksmithConsole } from './utils/blacksmith-console.js';
+import { postBlacksmithConsole, getBlacksmithApi } from './utils/blacksmith-console.js';
 import { getSkillsRulesetFetchUrl, getSkillsRulesetPath } from './config-rulesets.js';
 
 /** @type {{ schemaVersion: number, skills: Record<string, { perks: Record<string, object> }> } | null } */
@@ -166,6 +166,62 @@ function buildRulesFromDetails(details) {
     return out;
 }
 
+/**
+ * Push the live skill/kit lists to Blacksmith's recipe prompt dropdowns
+ * (`setPromptFieldOptions`, api-importer.md "A select whose list changes").
+ *
+ * Called from TWO places, both needed because of a real ordering gap: `_loadSkillsDocument`
+ * below calls it every time the skills cache updates, but skills load at `ready` BEFORE the
+ * recipe declaration registers (`artificer.js` awaits `loadSkillsDetails()` first, registers
+ * second) -- so that very first load's push always hits "not registered yet" and is silently
+ * dropped. `syncRecipeSkillPromptOptions()` (exported below) re-pushes from the already-cached
+ * data; `artificer.js` calls it right after `registerArtificerRecipeDeclaration` succeeds, which
+ * is the only ordering that is guaranteed correct.
+ *
+ * Kind/id are the literal 'journal'/'recipe' declared in
+ * declarations/declaration-artificer-recipe.js -- not imported from there, deliberately: this
+ * module is lower-level and more widely used than that one declaration, and a dependency in that
+ * direction would be backwards. If the recipe declaration's kind/id ever change, this must change
+ * with it.
+ *
+ * Silent no-op, not an error, when: an older Blacksmith lacks `setPromptFieldOptions`, or the
+ * recipe declaration has not registered yet. Both are expected, ordinary conditions.
+ * @param {object} parsed - A loaded skills document (same shape `_loadSkillsDocument` returns).
+ */
+function _pushRecipeSkillPromptOptions(parsed) {
+    const setOptions = getBlacksmithApi()?.importer?.setPromptFieldOptions;
+    if (typeof setOptions !== 'function') return;
+    const skillIds = extractEnabledSkillIds(parsed);
+    const kitNames = Array.from(buildCraftingKitNameSet(parsed)).sort();
+    try {
+        setOptions({ kind: 'journal', profile: 'recipe', field: 'skill', options: skillIds });
+        setOptions({ kind: 'journal', profile: 'recipe', field: 'skillKit', options: kitNames });
+    } catch (error) {
+        // Most likely: the recipe declaration has not registered yet. Not an error worth
+        // alarming over -- the next successful skills load (or the registration itself,
+        // once `ready` reaches it) will push a current list.
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: could not push recipe prompt skill/kit options yet`,
+            error?.message ?? String(error), true, false);
+    }
+}
+
+/**
+ * Re-push the current skill/kit lists to Blacksmith's recipe prompt dropdowns, from whatever is
+ * already cached (cheap; does not re-fetch). Call this once, right after
+ * `registerArtificerRecipeDeclaration` succeeds -- see the note on `_pushRecipeSkillPromptOptions`
+ * for why that ordering is the only one guaranteed correct. Safe to call even when skills have
+ * not loaded yet: resolves to nothing, silently, same as any other `loadSkillsDetails` failure.
+ * @returns {Promise<void>}
+ */
+export async function syncRecipeSkillPromptOptions() {
+    try {
+        const parsed = await loadSkillsDetails();
+        _pushRecipeSkillPromptOptions(parsed);
+    } catch {
+        /* No skills document to push yet; the next successful load pushes one. */
+    }
+}
+
 /** Drop cached skills JSON and derived rules (e.g. after settings change). */
 export function invalidateSkillsRulesCaches() {
     _skillsDetailsPromise = null;
@@ -226,6 +282,7 @@ async function _loadSkillsDocument() {
     }
     _lastKnownEnabledCraftingSkillIds = extractEnabledSkillIds(parsed);
     _skillsRulesetErrorReported = false;
+    _pushRecipeSkillPromptOptions(parsed);
     return parsed;
 }
 

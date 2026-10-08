@@ -4,7 +4,7 @@
 
 import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
-import { loadSkillsDetails } from './skills-rules.js';
+import { loadSkillsDetails, syncRecipeSkillPromptOptions } from './skills-rules.js';
 import { getAPI } from './api-artificer.js';
 import { loadTranslationFromFile } from './cache/cache-items.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
@@ -262,6 +262,11 @@ Hooks.once('ready', async () => {
                     ? `${MODULE.NAME}: Artificer recipe declaration registered with the importer`
                     : `${MODULE.NAME}: Blacksmith importer has no declarationFromModel/registerDeclaration; skipping`,
                 null, !recipeRegistered, false);
+            // Skills load earlier in `ready` (above), before registration -- that first push
+            // from skills-rules.js always finds the profile unregistered and drops silently.
+            // This is the one call guaranteed to run AFTER registration, so it is the one that
+            // actually populates the recipe prompt's skill/kit dropdowns on a normal boot.
+            if (recipeRegistered) await syncRecipeSkillPromptOptions();
         } catch (error) {
             postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Artificer recipe declaration was rejected`,
                 error?.message ?? String(error), false, false);

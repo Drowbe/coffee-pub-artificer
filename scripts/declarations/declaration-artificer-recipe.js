@@ -194,7 +194,8 @@ const RECIPE_PREAMBLE = 'You are a Dungeon Master designing a crafting recipe fo
     + 'container, process and timing into the description as part of how the recipe is made, '
     + 'rather than treating them as isolated facts. Ingredient and result names must come from '
     + 'the AVAILABLE ITEMS list when it is present -- the author can turn that list off, so do '
-    + 'not assume it is always there.';
+    + 'not assume it is always there. Traits are two to five tags describing what the recipe is '
+    + 'good for -- do not repeat type or category as a trait.';
 
 /**
  * Named catalogs to offer on the recipe prompt. ONLY 'actors' and 'items' are legal -- these
@@ -216,6 +217,147 @@ const RECIPE_PREAMBLE = 'You are a Dungeon Master designing a crafting recipe fo
  * anything without Artificer flags or a consumable subtype -- see TODO.md).
  */
 const RECIPE_PROMPT_CATALOGS = ['items'];
+
+/**
+ * "Prefill before copy" questions on the recipe prompt. Six titled sections, in this exact
+ * order, per the author's own breakdown of a recipe's parts: Result item, Ingredients, Process,
+ * Requirements, Provenance, Instructions. Every `id` here matches a declared field's `name`, so
+ * each becomes a CONSTRAINT -- stated as fixed in the prompt and written into the JSON template,
+ * Blacksmith's existing behaviour (api-importer.md, "Asking the author a question").
+ *
+ * `inputType: 'item'`/`'items'` (Blacksmith, 2026-10-09, "Dropping real items") are drag-and-drop
+ * fields: dropping an Item writes its NAME (an `item` answer is a string; an `items` answer is
+ * `[{name, quantity}]`, one per dropped/typed line). Blacksmith accepts ANY dropped item -- it
+ * cannot read our Artificer flags, so it cannot filter by them. Two consequences we accepted
+ * rather than asked Blacksmith to solve:
+ *
+ * 1. PROCESS CAN BE WRONG, AND THIS IS NOT A HARD FAILURE. Our own authoring sheet validates a
+ *    dropped process (Process family flag, non-empty levels array); the prompt's `item` field
+ *    cannot. `recipeCanCraft` (window-crafting.js) never checks processType at all -- a
+ *    non-process name there does not block crafting, it just means `findProcess()` returns null
+ *    at use and the bench shows no intensity/animation. Degraded, not broken; the hint says so.
+ * 2. INGREDIENT TYPE/FAMILY ARE GENERATOR-WRITTEN, NOT ITEM-READ, FOR A DROPPED LIST. An `items`
+ *    answer carries only name and quantity -- Blacksmith cannot read a dropped item's Artificer
+ *    flags to fill `type`/`family` the way our own sheet's drop handler does. Confirmed from
+ *    `recipeCanCraft`: a WRONG type/family on a FLAGGED ingredient does fail the craft-time match
+ *    (an unflagged item still matches by name alone, so this only bites flagged ingredients).
+ *    Not asking Blacksmith to carry flag data through a mechanism built for every module, not
+ *    just ours -- the fix belongs on our side: resolve `ingredients[].type`/`.family` from the
+ *    item cache BY NAME when a recipe is READ, rather than trusting whatever was written at
+ *    import. No regression for existing recipes (today a mismatch already fails the match; this
+ *    only ever fixes one, never breaks one) and covers every authoring path, not only this one.
+ *    Tracked in TODO.md -- not yet implemented; this is prompt-metadata only, that is a change to
+ *    already-shipped crafting-match code and deserves its own pass, not a same-night add-on.
+ *
+ * `type`/`category`/`rarity` (the crafted result's classification) stay OUT for now -- genuinely
+ * fixed vocabularies, but asking the author to classify a result before dropping the item that
+ * IS the result reads backwards. Revisit once result-item drag-and-drop has been used once.
+ *
+ * `skill`, `skillKit` are `select` with `dynamicOptions: true` (Blacksmith, 2026-10-09, "A select
+ * whose list changes"), NOT a static `select` and NOT free text -- both are world-configurable (a
+ * world's skills mapping JSON; the skill's kit list), so no option list can be frozen at
+ * registration. Our own sheet already solves exactly this the same way (render-time dropdown, not
+ * a schema `choices`), which is why free text was a real downgrade from the sheet, not an
+ * acceptable simplification -- the author caught that directly. A `dynamicOptions` field carries
+ * NO `options` key (Blacksmith rejects declaring both); the live list is pushed separately via
+ * `blacksmith.importer.setPromptFieldOptions`, from `syncRecipeSkillPromptOptions()`
+ * (`scripts/skills-rules.js`), called once right after this declaration registers and again every
+ * time the skills cache itself reloads, so the two can never disagree. `recipeCanCraft` still
+ * never rejects a recipe for an unmapped skill -- it degrades gracefully (no perks/rules apply,
+ * crafting still works) -- so an empty list still leaves a working, if unconstrained, field; it
+ * does not block anything. Kit is confirmed NOT an item in our model (matched by name against
+ * inventory with no flag filtering at all), so it is a dynamic select, not `inputType: 'item'`,
+ * even though apparatus/container/process/result all are.
+ *
+ * `traits` is a plain `textarea` (Blacksmith converts a comma/line-separated answer to an array
+ * for an array-of-string field automatically) -- a real gap caught by the author: our sheet offers
+ * it with a live-built suggestion list drawn from every tag already used across the item cache,
+ * genuinely open vocabulary, no fixed list anywhere. The hint says comma or line separated since
+ * nothing else in the prompt UI states that format.
+ *
+ * Image: no control here, deliberately -- the author's answer is that the image IS the result
+ * item's own image, resolved at render time the way every other icon on the page already is
+ * (`sheet-recipe-page.js`'s `cachedImages()`). Nothing to build.
+ */
+const RECIPE_PROMPT_FIELDS = [
+    {
+        id: 'resultItemName', label: 'Result item', inputType: 'item',
+        group: 'Result item', groupIcon: 'fa-solid fa-flask',
+        hint: 'Drop the exact item this recipe produces, or type its name. Any item works.'
+    },
+    {
+        id: 'traits', label: 'Traits', inputType: 'textarea',
+        group: 'Result item', groupIcon: 'fa-solid fa-flask',
+        hint: 'Comma or line separated, e.g. "Herbal, Medicinal". Two to five tags describing what the recipe is good for -- do not repeat type or category.'
+    },
+    {
+        id: 'ingredients', label: 'Ingredients', inputType: 'items',
+        group: 'Ingredients', groupIcon: 'fa-solid fa-mortar-pestle',
+        hint: 'Drop items or type Name xQuantity, one per line. The generator fills in type and family for each -- for an item carrying Artificer flags, a wrong type or family can fail the crafting match at use; verify flagged ingredients afterward.'
+    },
+    {
+        id: 'processType', label: 'Process', inputType: 'item',
+        group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: 'Drop a Process item (Component/Creation/Tool family "Process"). Any other item is accepted but produces no process animation or intensity at craft time.'
+    },
+    {
+        id: 'processLevel', label: 'Process level', group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: '0-3. What each position means depends on the process itself (e.g. heat\'s 1-3 are Low/Medium/High).'
+    },
+    {
+        id: 'time', label: 'Process time (seconds)', group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: '0-120 seconds. Distinct from work hours below -- this is the bench running, not the crafter\'s day.'
+    },
+    {
+        id: 'apparatusName', label: 'Apparatus', inputType: 'item',
+        group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: 'Drop the vessel crafted IN (beaker, mortar). Any item works -- not consumed.'
+    },
+    {
+        id: 'containerName', label: 'Container', inputType: 'item',
+        group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: 'Drop the vessel the result goes INTO (vial, flask). Any item works -- one consumed per craft.'
+    },
+    {
+        id: 'skill', label: 'Crafting skill', inputType: 'select', dynamicOptions: true,
+        group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: 'This world\'s currently enabled crafting skills. Options are pushed live -- see syncRecipeSkillPromptOptions() in skills-rules.js.'
+    },
+    {
+        id: 'skillLevel', label: 'Skill level', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: '0-20. Minimum crafting skill required.'
+    },
+    {
+        id: 'skillKit', label: 'Required kit', inputType: 'select', dynamicOptions: true,
+        group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: 'The tool kit the crafter must hold in inventory, e.g. "Alchemist\'s Supplies". Per-world, not a fixed list.'
+    },
+    {
+        id: 'successDC', label: 'Success DC', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: '1-30. The crafting roll DC.'
+    },
+    {
+        id: 'goldCost', label: 'Gold cost (gp)', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: 'Spent on top of the ingredients.'
+    },
+    {
+        id: 'workHours', label: 'Work hours', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
+        hint: 'In-game hours to craft. Distinct from process time above.'
+    },
+    {
+        id: 'source', label: 'Source', group: 'Provenance', groupIcon: 'fa-solid fa-book',
+        hint: 'Free-text attribution. Left blank if not given -- never invented.'
+    },
+    {
+        id: 'license', label: 'License', group: 'Provenance', groupIcon: 'fa-solid fa-book',
+        hint: 'Free-text license note.'
+    },
+    {
+        id: 'specificInstructions', label: 'Specific instructions for this recipe', inputType: 'textarea',
+        group: 'Instructions', groupIcon: 'fa-solid fa-pen-nib',
+        hint: 'Guidance for THIS recipe specifically, on top of the general Additional Guidance above -- does not constrain a field, just adds to what the generator is told.'
+    }
+];
 
 /**
  * Build the recipe declaration. A FUNCTION, not a module-scope constant --
@@ -244,7 +386,8 @@ export function buildArtificerRecipeDeclaration(blacksmithApi) {
         examples: RECIPE_EXAMPLES,
         extraFields: RECIPE_EXTRA_FIELDS,
         preamble: RECIPE_PREAMBLE,
-        promptCatalogs: RECIPE_PROMPT_CATALOGS
+        promptCatalogs: RECIPE_PROMPT_CATALOGS,
+        promptFields: RECIPE_PROMPT_FIELDS
     });
 }
 
