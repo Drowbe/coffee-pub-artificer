@@ -8,16 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **Recipe JSON import now builds its page through Blacksmith's recipe declaration (Track A), not HTML
-  parsing.** `importRecipes` calls `api.importer.buildDocumentData('journal', 'recipe', data)` to construct
-  the new `coffee-pub-artificer.recipe` page's `system` data from a declaration built with
-  `declarationFromModel` against `RecipePageModel` (`scripts/declarations/declaration-artificer-recipe.js`,
-  registered at `ready`), merges in `name` and `text.content` (both outside `system`), and still does its
-  own `createEmbeddedDocuments` and settings-driven journal/folder resolution exactly as before -- Blacksmith
-  owns construction, not destination. Falls back to the previous `buildRecipePageHtml` + `type: 'text'` page
-  when the declaration is unavailable (an older Blacksmith), so nothing regresses for a world that has not
-  updated Blacksmith yet. **Existing legacy recipes are untouched** -- this only changes what newly imported
-  recipes are stored as; migrating old ones is separate, unscoped work.
+- **Recipe import moved entirely to Blacksmith's Unified Import window -- the Artificer-owned "Import
+  Recipes" window is gone.** Recipes now work the way items already did: a declared profile
+  (`scripts/declarations/declaration-artificer-recipe.js`, built via `declarationFromModel` against
+  `RecipePageModel`) with no bespoke Artificer UI at all. The declaration covers both construction
+  (`system.*` fields) and destination -- a `journaltype` selector routes an imported payload to this
+  profile, `title`/`description` map to the page's own `name`/`text.content` (outside `system`,
+  same pattern as Bibliosoph's injury profile), and `containerNameFrom: 'book'` /
+  `folderNameFrom: 'skill'` file each recipe into its own book (journal) inside its skill's folder,
+  read straight from the payload. Deleted `window-artificer-recipe-import.js`, its template, its
+  stylesheet, and the "Import Recipes" secondary-bar button; `utility-artificer-recipe-import.js` is
+  trimmed to just the legacy HTML builder (still used by the maintenance macros below) and renamed to
+  `utility-artificer-recipe-legacy-html.js`.
+- **Recipes are found by page type across every world journal, not one configured journal.** Several
+  recipe "books" per skill folder is the normal shape (confirmed against a live world), which a single
+  named journal could never express. `storage-recipes.js` now scans every world journal for pages of
+  type `coffee-pub-artificer.recipe` -- a type exclusive to real recipe pages, so this is cheap and
+  cannot false-match unrelated content. The `recipeJournalName`/`recipeJournalFolder` settings are
+  deleted outright (this module is unreleased, with a single world confirmed to hold zero legacy-format
+  pages, so there was nothing left for them to protect). `window-crafting.js`'s `getRecipeSourceJournals()`
+  is also deleted -- it read the same two settings but was never actually called anywhere.
+- **Legacy `type: 'text'` recipe maintenance (`cleanAndRewriteRecipePages`, `applyPotionBrewingData`)
+  now scans every world journal instead of the deleted recipe-journal setting**, since there is no
+  longer a single configured journal to scope to. Both remain deliberate, GM-invoked, dry-run-capable
+  macros reviewed before anything is written, so the broader scan carries none of the false-match risk
+  that ruled out doing the same for the live recipe loader above.
 - **Deleted three more inert `activateListeners(html)` methods**, in `window-crafting.js`, `window-gather.js`
   and `window-skills.js` -- the ones confirmed safe-but-redundant in `v14.0.1`'s CHANGELOG entry, now
   removed rather than left as a second copy that looks equally live. `window-crafting.js`'s only call was

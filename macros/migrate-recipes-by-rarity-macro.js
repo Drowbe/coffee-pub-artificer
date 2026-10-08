@@ -7,12 +7,13 @@
  * - Alchemist Recipes → Alchemist Recipes - Common, Alchemist Recipes - Uncommon, etc.
  * - Poisoncraft Recipes → Poisoncraft Recipes - Common, Poisoncraft Recipes - Uncommon, etc.
  *
- * Only processes world journals in the module's recipe journal folder (or all world journals if no folder set).
- * Target journals are created in the world. Source pages are moved (removed from source). Pages are sorted alphabetically.
+ * Searches every world journal for the three source names above. Target journals are created at
+ * the world root. Source pages are moved (removed from source). Pages are sorted alphabetically.
+ * Only processes `type: 'text'` (legacy-format) pages -- a world with no legacy recipes left has
+ * nothing for this macro to do.
  *
  * 1. Back up your world before running.
- * 2. Ensure Artificer has Recipe Journal Folder set if you want to limit which world journals are used.
- * 3. Create a Macro (Script), paste this script, run as GM.
+ * 2. Create a Macro (Script), paste this script, run as GM.
  *
  * Set dryRun: true to preview without moving or deleting anything.
  */
@@ -49,7 +50,11 @@ async function getArtificerAPI(maxWaitMs = 5000) {
 /** Collect world journals only whose name is in SOURCE_JOURNAL_NAMES. Never touches compendiums. */
 async function getSourceJournals() {
     const nameSet = new Set(SOURCE_JOURNAL_NAMES);
-    const folderId = game.settings.get(MODULE_ID, 'recipeJournalFolder') ?? '';
+    // recipeJournalFolder was deleted (recipes are found by page type across every world
+    // journal now, not one configured journal/folder) -- this macro predates that and
+    // always treated an unset folder as "search every world journal", which is now the
+    // only behaviour available.
+    const folderId = '';
     let journals;
     if (folderId && game.folders) {
         const allowed = new Set([folderId]);
@@ -127,13 +132,14 @@ async function sortJournalPagesByName(journal) {
     const sourceJournals = await getSourceJournals();
     if (!sourceJournals.length) {
         ui.notifications.warn(
-            'No Artificer recipe journals found with names: ' + SOURCE_JOURNAL_NAMES.join(', ') +
-            '. Check module settings (Recipe Journal Folder or Recipe Compendiums).'
+            'No Artificer recipe journals found with names: ' + SOURCE_JOURNAL_NAMES.join(', ') + '.'
         );
         return;
     }
 
-    const folderId = (game.settings.get(MODULE_ID, 'recipeJournalFolder') ?? '').trim();
+    // recipeJournalFolder is deleted (see getSourceJournals above); target journals land at
+    // the world root now, same as source journals already do when no folder is configured.
+    const folderId = '';
     const toMove = []; // { sourceJournal, page, recipe, targetJournalName, isWorld }
 
     for (const { uuid, name, isWorld, journal } of sourceJournals) {

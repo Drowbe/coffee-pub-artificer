@@ -4,14 +4,14 @@
 // Our recipe subtype, declared to Blacksmith's importer as a MAPPED PROFILE --
 // built via `declarationFromModel`, not hand-transcribed.
 //
-// TRACK A, NOT TRACK B. This declaration exists so `buildDocumentData` can
-// construct a recipe page's `system` data for us; it does NOT hand destination
-// or window ownership to Blacksmith. We still call `createEmbeddedDocuments`
-// ourselves, with our own settings-driven journal/folder resolution
-// (`recipeJournalName`/`recipeJournalFolder`) -- unchanged. See
-// documentation/plans/plan-recipe-field-mappings.md for why: our destination is
-// GM-configurable per world, and neither of Blacksmith's `containerName` /
-// `containerNameFrom` resolves from a world setting.
+// TRACK B: Blacksmith's Unified Import window is the ONLY way a recipe is
+// imported. We do not keep a separate Artificer import window -- recipes work
+// exactly like items already do (a declared profile/field group, imported
+// entirely through Blacksmith's own UI, nothing bespoke on our side). See
+// documentation/plans/plan-recipe-field-mappings.md for the full history: this
+// started as Track A (construction only, keep our own window) and was
+// explicitly widened to Track B by the author once it was clear items never
+// had a separate Artificer window either.
 //
 // WHY declarationFromModel AND NOT A HAND FIELD TABLE. RecipePageModel already
 // IS the schema -- writing `fields: [...]` by hand would be a second copy that
@@ -31,23 +31,53 @@
 // this falls out correctly with no special-casing here -- do not patch `values`
 // onto these two after the fact.
 //
-// name AND description ARE NOT HANDLED HERE. Both live outside `system` --
-// `name` is the page's own title, `description` is the page's native
-// `text.content` (ProseMirror), not a RecipePageModel field at all. Left out of
-// this first declaration deliberately, to keep the first `buildDocumentData`
-// call minimal and its returned shape easy to read. Revisit once we know what
-// that call actually returns -- see the harness check.
+// EXTRA FIELDS -- what the model cannot express, same shape as Bibliosoph's
+// injury-import-profile.js (INJURY_EXTRA_FIELDS):
+// - `journaltype` (role: 'selector') is how the Unified Import window routes a
+//   payload to this profile at all. Required at the import boundary, forbidden
+//   at the authoring boundary -- RecipePageModel must never carry it.
+// - `title` -> `path: 'name'`. The recipe name is the page title, never stored
+//   twice (see RecipePageModel's `get name()`), so it is a page-level path
+//   rather than a system one and cannot come from the schema walk.
+// - `description` -> `path: 'text.content'`. The free-form notes live in the
+//   page's native ProseMirror content (RecipePageModel's `get description()`),
+//   not a system field either. `writePath()` in Blacksmith's assembler is a
+//   plain dotted-path setter, not restricted to `system.*`, so this works the
+//   same way `path: 'name'` does.
+// - `book` (role: 'input') names the JournalEntry (the recipe BOOK) this
+//   recipe files into. Not document data and not derivable -- it is where the
+//   containing entry goes, not a value on the page -- so it never lands on a
+//   path, exactly like Blacksmith's own three journal profiles declare
+//   `foldername`.
 //
-// document.containerName IS A PLACEHOLDER, NEVER READ. Blacksmith's registry
-// rejects ANY JournalEntryPage declaration with neither `containerName` nor
-// `containerNameFrom` at registration time (registry-declarations.js, "a
-// JournalEntryPage profile requires document.containerName or
-// document.containerNameFrom") -- unconditionally, whether or not the caller
-// ever uses Blacksmith's own placement. `buildDocumentData` -> `assemble()`
-// never reads it; only the window-based import path
-// (registry-json-import-journals.js) does, which Track A does not call. A
-// constant satisfies validation without doing anything -- do not read meaning
-// into its value, and do not let it imply we use Blacksmith's placement.
+// DESTINATION: `containerNameFrom: 'book'`, `folderNameFrom: 'skill'`. The
+// world's actual organisation (confirmed against a live screenshot, not
+// assumed): folder = skill (Alchemy, Herbalism, Poisoncraft, ...), journal =
+// a recipe book inside that folder, page = one recipe, several books per
+// skill allowed. `skill` is already a declared model field (`system.skill`),
+// and the same field name can be both a normal path AND a folderNameFrom
+// source -- Blacksmith's destination resolution reads the raw entry value by
+// field name, independent of what assemble() writes into `system`.
+//
+// NO containerName CONSTANT, and no `document.containerName` placeholder
+// either -- that was a Track-A-only workaround for a registry requirement we
+// now satisfy for real via `containerNameFrom`. Do not reintroduce it; the
+// registry rejects declaring both.
+//
+// NO image field. Unlike Bibliosoph's injuries (which store `system.image`),
+// RecipePageModel has none -- every icon shown on a recipe page is resolved at
+// RENDER TIME, by name, from the item cache (sheet-recipe-page.js
+// `cachedImages()`), not stored on the recipe itself. Confirmed by reading the
+// sheet; nothing to declare here.
+//
+// FOLDER CASING: no transform, none needed. `ensureJournalFolder`
+// (Blacksmith's utility-journal-destination.js) matches an EXISTING folder
+// case-insensitively and creates a new one verbatim -- a folder transform was
+// tried before, it mangled proper nouns, and was removed on purpose. A `skill`
+// value differing only in case from an existing folder still files correctly;
+// only a skill with NO existing folder yet creates one spelled however that
+// recipe's `skill` value was spelled. Not a mechanism gap -- confirmed with
+// Blacksmith directly, do not add `folderNameTransform` (it does not exist).
 // ==================================================================
 
 import { RecipePageModel, RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
@@ -69,7 +99,7 @@ const RECIPE_GUIDANCE = {
     type: 'The crafted result\'s D&D 5e item type.',
     category: 'Free text within type, such as "Potion".',
     rarity: 'Common, Uncommon, Rare, Very Rare, or Legendary. Leave blank if not stated.',
-    skill: 'The crafting skill id this recipe is rolled against. Must be an id enabled in the world\'s skills mapping -- not validated against a fixed list, since that mapping is per-world.',
+    skill: 'The crafting skill this recipe is rolled against, and the folder its book files into (e.g. "Alchemy"). Must be an id enabled in the world\'s skills mapping -- not validated against a fixed list, since that mapping is per-world.',
     skillLevel: 'Crafting difficulty, 0 to 20.',
     skillKit: 'The tool kit required in inventory at craft time, such as "Alchemist\'s Supplies".',
     processType: 'The crafting process this recipe uses, by process item name -- not validated against a fixed list, since processes are GM-authored items.',
@@ -101,6 +131,45 @@ const RECIPE_EXAMPLES = {
 };
 
 /**
+ * What RecipePageModel's schema cannot express -- the page name, the page's
+ * own body text, how the payload selects this profile, and which book it
+ * files into. Same shape as Bibliosoph's INJURY_EXTRA_FIELDS.
+ */
+const RECIPE_EXTRA_FIELDS = [
+    {
+        name: 'journaltype',
+        role: 'selector',
+        type: 'string',
+        values: ['recipe'],
+        example: 'recipe',
+        guidance: 'Identifies the profile, and must be exactly "recipe".'
+    },
+    {
+        name: 'title',
+        path: 'name',
+        type: 'string',
+        required: true,
+        example: 'Potion of Healing',
+        guidance: 'The recipe\'s name, which becomes the page title.'
+    },
+    {
+        name: 'description',
+        path: 'text.content',
+        type: 'string',
+        example: '<p>A quick restorative brew.</p>',
+        guidance: 'Free-form notes and instructions, as HTML. Stored as the page\'s own body text, not a system field -- weave the other fields into prose rather than repeating them as a list.'
+    },
+    {
+        name: 'book',
+        role: 'input',
+        type: 'string',
+        required: true,
+        example: 'Treatise on Common Transmutations',
+        guidance: 'The recipe book (journal) this recipe is filed into, created if it does not exist. Several books per skill is normal -- do not invent one name for every recipe of a given skill.'
+    }
+];
+
+/**
  * Build the recipe declaration. A FUNCTION, not a module-scope constant --
  * `declarationFromModel` itself lives on the Blacksmith API, which does not
  * exist at module-evaluation time (same reasoning as every other declaration
@@ -120,13 +189,12 @@ export function buildArtificerRecipeDeclaration(blacksmithApi) {
         module: MODULE.ID,
         document: {
             documentName: 'JournalEntryPage', type: RECIPE_PAGE_TYPE,
-            // Placeholder to satisfy registration -- see the header comment. Not used
-            // by buildDocumentData; Track A keeps its own createEmbeddedDocuments/
-            // destination resolution unchanged.
-            containerName: 'Artificer Recipes'
+            containerNameFrom: 'book',
+            folderNameFrom: 'skill'
         },
         guidance: RECIPE_GUIDANCE,
-        examples: RECIPE_EXAMPLES
+        examples: RECIPE_EXAMPLES,
+        extraFields: RECIPE_EXTRA_FIELDS
     });
 }
 

@@ -9,7 +9,6 @@ import { getAPI } from './api-artificer.js';
 import { loadTranslationFromFile } from './cache/cache-items.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
-import { ArtificerRecipeImportWindow } from './window-artificer-recipe-import.js';
 import { CraftingWindow } from './window-crafting.js';
 import { RecipeBrowserWindow } from './window-recipes.js';
 import { SkillsWindow } from './window-skills.js';
@@ -136,7 +135,6 @@ Hooks.once('init', async () => {
     // Preload templates (v13+: global loadTemplates deprecated; removed in v15)
     await foundry.applications.handlebars.loadTemplates([
         'modules/coffee-pub-artificer/templates/item-form.hbs',
-        'modules/coffee-pub-artificer/templates/import-recipes.hbs',
         'modules/coffee-pub-artificer/templates/panel-crafting-experiment.hbs',
         'modules/coffee-pub-artificer/templates/window-crafting.hbs',
         'modules/coffee-pub-artificer/templates/window-recipes.hbs',
@@ -253,10 +251,10 @@ Hooks.once('ready', async () => {
                 error?.message ?? String(error), false, false);
         }
 
-        // Recipe declaration -- Track A only: lets buildDocumentData construct a
-        // recipe page's `system` data for us. Does NOT hand destination to
-        // Blacksmith; we still call createEmbeddedDocuments ourselves. See
-        // documentation/plans/plan-recipe-field-mappings.md.
+        // Recipe declaration -- Blacksmith's Unified Import window builds AND places
+        // every recipe page from this; we hold no import window and never call
+        // createEmbeddedDocuments for a recipe ourselves. See
+        // documentation/architecture/architecture-artificer.md section 11.5.
         try {
             const recipeRegistered = registerArtificerRecipeDeclaration(bsApi);
             postBlacksmithConsole(MODULE.NAME,
@@ -433,21 +431,9 @@ async function registerMenubarIntegration() {
         }
     });
     
-    // Register secondary bar item for importing recipes (GM only)
-    const importRecipeItemId = 'artificer-import-recipes';
-    const importRecipeRegistered = blacksmith.registerSecondaryBarItem(barType, importRecipeItemId, {
-        icon: 'fa-solid fa-book-open',
-        label: 'Import Recipes',
-        title: 'Import Recipes',
-        group: 'Manage Artificer',
-        order: 20,
-        moduleId: MODULE.ID,
-        visible: () => game.user.isGM,
-        onClick: async function() {
-            if (!game.user.isGM) return;
-            await openArtificerWindow(() => new ArtificerRecipeImportWindow(), { windowLabel: 'Import Recipes' });
-        }
-    });
+    // Recipe import goes entirely through Blacksmith's Unified Import window -- no
+    // Artificer-owned "Import Recipes" button, same as items never had one. See
+    // declarations/declaration-artificer-recipe.js.
 
     const populateGatherItemId = 'artificer-populate-spots';
     const populateGatherRegistered = blacksmith.registerSecondaryBarItem(barType, populateGatherItemId, {
@@ -569,10 +555,10 @@ async function registerMenubarIntegration() {
         }
     });
     
-    if (craftingRegistered && recipeBrowserRegistered && createItemRegistered && importRecipeRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
+    if (craftingRegistered && recipeBrowserRegistered && createItemRegistered && skillsRegistered && gatherRegistered && gatherHarvestRegistered && discoverGatherRegistered && clearGatherRegistered && populateGatherRegistered) {
         postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Menubar tool, secondary bar, and crafting/import buttons registered successfully`, null, false, false);
     } else {
-        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, import-recipes: ${importRecipeRegistered}, recipe-browser: ${recipeBrowserRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, false, false);
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Failed to register some buttons`, `create: ${createItemRegistered}, recipe-browser: ${recipeBrowserRegistered}, skills: ${skillsRegistered}, gather: ${gatherRegistered}, gather-harvest: ${gatherHarvestRegistered}, discover: ${discoverGatherRegistered}, clear: ${clearGatherRegistered}, populate: ${populateGatherRegistered}`, false, false);
     }
 }
 

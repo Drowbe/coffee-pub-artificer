@@ -587,43 +587,6 @@ async function getRecipeJournalOptionsByFolder(recipes, filterRecipeJournal, ena
     return { allOption, groups, nameToUuids, journalByUuid, journalCoverByUuid };
 }
 
-/**
- * Get list of recipe source journals (folder + compendiums) with uuid and name
- */
-async function getRecipeSourceJournals() {
-    const source = game.settings.get(MODULE.ID, 'recipeStorageSource') ?? 'compendia-then-world';
-    const loadCompendia = ['compendia-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
-    const loadWorld = ['world-only', 'compendia-then-world', 'world-then-compendia'].includes(source);
-    const list = [];
-    if (loadWorld && game.journal) {
-        const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
-        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
-        for (const j of game.journal) {
-            if (!j.uuid || (j.name || '').trim() !== journalName) continue;
-            if (folderId && j.folder?.id !== folderId) continue;
-            list.push({ uuid: j.uuid, name: j.name ?? '' });
-        }
-    }
-    if (loadCompendia) {
-        try {
-            const num = Math.max(0, Math.min(10, parseInt(game.settings.get(MODULE.ID, 'numRecipeCompendiums'), 10) || 0));
-            for (let i = 1; i <= num; i++) {
-                const cid = game.settings.get(MODULE.ID, `recipeCompendium${i}`) ?? 'none';
-                if (!cid || cid === 'none') continue;
-                const pack = game.packs.get(cid);
-                if (!pack || pack.documentName !== 'JournalEntry') continue;
-                const docs = await pack.getDocuments();
-                for (const doc of docs) {
-                    if (doc?.uuid) list.push({ uuid: doc.uuid, name: doc.name ?? '' });
-                }
-            }
-        } catch (_e) {
-            /* ignore */
-        }
-    }
-    return list;
-}
-
 async function getRecipesForDisplay(selectedRecipeId, actor, journalByUuid = new Map()) {
     const api = getAPI();
     const recipes = api?.recipes?.getAll?.() ?? [];

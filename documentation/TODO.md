@@ -12,7 +12,7 @@
     ```
     `extends` is evaluated when our module script is evaluated, and `game` does not exist yet — a top-level `game.modules.get('coffee-pub-blacksmith')` throws `Cannot read properties of undefined (reading 'get')`, and ES modules cache a failed evaluation, so the throw disables Artificer for the entire session instead of being retried. Merchant hit this on 2026-08-19. `BLACKSMITH_WINDOW_STYLES`, `BLACKSMITH_TOOL_TITLEBARS` and `BLACKSMITH_TOOL_THEMES` come from the same path and are the same objects as `api.windowStyles` / `api.toolTitlebars` / `api.toolThemes`. `scripts/` paths are still not the contract; the bridge is. `module.api` stays correct for anything resolved after `init`.
 - [x] ~~Artificer Item window~~ — **DONE 13.2.0.** Extends `BlacksmithWindowBaseV2` via the bridge, uses the zone contract, and its fields carry `blacksmith-input` / `blacksmith-select` / `blacksmith-textarea`. It is the reference for the rest.
-- [ ] Audit and migrate the remaining windows: Crafting, Recipe Browser, Skills, Gather, Recipe Import, and the experimental Crafting panel; document which base and zone layout each one uses.
+- [ ] Audit and migrate the remaining windows: Crafting, Recipe Browser, Skills, Gather, and the experimental Crafting panel; document which base and zone layout each one uses. (Recipe Import is gone -- recipes import through Blacksmith's own Unified Import window now, no Artificer-owned window to migrate.)
 - [ ] Register stable window IDs through `api.registerWindow()` for windows opened by Blacksmith bars, macros, or other modules, and route those callers through `api.openWindow()`; retain direct construction only where the Window API explicitly recommends it for ephemeral/multi-instance tools.
 - [ ] Refactor window templates onto Blacksmith's zone contract (option bar, header, tools, body, action bar) while preserving existing actions, forms, scrolling, sizing, remembered positions, and singleton/multi-instance behavior.
 - [ ] Replace Artificer's hardcoded dark window surfaces and field colors with the applicable Blacksmith window variables. **Note from the Artificer Item migration:** the blockers are `!important` rules and a fixed `height: 22px` in `shared.css` plus per-window overrides, which beat the shared classes at any specificity. Stand them down with `:not(.blacksmith-…)` rather than deleting — unmigrated windows still depend on them. For Tool windows, use the `--blacksmith-tool-*` field/content-surface family and verify fields, placeholders, focus rings, open dropdown options, sticky content, hover/selection states, and muted text under Light, Dark, and Glass themes.
@@ -38,48 +38,58 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 **Superseded note from 2026-08-25 was itself stale by 2026-10-07** — Blacksmith's Journal kind landed
 2026-09-02, over a month before this was next touched. Do not trust a "blocked on" note's age; re-check the
 dependency before believing it. See [plans/plan-recipe-field-mappings.md](plans/plan-recipe-field-mappings.md)
-for the current Track A / Track B framing and everything verified against Blacksmith's actual source.
+for the full history (Track A, then widened to Track B) and everything verified against Blacksmith's actual
+source.
 
-- [x] ~~Write the recipe declaration via `declarationFromModel(RecipePageModel, options)`.~~ **DONE
-      2026-10-07** — `scripts/declarations/declaration-artificer-recipe.js`, registered at `ready` in
-      `artificer.js`, same pattern as the item field group. Confirmed `processType`/`skill` correctly carry
-      no `values` (no `choices` on those model fields, deliberately); `type`/`rarity` correctly do. Two bugs
-      found and fixed only by running the harness live: `declarationFromModel` needs the model CLASS, not
-      `RecipePageModel.schema` (the compiled `SchemaField` Foundry caches); and Blacksmith's registry
-      unconditionally requires `document.containerName` or `containerNameFrom` on any `JournalEntryPage`
-      declaration, even though Track A never uses it — supplied a constant placeholder
-      (`'Artificer Recipes'`), confirmed inert by reading `assemble()` in Blacksmith's
-      `manager-declarations.js`.
-- [x] ~~Run the harness, suite "Recipe Declaration".~~ **DONE 2026-10-07** — all real assertions pass; the
-      one "FAIL" row left in the output is the exploratory one by design (`suite-recipe-declaration.js`), no
-      real expectation, there only to surface the shape. `buildDocumentData` returns a flat
-      `{type, system: {...every recipe field...}}`, no stray `name`, no container/destination key. Reported
-      to Blacksmith.
-- [x] ~~Once the shape is known, wire it into `scripts/utility-artificer-recipe-import.js`.~~ **DONE
-      2026-10-07** — `buildRecipePageData()` calls `buildDocumentData('journal', 'recipe', data)`, merges in
-      `name`/`text.content`, and `importRecipes` still does its own `createEmbeddedDocuments` and
-      settings-driven destination, unchanged. Falls back to the old `buildRecipePageHtml` + `type: 'text'`
-      page when the declaration is unavailable (older Blacksmith), so nothing regresses for a world that
-      has not updated.
-- [x] ~~Decide `name`/`description` handling.~~ **DONE 2026-10-07** — set manually in
-      `buildRecipePageData()` rather than via `extraFields`: both are outside `system`, the shape
-      confirmed neither appears in `buildDocumentData`'s own output, and merging two known keys ourselves
-      was simpler than an unconfirmed declaration mechanism for two fields.
-- [ ] **Test in a live world:** import a recipe JSON payload and confirm the created page is
-      `coffee-pub-artificer.recipe` (not `text`), its fields round-trip into `system`, the page title and
-      description land correctly, and it still files into the configured recipe journal/folder.
-- [ ] Existing legacy-format (`type: 'text'`) recipes are not touched by any of this — only recipes
-      imported from this point forward go through the new path. Whether/how to migrate old ones is
-      undecided and out of scope here; see the plan doc.
-- [ ] **Track B, deferred:** retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js)
-      for `openWindow`/`attachButton`. Needs Blacksmith to add a destination mechanism a REGISTERING MODULE
-      resolves at runtime — `containerName`/`containerNameFrom` cannot read a world setting, and
-      `authorable: false` is documented as being for Blacksmith-maintained state across re-imports, not a
-      caller-injected value (confirmed against their source, not assumed). **Approved by Blacksmith's
-      author 2026-10-07 and logged in their TODO.** Nothing to build until we actually retire the window —
-      when we do, we owe them the exact spec: a value we resolve ourselves (their stated preference, since
-      a callback is opaque to their mirror check — unless we can justify one), and the same question for
-      folder resolution.
+**Track B, done 2026-10-08: recipes import exclusively through Blacksmith's Unified Import window.** Items
+never had a separate Artificer import window either (only a field group attached to Blacksmith's own item
+profiles) — recipes now match that shape. No code on our side builds a document or calls
+`createEmbeddedDocuments` for a recipe any more; Blacksmith's importer does both construction and
+placement, driven entirely by the declaration.
+
+- [x] ~~Recipe declaration covers construction AND destination.~~ **DONE 2026-10-08** —
+      `scripts/declarations/declaration-artificer-recipe.js`: `journaltype` selector (`extraFields`),
+      `title` → `path: 'name'`, `description` → `path: 'text.content'`,
+      `containerNameFrom: 'book'` / `folderNameFrom: 'skill'`. No image field — confirmed recipes have none;
+      every icon on a recipe page is resolved at render time from the item cache by name
+      (`sheet-recipe-page.js`), not stored on the recipe. No folder-casing transform needed — Blacksmith's
+      `ensureJournalFolder` matches an existing folder case-insensitively and creates a new one verbatim
+      (confirmed with Blacksmith directly; a transform was tried before and mangled proper nouns).
+- [x] ~~Retire the Artificer-owned import window.~~ **DONE 2026-10-08** — deleted
+      `window-artificer-recipe-import.js` and its template and stylesheet, the "Import Recipes"
+      secondary-bar button, and the module.json/`default.css` entries pointing at them.
+      `utility-artificer-recipe-import.js` trimmed to just `buildRecipePageHtml`/`escapeHtml` (still used by
+      the legacy-page maintenance macros below) and renamed to
+      `utility-artificer-recipe-legacy-html.js` to match what it actually does now.
+- [x] ~~`storage-recipes.js` finds recipes by page type, not a configured journal.~~ **DONE 2026-10-08** —
+      world journals are scanned for pages of type `coffee-pub-artificer.recipe` directly; several "book"
+      journals per skill folder is the normal case (confirmed against the live world), and the old loader
+      could only ever see one. `recipeJournalName`/`recipeJournalFolder` settings deleted outright (module
+      unreleased, single world, confirmed zero legacy-format pages exist — no backward compatibility to
+      preserve). `window-crafting.js`'s `getRecipeSourceJournals()` deleted too — turned out to be dead
+      code, never called; `getRecipeJournalOptionsByFolder()` (the function that IS live) already handled
+      multiple journals/folders correctly, it just never had more than one to show before.
+- [x] ~~Legacy-page scanning decision.~~ **DONE 2026-10-08** — moot. Verified live (console query, zero
+      matches) that no `type: 'text'` recipe pages exist anywhere in the world. `cleanAndRewriteRecipePages`/
+      `applyPotionBrewingData` (storage-recipes.js) still exist for a world that does have some, now scanning
+      every world journal rather than a configured one — safe there specifically because both are
+      deliberate, GM-invoked, dry-run-capable macros the GM reviews before committing, not a background scan.
+- [x] ~~Test in a live world, through the Unified Import window.~~ **DONE 2026-10-08** — all four cases
+      passed: new book created in an existing skill folder (Alchemy), a second page added into an existing
+      book, a second skill folder, and a re-import by matching title updated the existing page in place
+      rather than duplicating it. Page type, field round-trip, title/body placement, and `RecipePageSheet`
+      rendering all confirmed correct, including the optional fields (DC/Work/Cost) a second payload
+      exercised that the first test payload had deliberately left out.
+- [ ] Still open with Blacksmith: a profile-level `preamble` (for the DM-persona/process framing
+      `prompts/artificer-recipe.txt` carries) and whether their Prompt Template tab has any slot for a
+      separate image-generation prompt. Neither blocks the above.
+- [ ] **Housekeeping:** `plans/plan-recipe-field-mappings.md` should be deleted per the standard plan
+      workflow (its narrative is distributed above and into architecture 11.5 already), but its field
+      table + notes 1-4 (vocabularies, the container/apparatus alias bug, punctuation normalisation) are
+      still genuinely useful as a reference for the LEGACY HTML format `RecipeParser`/
+      `utility-artificer-recipe-legacy-html.js` read/write — not yet folded into architecture. Fold that
+      table in, then delete the plan doc. Notes 5 (duplicate policy) and 6 (our own button) are already
+      resolved/obsolete and do not need carrying forward.
 
 ### Retire buildItemSystem for Blacksmith's declaration assembler
 Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,

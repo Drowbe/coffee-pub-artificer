@@ -98,20 +98,6 @@ function getCompendiumChoices() {
 }
 
 /**
- * Get folder choices for JournalEntry (world journals in a folder)
- * @returns {Object} Object mapping folder id to display label
- */
-function getJournalFolderChoices() {
-    const choices = { "": "-- None --" };
-    if (!game.folders) return choices;
-    const journalFolders = game.folders.filter(f => f.type === 'JournalEntry');
-    for (const folder of journalFolders) {
-        choices[folder.id] = folder.name;
-    }
-    return choices;
-}
-
-/**
  * Get JournalEntry compendium choices (packs containing journals).
  *
  * See getCompendiumChoices() for why this is getAllChoices() and not getChoices().
@@ -265,28 +251,10 @@ export const registerSettings = () => {
 	// --------------------------------------
 	registerHeader('JournalSettings', 'headingH3JournalSettings-Label', 'headingH3JournalSettings-Hint', 'H3', WORKFLOW_GROUPS.COMMON_SETTINGS);
 
-    // -- Recipe journal name (world: journal with this name is the recipe source; import creates it if missing) --
-	game.settings.register(MODULE.ID, 'recipeJournalName', {
-        name: MODULE.ID + '.recipeJournalName-Label',
-        hint: MODULE.ID + '.recipeJournalName-Hint',
-        scope: 'world',
-        config: true,
-        default: 'Artificer Recipes',
-        type: String,
-		group: WORKFLOW_GROUPS.COMMON_SETTINGS
-	});
-
-    // -- Recipe journal folder (optional: where to look for/create the named recipe journal) --
-	game.settings.register(MODULE.ID, 'recipeJournalFolder', {
-        name: MODULE.ID + '.recipeJournalFolder-Label',
-        hint: MODULE.ID + '.recipeJournalFolder-Hint',
-        scope: 'world',
-        config: true,
-        default: '',
-        type: String,
-        choices: getJournalFolderChoices(),
-		group: WORKFLOW_GROUPS.COMMON_SETTINGS
-	});
+    // Recipe destination (which book, which skill folder) comes from each recipe's own
+    // `book`/`skill` fields now, resolved by Blacksmith's Unified Import window at import
+    // time -- not a world setting. recipeJournalName/recipeJournalFolder are gone; nothing
+    // reads them (storage-recipes.js finds recipes by page type across every world journal).
 
     // -- Number of recipe compendiums --
 	game.settings.register(MODULE.ID, 'numRecipeCompendiums', {

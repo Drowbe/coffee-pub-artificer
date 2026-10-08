@@ -7,37 +7,10 @@ import { postBlacksmithConsole } from '../../utils/blacksmith-console.js';
 import { ArtificerRecipe } from '../models/model-recipe.js';
 import { RecipeParser } from '../../parsers/parser-recipe.js';
 import { RECIPE_PAGE_TYPE } from '../models/model-recipe-page.js';
-import { buildRecipePageHtml } from '../../utility-artificer-recipe-import.js';
+import { buildRecipePageHtml } from '../../utility-artificer-recipe-legacy-html.js';
 import { SKILL_LEVEL_MAX } from '../../schema-recipes.js';
 import { getEnabledCraftingSkillIds } from '../../skills-rules.js';
 import { getPotionBrewingData } from '../potion-brewing-recipe-data.js';
-
-/** JournalEntry document type for folder filtering */
-const JOURNAL_TYPE = 'JournalEntry';
-
-/**
- * Return the set of folder IDs that are the given folder or any descendant (for the given document type).
- * Used so that when "Artificer" is selected, we include journals in "Alchemist Recipes", "Herbalist Recipes", etc.
- * @param {string} folderId
- * @param {string} [documentType]
- * @returns {Set<string>}
- */
-function getFolderIdAndDescendantIds(folderId, documentType = JOURNAL_TYPE) {
-    const allowed = new Set([folderId]);
-    if (!folderId || !game.folders) return allowed;
-    const folders = game.folders.filter((f) => f.type === documentType);
-    let added;
-    do {
-        added = 0;
-        for (const f of folders) {
-            if (f.folder?.id && allowed.has(f.folder.id) && !allowed.has(f.id)) {
-                allowed.add(f.id);
-                added++;
-            }
-        }
-    } while (added > 0);
-    return allowed;
-}
 
 /**
  * RecipeStorage - Manages loading recipes from journal entries
@@ -77,9 +50,21 @@ export class RecipeStorage {
     }
     
     /**
-     * Load recipes from configured sources: world folder and compendiums.
+     * Load recipes from configured sources: world journals and compendiums.
      * Deduplicates by core document ID (journal.id + page.id) so Compendium.X.Item.abc and Item.abc
      * are treated as the same. Load order and source filter respect recipeStorageSource.
+     *
+     * WORLD JOURNALS ARE FOUND BY PAGE TYPE, NOT BY A CONFIGURED JOURNAL NAME. Recipes are filed
+     * across however many "book" journals a GM has, grouped by skill folder -- several books per
+     * skill is normal (confirmed against a live world: folder = skill, journal = book, page = one
+     * recipe). A single named journal cannot express that, so every world journal is scanned and
+     * only pages of type RECIPE_PAGE_TYPE are taken; that type is exclusive to real recipe pages, so
+     * this is cheap and cannot false-match unrelated content. `text`-type pages are deliberately NOT
+     * considered here -- the old HTML-label parsing path existed only for pre-migration recipes, none
+     * of which exist in this world (verified directly), and matching arbitrary `text` pages against
+     * that parser across every journal in the world would risk misreading an unrelated page (session
+     * notes, an NPC writeup) as a garbage recipe for zero benefit. Compendium packs below are a
+     * GM-curated list, not "everything", so that path still checks both types.
      * @private
      * @returns {Promise<void>}
      */
@@ -90,11 +75,10 @@ export class RecipeStorage {
 
         const journalBatches = []; // [{ uuid, isWorld }]
         if (loadWorld && game.journal) {
-            const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
-            const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
             for (const journal of game.journal) {
-                if (!journal.uuid || (journal.name || '').trim() !== journalName) continue;
-                if (folderId && journal.folder?.id !== folderId) continue;
+                if (!journal.uuid) continue;
+                const hasRecipePage = (journal.pages?.contents ?? []).some(page => page.type === RECIPE_PAGE_TYPE);
+                if (!hasRecipePage) continue;
                 journalBatches.push({ uuid: journal.uuid, isWorld: true });
             }
         }
@@ -247,7 +231,11 @@ export class RecipeStorage {
     /**
      * Clean and adjust recipe journal pages to current schema: skillKit (not Tool), no Workstation,
      * skillLevel 0–20 (scale from old 0–100 if present), valid skill, description present.
-     * Only updates world journal pages in the configured recipe journal folder.
+     * LEGACY MAINTENANCE: operates on `type: 'text'` pages only (see the per-page check below), so a
+     * world with no legacy pages left finds nothing to update. Scans every world journal -- there is
+     * no configured "recipe journal" any more to scope to (recipes are found by page type now; see
+     * `_loadFromJournals`). Safe to scan broadly here specifically because this is a deliberate,
+     * GM-invoked, dry-run-capable macro the GM reviews before committing, not a background scan.
      * @param {Object} [options]
      * @param {boolean} [options.dryRun=false] - If true, do not write; only report what would be updated.
      * @returns {Promise<{ updated: number, errors: Array<{ name: string, error: string }>, skipped: number }>}
@@ -255,17 +243,11 @@ export class RecipeStorage {
     async cleanAndRewriteRecipePages(options = {}) {
         const dryRun = !!options.dryRun;
         const result = { updated: 0, errors: [], skipped: 0 };
-        const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
-        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
         if (!game.journal) {
             result.errors.push({ name: '', error: 'No journal collection available.' });
             return result;
         }
-        let journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && (j.name || '').trim() === journalName);
-        if (folderId) {
-            const allowedFolderIds = getFolderIdAndDescendantIds(folderId);
-            journals = journals.filter((j) => j.folder?.id && allowedFolderIds.has(j.folder.id));
-        }
+        const journals = game.journal.filter((j) => j.documentName === 'JournalEntry');
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];
             for (const page of pages) {
@@ -346,8 +328,9 @@ export class RecipeStorage {
 
     /**
      * Apply Potion Brewing (GM Binder PDF) data to recipe journal pages: set RARITY, SKILLLEVEL, SUCCESSDC (and optionally Skill).
-     * When a recipe folder is set, includes that folder and all subfolders and considers all journals in the tree (any name).
-     * When no folder is set, uses the single recipe journal name. Lookup by recipe name or result name.
+     * LEGACY MAINTENANCE, same scope as cleanAndRewriteRecipePages: `type: 'text'` pages only, scanned
+     * across every world journal -- there is no configured "recipe journal" any more. Lookup by recipe
+     * name or result name.
      * @param {Object} [options]
      * @param {boolean} [options.dryRun=false] - If true, do not write; only report what would be updated.
      * @returns {Promise<{ updated: number, skipped: number, notInData: number, skippedNames: string[], notInDataNames: string[], errors: Array<{ name: string, error: string }> }>}
@@ -355,21 +338,11 @@ export class RecipeStorage {
     async applyPotionBrewingData(options = {}) {
         const dryRun = !!options.dryRun;
         const result = { updated: 0, skipped: 0, notInData: 0, skippedNames: [], notInDataNames: [], errors: [] };
-        const journalName = (game.settings.get(MODULE.ID, 'recipeJournalName') ?? 'Artificer Recipes').trim();
-        const folderId = game.settings.get(MODULE.ID, 'recipeJournalFolder') ?? '';
         if (!game.journal) {
             result.errors.push({ name: '', error: 'No journal collection available.' });
             return result;
         }
-        let journals;
-        if (folderId) {
-            const allowedFolderIds = getFolderIdAndDescendantIds(folderId);
-            journals = game.journal.filter(
-                (j) => j.documentName === 'JournalEntry' && j.folder?.id && allowedFolderIds.has(j.folder.id)
-            );
-        } else {
-            journals = game.journal.filter((j) => j.documentName === 'JournalEntry' && (j.name || '').trim() === journalName);
-        }
+        const journals = game.journal.filter((j) => j.documentName === 'JournalEntry');
         const validSkills = new Set(await getEnabledCraftingSkillIds());
         for (const journal of journals) {
             const pages = journal.pages?.contents ?? [];

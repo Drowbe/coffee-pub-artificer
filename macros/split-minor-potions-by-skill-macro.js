@@ -153,7 +153,10 @@ async function sortJournalPagesByName(journal) {
         return;
     }
 
-    const folderId = (typeof sourceJournal.folder === 'string' ? sourceJournal.folder : sourceJournal.folder?.id) || (game.settings.get(MODULE_ID, 'recipeJournalFolder') ?? '').trim();
+    // recipeJournalFolder is deleted (recipes are found by page type across every world journal
+    // now, not one configured journal/folder); target journals fall back to the world root when
+    // the source journal itself has no folder.
+    const folderId = (typeof sourceJournal.folder === 'string' ? sourceJournal.folder : sourceJournal.folder?.id) || '';
     const errors = [];
 
     for (const [targetName, pageList] of [[TARGET_ALCHEMY, toAlchemy], [TARGET_HERBALISM, toHerbalism]]) {

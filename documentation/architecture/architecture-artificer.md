@@ -530,10 +530,27 @@ Following Codex/Quest patterns:
 
 ### 11.5 Journal Organization
 
-**Recipes:**
-- Default journal: "Artificer Recipes" (auto-created if missing)
-- User-configurable: Can select different journal via settings
-- Single journal recommended (simpler management)
+**Recipes:** several "book" journals per skill folder is the normal shape (e.g. an "Alchemy"
+folder holding multiple books, each a `JournalEntry` whose pages are individual recipes). There
+is no configured recipe journal any more — `RecipeStorage._loadFromJournals()`
+(`scripts/data/storage/storage-recipes.js`) finds recipes by scanning every world journal for
+pages of type `coffee-pub-artificer.recipe`, which is exclusive to real recipe pages and so
+cannot false-match unrelated content. Import (via Blacksmith's Unified Import window) files a
+recipe into its book and folder from the payload's own `book`/`skill` fields
+(`document.containerNameFrom`/`folderNameFrom` on the recipe declaration), not a world setting.
+
+A GM-authored "Cover Page" (first page named `Cover Page`, parsed by
+`scripts/parsers/parser-journal-cover.js`) can declare a book's `Skills`, `Author`, `Description`
+and cover image — used by the crafting window's journal picker
+(`getRecipeJournalOptionsByFolder` in `scripts/window-crafting.js`) for filtering and display.
+This is independent of the book's folder: a book's folder and its Cover Page skill list are two
+separate, human-set things that are not derived from each other.
+
+Legacy `type: 'text'` recipe pages (pre-dating the `coffee-pub-artificer.recipe` subtype) are
+not included in that by-type scan — deliberately, since matching arbitrary text pages against
+`RecipeParser` across every world journal would risk misreading unrelated content as a recipe.
+`cleanAndRewriteRecipePages`/`applyPotionBrewingData` (also in `storage-recipes.js`) still exist
+to maintain any that remain, scanning every world journal for `text`-type pages specifically.
 
 **Blueprints:**
 - **DECISION:** Separate journal ("Artificer Blueprints") for clarity and different permissions

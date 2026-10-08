@@ -2,69 +2,57 @@
 
 **Audience:** us, while the work is in flight
 
-**Status: superseded by a real data model, rewritten 2026-10-07.** The version of this
-document Blacksmith originally received (step 8, "raw input for the rendered form") assumed
-recipes were permanently `type: 'text'` with no schema, which is no longer true — recipes
-have been a real registered subtype (`coffee-pub-artificer.recipe`, `RecipePageModel`,
-`scripts/data/models/model-recipe-page.js`) since August. Only the IMPORT path still writes
-the legacy format; this document now plans retiring that, not designing around it. The field
-table and notes below describe the LEGACY import path's current behaviour, and are kept —
-that behaviour is exactly what a new declaration needs to either preserve or deliberately
-break, and getting that wrong silently is how note 3's container/apparatus bug happened in
-the first place.
+**Status: DONE, 2026-10-08.** Recipes import exclusively through Blacksmith's Unified Import
+window now — no Artificer-owned import window, matching how items already worked (a declared
+profile, no bespoke UI). This document started as a field-mapping reference for a hand-written
+declaration, became a two-track plan (Track A: construction only, keep our window; Track B:
+retire the window too), and ended with Track B shipping in full the same day it was proposed,
+once it was clear items never had a separate window either. The field table below is kept as
+the BEHAVIOURAL reference (vocabularies, aliases, what note 3's bug was) — it was never
+hand-transcribed into the declaration; `declarationFromModel` derives it from `RecipePageModel`.
 
----
+**What shipped.** `scripts/declarations/declaration-artificer-recipe.js` is a `mapped` profile
+built via `declarationFromModel(RecipePageModel, options)`, covering BOTH construction and
+destination:
+- `journaltype` selector (`extraFields`) — how the Unified Import window routes a payload here.
+- `title` → `path: 'name'`, `description` → `path: 'text.content'` — both outside `system`
+  (page title, native ProseMirror body), declared via `extraFields` the same way Bibliosoph's
+  `injury-import-profile.js` maps its own `title`. Blacksmith's `writePath()` is a plain
+  dotted-path setter, not restricted to `system.*`, so this needed no new mechanism.
+- `containerNameFrom: 'book'`, `folderNameFrom: 'skill'` — the world's actual organisation
+  (confirmed against a live screenshot): folder = skill (Alchemy, Herbalism, Poisoncraft, ...),
+  journal = a recipe book inside that folder, page = one recipe, several books per skill is
+  normal. No folder-casing transform: `ensureJournalFolder` matches an existing folder
+  case-insensitively and creates a new one verbatim (a transform was tried before, it mangled
+  proper nouns, and was removed on purpose — confirmed directly with Blacksmith, do not add one).
+- No image field — recipes don't have one. Every icon on a recipe page is resolved at RENDER
+  TIME, by name, from the item cache (`sheet-recipe-page.js`), not stored on the page.
 
-## Two tracks
+Two bugs found only by running the harness live, both fixed before any of the above: a first
+pass passed `RecipePageModel.schema` (the compiled `SchemaField` instance) instead of the model
+CLASS, which made `declarationFromModel` walk the wrong shape entirely; and Blacksmith's
+registry unconditionally requires `document.containerName` or `containerNameFrom` on *any*
+`JournalEntryPage` declaration at registration time, which a Track-A-only declaration (no real
+destination yet) satisfied with an inert placeholder — removed once `containerNameFrom` became
+real.
 
-**Track A — construction only, keep our own window. DONE 2026-10-07.** Registered a `mapped`
-profile for `coffee-pub-artificer.recipe` via `declarationFromModel(RecipePageModel, options)`
-(`scripts/declarations/declaration-artificer-recipe.js`) — this confirms the "Open, asked"
-question below: yes, it removes nearly all of the field-table transcription, since
-`RecipePageModel` already carries `required`/`nullable`/`default`/`choices`/nesting. Only
-`guidance` and `examples` (prose a schema cannot carry) are hand-supplied, keyed by dotted
-path. The field table below stays as the BEHAVIOURAL reference (vocabularies, aliases, what
-note 3's bug was); it is no longer hand-transcribed into `fields:`.
+**Also done:** `storage-recipes.js` finds recipes by page type across every world journal
+instead of one configured journal (several books per skill needs that); the
+`recipeJournalName`/`recipeJournalFolder` settings are deleted outright (module unreleased,
+single world, confirmed zero legacy pages exist); `window-artificer-recipe-import.js` and its
+button are deleted; `utility-artificer-recipe-import.js` is trimmed to the legacy HTML builder
+only (still used by `cleanAndRewriteRecipePages`/`applyPotionBrewingData` for a world that does
+have old-format pages) and renamed to `utility-artificer-recipe-legacy-html.js`.
 
-`scripts/utility-artificer-recipe-import.js`'s `importRecipes` now calls
-`blacksmithApi.importer.buildDocumentData('journal', 'recipe', entry)` in place of the
-hand-rolled JSON-to-HTML construction (`buildRecipePageHtml`, now a fallback for an older
-Blacksmith only), merges in `name`/`text.content` (both outside `system`, confirmed absent
-from `buildDocumentData`'s own output), and still does its own `createEmbeddedDocuments` with
-our existing settings-driven destination/folder resolution, completely unchanged. Confirmed
-buildable standalone — Blacksmith's own docs: "any surface that collects friendly fields...
-can map them to an entry and get the same document data the importer produces"
-(`api-importer.md:42`).
-
-Two bugs found only by running the harness live, both now fixed: `declarationFromModel` needs
-the model CLASS (`RecipePageModel`), not `RecipePageModel.schema` (the compiled `SchemaField`
-instance Foundry caches on the class) — passing the latter makes it walk the wrong shape
-entirely. And Blacksmith's registry unconditionally requires `document.containerName` or
-`containerNameFrom` on *any* `JournalEntryPage` declaration, even when `buildDocumentData` is
-the only thing ever called — confirmed by reading `assemble()` in Blacksmith's
-`manager-declarations.js`, which never reads it; only the window-based import path does. A
-constant placeholder (`'Artificer Recipes'`) satisfies registration without doing anything.
-
-**Track B — retire our window for `openWindow`/`attachButton`.** Deferred, but the request is
-now **approved by Blacksmith's author (2026-10-07) and logged in their TODO.** Needs Blacksmith
-to own destination resolution too, and our destination is GM-configurable via settings
-(`recipeJournalName`/`recipeJournalFolder`), not a fixed constant and not naturally a field
-on each JSON entry — `containerName` is a constant, `containerNameFrom` reads a *declared*
-field on the entry. The candidate mechanism (declare the field `authorable: false`, inject
-the setting's value ourselves before import) runs against the documented contract rather
-than merely an untested edge of it: `authorable: false` is "for state a subsystem
-maintains" (`api-importer.md:155`), i.e. Blacksmith-maintained state across re-imports, not
-a value a caller supplies per run. Blacksmith's stated preference for the real mechanism: the
-registering module resolves its own setting and passes the VALUE in, not a callback — "a
-callback in a declaration is opaque to the mirror check." Nothing to build on either side
-until we actually retire the window; when we do, we owe them the exact spec (value vs.
-per-import-resolved, and the same question for folder resolution).
-
-**Separate, not yet scoped: migrating existing legacy-format recipes.** Once import writes
-the real subtype, a world holds both `type: 'text'` recipes (pre-fix) and real-subtype ones
-side by side. Whether/how to upgrade the old ones is not decided here — flagging so it is not
-silently conflated with the import-path change, which only affects recipes imported from this
-point forward.
+**Still open with Blacksmith, not blocking:** a profile-level `preamble` for the DM-persona and
+process framing `prompts/artificer-recipe.txt` carries (no mechanism today — a declared journal
+profile's Prompt Template is JSON-schema only, derived entirely from `guidance`/`examples`/
+`rules`), and whether there's any slot for a separate image-generation prompt (there isn't one
+today; Blacksmith's own image prompts are two fixed, Blacksmith-owned templates a profile can't
+register into). Dependent vocabularies (category depends on type; ingredient family depends on
+ingredient type) and world-configurable closed vocabularies (skill, skillkit, apparatus,
+container, process) stay prose-only in `guidance` — not solvable by any of this, and no worse
+than the static prompt file already was.
 
 ---
 
