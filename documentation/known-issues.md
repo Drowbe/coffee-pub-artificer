@@ -53,10 +53,6 @@ is where to look.
 Artificer is verified on Foundry v14 (measured on 14.367 with dnd5e 5.3.3) and still runs on v13. No
 behaviour differs between them.
 
-**Two `Dialog` call sites are deprecated rather than broken.** `utils/helpers.js` and `window-skills.js`
-still construct the v1 `Dialog`, which Foundry has deprecated with a v16 horizon. It resolves and works on
-v14; migrating both to `DialogV2` is scheduled work, not a defect you will see.
-
 **One dead hook registration is kept on purpose.** `renderItemSheet` does not fire on Foundry 14.367 with
 dnd5e 5.3.3 -- dnd5e emits `renderItemSheet5e` there instead. Artificer also registers the core
 `renderDocumentSheetV2`, which does fire, so the Artificer block on item sheets renders normally. The dead

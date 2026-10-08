@@ -72,37 +72,50 @@ export async function copyToClipboard(text, options = {}) {
         }
     }
 
-    // Method 3: Show dialog with text for manual copying
-    const dialog = new Dialog({
-        title: fallbackTitle,
+    // Method 3: Show dialog with text for manual copying.
+    //
+    // DialogV2.wait(), not `new DialogV2().render(true)`: the config `render` callback
+    // below is what populates the textarea, and it is only honoured through wait(). A
+    // bare `.render(true)` silently never fires it, which was the actual V1->V2 trap
+    // (found in Monarch's migration, not merely a style preference).
+    //
+    // NOT AWAITED, matching the original `.render(true).then(...)` -- this is a
+    // fire-and-forget fallback display, not a decision the caller waits on.
+    foundry.applications.api.DialogV2.wait({
+        window: { title: fallbackTitle },
+        position: { width: 560 },
         content: `
             <p>Clipboard access failed. Select and copy the text below:</p>
             <textarea readonly style="width:100%;height:300px;font-family:monospace;font-size:12px;margin-top:8px;" id="artificer-copy-fallback"></textarea>
         `,
-        buttons: {
-            copy: {
-                icon: '<i class="fas fa-copy"></i>',
+        buttons: [
+            {
+                action: 'copy',
+                icon: 'fas fa-copy',
                 label: 'Select All',
-                callback: (html) => {
-                    const ta = html.querySelector('#artificer-copy-fallback');
-                    if (ta) {
-                        ta.focus();
-                        ta.select();
-                        ta.setSelectionRange(0, ta.value.length);
+                default: true,
+                // Same shape as V1: select the text, notify, and let the dialog close
+                // afterward. V1's Dialog.submit() always closes after a button callback
+                // runs, so preserving that behaviour means NOT suppressing the close here.
+                callback: (event, button, dialog) => {
+                    const root = dialog?.element ?? button.form ?? button.closest?.('form');
+                    const field = root?.querySelector?.('#artificer-copy-fallback');
+                    if (field) {
+                        field.focus();
+                        field.select();
+                        field.setSelectionRange(0, field.value.length);
                         ui.notifications?.info('Text selected — press Ctrl+C (Cmd+C) to copy.');
                     }
                 }
             },
-            close: {
-                icon: '<i class="fas fa-times"></i>',
-                label: 'Close'
-            }
-        },
-        default: 'copy'
-    }, { width: 560 });
-    dialog.render(true).then(() => {
-        const ta = dialog.element?.querySelector('#artificer-copy-fallback');
-        if (ta) ta.value = text;
+            { action: 'close', icon: 'fas fa-times', label: 'Close' }
+        ],
+        rejectClose: false,
+        render: (event, dialog) => {
+            const root = dialog?.element ?? dialog;
+            const ta = root?.querySelector?.('#artificer-copy-fallback');
+            if (ta) ta.value = text;
+        }
     });
     return false;
 }

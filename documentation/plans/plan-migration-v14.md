@@ -56,15 +56,16 @@ we did not measure.
 than deprecation debt, and Artificer was the only module in the suite that hit it. Note the shape: a
 PROPERTY removed from a global that itself still resolves, so a scan for missing globals cannot see it.
 
-**Deprecation debt, not breakage.** All of the following still resolve on 14.367:
+**Deprecation debt, not breakage, at the time of the original sweep.** `new Dialog(...)` still resolves on
+14.367, so neither of the two sites below blocked the v14 build. Nineteen such `Dialog` sites exist across
+the suite and none blocked a build either.
 
-| Site | What |
-|---|---|
-| `scripts/utils/helpers.js:76` | `new Dialog(...)` -- v16 horizon |
-| `scripts/window-skills.js:544` | `new Dialog(...)` -- v16 horizon |
-
-Nineteen such `Dialog` sites exist across the suite and none blocked a build. Migrating them to `DialogV2`
-is worth doing on its own schedule, not inside this migration.
+**Migrated to `DialogV2` ahead of the v16 horizon:** `scripts/utils/helpers.js:76` (the clipboard-copy
+fallback) and `scripts/window-skills.js:544` ("Edit skill points"). See `CHANGELOG.md` under
+`[Unreleased]` for what changed. The clipboard fallback is the one worth remembering if a similar
+migration comes up elsewhere: it populates its textarea in a post-render step, and `DialogV2` only
+honours a `render` callback through `DialogV2.wait()` -- `new DialogV2({...}).render(true)` silently never
+calls it.
 
 **Fixed here:** `storage-blueprints.js:73` used the bare global `TextEditor`. Now
 `foundry.applications.ux.TextEditor.implementation`, matching `sheet-recipe-page.js:476`. The bare global

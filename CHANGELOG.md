@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Both V1 `Dialog` call sites migrated to `DialogV2`, for Foundry v15 readiness.** `Dialog` still
+  resolves and works on v14, so this was deprecation debt rather than a break -- noted in the v14 migration
+  plan as a v16-horizon item, now closed ahead of it. `copyToClipboard()`'s manual-copy fallback
+  (`utils/helpers.js`) and the skills window's "Edit skill points" dialog (`window-skills.js`) carry
+  identical content, buttons and close behaviour; only the construction API changed. The clipboard
+  fallback's one behavioural trap: `DialogV2`'s `render` callback -- which populates the textarea with the
+  text to copy -- is only honoured through `DialogV2.wait()`, never through `new DialogV2().render(true)`.
+  Confirmed that the content strings for both dialogs survive `DialogV2`'s `cleanHTML` sanitisation intact
+  on Foundry 14.367, including every inline `style=` attribute.
 
 ## [14.0.0]
 

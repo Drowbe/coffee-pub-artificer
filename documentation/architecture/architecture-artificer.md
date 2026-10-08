@@ -679,9 +679,13 @@ register, a gate keyed on the wrong field, a cache reporting 668 items and retur
 throws, and all of them read as working code in the console.
 
 Two constraints the dialog is built around, both discovered the hard way and both shared with Blacksmith's
-harness: `DialogV2` sanitises string content through `cleanHTML`, which drops inline `style` attributes, so
-styling is a `<head>`-injected sheet keyed on classes (classes and `data-*` survive); and the config
-`render` callback -- which wires every button -- fires through `DialogV2.wait()`, not through
+harness: `DialogV2` sanitises string content through `cleanHTML`, which drops a `<style>` ELEMENT -- it is
+not in Foundry's allowed-tags list -- so styling is a `<head>`-injected sheet keyed on classes rather than
+an embedded stylesheet. Inline `style="..."` ATTRIBUTES are a different claim: verified against the
+Foundry 14.367 client (this module's `verified` version) that `style` is in `cleanHTML`'s global allowed-
+attributes list and survives, contrary to an earlier note here. Class-based styling stays the harness's
+approach regardless, because it does not depend on which Foundry build is running. The other constraint:
+the config `render` callback -- which wires every button -- fires through `DialogV2.wait()`, not through
 `new DialogV2(...).render(true)`.
 
 A harness asserting a stale contract is worse than none, because it manufactures confidence. The suite is

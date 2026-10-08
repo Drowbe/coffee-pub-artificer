@@ -541,8 +541,14 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         const actor = w._actor;
         const current = await _skillManager.getPointsRemaining(actor);
         const inputId = `skills-edit-points-${foundry.utils.randomID()}`;
-        new Dialog({
-            title: 'Edit skill points',
+        // DialogV2.wait() -- no render-callback trap here (the value is already baked
+        // into the template string via `value="${current}"`), but wait() is used for
+        // consistency with the rest of the module and because it is the documented
+        // entry point. `button.form.elements.points` is DialogV2's own idiom for
+        // reading a named field back out, from Foundry's own class documentation.
+        foundry.applications.api.DialogV2.wait({
+            window: { title: 'Edit skill points' },
+            position: { width: 320 },
             content: `
                 <p class="skills-edit-points-desc">Points remaining for <strong>${actor.name ?? 'this character'}</strong>:</p>
                 <div class="form-group">
@@ -550,12 +556,18 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                     <input type="number" id="${inputId}" name="points" value="${current}" min="0" step="1" style="max-width:6em;" />
                 </div>
             `,
-            buttons: {
-                set: {
-                    icon: '<i class="fas fa-check"></i>',
+            buttons: [
+                {
+                    action: 'set',
+                    icon: 'fas fa-check',
                     label: 'Set',
-                    callback: async (html) => {
-                        const raw = (html?.jquery ? html.find(`#${inputId}`).val() : html?.querySelector?.(`#${inputId}`)?.value) ?? '';
+                    default: true,
+                    // Same shape as V1: on an invalid value this warns and returns
+                    // without saving, but the dialog still closes -- V1's Dialog.submit()
+                    // always closed after a button callback ran regardless of what the
+                    // callback did, and V2's buttons give no way to keep it open either.
+                    callback: async (event, button) => {
+                        const raw = button.form?.elements?.points?.value ?? '';
                         const value = parseInt(String(raw).trim(), 10);
                         if (Number.isNaN(value) || value < 0) {
                             ui.notifications?.warn?.('Enter a number 0 or greater.');
@@ -565,13 +577,10 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                         w.render();
                     }
                 },
-                cancel: {
-                    icon: '<i class="fas fa-times"></i>',
-                    label: 'Cancel'
-                }
-            },
-            default: 'set'
-        }, { width: 320 }).render(true);
+                { action: 'cancel', icon: 'fas fa-times', label: 'Cancel' }
+            ],
+            rejectClose: false
+        });
     }
 
     static _actionSelectSkillBadge(event, target) {
