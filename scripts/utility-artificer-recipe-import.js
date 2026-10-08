@@ -8,6 +8,11 @@ import { ArtificerRecipe } from './data/models/model-recipe.js';
 import { ITEM_TYPES, HEAT_MAX, PROCESS_LEVEL_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from './schema-recipes.js';
 import { getSyncFallbackRecipeSkillId } from './skills-rules.js';
 import { resolveItemByName } from './utility-artificer-item.js';
+import { getBlacksmithApi } from './utils/blacksmith-console.js';
+
+/** The recipe declaration's registry key (scripts/declarations/declaration-artificer-recipe.js). */
+const RECIPE_DECLARATION_KIND = 'journal';
+const RECIPE_DECLARATION_ID = 'recipe';
 
 /** Default journal name when none configured */
 const DEFAULT_RECIPE_JOURNAL_NAME = 'Artificer Recipes';
@@ -151,9 +156,39 @@ export async function validateRecipePayload(payload) {
 }
 
 /**
+ * Build create-data for a recipe journal page via Blacksmith's recipe declaration
+ * (scripts/declarations/declaration-artificer-recipe.js), Track A only: construction,
+ * not destination -- the caller still does its own createEmbeddedDocuments.
+ *
+ * Null when this Blacksmith predates declarationFromModel/registerDeclaration, or when
+ * registration did not happen for any other reason -- the caller falls back to the
+ * legacy `type: 'text'` page via buildRecipePageHtml.
+ *
+ * `name` and `description` are merged in here rather than declared: both live outside
+ * `system` (the page's own title, and its native ProseMirror text.content), which is
+ * why they are absent from the declaration itself. See
+ * documentation/plans/plan-recipe-field-mappings.md.
+ * @param {Object} data - Validated recipe data (same shape validateRecipePayload returns).
+ * @returns {Promise<Object|null>} Create-data for JournalEntryPage, or null.
+ */
+async function buildRecipePageData(data) {
+    const importer = getBlacksmithApi()?.importer;
+    if (typeof importer?.buildDocumentData !== 'function') return null;
+    if (!importer.getDeclaration?.(RECIPE_DECLARATION_KIND, RECIPE_DECLARATION_ID)) return null;
+    const built = await importer.buildDocumentData(RECIPE_DECLARATION_KIND, RECIPE_DECLARATION_ID, data);
+    return {
+        ...built,
+        name: data.name,
+        text: { content: data.description || '' }
+    };
+}
+
+/**
  * Build HTML content for a recipe journal page (matches RecipeParser format).
  * Always outputs every recipe field so authors can see what is possible, even when empty.
- * Exported for recipe clean/migrate macro.
+ * FALLBACK ONLY as of the recipe declaration: used when buildRecipePageData returns null
+ * (an older Blacksmith). Still exported for the recipe clean/migrate macro, which works
+ * against existing legacy-format pages regardless.
  * @param {Object} data - Validated recipe data (name, resultItemName, skill, skillLevel, skillKit, ingredients, description, etc.)
  * @returns {string} HTML
  */
@@ -275,14 +310,12 @@ export async function importRecipes(payloads, options = {}) {
             continue;
         }
         try {
-            const html = buildRecipePageHtml(validated.data);
-            const pages = await journal.createEmbeddedDocuments('JournalEntryPage', [
-                {
-                    name: validated.data.name,
-                    type: 'text',
-                    text: { content: html }
-                }
-            ]);
+            const pageData = await buildRecipePageData(validated.data) ?? {
+                name: validated.data.name,
+                type: 'text',
+                text: { content: buildRecipePageHtml(validated.data) }
+            };
+            const pages = await journal.createEmbeddedDocuments('JournalEntryPage', [pageData]);
             const page = pages[0];
             if (page) {
                 result.created.push({ name: validated.data.name, page, index: i });

@@ -40,26 +40,34 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 dependency before believing it. See [plans/plan-recipe-field-mappings.md](plans/plan-recipe-field-mappings.md)
 for the current Track A / Track B framing and everything verified against Blacksmith's actual source.
 
-- [x] ~~Write the recipe declaration via `declarationFromModel(RecipePageModel.schema, options)`.~~ **DONE
+- [x] ~~Write the recipe declaration via `declarationFromModel(RecipePageModel, options)`.~~ **DONE
       2026-10-07** — `scripts/declarations/declaration-artificer-recipe.js`, registered at `ready` in
       `artificer.js`, same pattern as the item field group. Confirmed `processType`/`skill` correctly carry
-      no `values` (no `choices` on those model fields, deliberately); `type`/`rarity` correctly do.
-- [ ] **Run the harness, suite "Recipe Declaration".** Three checks: registration, the processType/skill
-      values assertion above, and an EXPLORATORY check that calls `buildDocumentData('journal', 'recipe',
-      entry)` for the first time on either side of this integration and surfaces the full returned shape.
-      Nothing is created by this — `buildDocumentData` only builds data. Report the returned shape back to
-      Blacksmith regardless of what it is; neither side has read this code path for a `JournalEntryPage`
-      profile. Verify by: run `testing/test-harness.js` (or `run-headless.js`) in a live world, read the
-      "RETURNED SHAPE" row.
-- [ ] **Once the shape is known:** wire it into `scripts/utility-artificer-recipe-import.js`, replacing
-      `buildRecipePageHtml` with `buildDocumentData` plus our own `createEmbeddedDocuments` call, using our
-      existing settings-driven destination resolution unchanged (Track A — see the plan doc). This is the
-      step that actually changes import behaviour; everything above only registers a declaration nothing
-      calls yet.
-- [ ] Decide `name` (page title) and `description` (`text.content`, ProseMirror) handling — both live
-      outside `system`, so outside what `declarationFromModel` walks. Either `extraFields` in the
-      declaration (syntax unconfirmed, no worked example in Blacksmith's docs) or set them ourselves
-      alongside whatever `buildDocumentData` returns. Decide after seeing the returned shape, not before.
+      no `values` (no `choices` on those model fields, deliberately); `type`/`rarity` correctly do. Two bugs
+      found and fixed only by running the harness live: `declarationFromModel` needs the model CLASS, not
+      `RecipePageModel.schema` (the compiled `SchemaField` Foundry caches); and Blacksmith's registry
+      unconditionally requires `document.containerName` or `containerNameFrom` on any `JournalEntryPage`
+      declaration, even though Track A never uses it — supplied a constant placeholder
+      (`'Artificer Recipes'`), confirmed inert by reading `assemble()` in Blacksmith's
+      `manager-declarations.js`.
+- [x] ~~Run the harness, suite "Recipe Declaration".~~ **DONE 2026-10-07** — all real assertions pass; the
+      one "FAIL" row left in the output is the exploratory one by design (`suite-recipe-declaration.js`), no
+      real expectation, there only to surface the shape. `buildDocumentData` returns a flat
+      `{type, system: {...every recipe field...}}`, no stray `name`, no container/destination key. Reported
+      to Blacksmith.
+- [x] ~~Once the shape is known, wire it into `scripts/utility-artificer-recipe-import.js`.~~ **DONE
+      2026-10-07** — `buildRecipePageData()` calls `buildDocumentData('journal', 'recipe', data)`, merges in
+      `name`/`text.content`, and `importRecipes` still does its own `createEmbeddedDocuments` and
+      settings-driven destination, unchanged. Falls back to the old `buildRecipePageHtml` + `type: 'text'`
+      page when the declaration is unavailable (older Blacksmith), so nothing regresses for a world that
+      has not updated.
+- [x] ~~Decide `name`/`description` handling.~~ **DONE 2026-10-07** — set manually in
+      `buildRecipePageData()` rather than via `extraFields`: both are outside `system`, the shape
+      confirmed neither appears in `buildDocumentData`'s own output, and merging two known keys ourselves
+      was simpler than an unconfirmed declaration mechanism for two fields.
+- [ ] **Test in a live world:** import a recipe JSON payload and confirm the created page is
+      `coffee-pub-artificer.recipe` (not `text`), its fields round-trip into `system`, the page title and
+      description land correctly, and it still files into the configured recipe journal/folder.
 - [ ] Existing legacy-format (`type: 'text'`) recipes are not touched by any of this — only recipes
       imported from this point forward go through the new path. Whether/how to migrate old ones is
       undecided and out of scope here; see the plan doc.
@@ -67,8 +75,11 @@ for the current Track A / Track B framing and everything verified against Blacks
       for `openWindow`/`attachButton`. Needs Blacksmith to add a destination mechanism a REGISTERING MODULE
       resolves at runtime — `containerName`/`containerNameFrom` cannot read a world setting, and
       `authorable: false` is documented as being for Blacksmith-maintained state across re-imports, not a
-      caller-injected value (confirmed against their source, not assumed). Raised with Blacksmith as a
-      feature request; not blocking Track A, not scheduled.
+      caller-injected value (confirmed against their source, not assumed). **Approved by Blacksmith's
+      author 2026-10-07 and logged in their TODO.** Nothing to build until we actually retire the window —
+      when we do, we owe them the exact spec: a value we resolve ourselves (their stated preference, since
+      a callback is opaque to their mirror check — unless we can justify one), and the same question for
+      folder resolution.
 
 ### Retire buildItemSystem for Blacksmith's declaration assembler
 Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,

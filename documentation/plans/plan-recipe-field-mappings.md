@@ -15,21 +15,38 @@ the first place.
 
 ---
 
-## Two tracks, and we are starting with the first
+## Two tracks
 
-**Track A — construction only, keep our own window.** Register a `mapped` profile for
-`coffee-pub-artificer.recipe`. Inside our own import window
-(`scripts/window-artificer-recipe-import.js`, `scripts/utility-artificer-recipe-import.js`),
-replace the hand-rolled JSON-to-HTML construction (`buildRecipePageHtml`) with
-`blacksmithApi.importer.buildDocumentData('journal', 'recipe', entry)`, then do our own
-`createEmbeddedDocuments` with our existing settings-driven destination/folder resolution,
-unchanged. Confirmed buildable standalone — Blacksmith's own docs: "any surface that
-collects friendly fields... can map them to an entry and get the same document data the
-importer produces" (`api-importer.md:42`). This removes `buildRecipePageHtml` and makes
-`RecipeParser` unnecessary for anything imported from here forward, without needing anything
-new from Blacksmith and without touching destination at all.
+**Track A — construction only, keep our own window. DONE 2026-10-07.** Registered a `mapped`
+profile for `coffee-pub-artificer.recipe` via `declarationFromModel(RecipePageModel, options)`
+(`scripts/declarations/declaration-artificer-recipe.js`) — this confirms the "Open, asked"
+question below: yes, it removes nearly all of the field-table transcription, since
+`RecipePageModel` already carries `required`/`nullable`/`default`/`choices`/nesting. Only
+`guidance` and `examples` (prose a schema cannot carry) are hand-supplied, keyed by dotted
+path. The field table below stays as the BEHAVIOURAL reference (vocabularies, aliases, what
+note 3's bug was); it is no longer hand-transcribed into `fields:`.
 
-**Track B — retire our window for `openWindow`/`attachButton`.** Deferred. Needs Blacksmith
+`scripts/utility-artificer-recipe-import.js`'s `importRecipes` now calls
+`blacksmithApi.importer.buildDocumentData('journal', 'recipe', entry)` in place of the
+hand-rolled JSON-to-HTML construction (`buildRecipePageHtml`, now a fallback for an older
+Blacksmith only), merges in `name`/`text.content` (both outside `system`, confirmed absent
+from `buildDocumentData`'s own output), and still does its own `createEmbeddedDocuments` with
+our existing settings-driven destination/folder resolution, completely unchanged. Confirmed
+buildable standalone — Blacksmith's own docs: "any surface that collects friendly fields...
+can map them to an entry and get the same document data the importer produces"
+(`api-importer.md:42`).
+
+Two bugs found only by running the harness live, both now fixed: `declarationFromModel` needs
+the model CLASS (`RecipePageModel`), not `RecipePageModel.schema` (the compiled `SchemaField`
+instance Foundry caches on the class) — passing the latter makes it walk the wrong shape
+entirely. And Blacksmith's registry unconditionally requires `document.containerName` or
+`containerNameFrom` on *any* `JournalEntryPage` declaration, even when `buildDocumentData` is
+the only thing ever called — confirmed by reading `assemble()` in Blacksmith's
+`manager-declarations.js`, which never reads it; only the window-based import path does. A
+constant placeholder (`'Artificer Recipes'`) satisfies registration without doing anything.
+
+**Track B — retire our window for `openWindow`/`attachButton`.** Deferred, but the request is
+now **approved by Blacksmith's author (2026-10-07) and logged in their TODO.** Needs Blacksmith
 to own destination resolution too, and our destination is GM-configurable via settings
 (`recipeJournalName`/`recipeJournalFolder`), not a fixed constant and not naturally a field
 on each JSON entry — `containerName` is a constant, `containerNameFrom` reads a *declared*
@@ -37,14 +54,11 @@ field on the entry. The candidate mechanism (declare the field `authorable: fals
 the setting's value ourselves before import) runs against the documented contract rather
 than merely an untested edge of it: `authorable: false` is "for state a subsystem
 maintains" (`api-importer.md:155`), i.e. Blacksmith-maintained state across re-imports, not
-a value a caller supplies per run. Worth asking Blacksmith for a real mechanism — a
-destination value the REGISTERING MODULE resolves at runtime — rather than probing whether
-the existing one happens to work for something it was not built for. Not blocking Track A.
-
-**Open, asked 2026-10-07:** whether `declarationFromModel(RecipePageModel.schema, options)`
-removes most of the field-table transcription below, since we already have a real
-`TypeDataModel`. If yes, the field table stays as the BEHAVIOURAL reference (vocabularies,
-aliases, what note 3's bug was) but stops being something we hand-transcribe into `fields:`.
+a value a caller supplies per run. Blacksmith's stated preference for the real mechanism: the
+registering module resolves its own setting and passes the VALUE in, not a callback — "a
+callback in a declaration is opaque to the mirror check." Nothing to build on either side
+until we actually retire the window; when we do, we owe them the exact spec (value vs.
+per-import-resolved, and the same question for folder resolution).
 
 **Separate, not yet scoped: migrating existing legacy-format recipes.** Once import writes
 the real subtype, a world holds both `type: 'text'` recipes (pre-fix) and real-subtype ones

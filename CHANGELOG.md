@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Recipe JSON import now builds its page through Blacksmith's recipe declaration (Track A), not HTML
+  parsing.** `importRecipes` calls `api.importer.buildDocumentData('journal', 'recipe', data)` to construct
+  the new `coffee-pub-artificer.recipe` page's `system` data from a declaration built with
+  `declarationFromModel` against `RecipePageModel` (`scripts/declarations/declaration-artificer-recipe.js`,
+  registered at `ready`), merges in `name` and `text.content` (both outside `system`), and still does its
+  own `createEmbeddedDocuments` and settings-driven journal/folder resolution exactly as before -- Blacksmith
+  owns construction, not destination. Falls back to the previous `buildRecipePageHtml` + `type: 'text'` page
+  when the declaration is unavailable (an older Blacksmith), so nothing regresses for a world that has not
+  updated Blacksmith yet. **Existing legacy recipes are untouched** -- this only changes what newly imported
+  recipes are stored as; migrating old ones is separate, unscoped work.
 - **Deleted three more inert `activateListeners(html)` methods**, in `window-crafting.js`, `window-gather.js`
   and `window-skills.js` -- the ones confirmed safe-but-redundant in `v14.0.1`'s CHANGELOG entry, now
   removed rather than left as a second copy that looks equally live. `window-crafting.js`'s only call was
