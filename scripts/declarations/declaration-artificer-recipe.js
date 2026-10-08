@@ -37,6 +37,17 @@
 // this first declaration deliberately, to keep the first `buildDocumentData`
 // call minimal and its returned shape easy to read. Revisit once we know what
 // that call actually returns -- see the harness check.
+//
+// document.containerName IS A PLACEHOLDER, NEVER READ. Blacksmith's registry
+// rejects ANY JournalEntryPage declaration with neither `containerName` nor
+// `containerNameFrom` at registration time (registry-declarations.js, "a
+// JournalEntryPage profile requires document.containerName or
+// document.containerNameFrom") -- unconditionally, whether or not the caller
+// ever uses Blacksmith's own placement. `buildDocumentData` -> `assemble()`
+// never reads it; only the window-based import path
+// (registry-json-import-journals.js) does, which Track A does not call. A
+// constant satisfies validation without doing anything -- do not read meaning
+// into its value, and do not let it imply we use Blacksmith's placement.
 // ==================================================================
 
 import { RecipePageModel, RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
@@ -102,12 +113,18 @@ const RECIPE_EXAMPLES = {
 export function buildArtificerRecipeDeclaration(blacksmithApi) {
     const fromModel = blacksmithApi?.importer?.declarationFromModel;
     if (typeof fromModel !== 'function') return null;
-    return fromModel(RecipePageModel.schema, {
+    return fromModel(RecipePageModel, {
         kind: 'journal',
         id: 'recipe',
         label: 'Artificer Recipe',
         module: MODULE.ID,
-        document: { documentName: 'JournalEntryPage', type: RECIPE_PAGE_TYPE },
+        document: {
+            documentName: 'JournalEntryPage', type: RECIPE_PAGE_TYPE,
+            // Placeholder to satisfy registration -- see the header comment. Not used
+            // by buildDocumentData; Track A keeps its own createEmbeddedDocuments/
+            // destination resolution unchanged.
+            containerName: 'Artificer Recipes'
+        },
         guidance: RECIPE_GUIDANCE,
         examples: RECIPE_EXAMPLES
     });
