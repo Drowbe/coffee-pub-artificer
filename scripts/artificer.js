@@ -25,6 +25,7 @@ import { getBlacksmithApi, postBlacksmithConsole } from './utils/blacksmith-cons
 import { RECIPE_PAGE_TYPE, RecipePageModel, RECIPE_DESCRIPTION_OUTLINE } from './data/models/model-recipe-page.js';
 import { RecipePageSheet } from './sheets/sheet-recipe-page.js';
 import { registerArtificerItemFieldGroup } from './declarations/declaration-artificer-item-group.js';
+import { registerArtificerRecipeDeclaration } from './declarations/declaration-artificer-recipe.js';
 // Imported from the API BRIDGE, never read off `game.modules.get(...)`; see CLAUDE.md.
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 
@@ -249,6 +250,22 @@ Hooks.once('ready', async () => {
             // A malformed declaration is rejected at registration with the field
             // named. That is a bug in our declaration, not a reason to fail boot.
             postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Artificer item field group was rejected`,
+                error?.message ?? String(error), false, false);
+        }
+
+        // Recipe declaration -- Track A only: lets buildDocumentData construct a
+        // recipe page's `system` data for us. Does NOT hand destination to
+        // Blacksmith; we still call createEmbeddedDocuments ourselves. See
+        // documentation/plans/plan-recipe-field-mappings.md.
+        try {
+            const recipeRegistered = registerArtificerRecipeDeclaration(bsApi);
+            postBlacksmithConsole(MODULE.NAME,
+                recipeRegistered
+                    ? `${MODULE.NAME}: Artificer recipe declaration registered with the importer`
+                    : `${MODULE.NAME}: Blacksmith importer has no declarationFromModel/registerDeclaration; skipping`,
+                null, !recipeRegistered, false);
+        } catch (error) {
+            postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Artificer recipe declaration was rejected`,
                 error?.message ?? String(error), false, false);
         }
         if (bsApi?.registerModule) {

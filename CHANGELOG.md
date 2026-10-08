@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **Deleted three more inert `activateListeners(html)` methods**, in `window-crafting.js`, `window-gather.js`
+  and `window-skills.js` -- the ones confirmed safe-but-redundant in `v14.0.1`'s CHANGELOG entry, now
+  removed rather than left as a second copy that looks equally live. `window-crafting.js`'s only call was
+  to `_attachListeners`, an intentionally-empty stub (everything it would have wired is handled by
+  document-level delegation instead); that stub is deleted too, since nothing else called it.
+  `window-gather.js` and `window-skills.js` each only re-called `_attachDelegationOnce()`, which
+  `_onFirstRender` already calls. All three windows wire their controls exactly as before; nothing about
+  their behaviour changes. `panel-crafting-experiment.js` still carries the one REAL instance of this bug
+  (its actor-selector `change` handler), left as-is per `TODO.md` since that panel is not reachable from
+  any menubar entry or hook today.
+
 ## [14.0.1]
 
 ### Fixed

@@ -35,7 +35,8 @@ export const SUITE_FILES = [
     'suite-importer-field-group',
     'suite-biome-normalization',
     'suite-scene-gather-profile',
-    'suite-harness-integrity'
+    'suite-harness-integrity',
+    'suite-recipe-declaration'
 ];
 
 /**

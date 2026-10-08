@@ -689,9 +689,4 @@ export class SkillsWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         await super._onFirstRender?.(_context, options);
         this._attachDelegationOnce();
     }
-
-    activateListeners(html) {
-        super.activateListeners(html);
-        this._attachDelegationOnce();
-    }
 }

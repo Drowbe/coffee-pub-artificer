@@ -187,11 +187,6 @@ export class GatherWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         this._attachDelegationOnce();
     }
 
-    activateListeners(html) {
-        super.activateListeners(html);
-        this._attachDelegationOnce();
-    }
-
     static _actionRequestRoll(event, target) {
         const w = _currentGatherWindowRef ?? target?.closest?.('.window-gather')?.__app ?? target?.__app;
         if (w && typeof w._requestRoll === 'function') w._requestRoll();

@@ -1866,17 +1866,6 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
         return resolved;
     }
 
-    _attachListeners(_root) {
-        /* Ingredient add, slot remove, container remove: handled by document-level delegation */
-    }
-
-    activateListeners(html) {
-        super.activateListeners(html);
-        const raw = html?.jquery ? html[0] : html;
-        const root = raw?.closest?.('.crafting-window-root') ?? raw?.querySelector?.('.crafting-window-root') ?? document.getElementById(this.id);
-        this._attachListeners(root);
-    }
-
     _getActor() {
         return this._getCrafterActor();
     }

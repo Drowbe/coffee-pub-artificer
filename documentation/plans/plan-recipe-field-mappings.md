@@ -2,73 +2,55 @@
 
 **Audience:** us, while the work is in flight
 
-**Status: raw input for Blacksmith, not an Artificer plan.** Sent ahead of step 8 (Journal,
-the rendered form), per their request for recipe requirements before the design rather than
-after. Delete when the declaration exists upstream and our parallel import pipeline is
-retired.
-
-Format is friendly field to target, matching Librarian's `declaration-field-mappings.md`.
-"Required" is what `validateRecipePayload`
-([`scripts/utility-artificer-recipe-import.js:73`](../../scripts/utility-artificer-recipe-import.js#L73))
-actually rejects an entry for today.
-
----
-
-## Kind identity
-
-| | Recipe |
-|---|---|
-| Host kind | `journal` |
-| Profile | `recipe` |
-| documentName | `JournalEntryPage` |
-| Document type | `text` — **no data model.** See "The round-trip problem" below. |
-| Destination | pages of the journal named in world setting `recipeJournalName`, inside folder setting `recipeJournalFolder`; created if absent |
-| Form | `rendered` |
-| Schema version | 0 — not yet a schema |
-
-Construction today: `importRecipes` validates, calls `buildRecipePageHtml`, and creates one
-page with `type: 'text'` and the whole recipe as `text.content`. That is your rendered form
-almost exactly — friendly fields into a template, one HTML string at `pages[].text.content`.
+**Status: superseded by a real data model, rewritten 2026-10-07.** The version of this
+document Blacksmith originally received (step 8, "raw input for the rendered form") assumed
+recipes were permanently `type: 'text'` with no schema, which is no longer true — recipes
+have been a real registered subtype (`coffee-pub-artificer.recipe`, `RecipePageModel`,
+`scripts/data/models/model-recipe-page.js`) since August. Only the IMPORT path still writes
+the legacy format; this document now plans retiring that, not designing around it. The field
+table and notes below describe the LEGACY import path's current behaviour, and are kept —
+that behaviour is exactly what a new declaration needs to either preserve or deliberately
+break, and getting that wrong silently is how note 3's container/apparatus bug happened in
+the first place.
 
 ---
 
-## The round-trip problem, and why we are not just another Area
+## Two tracks, and we are starting with the first
 
-**This is the part worth reading before the field table.**
+**Track A — construction only, keep our own window.** Register a `mapped` profile for
+`coffee-pub-artificer.recipe`. Inside our own import window
+(`scripts/window-artificer-recipe-import.js`, `scripts/utility-artificer-recipe-import.js`),
+replace the hand-rolled JSON-to-HTML construction (`buildRecipePageHtml`) with
+`blacksmithApi.importer.buildDocumentData('journal', 'recipe', entry)`, then do our own
+`createEmbeddedDocuments` with our existing settings-driven destination/folder resolution,
+unchanged. Confirmed buildable standalone — Blacksmith's own docs: "any surface that
+collects friendly fields... can map them to an entry and get the same document data the
+importer produces" (`api-importer.md:42`). This removes `buildRecipePageHtml` and makes
+`RecipeParser` unnecessary for anything imported from here forward, without needing anything
+new from Blacksmith and without touching destination at all.
 
-Your rendered profiles are one-way. `journal-area.hbs` compiles a payload into HTML and
-nothing ever reads it back — the HTML *is* the artifact. Ours is not. `RecipeParser`
-([`scripts/parsers/parser-recipe.js`](../../scripts/parsers/parser-recipe.js)) re-reads
-every page at runtime, matches on the bolded label text, and reconstructs an
-`ArtificerRecipe` from it. The rendered HTML is our **storage format**, not our output
-format.
+**Track B — retire our window for `openWindow`/`attachButton`.** Deferred. Needs Blacksmith
+to own destination resolution too, and our destination is GM-configurable via settings
+(`recipeJournalName`/`recipeJournalFolder`), not a fixed constant and not naturally a field
+on each JSON entry — `containerName` is a constant, `containerNameFrom` reads a *declared*
+field on the entry. The candidate mechanism (declare the field `authorable: false`, inject
+the setting's value ourselves before import) runs against the documented contract rather
+than merely an untested edge of it: `authorable: false` is "for state a subsystem
+maintains" (`api-importer.md:155`), i.e. Blacksmith-maintained state across re-imports, not
+a value a caller supplies per run. Worth asking Blacksmith for a real mechanism — a
+destination value the REGISTERING MODULE resolves at runtime — rather than probing whether
+the existing one happens to work for something it was not built for. Not blocking Track A.
 
-Consequences, in rough order of how much they should shape the design:
+**Open, asked 2026-10-07:** whether `declarationFromModel(RecipePageModel.schema, options)`
+removes most of the field-table transcription below, since we already have a real
+`TypeDataModel`. If yes, the field table stays as the BEHAVIOURAL reference (vocabularies,
+aliases, what note 3's bug was) but stops being something we hand-transcribe into `fields:`.
 
-1. **The template is a schema, and changing it is a data migration.** Renaming a section
-   heading is cosmetic; renaming a `<strong>` label silently orphans that field on every
-   recipe already in a world. If a declared template ever regenerates our HTML with
-   different labels, existing recipes lose fields with no error — they parse, they
-   validate, they just come back with less.
-
-2. **A rendered declaration needs to describe the read as well as the write**, or we keep
-   our parser and you own only half the loop. Our labels are a flat
-   `<p><strong>Label:</strong> value</p>` convention with two exceptions
-   (`Description` reads the following `div.recipe-description`; `Ingredients` reads the
-   following `<ul>`). If a declared field can carry its own label and a small number of
-   read shapes, the round trip is declarable. If it cannot, this profile should stay
-   `rendered`-write-only and we keep parsing — which works, but leaves the format
-   undeclared exactly where it is most load-bearing.
-
-3. **The real fix is a data model, and we would rather have that than a better parser.**
-   Everything above is a symptom of `type: 'text'`. Librarian's codex has
-   `CodexPageModel` and is therefore `mapped`; our recipes are the quest column of their
-   table — the mapping we want, not one that exists. If step 8's passthrough seam lets
-   Blacksmith construct a foreign subtype, **we would rather declare
-   `coffee-pub-artificer.recipe` as a mapped profile against a real model** and delete both
-   the builder and the parser. That is a bigger change on our side than on yours, and we
-   are not asking for it in step 8 — but if the rendered form gets designed around our
-   current HTML, it will be designed around the thing we most want to stop doing.
+**Separate, not yet scoped: migrating existing legacy-format recipes.** Once import writes
+the real subtype, a world holds both `type: 'text'` recipes (pre-fix) and real-subtype ones
+side by side. Whether/how to upgrade the old ones is not decided here — flagging so it is not
+silently conflated with the import-path change, which only affects recipes imported from this
+point forward.
 
 ---
 

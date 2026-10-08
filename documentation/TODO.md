@@ -35,15 +35,40 @@ Blacksmith is shipping `api.inventory` with four primitives: `grantItem`, `grant
 - [ ] **`uses.spent` loss.** The merge ignores `system.uses.spent`, so a partially-consumed item stacks into a full one and the spent charges vanish. **This is the one most likely to produce a real report** — 42 of 178 shipped creations have `uses.max > 1`. Currently latent only because no actor holds a partially-consumed Artificer item yet.
 
 ### Migrate recipe import to the Blacksmith Importer API
-`api.importer` went public on 2026-08-22: `registerKind`, `getKind`, `openWindow`, `parsePayload`, `attachButton`. We supply `onValidateEntry` and `onImportEntry`, so we keep document construction and Blacksmith never learns our data model. See [API: Importer](https://github.com/Drowbe/coffee-pub-blacksmith/wiki) on the wiki.
+**Superseded note from 2026-08-25 was itself stale by 2026-10-07** — Blacksmith's Journal kind landed
+2026-09-02, over a month before this was next touched. Do not trust a "blocked on" note's age; re-check the
+dependency before believing it. See [plans/plan-recipe-field-mappings.md](plans/plan-recipe-field-mappings.md)
+for the current Track A / Track B framing and everything verified against Blacksmith's actual source.
 
-**Superseded in part by the declaration model.** Blacksmith replaced the `onValidateEntry` / `onImportEntry`
-callback contract with declared profiles (2026-08-25). Recipes are now a mapped foreign subtype rather than a
-callback consumer — see [plans/plan-recipe-data-model.md](plans/plan-recipe-data-model.md) step 6, which is
-blocked on their step 8 (Journal). Do not build against the callback contract.
-
-- [ ] Declare `coffee-pub-artificer.recipe` as a mapped profile once Blacksmith's Journal kind lands. Field mappings are already written: [plans/plan-recipe-field-mappings.md](plans/plan-recipe-field-mappings.md).
-- [ ] Retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js) and its menubar wiring in favour of `openWindow` / `attachButton`. Sequence this **after** the window migration above so we are not porting a window we are about to delete.
+- [x] ~~Write the recipe declaration via `declarationFromModel(RecipePageModel.schema, options)`.~~ **DONE
+      2026-10-07** — `scripts/declarations/declaration-artificer-recipe.js`, registered at `ready` in
+      `artificer.js`, same pattern as the item field group. Confirmed `processType`/`skill` correctly carry
+      no `values` (no `choices` on those model fields, deliberately); `type`/`rarity` correctly do.
+- [ ] **Run the harness, suite "Recipe Declaration".** Three checks: registration, the processType/skill
+      values assertion above, and an EXPLORATORY check that calls `buildDocumentData('journal', 'recipe',
+      entry)` for the first time on either side of this integration and surfaces the full returned shape.
+      Nothing is created by this — `buildDocumentData` only builds data. Report the returned shape back to
+      Blacksmith regardless of what it is; neither side has read this code path for a `JournalEntryPage`
+      profile. Verify by: run `testing/test-harness.js` (or `run-headless.js`) in a live world, read the
+      "RETURNED SHAPE" row.
+- [ ] **Once the shape is known:** wire it into `scripts/utility-artificer-recipe-import.js`, replacing
+      `buildRecipePageHtml` with `buildDocumentData` plus our own `createEmbeddedDocuments` call, using our
+      existing settings-driven destination resolution unchanged (Track A — see the plan doc). This is the
+      step that actually changes import behaviour; everything above only registers a declaration nothing
+      calls yet.
+- [ ] Decide `name` (page title) and `description` (`text.content`, ProseMirror) handling — both live
+      outside `system`, so outside what `declarationFromModel` walks. Either `extraFields` in the
+      declaration (syntax unconfirmed, no worked example in Blacksmith's docs) or set them ourselves
+      alongside whatever `buildDocumentData` returns. Decide after seeing the returned shape, not before.
+- [ ] Existing legacy-format (`type: 'text'`) recipes are not touched by any of this — only recipes
+      imported from this point forward go through the new path. Whether/how to migrate old ones is
+      undecided and out of scope here; see the plan doc.
+- [ ] **Track B, deferred:** retire [scripts/window-artificer-recipe-import.js](../scripts/window-artificer-recipe-import.js)
+      for `openWindow`/`attachButton`. Needs Blacksmith to add a destination mechanism a REGISTERING MODULE
+      resolves at runtime — `containerName`/`containerNameFrom` cannot read a world setting, and
+      `authorable: false` is documented as being for Blacksmith-maintained state across re-imports, not a
+      caller-injected value (confirmed against their source, not assumed). Raised with Blacksmith as a
+      feature request; not blocking Track A, not scheduled.
 
 ### Retire buildItemSystem for Blacksmith's declaration assembler
 Blacksmith put construction on the public API (2026-08-31): `validateEntry`, `validateEntryDeep`,
