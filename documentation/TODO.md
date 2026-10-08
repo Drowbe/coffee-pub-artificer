@@ -287,6 +287,52 @@ something fixable by editing our own declaration alone.
         Suite updated: `skill`/`skillKit` assert `inputType: 'select'` + `dynamicOptions: true` +
         no `options` key; `traits` asserts `inputType: 'textarea'`. Syntax, import and doc-link
         checks pass. **Not run live, by either side.**
+      - **Fourth pass, same day, from the author actually testing the prompt window live** (the
+        first live run of any of tonight's recipe-prompt work, by either side): two quick fixes,
+        one open question sent to Blacksmith.
+        - **Traits given its own section**, split out of Result item — the author saw the two
+          crowded into one group in the actual rendered window and asked for it separate. Pure
+          `group` string change, no mechanism involved.
+        - **`processLevel` became a static `select` (options `0`/`1`/`2`/`3`), not text.** This one
+          was simply a miss on our part, not a Blacksmith limitation — the legal range is always
+          0-3 regardless of which process is chosen (confirmed earlier against
+          `process-definitions.js`), a genuinely fixed, small vocabulary that never needed
+          `dynamicOptions` at all. Hint notes that what 1-3 *mean* still depends on the process.
+        - **Item drop image — asked Blacksmith, answered and fixed same day.** Checked their
+          `window-json-import.js` (`_attachPromptDropListeners`, lines ~1205-1245) before asking —
+          confirmed an `item`/`items` prompt field was backed by a plain text/textarea control; a
+          drop wrote only the item's NAME as a string, no image captured anywhere. Blacksmith
+          confirmed this was a deliberate v1 simplification, not a technical limit, and fixed it on
+          their side: each `item`/`items` field now shows a chip under the control per entry (icon
+          + name + quantity for `items`), icon from the drop when there was one, otherwise an
+          exact-name lookup against the GM's Compendium Mapping and world so a typed or
+          restored-after-reload value still gets one; unmatched names get a placeholder icon.
+          **Nothing changes on our side** — still plain `inputType: 'item'`/`'items'`, Blacksmith
+          confirmed no declaration change needed. Staged on their side, not yet run in Foundry.
+        Suite updated: `traits` asserts `group: 'Traits'`; `processLevel` asserts `inputType:
+        'select'` with options `['0','1','2','3']`. Syntax, import, doc-link checks pass.
+        - **Second question, same live-testing pass — asked, answered, built same day.** `traits`
+          should be a chip/tag picker with autocomplete suggestions, matching the sheet, not a
+          plain textarea. Sent Blacksmith the sheet's exact behavior rather than a vague ask:
+          suggestions from every trait tag already used anywhere in the item cache, not closed to
+          them -- typing a brand-new trait still adds it. Blacksmith built a genuinely new input
+          type rather than bending `dynamicOptions`: `inputType: 'tags'` (api-importer.md, "A
+          select whose list changes"). Open-ended multi-value: type-and-Enter/comma or blur commits
+          a chip, a datalist suggests but never closes the set, duplicates ignored
+          case-insensitively, answer arrives as one comma-separated string and converts to an array
+          for an array-of-string field exactly like the textarea did. `dynamicOptions: true` is now
+          legal on `select` (closed to the pushed list, single-value -- `skill`/`skillKit`) OR
+          `tags` (suggestions only, multi-value -- `traits`), pushed the same way either time.
+          **Implemented:** `traits` is now `{ inputType: 'tags', dynamicOptions: true }`. New
+          exported `syncRecipeTraitPromptOptions()` (`scripts/cache/cache-items.js`) pushes every
+          trait tag found across the item cache (same source the sheet's own picker already uses,
+          so the two can never suggest a different vocabulary), called from the same two-site
+          pattern as the skill/kit push: once after registration (the cache may already hold
+          persisted data that never triggers a rebuild-time push) and once at the end of
+          `refreshCache()`, the one place the cache actually rebuilds. Suite updated: `traits`
+          asserts `inputType: 'tags'` + `dynamicOptions: true`. Syntax, import, doc-link checks
+          pass. **Not run live, by either side** -- Blacksmith headless-tested validation,
+          suggestions and the array conversion; the chip UI itself is unverified in Foundry.
 - [ ] **New, from caveat 2 above:** resolve a flagged ingredient's `type`/`family` from the item
       cache by name when a recipe is read, instead of trusting whatever was written at import.
       Closes the gap where a generator (via the new ingredient drag-and-drop) writes a plausible

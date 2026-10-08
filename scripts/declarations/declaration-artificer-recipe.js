@@ -219,11 +219,12 @@ const RECIPE_PREAMBLE = 'You are a Dungeon Master designing a crafting recipe fo
 const RECIPE_PROMPT_CATALOGS = ['items'];
 
 /**
- * "Prefill before copy" questions on the recipe prompt. Six titled sections, in this exact
- * order, per the author's own breakdown of a recipe's parts: Result item, Ingredients, Process,
- * Requirements, Provenance, Instructions. Every `id` here matches a declared field's `name`, so
- * each becomes a CONSTRAINT -- stated as fixed in the prompt and written into the JSON template,
- * Blacksmith's existing behaviour (api-importer.md, "Asking the author a question").
+ * "Prefill before copy" questions on the recipe prompt. Seven titled sections, in this order:
+ * Result item, Traits, Ingredients, Process, Requirements, Provenance, Instructions -- Traits
+ * split out from Result item after the author saw the two crowded into one group live and asked
+ * for it separate. Every `id` here matches a declared field's `name`, so each becomes a
+ * CONSTRAINT -- stated as fixed in the prompt and written into the JSON template, Blacksmith's
+ * existing behaviour (api-importer.md, "Asking the author a question").
  *
  * `inputType: 'item'`/`'items'` (Blacksmith, 2026-10-09, "Dropping real items") are drag-and-drop
  * fields: dropping an Item writes its NAME (an `item` answer is a string; an `items` answer is
@@ -269,11 +270,17 @@ const RECIPE_PROMPT_CATALOGS = ['items'];
  * inventory with no flag filtering at all), so it is a dynamic select, not `inputType: 'item'`,
  * even though apparatus/container/process/result all are.
  *
- * `traits` is a plain `textarea` (Blacksmith converts a comma/line-separated answer to an array
- * for an array-of-string field automatically) -- a real gap caught by the author: our sheet offers
- * it with a live-built suggestion list drawn from every tag already used across the item cache,
- * genuinely open vocabulary, no fixed list anywhere. The hint says comma or line separated since
- * nothing else in the prompt UI states that format.
+ * `traits` is `inputType: 'tags', dynamicOptions: true` (Blacksmith, 2026-10-09, built specifically
+ * for this request after a `textarea` first pass read as a real downgrade from the sheet).
+ * Deliberately NOT the same `dynamicOptions` as `skill`/`skillKit`: a `tags` field takes the
+ * pushed list as SUGGESTIONS only, never closes to it -- matches our sheet's own picker exactly,
+ * which offers a live-built suggestion list drawn from every tag already used across the item
+ * cache but still accepts a brand-new one typed in. The answer arrives as a comma-separated
+ * string and converts to an array for this array-of-string field, same as the textarea did.
+ * Suggestions are pushed by `syncRecipeTraitPromptOptions()` (`scripts/cache/cache-items.js`),
+ * same two-call-site pattern as the skill/kit push: once after registration (the cache may
+ * already hold persisted data that never triggers a rebuild-time push) and once at the end of
+ * `refreshCache()`, the one place the cache is actually rebuilt.
  *
  * Image: no control here, deliberately -- the author's answer is that the image IS the result
  * item's own image, resolved at render time the way every other icon on the page already is
@@ -286,9 +293,9 @@ const RECIPE_PROMPT_FIELDS = [
         hint: 'Drop the exact item this recipe produces, or type its name. Any item works.'
     },
     {
-        id: 'traits', label: 'Traits', inputType: 'textarea',
-        group: 'Result item', groupIcon: 'fa-solid fa-flask',
-        hint: 'Comma or line separated, e.g. "Herbal, Medicinal". Two to five tags describing what the recipe is good for -- do not repeat type or category.'
+        id: 'traits', label: 'Traits', inputType: 'tags', dynamicOptions: true,
+        group: 'Traits', groupIcon: 'fa-solid fa-tags',
+        hint: 'Pick a suggestion or type a new one -- suggestions are every trait already used anywhere in your items, not a closed list. Two to five tags describing what the recipe is good for -- do not repeat type or category.'
     },
     {
         id: 'ingredients', label: 'Ingredients', inputType: 'items',
@@ -301,8 +308,13 @@ const RECIPE_PROMPT_FIELDS = [
         hint: 'Drop a Process item (Component/Creation/Tool family "Process"). Any other item is accepted but produces no process animation or intensity at craft time.'
     },
     {
-        id: 'processLevel', label: 'Process level', group: 'Process', groupIcon: 'fa-solid fa-fire',
-        hint: '0-3. What each position means depends on the process itself (e.g. heat\'s 1-3 are Low/Medium/High).'
+        id: 'processLevel', label: 'Process level', inputType: 'select',
+        options: [
+            { value: '0', label: '0' }, { value: '1', label: '1' },
+            { value: '2', label: '2' }, { value: '3', label: '3' }
+        ],
+        group: 'Process', groupIcon: 'fa-solid fa-fire',
+        hint: '0-3, always this range regardless of process. 0 is always Off; what 1-3 mean (Low/Medium/High, Coarse/Medium/Fine, etc.) depends on the process chosen above, which this list cannot see.'
     },
     {
         id: 'time', label: 'Process time (seconds)', group: 'Process', groupIcon: 'fa-solid fa-fire',

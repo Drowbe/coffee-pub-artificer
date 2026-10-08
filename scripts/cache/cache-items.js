@@ -6,7 +6,7 @@
 // ==================================================================
 
 import { MODULE } from '../const.js';
-import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
+import { postBlacksmithConsole, getBlacksmithApi } from '../utils/blacksmith-console.js';
 import { getTranslationItemFetchUrl, getTranslationItemPath } from '../config-rulesets.js';
 import { LEGACY_FAMILY_TO_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 
@@ -419,6 +419,7 @@ export async function refreshCache(onProgress) {
     }
     await yieldFrame();
 
+    syncRecipeTraitPromptOptions();
     return { compendiumCount: compendiumIds.length, itemCount: entries.length };
 }
 
@@ -492,6 +493,39 @@ export function getAllRecordsFromCache() {
         if (!_status.hasCache) return [];
     }
     return Array.from(_recordsByUuid.values());
+}
+
+/**
+ * Push every trait tag found across the item cache to Blacksmith's recipe prompt as suggestions
+ * for the `traits` field (`inputType: 'tags', dynamicOptions: true`, api-importer.md "A select
+ * whose list changes" -- a `tags` field takes the pushed list as suggestions only, never a closed
+ * set, unlike a `select`). Same source `sheet-recipe-page.js`'s trait picker already uses, so the
+ * sheet and the prompt can never suggest a different vocabulary.
+ *
+ * Call this (a) after `registerArtificerRecipeDeclaration` succeeds, same as
+ * `syncRecipeSkillPromptOptions` and for the same reason -- the cache may already hold persisted
+ * data (loaded lazily, not freshly rebuilt) before registration happens, and (b) at the end of
+ * `refreshCache()` below, the one place the cache is actually rebuilt from compendia/world.
+ *
+ * Silent no-op, not an error, for an older Blacksmith or an unregistered profile -- same guards as
+ * every other optional Blacksmith integration in this module.
+ */
+export function syncRecipeTraitPromptOptions() {
+    const setOptions = getBlacksmithApi()?.importer?.setPromptFieldOptions;
+    if (typeof setOptions !== 'function') return;
+    const tags = new Set();
+    for (const record of getAllRecordsFromCache()) {
+        for (const tag of record?.tags ?? []) {
+            const trait = String(tag).trim();
+            if (trait) tags.add(trait);
+        }
+    }
+    try {
+        setOptions({ kind: 'journal', profile: 'recipe', field: 'traits', options: Array.from(tags).sort() });
+    } catch (error) {
+        postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: could not push recipe prompt trait suggestions yet`,
+            error?.message ?? String(error), true, false);
+    }
 }
 
 /**

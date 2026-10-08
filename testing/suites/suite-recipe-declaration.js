@@ -103,7 +103,17 @@ export default {
                     expect.ok(`promptFields "${id}" dynamicOptions is true`, promptField(id)?.dynamicOptions === true);
                     expect.ok(`promptFields "${id}" carries no static options`, !('options' in (promptField(id) ?? {})));
                 }
-                expect('promptFields "traits" inputType', promptField('traits')?.inputType, 'textarea');
+                // traits: 'tags' + dynamicOptions, NOT the same contract as skill/skillKit above --
+                // a tags field takes the pushed list as suggestions only, never closes to it,
+                // matching the sheet's own open-vocabulary picker.
+                expect('promptFields "traits" inputType', promptField('traits')?.inputType, 'tags');
+                expect.ok('promptFields "traits" dynamicOptions is true', promptField('traits')?.dynamicOptions === true);
+                expect('promptFields "traits" group', promptField('traits')?.group, 'Traits');
+                // processLevel is always 0-3 regardless of which process is chosen (confirmed
+                // earlier against recipeCanCraft/process-definitions.js), so a static select is
+                // correct here -- unlike skill/skillKit, this vocabulary never changes.
+                expect('promptFields "processLevel" inputType', promptField('processLevel')?.inputType, 'select');
+                expect('promptFields "processLevel" options', (promptField('processLevel')?.options ?? []).map(o => o.value), ['0', '1', '2', '3']);
             }
         },
         {

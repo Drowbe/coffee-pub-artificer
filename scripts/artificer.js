@@ -6,7 +6,7 @@ import { MODULE } from './const.js';
 import { registerSettings } from './settings.js';
 import { loadSkillsDetails, syncRecipeSkillPromptOptions } from './skills-rules.js';
 import { getAPI } from './api-artificer.js';
-import { loadTranslationFromFile } from './cache/cache-items.js';
+import { loadTranslationFromFile, syncRecipeTraitPromptOptions } from './cache/cache-items.js';
 import { ArtificerItemForm } from './window-artificer-item.js';
 import { registerItemSheetIntegration } from './item-sheet-artificer.js';
 import { CraftingWindow } from './window-crafting.js';
@@ -266,7 +266,13 @@ Hooks.once('ready', async () => {
             // from skills-rules.js always finds the profile unregistered and drops silently.
             // This is the one call guaranteed to run AFTER registration, so it is the one that
             // actually populates the recipe prompt's skill/kit dropdowns on a normal boot.
-            if (recipeRegistered) await syncRecipeSkillPromptOptions();
+            if (recipeRegistered) {
+                await syncRecipeSkillPromptOptions();
+                // Same reasoning, for traits: the item cache may already hold data loaded lazily
+                // from a persisted setting (not freshly rebuilt), which never otherwise triggers
+                // a push. This is what actually populates the trait suggestions on a normal boot.
+                syncRecipeTraitPromptOptions();
+            }
         } catch (error) {
             postBlacksmithConsole(MODULE.NAME, `${MODULE.NAME}: Artificer recipe declaration was rejected`,
                 error?.message ?? String(error), false, false);
