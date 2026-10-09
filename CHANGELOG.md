@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [14.1.0]
 
 ### Added
 - **The Recipe Browser and Crafting Station's Details panel now shows a recipe's ingredients.**
@@ -167,7 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   input-type change, just hint text: `resultItemName`/`ingredients` no longer say "or type its
   name", and both now say leaving the field empty lets the generator choose from the available
   items catalog. Suite updated to assert the `fills` array, the ordered fallback list, and the
-  rarity map. **Not yet verified live, by either side.**
+  rarity map. **Confirmed live, 2026-10-09.**
 - **`artifact` added to `RECIPE_RARITIES`** -- the one open question from the `fills` work above,
   decided by the author the same day. `model-recipe-page.js`'s model, the authoring sheet's Rarity
   select, and Blacksmith's `rarity` promptField options all read the same constant, so adding it
@@ -208,7 +208,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so anyone pasting the raw template as-is (no generator involved) would still have gotten the
   same 0/1 symptom through a different path. Added `successDC: 4`, matching `skillLevel: 1` via
   the module's own `_successDCFromSkillLevel` curve (`storage-recipes.js`), not picked
-  independently. **Not yet verified live.**
+  independently. **Confirmed live, 2026-10-09.**
 - **The Artificer Properties panel's edit (feather) button did nothing when clicked on a compendium
   item.** `item-sheet-artificer.js`'s click handler resolved the item with `foundry.utils.fromUuidSync`,
   which only returns a document already cached in memory -- reliable for a world item, not for a
