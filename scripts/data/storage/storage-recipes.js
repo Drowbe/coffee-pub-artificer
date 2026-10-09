@@ -299,7 +299,9 @@ export class RecipeStorage {
 
     /**
      * RARITY → SKILLLEVEL per artificer-recipe.txt: common 0-3, uncommon 4-9, rare 10-14, very rare 15-19, legendary 20.
-     * @param {string} rarity - common | uncommon | rare | very rare | legendary
+     * `artifact` is newer than that mapping (added to RECIPE_RARITIES 2026-10-09) and shares
+     * legendary's ceiling rather than inventing a value past SKILL_LEVEL_MAX.
+     * @param {string} rarity - common | uncommon | rare | very rare | legendary | artifact
      * @returns {number} skill level 0–20
      */
     static _skillLevelFromRarity(rarity) {
@@ -308,7 +310,7 @@ export class RecipeStorage {
         if (r === 'uncommon') return 6;
         if (r === 'rare') return 12;
         if (r === 'very rare') return 17;
-        if (r === 'legendary') return 20;
+        if (r === 'legendary' || r === 'artifact') return 20;
         return 1;
     }
 

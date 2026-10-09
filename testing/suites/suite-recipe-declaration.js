@@ -112,22 +112,57 @@ export default {
                 // processLevel is always 0-3 regardless of which process is chosen (confirmed
                 // earlier against recipeCanCraft/process-definitions.js), so a static select is
                 // correct here -- unlike skill/skillKit, this vocabulary never changes.
+                // All three numeric-range selects lead with a blank "Not specified" option
+                // (2026-10-09, found live): without one, an untouched select's value is the
+                // range's own minimum, indistinguishable from the author deliberately choosing
+                // it -- confirmed live, every generated recipe got skillLevel 0 / successDC 1
+                // regardless of rarity, because the prompt told the generator to honor the
+                // author's "selections" exactly and a silent default looked like one.
                 expect('promptFields "processLevel" inputType', promptField('processLevel')?.inputType, 'select');
-                expect('promptFields "processLevel" options', (promptField('processLevel')?.options ?? []).map(o => o.value), ['0', '1', '2', '3']);
+                expect('promptFields "processLevel" options', (promptField('processLevel')?.options ?? []).map(o => o.value), ['', '0', '1', '2', '3']);
                 // skillLevel (0-20) and successDC (1-30) are the same fixed-range pattern as
                 // processLevel -- a static select, not dynamicOptions, since the legal range
                 // never changes (confirmed against SKILL_LEVEL_MIN/MAX and RecipePageModel's
                 // successDC bounds directly).
                 expect('promptFields "skillLevel" inputType', promptField('skillLevel')?.inputType, 'select');
-                expect.ok('promptFields "skillLevel" options span 0-20',
-                    (promptField('skillLevel')?.options ?? []).length === 21
-                    && promptField('skillLevel').options[0].value === '0'
-                    && promptField('skillLevel').options[20].value === '20');
+                expect.ok('promptFields "skillLevel" options span blank + 0-20',
+                    (promptField('skillLevel')?.options ?? []).length === 22
+                    && promptField('skillLevel').options[0].value === ''
+                    && promptField('skillLevel').options[1].value === '0'
+                    && promptField('skillLevel').options[21].value === '20');
                 expect('promptFields "successDC" inputType', promptField('successDC')?.inputType, 'select');
-                expect.ok('promptFields "successDC" options span 1-30',
-                    (promptField('successDC')?.options ?? []).length === 30
-                    && promptField('successDC').options[0].value === '1'
-                    && promptField('successDC').options[29].value === '30');
+                expect.ok('promptFields "successDC" options span blank + 1-30',
+                    (promptField('successDC')?.options ?? []).length === 31
+                    && promptField('successDC').options[0].value === ''
+                    && promptField('successDC').options[1].value === '1'
+                    && promptField('successDC').options[30].value === '30');
+                // type/category/rarity (2026-10-09): added AS promptFields specifically so
+                // Blacksmith's `fills` can target them -- `resultItemName` fills them from the
+                // dropped item, editable after. Neither is authored from scratch by the
+                // generator; both stay plain `text` (no fixed vocabulary for either), rarity
+                // stays the one real `select` among the three (it IS a fixed, model-enforced
+                // vocabulary, unlike the other two).
+                const resultItemFills = promptField('resultItemName')?.fills ?? [];
+                expect.ok('promptFields "resultItemName" carries fills', Array.isArray(resultItemFills) && resultItemFills.length > 0);
+                const fillTargets = resultItemFills.map(f => f.field);
+                for (const id of ['type', 'category', 'rarity', 'traits']) {
+                    expect.ok(`resultItemName fills targets "${id}"`, fillTargets.includes(id));
+                }
+                const fillFor = (id) => resultItemFills.find(f => f.field === id);
+                // category: ordered fallback list (Blacksmith added multi-path `from` support
+                // 2026-10-09 specifically for this), matching the sheet's own reader exactly.
+                expect.ok('fills "category" from is the 3-path fallback list',
+                    Array.isArray(fillFor('category')?.from)
+                    && fillFor('category').from.join('|') === 'system.type.value|system.type.subtype|system.consumableType');
+                // rarity: dnd5e's raw `veryRare` -> our model's `'very rare'` (confirmed against
+                // dnd5e 5.3.3 source, not guessed) -- the one fill that needs a map, since rarity
+                // is the one of the four still `choices`-constrained on our model.
+                expect('fills "rarity" map translates veryRare', fillFor('rarity')?.map?.veryRare, 'very rare');
+                expect('promptFields "type" inputType', promptField('type')?.inputType, 'text');
+                expect('promptFields "category" inputType', promptField('category')?.inputType, 'text');
+                expect('promptFields "rarity" inputType', promptField('rarity')?.inputType, 'select');
+                expect.ok('promptFields "rarity" options match RECIPE_RARITIES',
+                    (promptField('rarity')?.options ?? []).length === 5);
             }
         },
         {

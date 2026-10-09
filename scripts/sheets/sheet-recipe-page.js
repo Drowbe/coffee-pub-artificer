@@ -25,6 +25,7 @@ import { getLastKnownEnabledCraftingSkillIds, loadSkillsDetails, buildCraftingKi
 import { ARTIFICER_TYPES, PROCESS_FAMILY, ARTIFICER_FLAG_KEYS } from '../schema-artificer-item.js';
 import { getAllRecordsFromCache } from '../cache/cache-items.js';
 import { bindTraitPicker } from '../systems/trait-picker.js';
+import { getTraitsFromFlags } from '../utility-artificer-item.js';
 
 const JournalEntryPageProseMirrorSheet = foundry.applications.sheets.journal.JournalEntryPageProseMirrorSheet;
 
@@ -507,11 +508,23 @@ export class RecipePageSheet extends JournalEntryPageProseMirrorSheet {
                     // cache: cache-items.js's `type`/`dndType` fields are derived for a different
                     // purpose (an Artificer ingredient family hint) and would misread this.
                     if (target === 'resultItemName') {
+                        // Traits are a SEED, not a derivation like type/category above -- merged
+                        // into whatever the author already has (case-insensitive, so "Herb" and
+                        // "herb" never become two traits that never match each other), not a
+                        // replacement. An author who already typed traits, or drops a second
+                        // result item, keeps everything they had; nothing is ever removed here.
+                        const itemTraits = getTraitsFromFlags(doc.flags?.[MODULE.ID] ?? {});
+                        const existingTraits = splitTraits(this.document.system.traits);
+                        const mergedTraits = [...existingTraits];
+                        for (const trait of itemTraits) {
+                            if (!mergedTraits.some(t => t.toLowerCase() === trait.toLowerCase())) mergedTraits.push(trait);
+                        }
                         await this.#stage({
                             'system.resultItemName': doc.name,
                             'system.type': doc.type ?? '',
                             'system.category': doc.system?.type?.value ?? doc.system?.type?.subtype
-                                ?? doc.system?.consumableType ?? ''
+                                ?? doc.system?.consumableType ?? '',
+                            'system.traits': mergedTraits
                         });
                         return;
                     }

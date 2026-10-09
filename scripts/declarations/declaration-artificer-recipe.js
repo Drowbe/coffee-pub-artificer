@@ -80,7 +80,7 @@
 // Blacksmith directly, do not add `folderNameTransform` (it does not exist).
 // ==================================================================
 
-import { RecipePageModel, RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
+import { RecipePageModel, RECIPE_PAGE_TYPE, RECIPE_RARITIES } from '../data/models/model-recipe-page.js';
 import { MODULE } from '../const.js';
 import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
 
@@ -88,9 +88,20 @@ import { SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
  * `{value, label}` options for a static, inclusive numeric range -- for a `promptFields` select
  * whose legal values are a fixed range with no cross-field dependency (processLevel, skillLevel,
  * successDC). NOT for a world-configurable vocabulary; that is `dynamicOptions` (skill, skillKit).
+ *
+ * ALWAYS leads with a blank "not specified" option. Found live, 2026-10-09: with no blank option,
+ * an untouched select's value is indistinguishable from the range's own minimum (skillLevel 0,
+ * processLevel 0, successDC 1) -- a plain `<select>` always has SOME value, there is no way for it
+ * to report "nothing chosen" on its own. Blacksmith's prompt builder then wrote that minimum into
+ * the generated prompt as though the author had deliberately chosen it, and the author's own
+ * instruction to "honor the author's selections exactly" meant the generator dutifully produced
+ * skillLevel 0 / successDC 1 on every recipe regardless of rarity -- confirmed live on "Black
+ * Thistle Poison", which should have landed around skillLevel 17 / successDC 25 for a Very Rare
+ * poison. Same pattern `skill`/`skillKit` already use ("No preference" as their own first option)
+ * -- not a new mechanism, just applying the existing one to a field this helper builds.
  */
 function numericRangeOptions(min, max) {
-    const options = [];
+    const options = [{ value: '', label: 'Not specified' }];
     for (let n = min; n <= max; n++) options.push({ value: String(n), label: String(n) });
     return options;
 }
@@ -108,13 +119,14 @@ const RECIPE_GUIDANCE = {
     'ingredients.family': 'Optional. Narrows the match within type (e.g. Plant, Mineral).',
     'ingredients.name': 'The ingredient item, by name.',
     'ingredients.quantity': 'How many of this ingredient the recipe consumes. Defaults to 1.',
-    // Leave blank, not guessed: both are set automatically from the dropped Result item in the
-    // authoring sheet (its own dnd5e document type and subtype), never authored or generated.
-    // The model carries no `choices` for `type` any more either, so nothing here claims an
-    // "Allowed: ..." list that no longer exists.
-    type: 'Leave blank. Set automatically from the Result item once it is dropped in the authoring sheet.',
-    category: 'Leave blank. Set automatically from the Result item once it is dropped in the authoring sheet.',
-    rarity: 'Common, Uncommon, Rare, Very Rare, or Legendary. Leave blank if not stated.',
+    // Set automatically, never authored or generated: dropping the Result item above (here or
+    // on the authoring sheet) fills this from the item's own dnd5e document type/subtype
+    // (Blacksmith's `fills`, 2026-10-09). Left blank when no item has been dropped -- do not
+    // guess one. The model carries no `choices` for `type` any more either, so nothing here
+    // claims an "Allowed: ..." list that no longer exists.
+    type: 'Set automatically when the Result item above is dropped. Left blank otherwise -- do not guess one.',
+    category: 'Set automatically when the Result item above is dropped. Left blank otherwise -- do not guess one.',
+    rarity: 'Set automatically when the Result item above is dropped. Otherwise Common, Uncommon, Rare, Very Rare, or Legendary, chosen to fit the recipe -- leave blank if genuinely not stated.',
     skill: 'The crafting skill this recipe is rolled against, and the folder its book files into (e.g. "Alchemy"). Must be an id enabled in the world\'s skills mapping -- not validated against a fixed list, since that mapping is per-world.',
     skillLevel: 'Crafting difficulty, 0 to 20.',
     skillKit: 'The tool kit required in inventory at craft time, such as "Alchemist\'s Supplies".',
@@ -137,6 +149,12 @@ const RECIPE_EXAMPLES = {
     rarity: 'Common',
     skill: 'Alchemy',
     skillLevel: 1,
+    // Matches skillLevel: 1 via _successDCFromSkillLevel's own 0-3 -> 4 band
+    // (storage-recipes.js), not picked independently -- same curve the preamble
+    // tells the generator to follow. Was missing entirely until Blacksmith flagged
+    // it: with no example, the JSON Template tab fell back to 0, recreating a
+    // milder version of the skillLevel-0/successDC-1 bug this session just fixed.
+    successDC: 4,
     processType: 'Heat',
     processLevel: 1,
     time: 30,
@@ -307,17 +325,51 @@ const RECIPE_PROMPT_FIELDS = [
     {
         id: 'resultItemName', label: 'Result item', inputType: 'item',
         group: 'Result item', groupIcon: 'fa-solid fa-flask',
-        hint: 'Drop the exact item this recipe produces, or type its name. Any item works.'
+        hint: 'Drop the exact item this recipe produces. Leave empty to let the generator choose one from the available items list, when that list is shown.',
+        // Blacksmith `fills` (2026-10-09): on a drop, each reads from the dropped document and
+        // writes into the named sibling promptField below, editable afterward.
+        // `category`'s `from` is an ORDERED LIST (Blacksmith added this the same day, specifically
+        // for this case): first non-empty of system.type.value / .subtype / .consumableType wins,
+        // matching our own sheet's reader (sheet-recipe-page.js's `resultItemName` branch) exactly.
+        // `rarity`'s `map` translates dnd5e's raw `veryRare` (confirmed against dnd5e 5.3.3 source,
+        // dnd5e.mjs:44950) to our model's `'very rare'` -- every other rarity value already matches
+        // case-insensitively. dnd5e also has `artifact`, which RECIPE_RARITIES does not carry; an
+        // artifact-rarity drop leaves Rarity unfilled (no matching option) rather than failing --
+        // whether to add `artifact` to our own vocabulary is a separate, open question, not guessed
+        // here. `traits` covers the PRIMARY path only (the legacy composite our reader also falls
+        // back to is not worth a `fills` entry -- confirmed vanishingly rare in the shipped packs).
+        fills: [
+            { field: 'type', from: 'type' },
+            { field: 'category', from: ['system.type.value', 'system.type.subtype', 'system.consumableType'] },
+            { field: 'rarity', from: 'system.rarity', map: { veryRare: 'very rare' } },
+            { field: 'traits', from: `flags.${MODULE.ID}.artificerTraits` }
+        ]
+    },
+    {
+        id: 'type', label: 'Type', inputType: 'text',
+        group: 'Result item', groupIcon: 'fa-solid fa-flask',
+        hint: 'Set automatically when the Result item above is dropped (its own dnd5e item type). Left blank otherwise -- do not guess one.'
+    },
+    {
+        id: 'category', label: 'Subtype', inputType: 'text',
+        group: 'Result item', groupIcon: 'fa-solid fa-flask',
+        hint: 'Set automatically when the Result item above is dropped (its own dnd5e subtype, e.g. "Potion"). Left blank otherwise -- do not guess one.'
+    },
+    {
+        id: 'rarity', label: 'Rarity', inputType: 'select',
+        options: RECIPE_RARITIES.map(r => ({ value: r, label: r.replace(/\b\w/g, c => c.toUpperCase()) })),
+        group: 'Result item', groupIcon: 'fa-solid fa-flask',
+        hint: 'Set automatically when the Result item above is dropped. Otherwise chosen to fit the recipe -- leave as (not stated) if genuinely unknown.'
     },
     {
         id: 'traits', label: 'Traits', inputType: 'tags', dynamicOptions: true,
         group: 'Traits', groupIcon: 'fa-solid fa-tags',
-        hint: 'Pick a suggestion or type a new one -- suggestions are every trait already used anywhere in your items, not a closed list. Two to five tags describing what the recipe is good for -- do not repeat what kind of item the result already is.'
+        hint: 'Pick a suggestion or type a new one -- suggestions are every trait already used anywhere in your items, not a closed list. Dropping the Result item above fills this from its own traits first (editable after); two to five total describing what the recipe is good for, not repeating what kind of item the result already is.'
     },
     {
         id: 'ingredients', label: 'Ingredients', inputType: 'items',
         group: 'Ingredients', groupIcon: 'fa-solid fa-mortar-pestle',
-        hint: 'Drop items or type Name xQuantity, one per line. The generator fills in type and family for each -- for an item carrying Artificer flags, a wrong type or family can fail the crafting match at use; verify flagged ingredients afterward.'
+        hint: 'Drop items to add them as ingredients -- dropping one already listed raises its quantity. Leave empty to let the generator choose from the available items list. The generator fills in type and family for each -- for an item carrying Artificer flags, a wrong type or family can fail the crafting match at use; verify flagged ingredients afterward.'
     },
     {
         id: 'processType', label: 'Process', inputType: 'item',
@@ -328,7 +380,7 @@ const RECIPE_PROMPT_FIELDS = [
         id: 'processLevel', label: 'Process level', inputType: 'select',
         options: numericRangeOptions(0, 3),
         group: 'Process', groupIcon: 'fa-solid fa-fire',
-        hint: '0-3, always this range regardless of process. 0 is always Off; what 1-3 mean (Low/Medium/High, Coarse/Medium/Fine, etc.) depends on the process chosen above, which this list cannot see.'
+        hint: '0-3, always this range regardless of process. 0 is always Off; what 1-3 mean (Low/Medium/High, Coarse/Medium/Fine, etc.) depends on the process chosen above, which this list cannot see. "Not specified" means the author left this open -- choose a level that fits the recipe (your final answer must still be an explicit 0-3, never blank). An explicit level the author picked, including 0, must be kept exactly.'
     },
     {
         id: 'time', label: 'Process time (seconds)', group: 'Process', groupIcon: 'fa-solid fa-fire',
@@ -353,7 +405,7 @@ const RECIPE_PROMPT_FIELDS = [
         id: 'skillLevel', label: 'Skill level', inputType: 'select',
         options: numericRangeOptions(SKILL_LEVEL_MIN, SKILL_LEVEL_MAX),
         group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
-        hint: '0-20. Minimum crafting skill required.'
+        hint: '0-20. Minimum crafting skill required. "Not specified" means the author left this open -- rise it with rarity (roughly common 0-3, uncommon 4-9, rare 10-14, very rare 15-19, legendary 20); your final answer must still be an explicit number, never blank. An explicit level the author picked, including 0, must be kept exactly.'
     },
     {
         id: 'skillKit', label: 'Required kit', inputType: 'select', dynamicOptions: true,
@@ -366,7 +418,7 @@ const RECIPE_PROMPT_FIELDS = [
         id: 'successDC', label: 'Success DC', inputType: 'select',
         options: numericRangeOptions(1, 30),
         group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',
-        hint: '1-30. The crafting roll DC.'
+        hint: '1-30. The crafting roll DC. "Not specified" means the author left this open -- rise it with skill level on a similar curve, not chosen independently; your final answer must still be an explicit number, never blank. A DC the author picked must be kept exactly.'
     },
     {
         id: 'goldCost', label: 'Gold cost (gp)', group: 'Requirements', groupIcon: 'fa-solid fa-hand-sparkles',

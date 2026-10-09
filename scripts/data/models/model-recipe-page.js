@@ -62,7 +62,7 @@ export const RECIPE_DESCRIPTION_OUTLINE = RECIPE_SECTIONS.map(section => {
 }).join('');
 
 /** D&D 5e rarities, lowercase as stored. Null means "not stated". */
-export const RECIPE_RARITIES = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
+export const RECIPE_RARITIES = ['common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'];
 
 /**
  * Data model for Artificer recipe journal pages.

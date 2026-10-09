@@ -4,6 +4,7 @@
 
 ## Current Focus
 
+
 ### Recipe Type/Subtype derived from the dropped result item
 Raised 2026-10-09, investigating the Category suggestion-popup positioning bug: `type`/`category`
 turned out to be real (type is `choices`-enforced, category is free text with Creation-family
@@ -43,17 +44,41 @@ dropped item. Full design in
       `ARTIFICER_TYPES`/`FAMILIES_BY_TYPE`). Subtype options narrow to the selected Type, and
       picking a new Type clears a Subtype selection the new Type may not have -- same shape as
       Components' Type/Family, different source.
-- [ ] **Not in this pass, logged for later:** recipes created through Blacksmith's Unified Import
-      (the generator path) never have a live dropped document to read `type`/`subtype` from --
-      only a name string. Needs the same "resolve from the item cache by name when read" treatment
-      already planned for ingredient type/family (see the entry below), not drop-time capture.
-      Until then, an imported recipe's Type/Subtype stay blank, which is correct (absent, not a
-      guess) rather than wrong.
-- [ ] **Not yet verified live:** drop a Consumable item as a recipe's Result item and confirm
-      Type/Subtype populate and display correctly; re-drop a different item and confirm both
-      update; clear the Result slot and confirm both clear; open the Crafting Station and confirm
-      no recipe's Type got silently reset to Consumable; exercise the new Type/Subtype filter in
-      both the Recipe Browser and the Crafting Station's Recipes column.
+- [x] ~~Not in this pass, logged for later: recipes created through Blacksmith's Unified Import
+      never have a live dropped document to read type/subtype from.~~ **SUPERSEDED 2026-10-09,
+      same day** -- the author pushed back on this being deferred at all ("if we're passing the
+      data, and the item was dropped, we should be able to prefill it"), raised it with Blacksmith
+      directly, and Blacksmith built `fills` on `item`/`items` prompt fields that same session:
+      `resultItemName`'s drop now fills `type`/`category`/`rarity`/`traits` from the resolved
+      document, editable after, same window. See the new entry below for what is still open.
+- [x] ~~Both `fills` gaps from the Blacksmith coordination.~~ **DONE 2026-10-09, same day.**
+      Blacksmith added multi-path `from` support to `fills` specifically for `category`'s case;
+      it now declares the ordered fallback list (`system.type.value` -> `.subtype` ->
+      `.consumableType`), matching the sheet's own reader exactly. `rarity`'s `fills` entry now
+      carries `map: { veryRare: 'very rare' }`, confirmed against the real dnd5e 5.3.3 source
+      (`dnd5e.mjs:44950`), not guessed. `traits` stays primary-path-only, confirmed deliberately --
+      the legacy composite fallback is too rare in the shipped packs to be worth a second entry.
+- [x] ~~Open, not decided: should `artifact` be added to `RECIPE_RARITIES`?~~ **DONE 2026-10-09**
+      -- author said add it. `RECIPE_RARITIES` (`model-recipe-page.js`) now carries it; the
+      model's `choices`, the sheet's Rarity select, and Blacksmith's `rarity` promptField options
+      all read that same constant, so no separate edit was needed in any of them. Two places DID
+      need a separate fix because they hardcode their own copy of the same vocabulary rather than
+      importing it: `parser-recipe.js`'s legacy-HTML rarity parser now imports `RECIPE_RARITIES`
+      instead of a duplicated inline list (so it can't drift again); `storage-recipes.js`'s
+      `_skillLevelFromRarity` (the PDF-import skill-level-from-rarity mapping) now maps `artifact`
+      to the same ceiling as `legendary` (20, `SKILL_LEVEL_MAX`), not a new invented value.
+      Deliberately NOT touched: `manager-gather.js`/`manager-gathering-images.js`'s rarity ladders
+      -- those are the GATHERING/discovery system's own component-rarity vocabulary, a different
+      domain the author did not ask about, with their own DC-offset settings; conflating the two
+      was not asked for and would be real scope creep.
+- [ ] **Not yet verified live, by either side:** drop a Consumable item as a recipe's Result item
+      on the authoring sheet and confirm Type/Subtype populate and display correctly; re-drop a
+      different item and confirm both update; clear the Result slot and confirm both clear; open
+      the Crafting Station and confirm no recipe's Type got silently reset to Consumable; exercise
+      the new Type/Subtype filter in both the Recipe Browser and the Crafting Station's Recipes
+      column; in Blacksmith's Unified Import Prompt Template, drop a Result item and confirm
+      Type/Subtype/Rarity/Traits prefill and that a generated/imported recipe actually carries
+      them.
 
 ### Crafting window search filter can drop a keystroke while typing
 Found live 2026-10-09, testing the recipe-prompt work. Typing "blight" into the Crafting Station's

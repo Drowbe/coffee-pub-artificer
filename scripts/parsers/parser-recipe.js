@@ -7,7 +7,7 @@ import { postBlacksmithConsole } from '../utils/blacksmith-console.js';
 import { extractNameFromUuidLink, normalizePunctuationForStorage } from '../utils/helpers.js';
 import { ArtificerRecipe } from '../data/models/model-recipe.js';
 import { HEAT_MAX, SKILL_LEVEL_MIN, SKILL_LEVEL_MAX } from '../schema-recipes.js';
-import { RECIPE_PAGE_TYPE } from '../data/models/model-recipe-page.js';
+import { RECIPE_PAGE_TYPE, RECIPE_RARITIES } from '../data/models/model-recipe-page.js';
 import { ARTIFICER_TYPES, LEGACY_TYPE_TO_ARTIFICER_TYPE, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 
 /**
@@ -212,7 +212,7 @@ export class RecipeParser {
                     if (value.trim()) data.source = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'rarity') {
                     const r = normalizePunctuationForStorage(value.trim()).toLowerCase();
-                    if (['common', 'uncommon', 'rare', 'very rare', 'legendary'].includes(r)) data.rarity = r;
+                    if (RECIPE_RARITIES.includes(r)) data.rarity = r;
                 } else if (labelLower === 'license') {
                     if (value.trim()) data.license = normalizePunctuationForStorage(value.trim());
                 } else if (labelLower === 'ingredients') {

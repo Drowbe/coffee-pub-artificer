@@ -493,25 +493,37 @@
     font-style: italic;
 }
 
-.crafting-recipe-journal-name {
-    font-size: 0.85em;
-    color: rgba(201, 201, 201, 0.75);
-    margin-top: 2px;
-    margin-bottom: 0;
+/* The journal's own name is the heading now (.crafting-recipe-name) -- this used to
+   duplicate it as a smaller line underneath a literal "Cover Page" heading. A book's
+   title belongs in the title slot, not a caption below a generic label. */
+
+/* Full-bleed banner at the top of the cover Details view, bled to the zone's own
+   edges (-10px -12px, matching .crafting-zone-section's padding) rather than sitting
+   inside it like a thumbnail. Fades to transparent at the bottom so it blends into
+   the content below instead of ending on a hard edge -- the same "zoom and fade"
+   treatment as the cover row in the recipe list, adapted to a tall content column
+   instead of a short row. */
+.crafting-recipe-journal-cover-banner {
+    position: relative;
+    width: calc(100% + 24px);
+    height: 170px;
+    margin: -10px -12px 10px -12px;
+    overflow: hidden;
 }
 
-.crafting-recipe-journal-cover {
-    margin-top: 6px;
-    padding: 6px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+.crafting-recipe-journal-cover-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 45%, rgba(8, 6, 4, 0.95) 100%);
+    pointer-events: none;
 }
+
 .crafting-recipe-journal-cover-img {
-    max-width: 80px;
-    max-height: 100px;
-    object-fit: contain;
-    border-radius: 4px;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
-    margin-bottom: 4px;
 }
 
 /* Details pane: result item art (same source as recipe list thumbnails), not journal cover */

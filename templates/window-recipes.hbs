@@ -92,7 +92,7 @@
                                 <div class="crafting-recipe-page-title-row">
                                     <span class="crafting-recipe-page-title">{{this.journalName}}</span>
                                 </div>
-                                <span class="crafting-recipe-page-tags">Cover Page</span>
+                                <span class="crafting-recipe-page-tags">{{this.author}}</span>
                             </div>
                         </div>
                     </div>
@@ -125,22 +125,36 @@
                     {{#if viewingCoverPage}}
                     {{#if selectedJournalCoverBlock}}
                     <div class="crafting-recipe-details">
-                        <div class="crafting-recipe-name">Cover Page</div>
-                        <div class="crafting-recipe-journal-name">{{selectedJournalCoverBlock.journalName}}</div>
-                        <div class="crafting-recipe-journal-cover">
-                            {{#if selectedJournalCoverBlock.coverImage}}
+                        {{#if selectedJournalCoverBlock.coverImage}}
+                        <div class="crafting-recipe-journal-cover-banner">
                             <img src="{{selectedJournalCoverBlock.coverImage}}" alt="" class="crafting-recipe-journal-cover-img" />
-                            {{/if}}
-                            {{#if selectedJournalCoverBlock.author}}
-                            <div class="crafting-recipe-journal-cover-author">{{selectedJournalCoverBlock.author}}</div>
-                            {{/if}}
-                            {{#if selectedJournalCoverBlock.description}}
-                            <div class="crafting-recipe-journal-cover-description">{{selectedJournalCoverBlock.description}}</div>
-                            {{/if}}
-                            {{#unless selectedJournalCoverBlock.hasAnyContent}}
-                            <div class="crafting-recipe-journal-cover-description">This journal has a Cover Page, but it has no image, author, or description.</div>
-                            {{/unless}}
                         </div>
+                        {{/if}}
+                        <div class="crafting-recipe-name">{{selectedJournalCoverBlock.journalName}}</div>
+                        {{#if selectedJournalCoverBlock.author}}
+                        <div class="crafting-recipe-journal-cover-author">{{selectedJournalCoverBlock.author}}</div>
+                        {{/if}}
+                        {{#if selectedJournalCoverBlock.description}}
+                        <div class="crafting-recipe-journal-cover-description">{{selectedJournalCoverBlock.description}}</div>
+                        {{/if}}
+                        {{#unless selectedJournalCoverBlock.hasAnyContent}}
+                        <div class="crafting-recipe-journal-cover-description">This journal has a Cover Page, but it has no image, author, or description.</div>
+                        {{/unless}}
+                        {{#if selectedJournalCoverBlock.recipeCount}}
+                        <hr class="crafting-details-divider" />
+                        <div class="crafting-recipe-stats-scoreboard" role="group" aria-label="Book contents">
+                            <div class="crafting-recipe-stat-tile">
+                                <span class="crafting-recipe-stat-label">Recipes</span>
+                                <span class="crafting-recipe-stat-value">{{selectedJournalCoverBlock.recipeCount}}</span>
+                            </div>
+                            {{#each selectedJournalCoverBlock.typeBreakdown}}
+                            <div class="crafting-recipe-stat-tile">
+                                <span class="crafting-recipe-stat-label">{{this.type}}</span>
+                                <span class="crafting-recipe-stat-value">{{this.count}}</span>
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{/if}}
                     </div>
                     {{else}}
                     <div class="crafting-zone-empty">Cover Page details are unavailable for the selected journal.</div>

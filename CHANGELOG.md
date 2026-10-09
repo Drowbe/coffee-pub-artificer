@@ -103,7 +103,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   filter (`window-crafting.js`), the natural use for a field that is now real, derived data instead
   of a stale display-only badge -- options are built from the distinct values actually present on
   the loaded recipe set, since dnd5e item types are not a vocabulary this module owns or enumerates
-  anywhere. **Not yet verified live.**
+  anywhere. **Confirmed live, 2026-10-09** -- Type/Subtype derivation specifically (Herb Bundle ->
+  `consumable`/`trinket`, matching the item's own Artificer Properties panel exactly); the new
+  filter pair itself still needs a dedicated pass.
+- **Dropping a Result item now also seeds the recipe's Traits from the item's own Artificer
+  traits**, merged in rather than replacing -- an author who already typed traits, or drops a
+  second result item, keeps everything they had (case-insensitive dedup, so "Herb" and "herb"
+  never become two traits that never match each other). Traits stay fully editable afterward
+  through the existing picker; unlike Type/Subtype this is a starting point, not a derivation --
+  raised live, immediately after confirming Type/Subtype worked, from Herb Bundle's own traits
+  (Herb, Medicinal, Earth, Pure) visibly sitting unused one panel over. `#bindDropZones`'s
+  `resultItemName` branch in `sheet-recipe-page.js`, reusing `getTraitsFromFlags`
+  (`utility-artificer-item.js`) -- the same reader the item form itself uses, so this can never
+  show a different trait list than the item's own sheet does. **Not yet verified live.**
 - **A journal's cover-page row in the Crafting Station/Recipe Browser looked identical to an
   ordinary recipe row** -- `.crafting-recipe-page-cover` shared `.crafting-recipe-page`'s whole
   layout and carried no rules of its own, so a book divider and a craftable recipe were visually
@@ -112,9 +124,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   treatment Squire's Favourites tray tiles use on Foundry's own small built-in icon art), the row
   is taller (108px), and the journal name sits on a bottom gradient caption instead of beside a
   small thumbnail. `window-crafting.css` only; no template or script changes, and the regular
-  recipe row is untouched. **Not yet verified live.**
+  recipe row is untouched. **Confirmed live, 2026-10-09.**
+- **The cover-page Details view got the same treatment, plus real content, from live feedback on
+  the row redesign above.** Previously: a literal "Cover Page" heading, the journal name repeated
+  as a smaller line underneath it, and an 80x100px thumbnail. Now: the journal's own name IS the
+  heading (no more generic label standing in for the title), the cover art is a full-bleed banner
+  across the top of the Details column that fades to transparent at the bottom instead of sitting
+  in a small box, and a new stats row shows how many recipes the book holds and a breakdown by
+  Type -- both counted from the exact same `knownCombinations` the recipe list itself is built
+  from, so they can never disagree with what filtering the journal actually shows.
+  `selectedJournalCoverBlock` (`window-crafting.js`) gained `recipeCount`/`typeBreakdown`. The
+  recipe list's own cover row caption changed too: it said "Cover Page" on every single row
+  regardless of journal; now it shows that journal's author (falling back to "Cover Page" only
+  when the cover genuinely has none). **Not yet verified live.**
+- **Type/Subtype/Rarity/Traits now prefill in Blacksmith's Unified Import prompt too, not just
+  the authoring sheet -- coordinated live with Blacksmith, 2026-10-09.** The author pushed back,
+  correctly, on the prompt still asking the generator to leave `type`/`category` blank for an
+  item that was already dropped and fully resolvable -- "if we're passing the data, and the item
+  was dropped, we should be able to prefill it too." Blacksmith built `fills` on `item`/`items`
+  prompt fields the same day: a drop reads one path off the resolved document and writes it into
+  a named sibling field, editable afterward, never a function we hand them. `resultItemName` now
+  declares `fills` targeting four siblings -- `type` (`doc.type`), `category`
+  (`doc.system.type.value`), `rarity` (`doc.system.rarity`), `traits`
+  (`doc.flags.coffee-pub-artificer.artificerTraits`) -- and `type`/`category`/`rarity` are new
+  `promptFields` entries that did not exist before (`type`/`category` plain text, no fixed
+  vocabulary; `rarity` a real `select` against `RECIPE_RARITIES`, the one of the four still
+  model-enforced). Decided with the author: overwrite-on-drop is fine for Traits here (unlike the
+  sheet's merge behavior -- this is typically the first and only drop in a fresh generation);
+  Rarity gets added (new, the sheet itself does not derive it); all four stay editable after the
+  fill, matching how `fills` works everywhere else. **Both gaps closed same-day.** `category`'s
+  `from` is now the ordered fallback list `['system.type.value', 'system.type.subtype',
+  'system.consumableType']` -- Blacksmith added multi-path `from` support to `fills` specifically
+  for this case, so it now matches the sheet's own reader exactly, not just the primary path.
+  `rarity`'s `fills` entry carries `map: { veryRare: 'very rare' }` -- confirmed against the real
+  dnd5e 5.3.3 source (`dnd5e.mjs:44950`), not guessed; every other rarity value already matches
+  case-insensitively. dnd5e also has `artifact`, which `RECIPE_RARITIES` does not -- an
+  artifact-rarity drop leaves Rarity unfilled rather than failing (no matching option), and
+  whether to add `artifact` to our own vocabulary is a separate, open, not-yet-decided question.
+  `traits` stays primary-path-only -- the legacy composite fallback is confirmed too rare in the
+  shipped packs to be worth a second `fills` entry for. Separately, Blacksmith made `item`/`items`
+  prompt fields drop-only (no more free-text name entry) the same day -- our declaration needed no
+  input-type change, just hint text: `resultItemName`/`ingredients` no longer say "or type its
+  name", and both now say leaving the field empty lets the generator choose from the available
+  items catalog. Suite updated to assert the `fills` array, the ordered fallback list, and the
+  rarity map. **Not yet verified live, by either side.**
+- **`artifact` added to `RECIPE_RARITIES`** -- the one open question from the `fills` work above,
+  decided by the author the same day. `model-recipe-page.js`'s model, the authoring sheet's Rarity
+  select, and Blacksmith's `rarity` promptField options all read the same constant, so adding it
+  there was the whole fix for those three. Two places hardcoded their own duplicate list instead
+  of importing it and needed a separate fix: `parser-recipe.js`'s legacy-HTML rarity parser now
+  imports `RECIPE_RARITIES` rather than carrying a second copy that could drift from it again;
+  `storage-recipes.js`'s `_skillLevelFromRarity` (PDF-import rarity-to-skill-level mapping) maps
+  `artifact` to the same ceiling as `legendary` (20, `SKILL_LEVEL_MAX`) rather than inventing a
+  value past the model's actual max. Deliberately NOT touched: the Gathering system's own,
+  separate component-rarity ladders (`manager-gather.js`, `manager-gathering-images.js`) -- a
+  different domain with its own DC-offset settings that nothing in this request asked to change.
 
 ### Fixed
+- **Every generated recipe got skillLevel 0 and successDC 1 regardless of rarity** -- reported by
+  the author from a live generation ("Black Thistle Poison", a Very Rare poison, should have
+  landed near skillLevel 17 / successDC 25 and did not). Root cause: `skillLevel`, `successDC` and
+  `processLevel` are static `select` prompt fields built from `numericRangeOptions(min, max)`,
+  and a plain `<select>` always has SOME value -- with no blank option, an untouched field's value
+  IS the range's own minimum (0, 1, 0), indistinguishable from the author deliberately choosing
+  it. The generated prompt's own instruction to honor the author's selections exactly then made
+  the generator treat that silent default as a real constraint on every recipe. Fixed by giving
+  `numericRangeOptions` a leading blank "Not specified" option -- the same pattern `skill`/
+  `skillKit` already use for exactly this reason -- and rewriting all three hints: blank means the
+  author left it open (choose a value that fits the recipe's rarity/tier), an explicit value,
+  including 0, must be kept exactly. **Flagged to Blacksmith, not yet confirmed:** whether a
+  blank answer for a `select` backing a NumberField gets OMITTED from the built document (letting
+  the schema's own default apply) or passed through as `""`, since `skillLevel`/`processLevel` are
+  NOT nullable on our model (unlike `successDC`, which already tolerates null) -- the generator is
+  told to always resolve a real number in its final answer regardless, so this should not surface
+  in practice, but is unconfirmed as a safety net. Suite updated for the new options shape
+  (blank + range, not just the range). **Resolved by Blacksmith, confirmed from their own code,
+  same day:** a blank select answer is omitted outright (never reaches the built document); a
+  literal `""` or `null` hand-written into the JSON Template for a non-nullable field is rejected
+  at validation with a clear TYPE_MISMATCH, never silently coerced to 0 or passed through --
+  `skillLevel`/`processLevel` do not need to become nullable. One real gap their read-through
+  surfaced that we did need to fix: the JSON Template tab shows a field's `example` for an
+  untouched field, falling back to 0 when none is declared -- `successDC` had no example at all,
+  so anyone pasting the raw template as-is (no generator involved) would still have gotten the
+  same 0/1 symptom through a different path. Added `successDC: 4`, matching `skillLevel: 1` via
+  the module's own `_successDCFromSkillLevel` curve (`storage-recipes.js`), not picked
+  independently. **Not yet verified live.**
 - **The Artificer Properties panel's edit (feather) button did nothing when clicked on a compendium
   item.** `item-sheet-artificer.js`'s click handler resolved the item with `foundry.utils.fromUuidSync`,
   which only returns a document already cached in memory -- reliable for a world item, not for a

@@ -1312,6 +1312,9 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                         journalUuid,
                         journalName,
                         coverImage: (cover.coverImage ?? '').trim() || null,
+                        // Shown in place of the old static "Cover Page" caption -- falls back to
+                        // it when the cover genuinely has no author, rather than an empty line.
+                        author: (cover.author ?? '').trim() || 'Cover Page',
                         selected: !!(this.viewingCoverPage && this.viewingCoverJournalUuid === journalUuid)
                     });
                 }
@@ -1517,12 +1520,27 @@ export class CraftingWindow extends HandlebarsApplicationMixin(ApplicationV2) {
                 const coverImage = (cover.coverImage ?? '').trim() || null;
                 const author = (cover.author ?? '').trim() || null;
                 const description = (cover.description ?? '').trim() || null;
+                // What this book actually holds -- count and a Type breakdown, both read off
+                // the SAME `knownCombinations` the list itself was built from, so this can never
+                // disagree with what is actually shown when the journal filter is applied.
+                const journalRecipes = knownCombinations.filter((c) => c.journalUuid === this.viewingCoverJournalUuid);
+                const typeCounts = new Map();
+                for (const c of journalRecipes) {
+                    const t = (c.type ?? '').trim();
+                    if (!t) continue;
+                    typeCounts.set(t, (typeCounts.get(t) ?? 0) + 1);
+                }
+                const typeBreakdown = [...typeCounts.entries()]
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([type, count]) => ({ type, count }));
                 return {
                     journalName,
                     coverImage,
                     author,
                     description,
-                    hasAnyContent: !!(coverImage || author || description)
+                    hasAnyContent: !!(coverImage || author || description),
+                    recipeCount: journalRecipes.length,
+                    typeBreakdown
                 };
             })(),
             viewingCoverPage: !!(this.viewingCoverPage ?? false),
