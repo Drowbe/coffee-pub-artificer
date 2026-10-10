@@ -682,7 +682,14 @@ function _getDiscoveryMaxRarityRankByThresholds(rollTotal, thresholds = {}) {
 
 function _buildDiscoveryThresholds(baseDC, offsets = {}) {
     const base = Math.max(0, Math.min(20, Number(baseDC) || 0));
-    const fallbacks = _gatherRt().discoveryRarityOffsets;
+    const d = SCENE_GATHER_DEFAULTS.discoveryOffsets;
+    const fallbacks = {
+        common: d.common,
+        uncommon: d.uncommon,
+        rare: d.rare,
+        'very rare': d.veryRare,
+        legendary: d.legendary
+    };
     const clampOffset = (v, fallback = 0) => {
         const n = Number(v);
         if (!Number.isFinite(n)) return fallback;
@@ -1427,7 +1434,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
         : (Number.isFinite(Number(dc)) ? Number(dc) : SCENE_GATHER_DEFAULTS.discoveryBaseDC);
     const effectiveThresholds = (discoveryThresholds && Number.isFinite(Number(discoveryThresholds.common)))
         ? discoveryThresholds
-        : _buildDiscoveryThresholds(fallbackBaseDC, _gatherRt().discoveryRarityOffsets);
+        : _buildDiscoveryThresholds(fallbackBaseDC);
     let remaining = Math.max(0, Number(gatherSpots) || 0);
     const existing = _getSceneDiscoveredNodes(scene);
     remaining = Math.max(0, remaining - existing.length);

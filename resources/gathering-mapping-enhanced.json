@@ -366,14 +366,6 @@
     "soundExploreSuccess": "interface-notification-10",
     "soundExploreFail": "interface-error-03",
     "soundPopulate": "fanfare-success-2",
-    "soundClear": "interface-button-10",
-    "discoveryRadiusUnits": 60,
-    "discoveryRarityOffsets": {
-      "common": 0,
-      "uncommon": 3,
-      "rare": 6,
-      "very rare": 10,
-      "legendary": 14
-    }
+    "soundClear": "interface-button-10"
   }
 }

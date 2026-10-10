@@ -34,9 +34,6 @@ let _mappingPromise = null;
 /** Avoid spamming the same failure; cleared on successful load or cache invalidation. */
 let _gatheringMappingErrorReported = false;
 
-/** Rarity keys for discovery DC offsets (must match scene flags + gather manager). */
-const _GATHER_RARITY_KEYS = ['common', 'uncommon', 'rare', 'very rare', 'legendary'];
-
 /**
  * Built-in gather runtime defaults (merged with optional `runtimeDefaults` from gathering ruleset JSON).
  * @type {Readonly<{
@@ -47,9 +44,7 @@ const _GATHER_RARITY_KEYS = ['common', 'uncommon', 'rare', 'very rare', 'legenda
  *   soundExploreSuccess: string,
  *   soundExploreFail: string,
  *   soundPopulate: string,
- *   soundClear: string,
- *   discoveryRadiusUnits: number,
- *   discoveryRarityOffsets: Readonly<Record<string, number>>
+ *   soundClear: string
  * }>}
  */
 export const BUILTIN_GATHER_RUNTIME_DEFAULTS = Object.freeze({
@@ -61,14 +56,6 @@ export const BUILTIN_GATHER_RUNTIME_DEFAULTS = Object.freeze({
     soundExploreFail: 'interface-error-03',
     soundPopulate: 'fanfare-success-2',
     soundClear: 'interface-button-10',
-    discoveryRadiusUnits: 60,
-    discoveryRarityOffsets: Object.freeze({
-        common: 0,
-        uncommon: 3,
-        rare: 6,
-        'very rare': 10,
-        legendary: 14
-    }),
     pinDesign: Object.freeze({
         overrideDefaultPinDesign: false,
         shape: 'none',
@@ -100,17 +87,6 @@ function _num(v, fallback) {
 function _mergeGatherRuntimeInternal(overrides) {
     const b = BUILTIN_GATHER_RUNTIME_DEFAULTS;
     const o = overrides && typeof overrides === 'object' && !Array.isArray(overrides) ? overrides : {};
-    const ro =
-        o.discoveryRarityOffsets && typeof o.discoveryRarityOffsets === 'object' && !Array.isArray(o.discoveryRarityOffsets)
-            ? o.discoveryRarityOffsets
-            : {};
-    const mergedOffsets = { ...b.discoveryRarityOffsets };
-    for (const key of _GATHER_RARITY_KEYS) {
-        if (Object.prototype.hasOwnProperty.call(ro, key)) {
-            const n = Number(ro[key]);
-            if (Number.isFinite(n)) mergedOffsets[key] = n;
-        }
-    }
     const bpd = b.pinDesign;
     const pd = o.pinDesign && typeof o.pinDesign === 'object' && !Array.isArray(o.pinDesign) ? o.pinDesign : {};
     const _VALID_IMAGE_FIT = ['fill', 'contain', 'cover', 'none', 'scale-down', 'zoom'];
@@ -146,8 +122,6 @@ function _mergeGatherRuntimeInternal(overrides) {
         soundPopulate:
             typeof o.soundPopulate === 'string' && o.soundPopulate.trim() ? o.soundPopulate.trim() : b.soundPopulate,
         soundClear: typeof o.soundClear === 'string' && o.soundClear.trim() ? o.soundClear.trim() : b.soundClear,
-        discoveryRadiusUnits: Math.max(5, Math.floor(_num(o.discoveryRadiusUnits, b.discoveryRadiusUnits))),
-        discoveryRarityOffsets: Object.freeze(mergedOffsets),
         pinDesign: mergedPinDesign
     });
 }

@@ -12,14 +12,6 @@
     "soundExploreFail": "interface-error-03",
     "soundPopulate": "fanfare-success-2",
     "soundClear": "interface-button-10",
-    "discoveryRadiusUnits": 60,
-    "discoveryRarityOffsets": {
-      "common": 0,
-      "uncommon": 3,
-      "rare": 6,
-      "very rare": 10,
-      "legendary": 14
-    },
     "pinDesign": {
       "notes": "When overrideDefaultPinDesign is true, these values replace the Blacksmith registered design. When false, the registered design wins and these are ignored. shape options: 'circle', 'square', 'none' (icon only, no background). textLayout options: 'under' (below pin), 'over' (centered over pin), 'above' (above pin), 'right' (right of pin), 'left' (left of pin), 'arc-above' (curved above), 'arc-below' (curved below). textDisplay options: 'always', 'hover', 'never', 'gm' (GM only).",
       "overrideDefaultPinDesign": true,

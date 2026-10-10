@@ -572,12 +572,6 @@ everywhere, so it keeps working and returns a narrower, plausible pool of only t
       than as configuration, so nothing is broken by leaving it; this is a cleanup question, not a
       correctness one. Verified by: scan scenes for a `habitats` entry that `normalizeBiome` rejects.
 
-- [ ] **Decide the fate of the ruleset's `discoveryRadiusUnits` and `discoveryRarityOffsets`.** Scene
-      gathering now takes every value from `resolveSceneGatherProfile`, so these two fields in
-      `resources/gathering-mapping-*.json` (and the base in `manager-gathering-images.js`) have no live
-      reader beyond fallbacks that cannot fire. Either delete them, or feed them into the resolver as its
-      defaults the way `harvestingDefaults` is. Verified by: grep for `discoveryRadiusUnits` outside the
-      resolver and the ruleset loader returns nothing.
 - [ ] Keep the twelve harvest-specific keys (`componentTypes`, `harvestingSkills`, `enabled`, `profile`,
       DCs, gather spots, discovery) on our own flag. Those encode what this module is for.
 - [x] ~~Hand `habitats` to Blacksmith's scene geography; hard cut at `ready`.~~ **DONE 2026-08-31** --

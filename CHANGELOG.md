@@ -18,7 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   defaults and re-read the raw flags, so an unconfigured scene could display one number on the Scene
   Config tab and run another. It also referenced `DEFAULT_DISCOVERY_RADIUS_UNITS`, which was never
   defined -- unreachable while the radius was always at least 5, but a ReferenceError waiting for the first
-  falsy value. As a consequence the ruleset's `discoveryRadiusUnits` no longer affects scene gathering.
+  falsy value.
+- **Removed `discoveryRadiusUnits` and `discoveryRarityOffsets` from the gathering ruleset.** Scene
+  gathering takes both from the resolved scene profile, so the ruleset copies had become fields that look
+  live and do nothing -- editing one changed no behaviour. They are gone from `runtimeDefaults` in
+  `resources/gathering-mapping-core.json` and `-enhanced.json`, from the builtin defaults and merge in
+  `manager-gathering-images.js`, and the threshold fallbacks in `manager-gather.js` now read
+  `SCENE_GATHER_DEFAULTS`. A custom ruleset file that still carries the keys loads without complaint; they
+  are ignored. To change these values for every scene, edit `SCENE_GATHER_DEFAULTS`, or set them per scene on
+  the Scene Config tab.
 
 ### Fixed
 - **Scene Config > Artificer: ticking one Component Type or Harvesting Skill ticked or unticked the
