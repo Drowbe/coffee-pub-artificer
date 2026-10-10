@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **Scene Config > Artificer: ticking one Component Type or Harvesting Skill ticked or unticked the
+  whole group.** `SceneConfig._onChangeForm` keeps same-named form fields "in sync" by copying the
+  changed checkbox's `checked` onto every other element carrying that name. Each group rendered many
+  `<input type="checkbox">` under one name (`flags.coffee-pub-artificer.scene.componentTypes`,
+  `...harvestingSkills`), so the group moved as a unit and a single skill or family could not be
+  selected on its own. Each group is now one `<multi-checkbox>` -- a single named field whose inner
+  boxes carry no name, so there is nothing to mirror (`manager-scene.js`, `_injectArtificerTab`). It
+  submits a `string[]` of only the ticked values, `[]` when none, which also stops new saves writing
+  the null-padded array. Scenes saved earlier still read correctly (`normalizeCheckboxList` is
+  unchanged) and an emptied group still resolves to the scene defaults. The grid layout moved from
+  `.artificer-scene-checkbox` onto the `<multi-checkbox>` host in `styles/scene-config.css`. Found
+  and reported by Blacksmith, whose habitat group had the same defect.
+
 ## [14.1.0]
 
 ### Added

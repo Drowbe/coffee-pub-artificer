@@ -36,15 +36,20 @@
     flex: 1;
 }
 
-.scene-config .tab[data-tab="artificer"] .artificer-scene-checkbox-grid {
+/* The grid class sits on the <multi-checkbox> host itself. Foundry gives that element a
+   fixed three-column grid; this overrides it with the auto-fit layout. The host builds its
+   own <label class="checkbox"> children directly inside it, so the labels are styled by
+   child selector rather than by a class of ours. */
+.scene-config .tab[data-tab="artificer"] multi-checkbox.artificer-scene-checkbox-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
     gap: 8px 12px;
     align-items: start;
     justify-items: start;
+    width: 100%;
 }
 
-.scene-config .tab[data-tab="artificer"] .artificer-scene-checkbox {
+.scene-config .tab[data-tab="artificer"] multi-checkbox.artificer-scene-checkbox-grid > label.checkbox {
     display: inline-flex;
     align-items: center;
     justify-content: flex-start;
@@ -53,7 +58,7 @@
     white-space: nowrap;
 }
 
-.scene-config .tab[data-tab="artificer"] .artificer-scene-checkbox > input[type="checkbox"] {
+.scene-config .tab[data-tab="artificer"] multi-checkbox.artificer-scene-checkbox-grid > label.checkbox > input[type="checkbox"] {
     margin: 0;
 }
 

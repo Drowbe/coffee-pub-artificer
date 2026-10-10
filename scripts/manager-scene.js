@@ -221,24 +221,23 @@ export class SceneManager {
         const habitatSummary = habitatLabels.length
             ? `${foundry.utils.escapeHTML(habitatLabels.join(', '))} &mdash; set on the Geography tab.`
             : 'None set. Choose them on the Geography tab; gathering needs at least one.';
+        // ONE <multi-checkbox> PER GROUP, NOT A LIST OF <input type="checkbox"> SHARING A NAME.
+        // SceneConfig._onChangeForm keeps same-named fields "in sync" by copying the changed
+        // box's `checked` onto every other element with that name (client/applications/
+        // sheets/scene-config.mjs, the loop at the top of _onChangeForm), so a shared-name
+        // group moved as a unit: tick one, the whole group ticked. A multi-checkbox is one
+        // named field -- its inner boxes carry no name -- so there is nothing to mirror, and
+        // it submits a string[] of only the ticked values ([] when none). That also retires
+        // the null-padded flag shape the old group wrote; normalizeCheckboxList still reads
+        // it for scenes saved before this.
         const componentTypeOptionsHtml = componentFamilies.map((family) => {
-            const checked = selectedComponentTypes.has(family) ? 'checked' : '';
+            const selected = selectedComponentTypes.has(family) ? 'selected' : '';
             const label = FAMILY_LABELS[family] ?? family;
-            return `
-                <label class="checkbox artificer-scene-checkbox">
-                    <input type="checkbox" name="flags.${MODULE.ID}.scene.componentTypes" value="${foundry.utils.escapeHTML(family)}" ${checked} />
-                    <span>${foundry.utils.escapeHTML(label)}</span>
-                </label>
-            `;
+            return `<option value="${foundry.utils.escapeHTML(family)}" ${selected}>${foundry.utils.escapeHTML(label)}</option>`;
         }).join('');
         const harvestingSkillOptionsHtml = this._defaultHarvestingSkills.map((skillId) => {
-            const checked = selectedHarvestingSkills.has(skillId) ? 'checked' : '';
-            return `
-                <label class="checkbox artificer-scene-checkbox">
-                    <input type="checkbox" name="flags.${MODULE.ID}.scene.harvestingSkills" value="${foundry.utils.escapeHTML(skillId)}" ${checked} />
-                    <span>${foundry.utils.escapeHTML(skillId)}</span>
-                </label>
-            `;
+            const selected = selectedHarvestingSkills.has(skillId) ? 'selected' : '';
+            return `<option value="${foundry.utils.escapeHTML(skillId)}" ${selected}>${foundry.utils.escapeHTML(skillId)}</option>`;
         }).join('');
 
         const tabPanel = document.createElement('div');
@@ -254,14 +253,18 @@ export class SceneManager {
             </div>
             <fieldset class="form-group artificer-scene-fieldset">
                 <legend>Component Types</legend>
-                <div class="form-fields artificer-scene-checkbox-grid">
-                    ${componentTypeOptionsHtml}
+                <div class="form-fields">
+                    <multi-checkbox class="artificer-scene-checkbox-grid" name="flags.${MODULE.ID}.scene.componentTypes">
+                        ${componentTypeOptionsHtml}
+                    </multi-checkbox>
                 </div>
             </fieldset>
             <fieldset class="form-group artificer-scene-fieldset">
                 <legend>Harvesting Skills</legend>
-                <div class="form-fields artificer-scene-checkbox-grid">
-                    ${harvestingSkillOptionsHtml}
+                <div class="form-fields">
+                    <multi-checkbox class="artificer-scene-checkbox-grid" name="flags.${MODULE.ID}.scene.harvestingSkills">
+                        ${harvestingSkillOptionsHtml}
+                    </multi-checkbox>
                 </div>
             </fieldset>
             <fieldset class="artificer-scene-fieldset artificer-scene-thresholds">
