@@ -35,10 +35,10 @@ Everything here narrows the default rather than enabling anything.
 | **Habitats** | Read-only, mirroring the Geography tab so you can confirm without switching. |
 | **Component Types** | Which families occur here: Creature Part, Environmental, Essence, Gem, Mineral, Plant. |
 | **Harvesting Skills** | Which skills may be rolled on this scene. |
-| **Discovery DC Thresholds** | A base DC plus an offset per rarity. |
-| **Harvest DC** | The difficulty of working a spot once found, 0 to 20. |
-| **Gather Spots** | How many discovered spots the scene may hold at once, up to 30. |
-| **Discovery Radius** | How close to the rolling token new spots appear, 5 to 300 feet. |
+| **Discovery DC Thresholds** | A base DC plus an offset per rarity. Defaults to a base of 12 with offsets of 0, 3, 6, 10 and 14 for Common through Legendary. |
+| **Harvest DC** | The difficulty of working a spot once found, 0 to 20. Defaults to 10. |
+| **Gather Spots** | How many discovered spots the scene may hold at once, up to 30. Defaults to 10. |
+| **Discovery Radius** | How close to the rolling token new spots appear, 5 to 300 feet. Defaults to 20. |
 
 **The rarity offsets are how a scene stays interesting.** Rolls are checked from Legendary downward
 through Very Rare, Rare, Uncommon and Common, so one roll decides both whether anything was found and how

@@ -9,7 +9,7 @@ import { MODULE } from './const.js';
 import { BlacksmithAPI } from '/modules/coffee-pub-blacksmith/api/blacksmith-api.js';
 import { getBiomeVocabulary, normalizeBiome, normalizeBiomeList } from './schema-ingredients.js';
 import { normalizeCheckboxList, getSceneHabitats } from './utils/helpers.js';
-import { resolveSceneGatherProfile } from './systems/scene-gather-profile.js';
+import { resolveSceneGatherProfile, SCENE_GATHER_DEFAULTS } from './systems/scene-gather-profile.js';
 import {
     ARTIFICER_TYPES,
     FAMILIES_BY_TYPE,
@@ -618,6 +618,10 @@ async function _getSceneGatherSettings(scene = canvas?.scene ?? null) {
     const profile = resolveSceneGatherProfile(scene, harvestingDefaults);
     return {
         discoveryDC: profile.discoveryDC,
+        discoveryBaseDC: profile.discoveryBaseDC,
+        discoveryOffsets: profile.discoveryOffsets,
+        gatherSpots: profile.gatherSpots,
+        discoveryRadiusUnits: profile.discoveryRadiusUnits,
         harvestDC: profile.harvestDC,
         biomes: profile.habitats,
         componentTypes: profile.componentTypes,
@@ -1420,7 +1424,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
     const { discoveryThresholds, discoveryDC, dc, biomes, componentTypes, harvestingSkills, gatherSpots, discoveryRadiusUnits } = context;
     const fallbackBaseDC = Number.isFinite(Number(discoveryDC))
         ? Number(discoveryDC)
-        : (Number.isFinite(Number(dc)) ? Number(dc) : 5);
+        : (Number.isFinite(Number(dc)) ? Number(dc) : SCENE_GATHER_DEFAULTS.discoveryBaseDC);
     const effectiveThresholds = (discoveryThresholds && Number.isFinite(Number(discoveryThresholds.common)))
         ? discoveryThresholds
         : _buildDiscoveryThresholds(fallbackBaseDC, _gatherRt().discoveryRarityOffsets);
@@ -1452,7 +1456,7 @@ async function _applyDiscoveryResults(scene, context, entries) {
             .filter((rec) => _getRarityRank(_getRecordRarity(rec)) <= maxRarityRank);
         if (!basePool.length) continue;
         const anchor = _getTokenCenterById(scene, entry?.tokenId ?? null);
-        const radiusUnits = Math.max(5, Number(discoveryRadiusUnits) || DEFAULT_DISCOVERY_RADIUS_UNITS);
+        const radiusUnits = Math.max(5, Number(discoveryRadiusUnits) || SCENE_GATHER_DEFAULTS.discoveryRadiusUnits);
 
         for (let i = 0; i < countForRoll; i++) {
             if (remaining <= 0) break;
@@ -1588,22 +1592,21 @@ async function _processDiscoveryRollOnGM(data) {
 }
 
 async function _buildDiscoveryContext(scene) {
-    const { discoveryDC, biomes, componentTypes, harvestingSkills } = await _getSceneGatherSettings(scene);
-    const sceneFlags = scene?.getFlag?.(MODULE.ID, 'scene') ?? {};
-    const rawBase = Number(sceneFlags.discoveryBaseDC);
-    const discoveryBaseDC = Number.isFinite(rawBase) ? Math.max(0, Math.min(20, Math.floor(rawBase))) : discoveryDC;
+    // Every value here comes from the scene's resolved profile, not from re-reading the
+    // flags. This function used to carry its own copy of each default (spots 1, radius from
+    // the ruleset), which is the disagreement with the Scene Config tab the resolver exists
+    // to prevent: an unconfigured scene would have shown one number and run another.
+    const {
+        discoveryBaseDC, discoveryOffsets, gatherSpots, discoveryRadiusUnits,
+        biomes, componentTypes, harvestingSkills
+    } = await _getSceneGatherSettings(scene);
     const discoveryThresholds = _buildDiscoveryThresholds(discoveryBaseDC, {
-        common: sceneFlags.discoveryOffsetCommon,
-        uncommon: sceneFlags.discoveryOffsetUncommon,
-        rare: sceneFlags.discoveryOffsetRare,
-        'very rare': sceneFlags.discoveryOffsetVeryRare,
-        legendary: sceneFlags.discoveryOffsetLegendary
+        common: discoveryOffsets.common,
+        uncommon: discoveryOffsets.uncommon,
+        rare: discoveryOffsets.rare,
+        'very rare': discoveryOffsets.veryRare,
+        legendary: discoveryOffsets.legendary
     });
-    const gatherSpots = Math.max(1, Math.min(30, Number(sceneFlags.gatherSpots) || 1));
-    const rawRadius = Number(sceneFlags.discoveryRadiusUnits);
-    const discoveryRadiusUnits = Number.isFinite(rawRadius)
-        ? Math.max(5, Math.min(300, Math.round(rawRadius / 5) * 5))
-        : _gatherRt().discoveryRadiusUnits;
     const discoveryRollDC = Number.isFinite(Number(discoveryThresholds.common)) ? Number(discoveryThresholds.common) : discoveryBaseDC;
     return { discoveryBaseDC, discoveryThresholds, discoveryRollDC, biomes, componentTypes, harvestingSkills, gatherSpots, discoveryRadiusUnits };
 }

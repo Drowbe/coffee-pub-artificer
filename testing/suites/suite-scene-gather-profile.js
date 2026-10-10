@@ -58,6 +58,35 @@ export default {
             }
         },
         {
+            id: 'numeric-defaults',
+            label: 'An unconfigured scene resolves to the agreed numeric defaults',
+            tier: 'headless',
+            group: 'Defaults',
+            note: 'Base DC 12, offsets 0/3/6/10/14, harvest DC 10, 10 spots, 20 ft radius. A legacy defaultDC still beats the DC defaults, and the gather path must not carry its own copy of any of them.',
+            run: async ({ expect }) => {
+                const { resolveSceneGatherProfile } = await import(PROFILE);
+                const profile = resolveSceneGatherProfile({ getFlag: () => ({}) }, []);
+                expect('discovery base DC', profile.discoveryBaseDC, 12);
+                expect('discovery offsets', profile.discoveryOffsets,
+                    { common: 0, uncommon: 3, rare: 6, veryRare: 10, legendary: 14 });
+                expect('harvest DC', profile.harvestDC, 10);
+                expect('gather spots', profile.gatherSpots, 10);
+                expect('discovery radius', profile.discoveryRadiusUnits, 20);
+
+                const legacy = resolveSceneGatherProfile({ getFlag: () => ({ defaultDC: 7 }) }, []);
+                expect('legacy defaultDC still wins for discovery', legacy.discoveryBaseDC, 7);
+                expect('and for harvest', legacy.harvestDC, 7);
+
+                // The gather path must read the resolved profile, not re-derive a default
+                // from the raw flags -- that was the disagreement the resolver exists for.
+                const source = await fetch('/modules/coffee-pub-artificer/scripts/manager-gather.js')
+                    .then((r) => r.text());
+                const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+                expect.ok('manager-gather does not read gatherSpots off the raw flags',
+                    !/sceneFlags\s*\.\s*(gatherSpots|discoveryRadiusUnits|discoveryBaseDC)\b/.test(code));
+            }
+        },
+        {
             id: 'stored-values-win',
             label: 'A configured scene keeps exactly what the GM set',
             tier: 'headless',

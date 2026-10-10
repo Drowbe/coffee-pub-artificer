@@ -33,6 +33,21 @@
 import { ARTIFICER_TYPES, FAMILIES_BY_TYPE } from '../schema-artificer-item.js';
 import { normalizeCheckboxList, getSceneHabitats } from '../utils/helpers.js';
 
+/**
+ * What a scene gathers with when the GM has not set a value. The ONE place these
+ * numbers live: the Scene Config tab, the discovery path and the harvest path all
+ * resolve through `resolveSceneGatherProfile`, so changing a default here changes it
+ * everywhere -- and nowhere else may carry its own copy, which is how the form and the
+ * engine came to disagree before.
+ */
+export const SCENE_GATHER_DEFAULTS = Object.freeze({
+    discoveryBaseDC: 12,
+    harvestDC: 10,
+    gatherSpots: 10,
+    discoveryRadiusUnits: 20,
+    discoveryOffsets: Object.freeze({ common: 0, uncommon: 3, rare: 6, veryRare: 10, legendary: 14 })
+});
+
 /** Clamp to an integer range, falling back when the value is not a number at all. */
 function clampInt(value, min, max, fallback) {
     const number = Number(value);
@@ -79,26 +94,30 @@ export function resolveSceneGatherProfile(scene, harvestingDefaults = []) {
     // `defaultDC` is a LEGACY key that no form field writes -- the form writes
     // `discoveryBaseDC` and `harvestDC`. Kept as a fallback because worlds predating
     // the split may still carry it: the writer retired it, the reader keeps it.
+    // A legacy value, where a world carries one, still wins over the default for both DCs.
     const legacyDC = Number(flags.defaultDC);
-    const legacyFallback = Number.isFinite(legacyDC) ? clampInt(legacyDC, 0, 20, 5) : 5;
+    const legacyFallback = Number.isFinite(legacyDC) ? clampInt(legacyDC, 0, 20, 0) : null;
 
-    const discoveryDC = clampInt(flags.discoveryDC, 0, 20, legacyFallback);
+    const discoveryDC = clampInt(flags.discoveryDC, 0, 20,
+        legacyFallback ?? SCENE_GATHER_DEFAULTS.discoveryBaseDC);
     const discoveryBaseDC = clampInt(flags.discoveryBaseDC, 0, 20, discoveryDC);
-    const harvestDC = clampInt(flags.harvestDC, 0, 20, legacyFallback);
+    const harvestDC = clampInt(flags.harvestDC, 0, 20,
+        legacyFallback ?? SCENE_GATHER_DEFAULTS.harvestDC);
 
+    const defaultOffsets = SCENE_GATHER_DEFAULTS.discoveryOffsets;
     const discoveryOffsets = {
-        common: clampInt(flags.discoveryOffsetCommon, 0, 30, 0),
-        uncommon: clampInt(flags.discoveryOffsetUncommon, 0, 30, 3),
-        rare: clampInt(flags.discoveryOffsetRare, 0, 30, 6),
-        veryRare: clampInt(flags.discoveryOffsetVeryRare, 0, 30, 10),
-        legendary: clampInt(flags.discoveryOffsetLegendary, 0, 30, 14)
+        common: clampInt(flags.discoveryOffsetCommon, 0, 30, defaultOffsets.common),
+        uncommon: clampInt(flags.discoveryOffsetUncommon, 0, 30, defaultOffsets.uncommon),
+        rare: clampInt(flags.discoveryOffsetRare, 0, 30, defaultOffsets.rare),
+        veryRare: clampInt(flags.discoveryOffsetVeryRare, 0, 30, defaultOffsets.veryRare),
+        legendary: clampInt(flags.discoveryOffsetLegendary, 0, 30, defaultOffsets.legendary)
     };
 
-    const gatherSpots = clampInt(flags.gatherSpots, 1, 30, 1);
+    const gatherSpots = clampInt(flags.gatherSpots, 1, 30, SCENE_GATHER_DEFAULTS.gatherSpots);
     const rawRadius = Number(flags.discoveryRadiusUnits);
     const discoveryRadiusUnits = Number.isFinite(rawRadius)
         ? Math.max(5, Math.min(300, Math.round(rawRadius / 5) * 5))
-        : 60;
+        : SCENE_GATHER_DEFAULTS.discoveryRadiusUnits;
 
     return {
         habitats,

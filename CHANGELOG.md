@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **New scene gathering defaults: base DC 12, harvest DC 10, 10 gather spots, 20 ft discovery radius.**
+  The rarity offsets are unchanged (0 / 3 / 6 / 10 / 14). Previously an unconfigured scene resolved to
+  DC 5 for both DCs, 1 spot and a 60 ft radius. These apply only to scenes that have never had the value
+  set; a stored value, and a legacy `defaultDC` where a world still carries one, still wins. They live in
+  one place, `SCENE_GATHER_DEFAULTS` (`scripts/systems/scene-gather-profile.js`).
+- **The discovery path now reads its scene settings from the resolved profile instead of re-deriving
+  them.** `_buildDiscoveryContext` (`manager-gather.js`) carried its own copy of the spots and radius
+  defaults and re-read the raw flags, so an unconfigured scene could display one number on the Scene
+  Config tab and run another. It also referenced `DEFAULT_DISCOVERY_RADIUS_UNITS`, which was never
+  defined -- unreachable while the radius was always at least 5, but a ReferenceError waiting for the first
+  falsy value. As a consequence the ruleset's `discoveryRadiusUnits` no longer affects scene gathering.
+
 ### Fixed
 - **Scene Config > Artificer: ticking one Component Type or Harvesting Skill ticked or unticked the
   whole group.** `SceneConfig._onChangeForm` keeps same-named form fields "in sync" by copying the
